@@ -1,0 +1,29 @@
+.hide {
+  display: none;
+}
+
+.show {
+  display: block;
+}
+
+
+.rotate {
+  vertical-align: top;
+  text-align: center;
+}
+
+.rotate span {
+  -ms-writing-mode: tb-rl;
+  -webkit-writing-mode: vertical-rl;
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+}
+
+.credit_voucher_table {
+  box-shadow: 0px 10px 15px rgb(255, 255, 255);
+}
+
+.credit_voucher_table_p {
+  padding-left: 25px !important;
+  font-weight: bold;
+}

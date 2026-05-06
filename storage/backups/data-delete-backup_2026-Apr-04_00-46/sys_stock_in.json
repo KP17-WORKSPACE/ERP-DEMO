@@ -1,0 +1,47 @@
+[
+    {
+        "id": 1,
+        "date": "2026-04-01",
+        "doc_number": "EXD-1001",
+        "remarks": "121212",
+        "currancy": 1,
+        "status": 1,
+        "created_by": 133,
+        "updated_by": null,
+        "created_at": "2026-04-01 14:30:34",
+        "updated_at": "2026-04-01 16:30:34",
+        "company_id": 1,
+        "customer_id": null,
+        "supplier_id": null
+    },
+    {
+        "id": 2,
+        "date": "2026-04-01",
+        "doc_number": "EXD-1002",
+        "remarks": "DID-1001 change to EXD-1002 \/ EXD-1002 change to DID-1001 \/ 12121212",
+        "currancy": 1,
+        "status": 1,
+        "created_by": 133,
+        "updated_by": 133,
+        "created_at": "2026-04-01 14:56:32",
+        "updated_at": "2026-04-01 15:21:30",
+        "company_id": 1,
+        "customer_id": null,
+        "supplier_id": null
+    },
+    {
+        "id": 3,
+        "date": "2026-04-02",
+        "doc_number": "EXD-1003",
+        "remarks": "12121212",
+        "currancy": 1,
+        "status": 1,
+        "created_by": 133,
+        "updated_by": 133,
+        "created_at": "2026-04-02 10:05:56",
+        "updated_at": "2026-04-02 10:07:31",
+        "company_id": 1,
+        "customer_id": null,
+        "supplier_id": null
+    }
+]

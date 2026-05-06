@@ -1,0 +1,343 @@
+<style>
+:root {
+    --color-white: #ffffff;
+    --color-dark-blue: #0A3D62; /* Primary Text, Nav */
+    --color-orange-red: #E74C3C; /* Call-to-Action, Highlights */
+    --color-text-dark: #333333;
+    --color-gray-line: #eeeeee;
+}
+
+/* --- Base Styles & Typography --- */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-white); /* Main background */
+    color: var(--color-text-dark);
+    line-height: 1.6;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* --- Headings --- */
+h1, h2, h3 {
+    color: var(--color-dark-blue);
+    margin-top: 0;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 50px;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 4px;
+    background-color: var(--color-orange-red); /* Accent line */
+    margin: 10px auto 0;
+}
+
+.section-padding {
+    padding: 80px 0;
+}
+
+/* --- Buttons --- */
+.btn {
+    display: inline-block;
+    padding: 12px 30px;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background-color: var(--color-orange-red);
+    color: var(--color-white);
+    border: 2px solid var(--color-orange-red);
+}
+
+.btn-primary:hover {
+    background-color: #D63E2F; /* Slightly darker */
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--color-dark-blue);
+    border: 2px solid var(--color-dark-blue);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-dark-blue);
+    color: var(--color-white);
+}
+
+/* --- Navbar --- */
+.navbar {
+    background-color: var(--color-white);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 15px 0;
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar .logo {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--color-dark-blue);
+    /* In a real site, use an image/SVG here */
+}
+
+.navbar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.navbar li a {
+    text-decoration: none;
+    color: var(--color-dark-blue);
+    margin-left: 30px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.navbar li a:hover, .navbar li a.active {
+    color: var(--color-orange-red);
+}
+
+.btn-portal {
+    background-color: var(--color-dark-blue);
+    color: var(--color-white);
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: 600 !important;
+}
+
+.btn-portal:hover {
+    background-color: var(--color-orange-red);
+    color: var(--color-white) !important;
+}
+
+/* --- Hero Section --- */
+.hero {
+    background: url('path/to/professional-tech-bg.jpg') no-repeat center center/cover; /* Use a relevant background image */
+    background-color: #F8F9FA; /* Light fallback color */
+    padding: 150px 0;
+    text-align: center;
+}
+
+.hero-title {
+    font-size: 3.5em;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 20px;
+}
+
+.hero-subtitle {
+    font-size: 1.3em;
+    color: #555;
+    margin-bottom: 40px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* --- Trust Points --- */
+.trust-points {
+    background-color: var(--color-white);
+    border-top: 1px solid var(--color-gray-line);
+    border-bottom: 1px solid var(--color-gray-line);
+    padding: 40px 0;
+}
+
+.trust-points .container {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+
+.point-card {
+    flex-basis: 30%;
+    padding: 15px;
+}
+
+.point-card h3 {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: var(--color-orange-red);
+}
+
+.point-card p {
+    color: #666;
+}
+
+/* --- Services Overview --- */
+.service-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+.service-card {
+    background-color: #F8F9FA;
+    padding: 30px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: transform 0.3s;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+.service-card .icon {
+    font-size: 2.5em;
+    color: var(--color-orange-red);
+    margin-bottom: 15px;
+}
+
+.service-card h3 {
+    font-size: 1.5em;
+}
+
+.center-cta {
+    text-align: center;
+    margin-top: 40px;
+}
+
+/* --- Footer --- */
+.footer {
+    background-color: var(--color-dark-blue);
+    color: var(--color-white);
+    padding: 25px 0;
+    font-size: 0.9em;
+}
+
+.footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer a {
+    color: var(--color-white);
+    text-decoration: none;
+    margin-left: 15px;
+    transition: color 0.2s;
+}
+
+.footer a:hover {
+    color: var(--color-orange-red);
+}
+</style>
+
+ <head> 
+
+
+
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KP Systems - Driving Digital Success</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="container">
+            <div class="logo">KP Systems</div> 
+            <nav>
+                <ul>
+                    <li><a href="#" class="active">Home</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#about">About Us</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                    <li><a href="#" class="btn-portal">Client Portal</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1 class="hero-title">Driving Digital Success for Modern Businesses</h1>
+            <p class="hero-subtitle">Trusted IT Services, Proactive Security, and Cloud Solutions tailored for growth and efficiency.</p>
+            <a href="#services" class="btn btn-primary">Explore Our Services</a>
+        </div>
+    </section>
+
+    <section class="trust-points">
+        <div class="container">
+            <div class="point-card">
+                <h3>24/7 Expert Support</h3>
+                <p>Immediate, reliable assistance whenever you need it to minimize downtime.</p>
+            </div>
+            <div class="point-card">
+                <h3>Proactive Security</h3>
+                <p>Advanced threat detection and comprehensive compliance management.</p>
+            </div>
+            <div class="point-card">
+                <h3>Certified Cloud Partners</h3>
+                <p>Seamless migration and management for Azure, AWS, and Google Cloud.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="section-padding">
+        <div class="container">
+            <h2 class="section-title">Comprehensive IT Solutions</h2>
+            <div class="service-grid">
+                <div class="service-card">
+                    <i class="icon fas fa-cogs"></i>
+                    <h3>Managed IT Services</h3>
+                    <p>Worry-free IT management, from help desk to infrastructure maintenance.</p>
+                </div>
+                <div class="service-card">
+                    <i class="icon fas fa-shield-alt"></i>
+                    <h3>Cybersecurity</h3>
+                    <p>Protect your assets with cutting-edge network security and backup solutions.</p>
+                </div>
+                <div class="service-card">
+                    <i class="icon fas fa-cloud"></i>
+                    <h3>Cloud Solutions</h3>
+                    <p>Harness the power of the cloud for scalability, flexibility, and remote work.</p>
+                </div>
+            </div>
+            <div class="center-cta">
+                <a href="services.html" class="btn btn-secondary">View All Services</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 KP Systems. All rights reserved. | <a href="#">Privacy Policy</a></p>
+            <div class="social-links">
+                </div>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Classroom Counter</title>
+
+  <!-- ✅ MQTT.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.14.1/mqtt.min.js"></script>
+
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #121212;
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+    }
+    .counter-box {
+      background: #1e1e1e;
+      padding: 40px 60px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    }
+    h1 {
+      font-size: 22px;
+      color: #ccc;
+    }
+    .count {
+      font-size: 80px;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #00e676;
+      transition: all 0.3s ease;
+    }
+    .status {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="counter-box">
+    <h1>Students In Classroom</h1>
+    <div class="count" id="countDisplay">--</div>
+    <div class="status" id="statusText">Connecting...</div>
+  </div>
+
+  <script>
+    // ✅ Primary Broker (HiveMQ)
+    const primaryBroker = "wss://broker.hivemq.com:8884/mqtt";
+    // ✅ Fallback Broker (Eclipse)
+    const fallbackBroker = "wss://mqtt.eclipseprojects.io/mqtt";
+    const topic = "classroom/VPSH";
+
+    const countDisplay = document.getElementById("countDisplay");
+    const statusText = document.getElementById("statusText");
+
+    let client;
+    let usingFallback = false;
+
+    function connectToBroker(brokerUrl) {
+      console.log("🔌 Connecting to:", brokerUrl);
+
+      client = mqtt.connect(brokerUrl, {
+        clientId: "webclient_" + Math.random().toString(16).substr(2, 8),
+        clean: true,
+        connectTimeout: 4000,
+        reconnectPeriod: 2000,
+      });
+
+      client.on("connect", () => {
+        console.log("✅ Connected to broker:", brokerUrl);
+        statusText.textContent = "Connected";
+        statusText.style.color = "#00e676";
+
+        client.subscribe(topic, (err) => {
+          if (!err) {
+            console.log("Subscribed to:", topic);
+          } else {
+            console.error("Subscribe error:", err);
+          }
+        });
+      });
+
+      client.on("error", (err) => {
+        console.error("❌ Connection error:", err);
+        statusText.textContent = "Connection Error";
+        statusText.style.color = "#ff5252";
+
+        // Try fallback if primary fails
+        if (!usingFallback && brokerUrl === primaryBroker) {
+          console.warn("⚠️ Switching to fallback broker...");
+          usingFallback = true;
+          client.end(true);
+          connectToBroker(fallbackBroker);
+        }
+      });
+
+      client.on("message", (receivedTopic, payload) => {
+        console.log("📩 Message:", receivedTopic, payload.toString());
+
+        if (receivedTopic === topic) {
+          const value = parseInt(payload.toString());
+          if (!isNaN(value)) {
+            countDisplay.textContent = value;
+            countDisplay.style.color = "#00e676";
+          } else {
+            countDisplay.textContent = "--";
+            countDisplay.style.color = "#ff5252";
+          }
+        }
+      });
+
+      client.on("reconnect", () => {
+        statusText.textContent = "Reconnecting...";
+        statusText.style.color = "#ffc107";
+      });
+
+      client.on("offline", () => {
+        statusText.textContent = "Offline";
+        statusText.style.color = "#ff5252";
+      });
+    }
+
+    // 🔁 Start connection
+    connectToBroker(primaryBroker);
+  </script>
+</body>
+</html>

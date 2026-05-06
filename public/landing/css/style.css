@@ -1,0 +1,2139 @@
+/**************** extend css start ****************/
+@import url("https://fonts.googleapis.com/css?family=Open+Sans:800|Poppins:300,400,500,600,700,800|Roboto:300,400,500");
+/* line 7, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_extends.scss */
+.banner_part .banner_text .btn_1 {
+  background-image: -webkit-gradient(linear, right top, left top, from(#7c32ff), color-stop(50%, #c738d8), to(#7c32ff));
+  background-image: -webkit-linear-gradient(right, #7c32ff 0%, #c738d8 50%, #7c32ff 100%);
+  background-image: -o-linear-gradient(right, #7c32ff 0%, #c738d8 50%, #7c32ff 100%);
+  background-image: linear-gradient(to left, #7c32ff 0%, #c738d8 50%, #7c32ff 100%);
+}
+
+/* line 57, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_extends.scss */
+.contact_us .section_tittle h5, .contact_us .section_tittle h2, .contact_us .section_tittle p {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: #fff;
+  background-image: linear-gradient(to right, #fff 0%, #fff 100%);
+}
+
+/**************** extend css start ****************/
+/**************** common css start ****************/
+/* line 4, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+body {
+  font-family: "Roboto", sans-serif;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+  background-color: #eff0fa;
+}
+
+/* line 12, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.message_submit_form:focus {
+  outline: none;
+}
+
+/* line 16, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+input:hover,
+input:focus {
+  outline: none !important;
+}
+
+/* line 21, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.gray_bg {
+  background-color: #f7f7f7;
+}
+
+/* line 25, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.section_padding {
+  padding: 100px 0px;
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 25, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_padding {
+    padding: 80px 0px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 25, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_padding {
+    padding: 70px 0px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* line 25, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_padding {
+    padding: 70px 0px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 25, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_padding {
+    padding: 70px 0px;
+  }
+}
+
+/* line 45, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.single_padding_top {
+  padding-top: 100px !important;
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 45, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .single_padding_top {
+    padding-top: 70px !important;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 45, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .single_padding_top {
+    padding-top: 70px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  /* line 45, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .single_padding_top {
+    padding-top: 70px !important;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 45, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .single_padding_top {
+    padding-top: 80px !important;
+  }
+}
+
+/* line 65, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.padding_top {
+  padding-top: 100px;
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 65, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .padding_top {
+    padding-top: 80px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 65, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .padding_top {
+    padding-top: 70px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* line 65, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .padding_top {
+    padding-top: 70px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 65, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .padding_top {
+    padding-top: 70px;
+  }
+}
+
+/* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.padding_bottom {
+  padding-bottom: 100px;
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .padding_bottom {
+    padding-bottom: 80px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .padding_bottom {
+    padding-bottom: 70px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .padding_bottom {
+    padding-bottom: 70px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .padding_bottom {
+    padding-bottom: 70px;
+  }
+}
+
+/* line 105, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+a {
+  text-decoration: none;
+  -webkit-transition: 0.5s;
+  transition: 0.5s;
+}
+
+/* line 109, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+a:hover {
+  outline: none;
+  text-decoration: none;
+}
+
+/* line 115, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #464d56;
+  font-family: "Roboto", sans-serif;
+}
+
+/* line 125, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+p {
+  font-family: "Roboto", sans-serif;
+  line-height: 1.929;
+  font-size: 16px;
+  margin-bottom: 0px;
+  color: #8c929d;
+  font-weight: 300;
+}
+
+/* line 134, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+h2 {
+  font-size: 36px;
+  line-height: 28px;
+  color: #464d56;
+  font-weight: 700;
+  line-height: 1.222;
+}
+
+@media (max-width: 576px) {
+  /* line 134, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  h2 {
+    font-size: 22px;
+    line-height: 25px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 134, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  h2 {
+    font-size: 24px;
+    line-height: 25px;
+  }
+}
+
+/* line 154, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+h3 {
+  font-size: 24px;
+  line-height: 25px;
+}
+
+@media (max-width: 576px) {
+  /* line 154, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  h3 {
+    font-size: 20px;
+  }
+}
+
+/* line 164, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+h5 {
+  font-size: 18px;
+  line-height: 22px;
+}
+
+/* line 169, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+img {
+  max-width: 100%;
+}
+
+/* line 173, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+a:focus,
+.button:focus,
+button:focus,
+.btn:focus {
+  text-decoration: none;
+  outline: none;
+  box-shadow: none;
+  -webkit-transition: 1s;
+  transition: 1s;
+}
+
+/* line 183, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.section_tittle {
+  margin-bottom: 74px;
+}
+
+@media (max-width: 576px) {
+  /* line 183, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle {
+    margin-bottom: 50px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 183, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle {
+    margin-bottom: 50px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 183, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle {
+    font-size: 50px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 183, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle {
+    margin-bottom: 50px;
+  }
+}
+
+/* line 202, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.section_tittle h5 {
+  font-size: 13px;
+  font-weight: 300;
+  text-transform: capitalize;
+  line-height: 11px;
+  color: #f7343d;
+  margin-bottom: 35px;
+}
+
+@media (max-width: 991px) {
+  /* line 202, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle h5 {
+    margin-bottom: 15px;
+  }
+}
+
+/* line 214, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.section_tittle h2 {
+  font-size: 36px;
+  color: #464d56;
+  font-weight: 700;
+  position: relative;
+  margin: 30px 0 19px;
+  line-height: 1.25;
+}
+
+@media (max-width: 991px) {
+  /* line 214, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle h2 {
+    font-size: 25px;
+    margin: 15px 0 10px;
+    padding: 0px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 214, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle h2 {
+    font-size: 30px;
+    line-height: 40px;
+    margin: 15px 0 10px;
+  }
+}
+
+/* line 236, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.section_tittle p {
+  color: #8c929d;
+  font-weight: 300;
+  text-transform: capitalize;
+}
+
+@media (max-width: 576px) {
+  /* line 236, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle p {
+    margin-bottom: 10px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 236, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle p {
+    margin-bottom: 10px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 236, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle p {
+    margin-bottom: 10px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 236, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .section_tittle p {
+    margin-bottom: 10px;
+    line-height: 25px;
+  }
+}
+
+/* line 260, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* line 266, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.mb_110 {
+  margin-bottom: 110px;
+}
+
+@media (max-width: 576px) {
+  /* line 266, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .mb_110 {
+    margin-bottom: 220px;
+  }
+}
+
+/* line 275, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.mt_130 {
+  margin-top: 130px;
+}
+
+@media (max-width: 576px) {
+  /* line 275, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .mt_130 {
+    margin-top: 70px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 275, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .mt_130 {
+    margin-top: 70px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 275, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .mt_130 {
+    margin-top: 70px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 275, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .mt_130 {
+    margin-top: 70px;
+  }
+}
+
+/* line 295, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.mb_130 {
+  margin-bottom: 130px;
+}
+
+@media (max-width: 576px) {
+  /* line 295, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .mb_130 {
+    margin-bottom: 70px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 295, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .mb_130 {
+    margin-bottom: 70px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 295, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .mb_130 {
+    margin-bottom: 70px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 295, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .mb_130 {
+    margin-bottom: 70px;
+  }
+}
+
+/* line 315, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.padding_less_40 {
+  margin-bottom: -50px;
+}
+
+/* line 319, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.z_index {
+  z-index: 9 !important;
+  position: relative;
+}
+
+@media only screen and (min-width: 1200px) and (max-width: 3640px) {
+  /* line 325, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+  .container {
+    max-width: 1170px;
+  }
+}
+
+/* line 342, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.coming_soon {
+  position: relative;
+  z-index: 1;
+}
+
+/* line 345, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.coming_soon:after {
+  position: absolute;
+  content: "coming soon";
+  left: 0;
+  width: 100%;
+  color: #415094;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  bottom: 20px;
+}
+
+/* line 357, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_common.scss */
+.coming_soon:hover:after {
+  color: #fff;
+}
+
+/**************** common css end ****************/
+/* Main Button Area css
+============================================================================================ */
+/* line 3, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.submit_btn {
+  width: auto;
+  display: inline-block;
+  background: #fff;
+  padding: 0px 50px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 50px;
+  border-radius: 5px;
+  outline: none !important;
+  box-shadow: none !important;
+  text-align: center;
+  border: 1px solid #edeff2;
+  cursor: pointer;
+  -webkit-transition: 0.5s;
+  transition: 0.5s;
+}
+
+/* line 19, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.submit_btn:hover {
+  background: transparent;
+}
+
+/* line 24, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.btn_1 {
+  display: inline-block;
+  padding: 13.5px 45px;
+  border-radius: 5px;
+  background-color: #f7343d;
+  font-size: 14px;
+  color: #fff;
+  -o-transition: all .4s ease-in-out;
+  -webkit-transition: all .4s ease-in-out;
+  transition: all .4s ease-in-out;
+  text-transform: capitalize;
+  background-size: 200% auto;
+  border: 1px solid transparent;
+}
+
+/* line 37, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.btn_1:hover {
+  color: #fff !important;
+  background-position: right center;
+}
+
+@media (max-width: 576px) {
+  /* line 24, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+  .btn_1 {
+    padding: 10px 30px;
+    margin-top: 25px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 24, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+  .btn_1 {
+    padding: 10px 30px;
+    margin-top: 30px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 24, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+  .btn_1 {
+    padding: 10px 30px;
+    margin-top: 30px;
+  }
+}
+
+/* line 59, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.btn_2 {
+  border-color: #828bb2;
+  display: inline-block;
+  padding: 13px 39px;
+  border-radius: 5px;
+  background-color: transparent;
+  border: 1px solid #828bb2;
+  color: #fff;
+  font-size: 14px;
+  -o-transition: all .4s ease-in-out;
+  -webkit-transition: all .4s ease-in-out;
+  transition: all .4s ease-in-out;
+  text-transform: capitalize;
+  background-size: 200% auto;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* line 75, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.btn_2:hover {
+  color: #fff !important;
+  background-position: right center;
+  background-color: #f7343d;
+  border: 1px solid transparent;
+  box-shadow: 0px 10px 20px 0px rgba(108, 39, 255, 0.3);
+}
+
+@media (max-width: 576px) {
+  /* line 59, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+  .btn_2 {
+    padding: 14px 30px;
+    margin-top: 25px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 59, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+  .btn_2 {
+    padding: 14px 30px;
+    margin-top: 30px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 59, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+  .btn_2 {
+    padding: 14px 30px;
+    margin-top: 30px;
+  }
+}
+
+/* line 98, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.btn_4 {
+  background-color: #f7343d;
+  padding: 3.5px 21px;
+  background: #ff663b;
+  text-transform: capitalize;
+  display: inline-block;
+  border: 2px solid transparent;
+  -webkit-transition: 0.5s;
+  transition: 0.5s;
+  color: #fff;
+}
+
+/* line 107, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.btn_4:hover {
+  background: rgba(255, 102, 59, 0.8);
+  color: #fff;
+}
+
+/*=================== custom button rule start ====================*/
+/* line 115, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.button {
+  display: inline-block;
+  border: 1px solid transparent;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 54px;
+  border-radius: 4px;
+  color: #fff;
+  border: 1px solid #edeff2;
+  text-transform: uppercase;
+  background-color: #f7343d;
+  cursor: pointer;
+  -webkit-transition: 0.5s;
+  transition: 0.5s;
+}
+
+@media (max-width: 767px) {
+  /* line 115, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+  .button {
+    font-size: 13px;
+    padding: 9px 24px;
+  }
+}
+
+/* line 134, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.button:hover {
+  color: #fff;
+}
+
+/* line 139, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.button-link {
+  letter-spacing: 0;
+  color: #3b1d82;
+  border: 0;
+  padding: 0;
+}
+
+/* line 145, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.button-link:hover {
+  background: transparent;
+  color: #3b1d82;
+}
+
+/* line 151, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.button-header {
+  color: #fff;
+  border-color: #edeff2;
+}
+
+/* line 155, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.button-header:hover {
+  background: #b8024c;
+  color: #fff;
+}
+
+/* line 161, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_button.scss */
+.button-contactForm {
+  color: #fff;
+  border-color: #edeff2;
+  padding: 12px 25px;
+}
+
+/* End Main Button Area css
+============================================================================================ */
+/**************menu part start*****************/
+/* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.header_area {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  z-index: 99;
+}
+
+@media (max-width: 576px) {
+  /* line 10, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .sub_header {
+    padding: 0px 0 10px;
+  }
+}
+
+/* line 16, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.sub_header .header_social_icon a {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+  padding: 11px 8px;
+  display: inline-block;
+}
+
+/* line 21, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.sub_header .header_social_icon a:hover {
+  color: #f7343d;
+}
+
+/* line 24, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.sub_header .header_social_icon a:first-child {
+  padding: 11px 8px 11px 0;
+}
+
+/* line 29, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.sub_header .header_info {
+  text-align: right;
+}
+
+/* line 31, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.sub_header .header_info a {
+  margin-left: 40px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 768px) {
+  /* line 31, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .sub_header .header_info a {
+    margin-left: 15px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* line 31, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .sub_header .header_info a {
+    margin-left: 8px;
+  }
+}
+
+/* line 39, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.sub_header .header_info a i {
+  margin-right: 14px;
+  font-weight: 400;
+  color: #f7343d;
+}
+
+@media (max-width: 768px) {
+  /* line 39, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .sub_header .header_info a i {
+    margin-right: 4px;
+  }
+}
+
+/* line 52, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.main_menu {
+  background-color: #060818;
+}
+
+/* line 54, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.main_menu .navbar-brand {
+  padding: 0rem !important;
+}
+
+/* line 57, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.main_menu .navbar {
+  padding: 0;
+}
+
+@media (max-width: 991px) {
+  /* line 57, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .main_menu .navbar {
+    padding: 20px 0;
+  }
+}
+
+/* line 63, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.main_menu .navbar-toggler {
+  position: relative;
+  z-index: 1;
+}
+
+/* line 66, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.main_menu .navbar-toggler:after {
+  position: absolute;
+  content: "\e68e";
+  font-family: 'themify';
+  width: 18px;
+  height: 18px;
+  font-size: 30px;
+  top: 3px;
+  color: #fff;
+  right: 10px;
+}
+
+/* line 78, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.main_menu .main-menu-item {
+  text-align: right;
+  justify-content: right;
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 78, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .main_menu .main-menu-item {
+    padding-left: 25px;
+  }
+}
+
+/* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.main_menu .main-menu-item ul li .nav-link {
+  color: #fff !important;
+  font-size: 12px;
+  padding: 36px 22px;
+  font-weight: 500;
+  font-family: "Roboto", sans-serif;
+  text-transform: uppercase;
+  line-height: 10px;
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .main_menu .main-menu-item ul li .nav-link {
+    padding: 35px 16px;
+  }
+}
+
+/* line 96, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.main_menu .main-menu-item ul li .nav-link:hover {
+  color: #f7343d !important;
+}
+
+/* line 102, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.main_menu .btn_1 {
+  color: #fff;
+  font-size: 14px;
+  padding: 8.5px 21px;
+  border-radius: 5px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 991px) {
+  /* line 102, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .main_menu .btn_1 {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 991px) {
+  /* line 117, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .navbar-light .navbar-toggler {
+    border-color: transparent;
+  }
+  /* line 120, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .navbar-collapse {
+    z-index: 9999 !important;
+    position: absolute;
+    left: 0;
+    top: 80px;
+    width: 100%;
+    background-color: #464d56;
+    text-align: center !important;
+  }
+  /* line 130, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .main_menu .main-menu-item {
+    text-align: left !important;
+  }
+  /* line 132, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .main_menu .main-menu-item .nav-item {
+    padding: 10px 15px !important;
+  }
+  /* line 135, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .main_menu .main-menu-item .nav-item a {
+    padding: 5px 15px !important;
+  }
+  /* line 141, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .dropdown .dropdown-menu {
+    transform: scale(1, 0);
+    display: none;
+    margin-top: 10px;
+  }
+  /* line 147, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .dropdown:hover .dropdown-menu {
+    transform: scale(1);
+    display: block;
+    color: #f7343d;
+  }
+  /* line 153, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .dropdown .dropdown-item:hover {
+    color: #f7343d !important;
+  }
+  /* line 157, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .navbar-light .navbar-toggler-icon {
+    background-image: none;
+  }
+  /* line 160, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .menu_fixed {
+    position: fixed;
+    z-index: 9999 !important;
+    width: 100%;
+    background-color: #464d56;
+    box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.25s ease-in;
+    top: 0;
+  }
+}
+
+@media (min-width: 991px) {
+  /* line 172, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+  .sticky {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: #fff;
+    z-index: 9999 !important;
+    box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.25s ease-in;
+  }
+}
+
+/* line 183, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_menu.scss */
+.menu_fixed {
+  position: fixed;
+  width: 100%;
+  top: 0;
+}
+
+/**************** banner part css start ****************/
+/* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part {
+  height: 900px;
+  position: relative;
+  background-image: url(../img/banner_bg.jpg);
+  background-repeat: no-repeat;
+  background-position: center;
+  margin-bottom: 190px;
+  background-size: cover;
+}
+
+@media (max-width: 576px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part {
+    height: 650px;
+    margin-bottom: 60px;
+  }
+  /* line 13, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part br {
+    display: none;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part {
+    height: 650px;
+    margin-bottom: 60px;
+  }
+  /* line 20, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part br {
+    display: none;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part {
+    height: 650px;
+  }
+  /* line 26, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part br {
+    display: none;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part {
+    height: 750px;
+  }
+}
+
+/* line 33, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_mockup_img {
+  position: absolute;
+  bottom: -223px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  text-align: center;
+}
+
+@media (max-width: 991px) {
+  /* line 33, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_mockup_img {
+    bottom: -90px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* line 33, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_mockup_img {
+    bottom: -64px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 33, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_mockup_img {
+    bottom: -150px;
+  }
+}
+
+/* line 50, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text {
+  padding-top: 230px;
+}
+
+/* line 52, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text h5 {
+  font-size: 14px;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 14px;
+}
+
+/* line 59, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text h1 {
+  font-size: 60px;
+  text-transform: capitalize;
+  font-weight: 700;
+  margin-bottom: 22px;
+  line-height: 66px;
+  color: #fff;
+  position: relative;
+}
+
+/* line 67, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text h1 br {
+  display: block !important;
+}
+
+/* line 70, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text h1:after {
+  position: absolute;
+  content: "lite";
+  right: 91px;
+  bottom: 52px;
+  background-color: #f9dc3d;
+  color: #000;
+  width: 63px;
+  height: 31px;
+  text-align: center;
+  line-height: 30px;
+  font-size: 12px;
+  border-radius: 5px;
+}
+
+@media (max-width: 991px) {
+  /* line 70, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text h1:after {
+    right: 0px;
+    bottom: 42px;
+  }
+}
+
+@media (max-width: 991px) {
+  /* line 59, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text h1 {
+    font-size: 30px;
+    margin-bottom: 15px;
+    line-height: 1.3;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 59, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text h1 {
+    font-size: 30px;
+    margin-bottom: 15px;
+    line-height: 1.4;
+  }
+}
+
+/* line 98, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text h1 span {
+  color: #f7343d;
+}
+
+/* line 102, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text p {
+  font-size: 14px;
+  line-height: 26px;
+  font-family: "Roboto", sans-serif;
+  color: #fff;
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 108, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text p br {
+    display: none;
+  }
+}
+
+/* line 114, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text .btn_1 {
+  box-shadow: 0px 10px 20px 0px rgba(108, 39, 255, 0.3);
+  margin-top: 53px;
+  padding: 13.5px 25px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+}
+
+@media (max-width: 576px) {
+  /* line 114, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text .btn_1 {
+    margin-top: 20px;
+    margin-bottom: 5px;
+    padding: 10px 25px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 114, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text .btn_1 {
+    margin-top: 20px;
+    padding: 10px 25px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 114, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text .btn_1 {
+    margin-top: 20px;
+    padding: 10px 25px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 114, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text .btn_1 {
+    margin-top: 20px;
+    margin-bottom: 70px;
+    padding: 10px 25px;
+  }
+}
+
+/* line 140, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text .btn_1 i {
+  margin-right: 14px;
+  font-size: 16px;
+}
+
+/* line 146, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text .btn_2 {
+  margin-top: 50px;
+  padding: 13.5px 25px;
+  margin-left: 16px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  color: #415094;
+}
+
+@media (max-width: 576px) {
+  /* line 146, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text .btn_2 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding: 10px 25px;
+    margin-left: 0;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 146, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text .btn_2 {
+    margin-top: 20px;
+    padding: 10px 25px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 146, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text .btn_2 {
+    margin-top: 20px;
+    padding: 10px 25px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 146, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+  .banner_part .banner_text .btn_2 {
+    margin-top: 20px;
+    margin-bottom: 70px;
+    padding: 10px 25px;
+  }
+}
+
+/* line 173, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_banner.scss */
+.banner_part .banner_text .btn_2 i {
+  margin-right: 14px;
+  font-size: 16px;
+}
+
+/**************** hero part css end ****************/
+/**************** about css start ****************/
+/* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+.about_part {
+  position: relative;
+  z-index: 1;
+  padding: 70px 0px 140px;
+  background-image: url(../img/about_overlay.png);
+  background-repeat: no-repeat;
+  background-position: left;
+  background-size: 33% 73%;
+}
+
+@media (max-width: 576px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part {
+    padding: 70px 0px 70px;
+    background-position: top;
+    background-size: 100% 43%;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part {
+    padding: 70px 0px 70px;
+    background-position: top left;
+    background-size: 90% 56%;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part {
+    padding: 70px 0px 70px;
+    background-position: left;
+    background-size: 48% 70%;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part {
+    padding: 0px 0px 80px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* line 29, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text {
+    margin-top: 50px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 29, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text {
+    margin-top: 50px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 29, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text {
+    margin-top: 50px;
+  }
+}
+
+/* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+.about_part .about_text h4 {
+  margin-bottom: 32px;
+  color: #ff7e5f;
+  font-size: 22px;
+  font-style: italic;
+  font-family: "Roboto", sans-serif;
+  font-weight: 300;
+}
+
+@media (max-width: 576px) {
+  /* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text h4 {
+    margin-bottom: 20px;
+    font-size: 17px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text h4 {
+    margin-bottom: 20px;
+    font-size: 17px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text h4 {
+    margin-bottom: 20px;
+    font-size: 17px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text h4 {
+    margin-bottom: 20px;
+    font-size: 17px;
+  }
+}
+
+/* line 66, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+.about_part .about_text h2 {
+  line-height: 1.25;
+  margin-bottom: 35px;
+}
+
+@media (max-width: 576px) {
+  /* line 66, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text h2 {
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 66, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text h2 {
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 66, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text h2 {
+    font-size: 25px;
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 66, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+  .about_part .about_text h2 {
+    font-size: 30px;
+    margin-bottom: 15px;
+  }
+}
+
+/* line 84, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_about.scss */
+.about_part .about_text p {
+  margin-top: 13px;
+}
+
+/**************** service_part css start ****************/
+@media (max-width: 991px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part {
+    padding: 70px 0 42px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part {
+    padding: 80px 0 52px;
+  }
+}
+
+/* line 10, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+.feature_part .single_feature_text h2 {
+  font-size: 42px;
+  line-height: 1.222;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 576px) {
+  /* line 10, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part .single_feature_text h2 {
+    margin-top: 0px;
+    font-size: 25px;
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 10, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part .single_feature_text h2 {
+    margin-top: 0px;
+    font-size: 30px;
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 10, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part .single_feature_text h2 {
+    font-size: 30px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 10, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part .single_feature_text h2 {
+    margin-top: 0px;
+    font-size: 35px;
+  }
+}
+
+/* line 37, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+.feature_part .single_feature_text p {
+  line-height: 1.8;
+}
+
+/* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+.feature_part .single_feature_part {
+  -webkit-transition: 0.6s;
+  transition: 0.6s;
+}
+
+@media (max-width: 991px) {
+  /* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part .single_feature_part {
+    padding: 0px 0px 25px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part .single_feature_part {
+    margin-bottom: 25px;
+  }
+}
+
+/* line 53, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+.feature_part .single_feature_part i {
+  color: #f7343d;
+  font-size: 30px;
+  -webkit-transition: 0.6s;
+  transition: 0.6s;
+}
+
+/* line 58, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+.feature_part .single_feature_part h4 {
+  font-weight: 600;
+  font-size: 18px;
+  margin: 42px 0 22px;
+}
+
+@media (max-width: 991px) {
+  /* line 58, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part .single_feature_part h4 {
+    margin: 25px 0 15px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 58, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+  .feature_part .single_feature_part h4 {
+    margin: 25px 0 15px;
+  }
+}
+
+/* line 70, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_feature_part.scss */
+.feature_part .single_feature_part p {
+  line-height: 1.8;
+  font-size: 16px;
+  padding-right: 4px;
+}
+
+/**************** service_part css start ****************/
+/* line 3, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+.video_section .video_section_img {
+  position: relative;
+  z-index: 1;
+}
+
+/* line 6, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+.video_section .video_section_img .video-play-button {
+  height: 80px;
+  width: 80px;
+  display: inline-block;
+  background-color: rgba(255, 255, 255, 0.2);
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  top: 39%;
+  text-align: center;
+  line-height: 84px;
+  font-size: 36px;
+  border-radius: 50%;
+  padding-left: 5px;
+  z-index: 2;
+}
+
+@media (max-width: 991px) {
+  /* line 6, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+  .video_section .video_section_img .video-play-button {
+    top: 30%;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 6, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+  .video_section .video_section_img .video-play-button {
+    top: 37%;
+  }
+}
+
+/* line 28, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+.video_section .video_section_img .video-play-button span {
+  color: #fff;
+}
+
+/* line 33, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+.video_section .video_section_text {
+  margin-top: 43px;
+}
+
+@media (max-width: 991px) {
+  /* line 33, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+  .video_section .video_section_text {
+    padding-left: 0px;
+    margin-top: 25px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 33, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+  .video_section .video_section_text {
+    padding-left: 0px;
+  }
+}
+
+/* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+.video_section .video_section_text h2 {
+  position: relative;
+  font-size: 32px;
+}
+
+@media (max-width: 991px) {
+  /* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+  .video_section .video_section_text h2 {
+    font-size: 25px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 42, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+  .video_section .video_section_text h2 {
+    font-size: 30px;
+  }
+}
+
+/* line 52, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+.video_section .video_section_text p {
+  margin-top: 21px;
+}
+
+@media (max-width: 991px) {
+  /* line 52, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+  .video_section .video_section_text p {
+    margin-top: 5px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 52, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_video_section_text.scss */
+  .video_section .video_section_text p {
+    margin-top: 15px;
+  }
+}
+
+/**************** all feature css start ****************/
+/* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature {
+  position: relative;
+  z-index: 1;
+  padding: 100px 0 70px;
+}
+
+@media (max-width: 991px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature {
+    padding: 70px 0 50px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature {
+    padding: 80px 0 60px;
+  }
+}
+
+/* line 12, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature .single_feature {
+  text-align: center;
+  background-color: #fff;
+  padding: 70px 32px 60px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+  background-color: #fff;
+  -webkit-transition: 0.5s;
+  transition: 0.5s;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 991px) {
+  /* line 12, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature .single_feature {
+    padding: 35px 15px 32px;
+    margin-bottom: 20px;
+  }
+}
+
+/* line 29, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature .single_feature:hover {
+  box-shadow: 0px 20px 30px 0px rgba(247, 52, 61, 0.1);
+  margin-top: -10px;
+}
+
+/* line 35, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature .single_feature_text h2 {
+  font-size: 42px;
+  line-height: 1.222;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 576px) {
+  /* line 35, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature .single_feature_text h2 {
+    margin-top: 0px;
+    font-size: 25px;
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 35, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature .single_feature_text h2 {
+    margin-top: 0px;
+    font-size: 30px;
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 35, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature .single_feature_text h2 {
+    font-size: 30px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 35, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature .single_feature_text h2 {
+    margin-top: 0px;
+    font-size: 35px;
+  }
+}
+
+/* line 62, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature .single_feature_text p {
+  line-height: 1.8;
+}
+
+/* line 67, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature .single_feature_part {
+  -webkit-transition: 0.6s;
+  transition: 0.6s;
+}
+
+/* line 69, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature .single_feature_part .single_feature_icon {
+  -webkit-transition: 0.6s;
+  transition: 0.6s;
+}
+
+/* line 71, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature .single_feature_part .single_feature_icon i {
+  color: #0c2e60;
+  font-size: 30px;
+  -webkit-transition: 0.6s;
+  transition: 0.6s;
+  color: #f7343d;
+}
+
+/* line 78, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature .single_feature_part h4 {
+  font-weight: 600;
+  font-size: 20px;
+  margin: 42px 0 36px;
+}
+
+@media (max-width: 991px) {
+  /* line 78, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature .single_feature_part h4 {
+    margin: 25px 0 20px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 78, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature .single_feature_part h4 {
+    margin: 20px 0 15px;
+  }
+}
+
+@media only screen and (min-width: 1200px) and (max-width: 1440px) {
+  /* line 78, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+  .all_feature .single_feature_part h4 {
+    margin: 20px 0 15px;
+  }
+}
+
+/* line 95, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_all_feature.scss */
+.all_feature .single_feature_part p {
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+/**************** all feature css start ****************/
+/* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality {
+  position: relative;
+  z-index: 1;
+  padding: 0 0 70px;
+}
+
+@media (max-width: 991px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality {
+    padding: 70px 0 50px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality {
+    padding: 80px 0 60px;
+  }
+}
+
+/* line 15, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality .single_feature {
+  text-align: center;
+  background-color: #fff;
+  padding: 45px 10px 42px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+  -webkit-transition: 0.5s;
+  transition: 0.5s;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 991px) {
+  /* line 15, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality .single_feature {
+    margin-bottom: 20px;
+  }
+}
+
+/* line 31, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality .single_feature:hover {
+  box-shadow: 0px 20px 30px 0px rgba(247, 52, 61, 0.1);
+  margin-top: -10px;
+}
+
+/* line 38, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality .single_feature_text h2 {
+  font-size: 42px;
+  line-height: 1.222;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 576px) {
+  /* line 38, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality .single_feature_text h2 {
+    margin-top: 0px;
+    font-size: 25px;
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 38, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality .single_feature_text h2 {
+    margin-top: 0px;
+    font-size: 30px;
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 38, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality .single_feature_text h2 {
+    font-size: 30px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 38, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality .single_feature_text h2 {
+    margin-top: 0px;
+    font-size: 35px;
+  }
+}
+
+/* line 65, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality .single_feature_text p {
+  line-height: 1.8;
+}
+
+/* line 70, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality .single_feature_part {
+  -webkit-transition: 0.6s;
+  transition: 0.6s;
+}
+
+/* line 73, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality .single_feature_part .single_feature_icon {
+  margin-bottom: 25px;
+  display: inline-block;
+}
+
+/* line 76, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality .single_feature_part .single_feature_icon i {
+  color: #0c2e60;
+  font-size: 30px;
+  -webkit-transition: 0.6s;
+  transition: 0.6s;
+  color: #f7343d;
+  display: inline-block;
+}
+
+/* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality .single_feature_part h4 {
+  font-weight: 600;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 576px) {
+  /* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality .single_feature_part h4 {
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 576px) and (max-width: 767px) {
+  /* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality .single_feature_part h4 {
+    margin-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 85, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+  .our_speciality .single_feature_part h4 {
+    margin-bottom: 15px;
+  }
+}
+
+/* line 105, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_our_speciality.scss */
+.our_speciality .single_feature_part p {
+  line-height: 1.8;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #464d56;
+}
+
+/**************** all feature css start ****************/
+/* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_contact_us.scss */
+.contact_us {
+  background-image: url(../img/contact_bg.png);
+  background-size: 100% 86%;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+/* line 12, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_contact_us.scss */
+.contact_us .single_feature_part {
+  background-color: #fff;
+  border-radius: 5px;
+  padding: 80px 60px;
+  -webkit-transition: 0.5s;
+  transition: 0.5s;
+}
+
+@media (max-width: 991px) {
+  /* line 12, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_contact_us.scss */
+  .contact_us .single_feature_part {
+    padding: 30px 20px 20px;
+    margin-bottom: 20px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 12, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_contact_us.scss */
+  .contact_us .single_feature_part {
+    padding: 40px 20px 35px;
+  }
+}
+
+/* line 24, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_contact_us.scss */
+.contact_us .single_feature_part i {
+  font-size: 32px;
+  display: inline-block;
+  float: left;
+  color: #f7343d;
+  margin-right: 26px;
+  -webkit-transition: 0.5s;
+  transition: 0.5s;
+}
+
+@media (max-width: 991px) {
+  /* line 24, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_contact_us.scss */
+  .contact_us .single_feature_part i {
+    margin-bottom: 20px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 24, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_contact_us.scss */
+  .contact_us .single_feature_part i {
+    margin-right: 10px;
+  }
+}
+
+/* line 38, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_contact_us.scss */
+.contact_us .single_feature_part p {
+  font-weight: 500;
+  font-size: 18px;
+  color: #464d56;
+}
+
+/* line 43, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_contact_us.scss */
+.contact_us .single_feature_part:hover {
+  box-shadow: 0px 20px 30px 0px rgba(247, 52, 61, 0.1);
+  margin-top: -10px;
+}
+
+/************* footer section start******************/
+/* line 2, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section {
+  text-align: center;
+  margin-top: -40px;
+}
+
+/* line 11, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .footer_area_text {
+  padding: 142px 0 55px;
+}
+
+@media (max-width: 991px) {
+  /* line 11, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+  .footer_section .footer_area_text {
+    padding: 90px 0 40px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 11, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+  .footer_section .footer_area_text {
+    padding: 120px 0 50px;
+  }
+}
+
+/* line 20, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .footer_area_text img {
+  margin-bottom: 39px;
+}
+
+/* line 23, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .footer_area_text h2 {
+  margin-bottom: 18px;
+}
+
+/* line 26, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .footer_area_text p {
+  padding: 0 66px;
+}
+
+@media (max-width: 991px) {
+  /* line 26, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+  .footer_section .footer_area_text p {
+    padding: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  /* line 36, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+  .footer_section .footer_area_text h2 {
+    font-size: 25px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  /* line 44, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+  .footer_section .footer_area_text h2 {
+    font-size: 25px;
+  }
+}
+
+@media only screen and (min-width: 992px) and (max-width: 1200px) {
+  /* line 49, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+  .footer_section .footer_area_text h2 {
+    font-size: 25px;
+  }
+}
+
+/* line 53, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .footer_area_text .footer_btn {
+  text-align: left;
+  display: inline-block;
+  border-radius: 50px;
+  padding: 18px 67px 18px 91px;
+  position: relative;
+  margin-top: 44px;
+  -webkit-transition: 0.8s;
+  transition: 0.8s;
+  background-color: #0d1229;
+  background-size: auto 200%;
+}
+
+@media (max-width: 991px) {
+  /* line 53, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+  .footer_section .footer_area_text .footer_btn {
+    padding: 18px 30px 18px 80px;
+  }
+}
+
+/* line 66, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .footer_area_text .footer_btn i {
+  height: 60px;
+  width: 60px;
+  text-align: center;
+  line-height: 60px;
+  font-size: 20px;
+  background-color: #f7343d;
+  display: inline-block;
+  border-radius: 50%;
+  color: #fff;
+  position: absolute;
+  left: 10px;
+  top: 11px;
+  margin-bottom: 0px;
+}
+
+/* line 82, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .footer_area_text .footer_btn p {
+  padding: 0;
+  font-size: 11px;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+/* line 89, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .footer_area_text .footer_btn h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 0;
+}
+
+/* line 97, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .copyright_text {
+  padding: 20px 0px;
+}
+
+/* line 99, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .copyright_text img {
+  width: 20px;
+  margin-right: 3px;
+}
+
+/* line 103, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .copyright_text p {
+  color: #828bb2;
+}
+
+/* line 106, /Applications/MAMP/htdocs/101/102.infixedulite.codecanyon.v1/public/landing/sass/_footer_section.scss */
+.footer_section .copyright_text a {
+  color: #f7343d;
+  font-size: 15px;
+}
+
+/*# sourceMappingURL=../css/style.map */

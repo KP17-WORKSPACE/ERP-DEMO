@@ -1,0 +1,411 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\SysChartofAccounts;
+use App\SysAccountType;
+use App\ApiBaseMethod;
+use App\SmSupplier;
+use App\SysAccountGroup;
+use App\SysAccountGroupSub;
+use App\SysAccountGroupSub2;
+use App\SysChartofAccountsTransaction;
+use App\SysCustSuppl;
+use App\SysHelper;
+use App\SysItemStock;
+use App\SysLedgerEntries;
+use Illuminate\Http\Request;
+use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use PhpParser\Node\Stmt\Else_;
+use Carbon\Carbon;
+
+class SysTradingAccountController extends Controller
+{
+    public function __construct(){
+        $this->middleware('PM');
+    }
+    
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function tradingaccountlist(Request $request)
+    {
+        try{            
+           
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+
+            $from_date = date('Y-01-01');
+            $to_date = date('Y-m-d');
+            $filter_by="";
+            $opening_stock=0.00;
+            $closing_stock=0.00;
+            $purchase=0.00;
+            $sales=0.00;
+            $purchase_return=0.00;
+            $sales_return=0.00;
+            if($_POST){
+               
+                if ($request->from_date != "" && $request->filter_by == "") {
+                    $from_date=Carbon::createFromFormat('d/m/Y', $request->from_date)->format('Y-m-d');
+                }
+                if ($request->to_date != "" && $request->filter_by == "") {
+                    $to_date=Carbon::createFromFormat('d/m/Y', $request->to_date)->format('Y-m-d');
+                }
+
+                if ($request->filter_by == "this_month") {
+                    $from_date=date('Y-m-01');
+                    $to_date=date("Y-m-t", strtotime($from_date));
+                    $filter_by='this_month';               
+                }
+                if ($request->filter_by == "today") {
+                    $from_date=date('Y-m-d');
+                    $to_date=date('Y-m-d');
+                    $filter_by='today';
+                }
+                if ($request->filter_by == "this_week") {
+                    $from_date = date('Y-m-d', strtotime('-1 week sunday 00:00:00'));
+                    $to_date = date('Y-m-d', strtotime('saturday 23:59:59'));
+                    $filter_by='this_week';
+                }
+                if ($request->filter_by == "last_week") {
+                    $from_date = date('Y-m-d', strtotime('-2 week sunday 00:00:00'));
+                    $to_date = date('Y-m-d', strtotime('-1 week saturday 23:59:59'));
+                    $filter_by='last_week';
+                }
+                if ($request->filter_by == "last_month") {
+                    $from_date = date('Y-m-d', strtotime('first day of previous month'));
+                    $to_date = date('Y-m-d', strtotime('last day of previous month'));
+                    $filter_by='last_month';
+                }
+                if ($request->filter_by == "this_quarter") {
+                    $q_date = SysHelper::get_quarter(date('m'));
+                    $from_date = $q_date[0];
+                    $to_date = $q_date[1];
+                    $filter_by='this_quarter';
+                }
+                if ($request->filter_by == "pre_quarter") {
+                    $q_date = SysHelper::get_pre_quarter(date('m'));
+                    $from_date = $q_date[0];
+                    $to_date = $q_date[1];
+                    $filter_by='pre_quarter';
+                }
+                if ($request->filter_by == "this_year") {
+                    $from_date = date('Y-01-01');
+                    $to_date = date('Y-12-31');
+                    $filter_by='this_year';
+                }
+                if ($request->filter_by == "last_year") {
+                    $from_date = date("Y-01-01",strtotime("-1 year"));
+                    $to_date = date("Y-12-31",strtotime("-1 year"));
+                    $filter_by='last_year';
+                }
+
+            }
+            else{
+                            
+            }
+
+                $opening_stock = SysProfitAndLossAccountController::get_opening_stock_trading_new($from_date,$to_date,$company_id);
+                $purchase = SysProfitAndLossAccountController::get_purchase($from_date,$to_date,$company_id);
+                $purchase_return = SysProfitAndLossAccountController::get_purchase_return($from_date,$to_date,$company_id);
+                $sales = SysProfitAndLossAccountController::get_sales($from_date,$to_date,$company_id);
+                $sales_return = SysProfitAndLossAccountController::get_sales_return($from_date,$to_date,$company_id);
+                $stock = SysProfitAndLossAccountController::get_item_stock($from_date,$to_date,$company_id);
+                //$closing_stock = SysProfitAndLossAccountController::get_closing_stock($opening_stock,$purchase,$purchase_return,$sales,$sales_return,$stock);
+                $closing_stock = SysProfitAndLossAccountController::get_closing_stock_update($from_date,$to_date,$company_id);
+
+                //return $closing_stock;
+                //$closing_stock_till = SysProfitAndLossAccountController::get_closing_stock_tilldate($from_date,$com_ids);
+
+                //$opening_stock += $closing_stock_till;                
+                //$closing_stock -= $purchase;
+
+                $subgruop2= SysAccountGroupSub2::select('sys_account_group_sub2.id', 'sys_account_group_sub2.title', 'sys_account_group_sub2.sub_id', DB::raw('SUM(cat.debit_amount) as total_debit'), DB::raw('SUM(cat.credit_amount) as total_credit'))
+                ->leftjoin('sys_chartofaccounts as ca','ca.subgroup2','sys_account_group_sub2.id')
+                ->leftjoin('sys_chartofaccounts_transaction as cat','cat.account_id','ca.id')
+                ->wherein('sub_id',[13,15]) // 13 Direct Expense, 15 Direct Income
+                ->where('title','not like', 'sales%')->where('title','not like', 'purchase%')->where('title','not like', '%stock')
+                ->wherein('ca.company_id',$company_id)
+                ->whereRaw("DATE_FORMAT(cat.transaction_date, '%Y-%m-%d') >= '" . $from_date . "'")
+                ->whereRaw("DATE_FORMAT(cat.transaction_date, '%Y-%m-%d') <= '" . $to_date . "'")
+                ->where('cat.status',1)
+                ->groupby('sys_account_group_sub2.id','sys_account_group_sub2.title', 'sys_account_group_sub2.sub_id')->get();
+
+                 //return $subgruop2;
+
+                $directIncomeExpence = DB::table('sys_chartofaccounts_transaction as cat')
+                ->select('ca.account_name','ca.subgroup','sub.id', DB::raw('SUM(cat.debit_amount) as debit_amount'), DB::raw('SUM(cat.credit_amount) as credit_amount'))
+                ->join('sys_chartofaccounts as ca', 'ca.id','cat.account_id')
+                ->join('sys_account_group_sub2 as sub', 'sub.id','ca.subgroup2')
+                ->wherein('ca.subgroup',[13,15])
+                ->where('title','not like', 'sales%')->where('title','not like', 'purchase%')->where('title','not like', '%stock')
+                ->wherein('ca.company_id',$company_id)
+                ->whereRaw("DATE_FORMAT(cat.transaction_date, '%Y-%m-%d') >= '" . $from_date . "'")
+                ->whereRaw("DATE_FORMAT(cat.transaction_date, '%Y-%m-%d') <= '" . $to_date . "'")
+                ->where('cat.status',1)
+                ->groupby('ca.account_name','ca.subgroup','sub.id')
+                ->get();
+            
+            return view('backEnd.trading-account.tradingaccountlist', compact('from_date','to_date','opening_stock','purchase','purchase_return','closing_stock','sales','sales_return','directIncomeExpence','subgruop2','filter_by'));
+        }catch (\Exception $e) {
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    
+    public function search(Request $request)
+    {
+        //return $request;
+        $from_date = ($request->from_date != "" ? date('Y-m-d', strtotime($request->from_date)) : '');
+        $to_date = ($request->to_date != "" ? date('Y-m-d', strtotime($request->to_date)) : '');
+        
+        $from_date1 = $request->from_date;
+        $to_date1 = $request->to_date;
+
+        $period = $request->period;
+
+
+
+// $date = new \Carbon\Carbon('-3 months');
+// $firstOfQuarter = $date->firstOfQuarter();
+// $lastOfQuarter = $date->lastOfQuarter();
+
+//         if($period == 1){ $period = "All"; }
+//         if($period == 2){ $period = date('Y-m-d'); }
+//         if($period == 3){ $period = date('Y-m'); }
+//         if($period == 4){'This Quarter'}
+//         if($period == 5){'This Financial Year'}
+//         if($period == 6){'Yesterday'}
+//         if($period == 7){'Previous Month'}
+//         if($period == 8){'Previous Quarter'}
+//         if($period == 9){'Previous Financial Year'}
+//         if($period == 10){'Previous Financial Year to Date'}
+//         if($period == 11){'Month Start (to Date)'}
+//         if($period == 12){'Month End (from Date)'}
+//         if($period == 13){'Year Start (to Date)'}
+//         if($period == 14){'Year End (from Date)'}
+
+        if($from_date != "" && $to_date != "")
+        {
+            
+        $trad = SysItemStock::get();
+        return $trad;
+
+            $search_result = DB::select("CALL get_trialbalance('$from_date','$to_date')");
+            $search_result_openning_balance = DB::select("CALL get_opening_balance(2,'$from_date','$to_date',0)");
+
+            $search_result_list = SysLedgerEntries::select('transaction_id','transaction_type','entry_date','entry_type','amount','account_id')
+                                //->join('sys_chartofaccounts','sys_chartofaccounts.id','account_id')
+                                ->whereBetween('entry_date', [$from_date, $to_date])->get();
+                                // ->whereIn('transaction_type', ['postdatedreceipt','postdatedpayment'])
+                                
+
+            //return $search_result_list;
+        }
+        else if($period != "")
+        {
+            //return 'u2';
+        }
+
+        $accountgroup = SysAccountGroup::all();
+        $accounts = SysChartofAccounts::all();
+        // if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+        //     return ApiBaseMethod::sendResponse($accounts, null);
+        // }
+        
+        //return $accountgroup;
+        //return $editData;
+        //return $search_result;
+
+        return view('backEnd.trial-balance.trialbalancelist', compact('accountgroup','accounts','search_result','search_result_openning_balance','search_result_list','from_date1', 'to_date1', 'period'));
+
+    }
+
+    public function trialbalanceAdd(Request $request)
+    {
+        try{
+            $accounts = SysChartofAccounts::all();
+            $accountgroupsub = SysAccountGroupSub::all();
+
+            if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+                return ApiBaseMethod::sendResponse($accounts, null);
+            }
+            return view('backEnd.trial-balance.trialbalanceadd', compact('accounts','accountgroupsub'));
+        }catch (\Exception $e) {
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+
+    public function store(Request $request)
+    {
+        // return $request;
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'subgroup'=> "required",
+            'account_name'=> "required",
+        ]);
+
+        if ($validator->fails()) {
+            if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+                return ApiBaseMethod::sendError('Validation Error.', $validator->errors());
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+        
+
+        try{
+            $accounts = new SysChartofAccounts();
+            //$accounts->account_code = $request->account_code;
+            //$accounts->group = $request->group;
+            $accounts->subgroup = $request->subgroup;
+            //$accounts->account_type = $request->account_type;
+            $accounts->account_name = $request->account_name;
+            //$accounts->billwise = $request->billwise;
+            //$accounts->debitlimit = $request->debitlimit;
+            $accounts->status = 1;
+            $accounts->created_by = Auth::user()->id;
+            
+            $results = $accounts->save();
+     
+             if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+                 if ($results) {
+                     return ApiBaseMethod::sendResponse(null, 'General Ledger Info has been added successfully');
+                 } else {
+                     return ApiBaseMethod::sendError('Something went wrong, please try again');
+                 }
+             } else {
+                 if ($results) {
+                    Toastr::success('Operation successful', 'Success');
+                    return redirect()->back();
+                 } else {
+                    Toastr::error('Operation Failed', 'Failed');
+                    return redirect()->back(); 
+                 }
+             }
+        }catch (\Exception $e) {
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function edit(Request $request,$id)
+    {
+       try{
+        $editData = SysChartofAccounts::find($id);
+        $accounts = SysChartofAccounts::all();
+        $accountgroupsub = SysAccountGroupSub::all();
+        if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+             $data = [];
+             $data['editData'] = $editData->toArray();
+             $data['accounts'] = $accounts->toArray();
+             return ApiBaseMethod::sendResponse($data, null);
+        }
+        return view('backEnd.trial-balance.trialbalanceadd', compact('accounts', 'editData','accountgroupsub'));
+        }catch (\Exception $e) {
+        Toastr::error('Operation Failed', 'Failed');
+        return redirect()->back(); 
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'subgroup'=> "required",
+            'account_name'=> "required",
+        ]);
+
+        if ($validator->fails()) {
+            if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+                return ApiBaseMethod::sendError('Validation Error.', $validator->errors());
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+        try{
+
+            $accounts = SysChartofAccounts::find($id);
+            //$accounts->account_code = $request->account_code;
+            //$accounts->group = $request->group;
+            $accounts->subgroup = $request->subgroup;
+            //$accounts->account_type = $request->account_type;
+            $accounts->account_name = $request->account_name;
+            //$accounts->billwise = $request->billwise;
+            //$accounts->debitlimit = $request->debitlimit;
+            $accounts->status = 1;            
+            $accounts->updated_by = Auth()->user()->id;
+            $results = $accounts->update();
+
+             if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+                 if ($results) {
+                     return ApiBaseMethod::sendResponse(null,  'Account Info has been updated successfully');
+                 } else {
+                     return ApiBaseMethod::sendError('Something went wrong, please try again');
+                 }
+             } else {
+                 if ($results) {
+                    Toastr::success('Operation successful', 'Success');
+                    return redirect('chartofaccounts-add');
+                 } else {
+                    Toastr::error('Operation Failed', 'Failed');
+                    return redirect()->back(); 
+                 }
+             }
+        }catch (\Exception $e) {
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+
+    public function delete(Request $request,$id){
+        
+        //  try{
+        //     if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+        //         return ApiBaseMethod::sendResponse($id, null);
+        //     }
+        //      return view('backEnd.inventory.deleteSupportView', compact('id'));
+        // }catch (\Exception $e) {
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        //}
+    }
+
+    // public function deleteSupplier(Request $request,$id){
+        
+    //     try{
+    //         $result = SmSupplier::destroy($id);
+
+    //         if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+    //             if ($result) {
+    //                 return ApiBaseMethod::sendResponse(null, 'Supplier has been deleted successfully');
+    //             } else {
+    //                 return ApiBaseMethod::sendError('Something went wrong, please try again.');
+    //             }
+    //         } else {
+    //             if ($result) {
+    //                 Toastr::success('Operation successful', 'Success');
+    //                 return redirect('suppliers');
+    //             } else {
+    //                 Toastr::error('Operation Failed', 'Failed');
+    //                 return redirect()->back();
+    //             }
+    //         }
+    //     }catch (\Exception $e) {
+    //        Toastr::error('Operation Failed', 'Failed');
+    //        return redirect()->back(); 
+    //     }
+    // }
+}

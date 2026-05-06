@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus - Role</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="./assets/css/_main.css" />
+</head>
+
+<body>
+    <div class="venus-app role-page">
+        <header class="main-header">
+            <div class="logo"><img src="./assets/images/logo-gray.png" alt="VENUS LOGO" /></div>
+            <div class="right-section">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="dropdown-toggle-text">Syscom</div>
+                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Receipts</a></li>
+                        <li><a class="dropdown-item" href="#">Payments</a></li>
+                        <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-light add-btn"><i class="ico icon-outline-add-circle"></i></button>
+                <button class="btn btn-light notification-unread"><i class="ico icon-outline-bell"></i></button>
+                <div class="profile-dropdown">
+                    <div class="profile-img">
+                        <img src="./assets/images/profile.png" alt="PROFILE">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <div class="dropdown-toggle-text">
+                                <div class="title">Hamid Imran</div>
+                                <div class="role">Admin User</div>
+                            </div>
+                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown-body py-4 px-3">
+                            <div class="profile-content">
+                                <img src="./assets/images/profile_img.png" alt="profile_img" class="profile-image">
+                                <h4 class="profile_name">Saeed Hameed</h4>
+                               <div class="d-flex justify-content-center mb-3"> <h4 class="second-text">Super Admin </h4>
+                                <div class="company-name">SYSCOM</div></div>
+                                <div class="profile-second-section py-3">
+                                    <h4 class="company-details-text mb-3">Company Details</h4>
+                                    <div class="row">
+                                        <div class="col-7">Designation:
+                                            <h6 class="">Senior Accountant</h6>
+                                            staff ID:
+                                            <h6>UID1001</h6>
+                                        </div>
+                                        <div class="col-5">Departments:
+                                            <h6>Accounts</h6>
+                                            Date Of Joining:
+                                            <h6>01/01/1970</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="profile-third-section py-3">
+                                    <h4 class="personal-details-text">Personal Details</h4>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/telephone_Vector.png" class="telephone" alt="telephone_icon">
+                                        <h6>+971  50 123 4567</h6>
+                                    </div>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/envelop_Vector.png" class="email" alt="email_icon">
+                                        <h6>Saeed@syscom.com</h6>
+                                    </div>
+                                </div>
+                                <div class="profile-last-section">
+                                    <div>
+                                        <button class="btn ">
+                                            <i class="ico icon-outline-pen-2"></i>
+                                        </button>
+                                        <p class="button-text">Edit Profile</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Lock Keyhole Minimalistic.png" alt="lock_img">
+                                        </button>
+                                        <p class="button-text">Change Password</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Logout 2.png" alt="logout">
+                                        </button>
+                                        <p class="button-text-logout">Logout</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main>
+            <nav class="main-nav">
+                <div class="toggle-nav"></div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="" class="nav-link">
+                            <i class="ico icon-outline-widget-6"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavCRM">
+                            <i class="ico icon-outline-calculator"></i>
+                            <span class="nav-text">CRM</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavCRM">
+                            <div class="sub-nav-item">
+                                <a href="lead-list.html" class="sub-nav-link">Leads</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="deal-list.html" class="sub-nav-link">Deals</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track Status</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Sales Report</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Brand Sales Report</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavServiceDesk">
+                            <i class="ico icon-outline-checklist-minimalistic"></i>
+                            <span class="nav-text">Service Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavServiceDesk">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Service Desk Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavDatabase">
+                            <i class="ico icon-outline-database"></i>
+                            <span class="nav-text">Database</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavDatabase">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Database Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavPurchase">
+                            <i class="ico icon-outline-cart-large-4"></i>
+                            <span class="nav-text">Purchase</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavPurchase">
+                            <div class="sub-nav-item">
+                                <a href="supplier-register.html" class="sub-nav-link">Supplier Register</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="purchase-order.html" class="sub-nav-link">Purchase Order</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSales">
+                            <i class="ico icon-outline-bag-4"></i>
+                            <span class="nav-text">Sales</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSales">
+                            <div class="sub-nav-item">
+                                <a href="quotations.html" class="sub-nav-link">Quotations</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavInventory">
+                            <i class="ico icon-outline-server"></i>
+                            <span class="nav-text">Inventory</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavInventory">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Inventory Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavReports">
+                            <i class="ico icon-outline-document-text"></i>
+                            <span class="nav-text">Reports</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavReports">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Reports Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item active">
+                        <div class="sub-menu-nav" data-subnav="subnavSettings">
+                            <i class="ico icon-bold-settings"></i>
+                            <span class="nav-text">Settings</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSettings">
+                            <div class="sub-nav-item">
+                                <a href="company.html" class="sub-nav-link">Company</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="shipping.html" class="sub-nav-link">Shipping</a>
+                            </div>
+                            <div class="sub-nav-item active">
+                                <a href="role.html" class="sub-nav-link">Role</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <section class="main-content role-content">
+                <aside class="left-nav col-3">
+                    <h4 class="mb-4">Role Permission Settings | Assign Permission to (Accounts)</h4>
+                    <div class="search-filter-container mb-4">
+                        <div class="input-group flex-nowrap">
+                            <span class="input-group-text" id="addon-wrapping"><i
+                                    class="ico icon-outline-magnifer"></i></span>
+                            <input type="text" class="form-control" placeholder="Search" aria-label="Search"
+                                aria-describedby="addon-wrapping">
+                        </div>
+                    </div>
+                    <div class="left-nav-list">
+                        <ul class="nav flex-column nav-pills" id="companyTabNavs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="role-1-tab" data-bs-toggle="tab"
+                                    data-bs-target="#role-1" type="button" role="tab" aria-controls="role-1"
+                                    aria-selected="true">
+                                    Dashboard
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="role-2-tab" data-bs-toggle="tab"
+                                    data-bs-target="#role-2" type="button" role="tab" aria-controls="role-2"
+                                    aria-selected="true">
+                                   Accounts 
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="role-3-tab" data-bs-toggle="tab"
+                                    data-bs-target="#role-3" type="button" role="tab" aria-controls="role-3"
+                                    aria-selected="true">
+                                   CRM 
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="role-4-tab" data-bs-toggle="tab"
+                                    data-bs-target="#role-4" type="button" role="tab" aria-controls="role-4"
+                                    aria-selected="true">
+                                   Purchase 
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="role-5-tab" data-bs-toggle="tab"
+                                    data-bs-target="#role-5" type="button" role="tab" aria-controls="role-5"
+                                    aria-selected="true">
+                                    Sales 
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="role-6-tab" data-bs-toggle="tab"
+                                    data-bs-target="#role-6" type="button" role="tab" aria-controls="role-6"
+                                    aria-selected="true">
+                                    Inventory
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="role-7-tab" data-bs-toggle="tab"
+                                    data-bs-target="#role-7" type="button" role="tab" aria-controls="role-7"
+                                    aria-selected="true">
+                                    Reports 
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="role-8-tab" data-bs-toggle="tab"
+                                    data-bs-target="#role-8" type="button" role="tab" aria-controls="role-8"
+                                    aria-selected="true">
+                                    Settings 
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="role-9-tab" data-bs-toggle="tab"
+                                    data-bs-target="#role-9" type="button" role="tab" aria-controls="role-9"
+                                    aria-selected="true">
+                                    Service Desk
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+                <div class="content-container col-9">
+                    <div class="tab-content display-flex-tabs" id="roleTabContent">
+                        <div class="tab-pane fade show " id="role-1" role="tabpanel" aria-labelledby="role-1-tab">
+                            <div class="role-content-header">
+                                <h4 class="role-content-header-left">
+                                    Dashboard
+                                </h4>
+                                <div class="role-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-dark add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>role</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show active" id="role-2" role="tabpanel" aria-labelledby="role-2-tab">
+                            <div class="role-content-header">
+                                <h4 class="role-content-header-left">
+                                    Accounts
+                                </h4>
+                                <div class="role-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-dark add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>role</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card mt-3">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Create</span></th>
+                                            <th scope="col" class="head-date text-nowrap">Create</th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">View</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Edit</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Delete</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Print</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Copy</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Recreate</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Save Print</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Revise</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Export</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Edit Print</span></th>
+                                            <th scope="col" class="head-date text-nowrap"><span class="th-content">Attach</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td scope="row"><span class="font-weight-600 text-ellipsis select-all">Select All</span></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td> 
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                        </tr>
+                                        <tr>
+                                            <td scope="row"><span class="font-weight-600 first-td">Chart of Accounts</span></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                        </tr>
+                                        <tr>
+                                            <td scope="row"><span class="font-weight-600 first-td">Journal Voucher</span></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                        </tr>
+                                        <tr>
+                                            <td scope="row"><span class="font-weight-600 first-td">Cash Book</span></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                        </tr>
+                                        <tr>
+                                            <td scope="row"><span class="font-weight-600 first-td">Bank Book</span></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                            <td class="checkbox"><div class="checkbox-wrapper">
+                                                <input type="checkbox" class="check" id="checkbox1">
+                                                <label for="checkbox1"></label>
+                                            </div></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="flex-spacer"></div>
+                            <footer class="role-tab-footer">
+                                <button class="btn cancel-btn">
+                                    <span>Cancel</span>
+                                </button>
+                                <button class="btn btn-dark add-btn ms-2">
+                                    <span>Update Shipping</span>
+                                </button>
+                            </footer>
+                        </div>
+                        <div class="tab-pane fade show " id="role-3" role="tabpanel" aria-labelledby="role-3-tab">
+                            <div class="role-content-header">
+                                <h4 class="role-content-header-left">
+                                    CRM
+                                </h4>
+                                <div class="role-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-dark add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>role</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show" id="role-4" role="tabpanel" aria-labelledby="role-4-tab">
+                            <div class="role-content-header">
+                                <h4 class="role-content-header-left">
+                                    Purchase
+                                </h4>
+                                <div class="role-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-dark add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>role</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="role-5" role="tabpanel" aria-labelledby="role-5-tab">
+                            <div class="role-content-header">
+                                <h4 class="role-content-header-left">
+                                    Sales 
+                                </h4>
+                                <div class="role-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-dark add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>role</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="role-6" role="tabpanel" aria-labelledby="role-6-tab">
+                            <div class="role-content-header">
+                                <h4 class="role-content-header-left">
+                                    Inventory 
+                                </h4>
+                                <div class="role-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-dark add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>role</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="role-7" role="tabpanel" aria-labelledby="role-7-tab">
+                            <div class="role-content-header">
+                                <h4 class="role-content-header-left">
+                                    Reports 
+                                </h4>
+                                <div class="role-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-dark add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>role</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="role-8" role="tabpanel" aria-labelledby="role-8-tab">
+                            <div class="role-content-header">
+                                <h4 class="role-content-header-left">
+                                    Settings 
+                                </h4>
+                                <div class="role-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-dark add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>role</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="role-9" role="tabpanel" aria-labelledby="role-9-tab">
+                            <div class="role-content-header">
+                                <h4 class="role-content-header-left">
+                                    Service Desk
+                                </h4>
+                                <div class="role-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-dark add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>role</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="./assets/js/_main.js" type="text/javascript"></script>
+</body>
+
+</html>

@@ -1,0 +1,540 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\SysChartofAccounts;
+use App\SysAccountType;
+use App\ApiBaseMethod;
+use App\Helper;
+use App\Role;
+use App\SmStaff;
+use App\SmSupplier;
+use App\SysAccountGroup;
+use App\SysAccountGroupSub;
+use App\SysAccountGroupSub2;
+use App\SysChartofAccountsTransaction;
+use App\SysCountries;
+use App\SysCountryCode;
+use App\SysCustSuppl;
+use App\SysHelper;
+use App\SysItemStock;
+use App\SysPaymentTerms;
+use Illuminate\Http\Request;
+use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use PhpParser\Node\Stmt\Else_;
+
+class SysProfitAndLossAccountController extends Controller
+{
+    public function __construct(){
+        $this->middleware('PM');
+    }
+    
+    public function index(Request $request)
+    {
+        try{
+            $com_ids = SysHelper::get_company_access();
+            $from_date = "";
+            $to_date = "";
+            
+            $gross_profit=0;
+            $gross_loss=0;
+
+            $net_profit=0;
+            $net_loss=0;
+
+            $indirect_expenses=0;
+            $indirect_income=0;
+            $indirect_expenses_list=[];
+            $indirect_income_list=[];
+            $indirect_expenses_data=[];
+            $indirect_income_data=[];
+            $indirect_expenses_group=[];
+            $indirect_income_group=[];
+            $total_indirect_expenses = 0;
+            $total_indirect_income = 0;
+
+            if($_POST){
+                $from_date = $request->from_date;
+                $to_date = $request->to_date;
+                $m = SysHelper::get_months_by_date($from_date,$to_date);
+
+                $ie_acc_id = SysChartofAccounts::select('id','account_name')->where('subgroup',14)->wherein('company_id',$com_ids)->where('status',1)->get();
+                $indirect_expenses = SysProfitAndLossAccountController::get_indirect_expenses($from_date,$to_date,$ie_acc_id);
+
+                $indirect_expenses_group = DB::table('sys_account_group_sub2 as sub')
+                ->select('sub.id','sub.title',DB::raw('SUM(debit_amount) as debit_amount'),DB::raw('SUM(credit_amount) as credit_amount'))
+                ->join('sys_chartofaccounts as ca','ca.subgroup2','sub.id')
+                ->join('sys_chartofaccounts_transaction as cat','cat.account_id','ca.id')
+                ->where('sub.sub_id',14)                
+                ->whereRaw("DATE_FORMAT(cat.created_at, '%Y-%m-%d') >= '" . $from_date . "'")
+                ->whereRaw("DATE_FORMAT(cat.created_at, '%Y-%m-%d') <= '" . $to_date . "'")
+                ->wherein('cat.company_id',$com_ids)
+                ->where('cat.status',1)
+                ->groupby('sub.id','sub.title')->get();
+                
+                /*$indirect_expenses_data = DB::table('sys_chartofaccounts as c')->select('c.id','c.account_name','plan')->sum('debit_amount')
+                ->join('sys_chartofaccounts_transaction as t','t.account_id','c.id')->where('c.subgroup',11)->where('c.status',1)
+                ->whereRaw("DATE_FORMAT(t.created_at, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(t.created_at, '%Y-%m-%d') <= '".$to_date."'")
+                ->where('debit_amount','>',0)->groupby('c.id','c.account_name','debit_amount','plan')->orderby('c.account_name','asc')->get();*/
+
+                $indirect_expenses_data =  DB::table('sys_chartofaccounts as c')
+                ->select('c.id', 'c.account_name', 'c.subgroup2', DB::raw('SUM(t.debit_amount) - SUM(t.credit_amount) as total_debit'))
+                ->join('sys_chartofaccounts_transaction as t', 't.account_id', '=', 'c.id')
+                ->where('c.subgroup', 14)
+                ->where('c.status', 1)
+                ->whereRaw("DATE_FORMAT(t.created_at, '%Y-%m-%d') >= '" . $from_date . "'")
+                ->whereRaw("DATE_FORMAT(t.created_at, '%Y-%m-%d') <= '" . $to_date . "'")
+                ->wherein('t.company_id',$com_ids)
+                //->where('t.debit_amount', '>', 0)
+                ->where('t.status',1)
+                ->groupBy('c.id', 'c.account_name', 'c.subgroup2')
+                ->orderBy('c.account_name', 'asc')
+                ->get();
+                
+                if(count($indirect_expenses_data)>0){
+                    foreach($indirect_expenses_data as $dt){
+                        //if($dt->plan==0){
+                            $indirect_expenses_list[] = ["subid" => $dt->subgroup2, "account_name" => $dt->account_name, "total_debit" => $dt->total_debit];
+                        //}
+                        //else{
+                        //    $indirect_expenses_list[] = ["subid" => $dt->subgroup2, "account_name" => $dt->account_name, "total_debit" => SysHelper::get_amount_by_month($m,$dt->plan,$dt->total_debit)];
+                        //}
+                    }
+                }
+
+                $ii_acc_id = SysChartofAccounts::select('id','account_name')->where('subgroup',16)->wherein('company_id',$com_ids)->where('status',1)->get();
+                $indirect_income = SysProfitAndLossAccountController::get_indirect_income($from_date,$to_date,$ii_acc_id);
+                
+                $indirect_income_group = DB::table('sys_account_group_sub2 as sub')
+                ->select('sub.id','sub.title',DB::raw('SUM(debit_amount) as debit_amount'),DB::raw('SUM(credit_amount) as credit_amount'))
+                ->join('sys_chartofaccounts as ca','ca.subgroup2','sub.id')
+                ->join('sys_chartofaccounts_transaction as cat','cat.account_id','ca.id')
+                ->where('sub.sub_id',16)
+                ->whereRaw("DATE_FORMAT(cat.created_at, '%Y-%m-%d') >= '" . $from_date . "'")
+                ->whereRaw("DATE_FORMAT(cat.created_at, '%Y-%m-%d') <= '" . $to_date . "'")
+                ->wherein('cat.company_id',$com_ids)
+                ->where('cat.status',1)
+                ->groupby('sub.id','sub.title')->get();
+
+                /*$indirect_income_data = DB::table('sys_chartofaccounts as c')->select('c.id','c.account_name','credit_amount','plan')
+                ->join('sys_chartofaccounts_transaction as t','t.account_id','c.id')->where('c.subgroup',13)->where('c.status',1)
+                ->whereRaw("DATE_FORMAT(t.created_at, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(t.created_at, '%Y-%m-%d') <= '".$to_date."'")
+                ->where('credit_amount','>',0)->orderby('c.account_name','asc')->get();*/
+
+                $indirect_income_data =  DB::table('sys_chartofaccounts as c')
+                ->select('c.id', 'c.account_name', 'c.subgroup2', DB::raw('SUM(t.credit_amount) - SUM(t.debit_amount) as total_credit'))
+                ->join('sys_chartofaccounts_transaction as t', 't.account_id', '=', 'c.id')
+                ->where('c.subgroup', 16)
+                ->where('c.status', 1)
+                ->whereRaw("DATE_FORMAT(t.created_at, '%Y-%m-%d') >= '" . $from_date . "'")
+                ->whereRaw("DATE_FORMAT(t.created_at, '%Y-%m-%d') <= '" . $to_date . "'")
+                ->wherein('t.company_id',$com_ids)
+                //->where('t.credit_amount', '>', 0)
+                ->where('t.status',1)
+                ->groupBy('c.id', 'c.account_name', 'c.subgroup2')
+                ->orderBy('c.account_name', 'asc')
+                ->get();
+
+                if(count($indirect_income_data)>0){
+                    foreach($indirect_income_data as $dt){
+                        //if($dt->plan==0){
+                            $indirect_income_list[]= ["subid" => $dt->subgroup2, "account_name" => $dt->account_name, "total_credit" => $dt->total_credit];
+                        //}
+                        //else{
+                        //    $indirect_income_list[] = ["subid" => $dt->subgroup2, "account_name" => $dt->account_name, "total_credit" => SysHelper::get_amount_by_month($m,$dt->plan,$dt->total_credit)];
+                        //}
+                    }
+                }
+
+                
+                $ie_acc_id = SysChartofAccounts::select('id','account_name')->where('subgroup',13)->wherein('company_id',$com_ids)->where('status',1)->get();
+                $direct_expenses = SysProfitAndLossAccountController::get_direct_expenses($from_date,$to_date,$ie_acc_id);
+                $opening_stock = SysProfitAndLossAccountController::get_opening_stock($from_date,$to_date,$com_ids);
+                $purchase = SysProfitAndLossAccountController::get_purchase($from_date,$to_date,$com_ids);
+                $purchase_return = SysProfitAndLossAccountController::get_purchase_return($from_date,$to_date,$com_ids);
+
+                $ie_acc_id = SysChartofAccounts::select('id','account_name')->where('subgroup',15)->wherein('company_id',$com_ids)->where('status',1)->get();
+                $direct_incomes = SysProfitAndLossAccountController::get_direct_income($from_date,$to_date,$ie_acc_id);                
+                $closing_stock = SysProfitAndLossAccountController::get_closing_stock($from_date,$to_date,$com_ids);                
+                $sales = SysProfitAndLossAccountController::get_sales($from_date,$to_date,$com_ids);
+                $sales_return = SysProfitAndLossAccountController::get_sales_return($from_date,$to_date,$com_ids);
+
+
+                $total_direct_expences = ($direct_expenses + $opening_stock + abs($purchase - $purchase_return));
+                $total_direct_incomes = ($direct_incomes + $closing_stock + abs($sales - $sales_return));
+
+                //Direct Income - Direct Expence = Gross Profit
+                if($total_direct_expences > $total_direct_incomes) {
+                    $gross_loss = $total_direct_expences - $total_direct_incomes;
+                }
+                else {
+                    $gross_profit = $total_direct_incomes - $total_direct_expences;
+                }
+
+                //(Indirect income + Gross Profit) - Indirect Expence = Net Profit
+                if($gross_profit > $gross_loss) {
+                    if($indirect_expenses > ($indirect_income + $gross_profit)){
+                        $net_loss = $indirect_expenses - abs($indirect_income + $gross_profit);
+                    } else {
+                        $net_profit = ($indirect_income + $gross_profit) - $indirect_expenses;
+                    }
+                } else {
+                    if($indirect_expenses > ($indirect_income - $gross_loss)){
+                        $net_loss = $indirect_expenses - abs($indirect_income - $gross_loss);
+                    } else {
+                        $net_profit = abs($indirect_income - $gross_loss) - $indirect_expenses;
+                    }
+                }
+                
+                $total_indirect_expenses = abs($indirect_expenses)+abs($net_profit)+abs($gross_loss);
+                $total_indirect_income = abs($indirect_income)+abs($gross_profit)+abs($net_loss);
+
+                // delete
+                /*$gp_p=$opening_stock+($purchase-$purchase_return)+$indirect_income;
+                $gp_s=$closing_stock+($sales-$sales_return)+$indirect_expenses;
+
+                if($gp_p > $gp_s){ $gprofit = number_format($gp_p - $gp_s, 2, '.', ''); }
+                if($gp_s > $gp_p){ $gloss = number_format($gp_s - $gp_p, 2, '.', ''); }
+                */
+                
+
+            }
+            else{
+                
+            }
+
+            return view('backEnd.profit-and-loss-account.view', compact('from_date','to_date','indirect_expenses','indirect_income','indirect_expenses_data','indirect_income_data','total_indirect_expenses','total_indirect_income','indirect_expenses_group','indirect_income_group','gross_profit','gross_loss','net_profit','net_loss'));
+        }catch (\Exception $e) {
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    public static function get_indirect_expenses($from_date,$to_date,$ie_acc_id)
+    {
+        $m = SysHelper::get_months_by_date($from_date,$to_date);
+        $tot=0;
+        if(count($ie_acc_id)>0){
+            foreach ($ie_acc_id as $val) {
+                $dt[]=$val->id;
+            }
+            $trn = SysChartofAccountsTransaction::select('plan','debit_amount','credit_amount')->wherein('account_id',$dt)->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")->where('status',1)->get();
+
+            if(count($trn)>0){
+                foreach($trn as $dt){
+                    if($dt->plan==0){
+                        $tot += $dt->debit_amount;
+                        $tot -= $dt->credit_amount;
+                    }
+                    else{
+                        $tot += SysHelper::get_amount_by_month($m,$dt->plan,$dt->debit_amount);
+                    }
+                }
+                return number_format($tot, 2, '.', '');
+            } else{
+                return number_format($tot, 2, '.', '');
+            }
+        }
+    }
+    public static function get_indirect_income($from_date,$to_date,$ii_acc_id)
+    {
+        $m = SysHelper::get_months_by_date($from_date,$to_date);
+        $tot=0;
+        if(count($ii_acc_id)>0){
+            foreach ($ii_acc_id as $val) {
+                $dt[]=$val->id;
+            }
+            $trn = SysChartofAccountsTransaction::select('plan','debit_amount','credit_amount')->wherein('account_id',$dt)->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")->where('status',1)->get();
+
+            if(count($trn)>0){
+                foreach($trn as $dt){
+                    if($dt->plan==0){
+                        $tot += $dt->credit_amount;
+                        $tot -= $dt->debit_amount;
+                    }
+                    else{
+                        $tot += SysHelper::get_amount_by_month($m,$dt->plan,$dt->credit_amount);
+                    }
+                }
+                return number_format($tot, 2, '.', '');
+            } else{
+                return number_format($tot, 2, '.', '');
+            }
+        }
+    }
+
+    public static function get_direct_expenses($from_date,$to_date,$ie_acc_id)
+    {
+        $m = SysHelper::get_months_by_date($from_date,$to_date);
+        $tot=0;
+        if(count($ie_acc_id)>0){
+            foreach ($ie_acc_id as $val) {
+                $dt[]=$val->id;
+            }
+            $trn = SysChartofAccountsTransaction::select('plan','debit_amount','credit_amount')->wherein('account_id',$dt)->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")->where('status',1)->get();
+
+            if(count($trn)>0){
+                foreach($trn as $dt){
+                    if($dt->plan==0){
+                        $tot += $dt->debit_amount;
+                        $tot -= $dt->credit_amount;
+                    }
+                    else{
+                        $tot += SysHelper::get_amount_by_month($m,$dt->plan,$dt->debit_amount);
+                    }
+                }
+                return number_format($tot, 2, '.', '');
+            } else{
+                return number_format($tot, 2, '.', '');
+            }
+        }
+    }
+    public static function get_direct_income($from_date,$to_date,$ii_acc_id)
+    {
+        $m = SysHelper::get_months_by_date($from_date,$to_date);
+        $tot=0;
+        if(count($ii_acc_id)>0){
+            foreach ($ii_acc_id as $val) {
+                $dt[]=$val->id;
+            }
+            $trn = SysChartofAccountsTransaction::select('plan','debit_amount','credit_amount')->wherein('account_id',$dt)->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")->where('status',1)->get();
+
+            if(count($trn)>0){
+                foreach($trn as $dt){
+                    if($dt->plan==0){
+                        $tot += $dt->credit_amount;
+                        $tot -= $dt->debit_amount;
+                    }
+                    else{
+                        $tot += SysHelper::get_amount_by_month($m,$dt->plan,$dt->credit_amount);
+                    }
+                }
+                return number_format($tot, 2, '.', '');
+            } else{
+                return number_format($tot, 2, '.', '');
+            }
+        }
+    }
+
+    public static function get_opening_stock($from_date,$to_date,$company_id)
+    {
+        try {
+            $opening_stock_account_id = SysChartofAccounts::select('id')->where('account_name','Opening Stock')->pluck('id');
+            $trn = SysChartofAccountsTransaction::select(DB::raw('SUM(debit_amount) - SUM(credit_amount) as amount'))
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') < '".$from_date."'")
+            ->wherein('account_id',$opening_stock_account_id)
+            ->wherein('company_id',$company_id)->first();
+            if($trn->amount==""){
+                return '0.00';
+            }
+            return $trn->amount;
+
+            $tot=0;
+            //Debit - credit = balance
+
+            if(count($trn)>0){
+                foreach($trn as $dt){
+                    if($dt->qty_in > 0)
+                    $tot += $dt->price_in;
+                }
+                return number_format($tot, 2, '.', '');
+            } else{
+                return number_format($tot, 2, '.', '');
+            }        
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public static function get_closing_stock($from_date,$to_date,$company_id)
+    {
+        try {
+            $opening_stock_account_id = SysChartofAccounts::select('id')->where('account_name','Opening Stock')->pluck('id');
+            $trn = SysChartofAccountsTransaction::select(DB::raw('SUM(debit_amount) - SUM(credit_amount) as amount'))
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")
+            ->wherein('account_id',$opening_stock_account_id)
+            ->wherein('company_id',$company_id)->first();
+            if($trn->amount==""){
+                return '0.00';
+            }
+            return $trn->amount;
+
+            $tot=0;
+            $trn = SysItemStock::whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")->wherein('sys_item_stock.company_id',$company_id)->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){
+                    if($dt->qty_in > 0)
+                    $tot += $dt->price_in;
+                }
+                return number_format($tot, 2, '.', '');
+            } else{
+                return number_format($tot, 2, '.', '');
+            }        
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_purchase($from_date,$to_date,$company_id)
+    {
+        try {
+            $opening_stock_account_id = SysChartofAccounts::select('id')->where('account_name','Purchase')->pluck('id');
+            $trn = SysChartofAccountsTransaction::select(DB::raw('SUM(debit_amount) - SUM(credit_amount) as amount'))
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."'")
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")
+            ->wherein('account_id',$opening_stock_account_id)
+            ->wherein('company_id',$company_id)->first();
+            if($trn->amount==""){
+                return '0.00';
+            }
+            return $trn->amount;
+
+            $tot=0;
+            $trn = SysItemStock::whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")
+            ->wherein('sys_item_stock.company_id',$company_id)->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){
+                    if($dt->qty_in > 0)
+                    $tot += $dt->price_in;
+                }
+                return number_format($tot, 2, '.', '');
+            } else{
+                return number_format($tot, 2, '.', '');
+            }        
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public static function get_purchase_return($from_date,$to_date,$company_id)
+    {
+        try {
+            $opening_stock_account_id = SysChartofAccounts::select('id')->where('account_name','Purchase return')->pluck('id');
+            $trn = SysChartofAccountsTransaction::select(DB::raw('SUM(debit_amount) - SUM(credit_amount) as amount'))
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."'")
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")
+            ->wherein('account_id',$opening_stock_account_id)
+            ->wherein('company_id',$company_id)->first();
+            if($trn->amount==""){
+                return '0.00';
+            }
+            return $trn->amount;
+            
+            $tot=0;
+            return number_format($tot, 2, '.', '');
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public static function get_sales($from_date,$to_date,$company_id)
+    {
+        try {
+            $opening_stock_account_id = SysChartofAccounts::select('id')->where('account_name','Sales')->pluck('id');
+            $trn = SysChartofAccountsTransaction::select(DB::raw('SUM(credit_amount) - SUM(debit_amount) as amount'))
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."'")
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")
+            ->wherein('account_id',$opening_stock_account_id)
+            ->wherein('company_id',$company_id)->first();
+            if($trn->amount==""){
+                return '0.00';
+            }
+            return $trn->amount;
+
+            $tot=0;
+            $trn = SysItemStock::whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")
+            ->wherein('sys_item_stock.company_id',$company_id)->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){
+                    if($dt->qty_out > 0)
+                    $tot += $dt->price_out;
+                }
+                return number_format($tot, 2, '.', '');
+            } else{
+                return number_format($tot, 2, '.', '');
+            }        
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    
+    public static function get_sales_return($from_date,$to_date,$company_id)
+    {
+        try {
+            $opening_stock_account_id = SysChartofAccounts::select('id')->where('account_name','Sales Return')->pluck('id');
+            $trn = SysChartofAccountsTransaction::select(DB::raw('SUM(credit_amount) - SUM(debit_amount) as amount'))
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$from_date."'")
+            ->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$to_date."'")
+            ->wherein('account_id',$opening_stock_account_id)
+            ->wherein('company_id',$company_id)->first();
+            if($trn->amount==""){
+                return '0.00';
+            }
+            return $trn->amount;
+
+            $tot=0;
+            return number_format($tot, 2, '.', '');
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_net_profit_loss($from_date,$to_date)
+    {
+        $com_ids = SysHelper::get_company_access();
+        $gross_profit=0;
+        $gross_loss=0;
+
+        $net_profit=0;
+        $net_loss=0;
+
+        $indirect_expenses=0;
+        $indirect_income=0;
+
+        $ie_acc_id = SysChartofAccounts::select('id','account_name')->where('subgroup',14)->wherein('company_id',$com_ids)->where('status',1)->get();
+        $indirect_expenses = SysProfitAndLossAccountController::get_indirect_expenses($from_date,$to_date,$ie_acc_id);
+        
+        $ii_acc_id = SysChartofAccounts::select('id','account_name')->where('subgroup',16)->wherein('company_id',$com_ids)->where('status',1)->get();
+        $indirect_income = SysProfitAndLossAccountController::get_indirect_income($from_date,$to_date,$ii_acc_id);
+        $ie_acc_id = SysChartofAccounts::select('id','account_name')->where('subgroup',13)->wherein('company_id',$com_ids)->where('status',1)->get();
+        $direct_expenses = SysProfitAndLossAccountController::get_direct_expenses($from_date,$to_date,$ie_acc_id);
+        $opening_stock = SysProfitAndLossAccountController::get_opening_stock($from_date,$to_date,$com_ids);
+        $purchase = SysProfitAndLossAccountController::get_purchase($from_date,$to_date,$com_ids);
+        $purchase_return = SysProfitAndLossAccountController::get_purchase_return($from_date,$to_date,$com_ids);
+        
+        $ie_acc_id = SysChartofAccounts::select('id','account_name')->where('subgroup',15)->wherein('company_id',$com_ids)->where('status',1)->get();
+        $direct_incomes = SysProfitAndLossAccountController::get_direct_income($from_date,$to_date,$ie_acc_id);                
+        $closing_stock = SysProfitAndLossAccountController::get_closing_stock($from_date,$to_date,$com_ids);                
+        $sales = SysProfitAndLossAccountController::get_sales($from_date,$to_date,$com_ids);
+        $sales_return = SysProfitAndLossAccountController::get_sales_return($from_date,$to_date,$com_ids);
+        
+        $total_direct_expences = ($direct_expenses + $opening_stock + abs($purchase - $purchase_return));
+        $total_direct_incomes = ($direct_incomes + $closing_stock + abs($sales - $sales_return));
+        
+        //Direct Income - Direct Expence = Gross Profit
+        if($total_direct_expences > $total_direct_incomes) {
+            $gross_loss = $total_direct_expences - $total_direct_incomes;
+        }
+        else {
+            $gross_profit = $total_direct_incomes - $total_direct_expences;
+        }
+        
+        //(Indirect income + Gross Profit) - Indirect Expence = Net Profit
+        if($gross_profit > $gross_loss) {
+            if($indirect_expenses > ($indirect_income + $gross_profit)){
+                $net_loss = $indirect_expenses - abs($indirect_income + $gross_profit);
+            } else {
+                $net_profit = ($indirect_income + $gross_profit) - $indirect_expenses;
+            }
+        } else {
+            if($indirect_expenses > ($indirect_income - $gross_loss)){
+                $net_loss = $indirect_expenses - abs($indirect_income - $gross_loss);
+            } else {
+                $net_profit = abs($indirect_income - $gross_loss) - $indirect_expenses;
+            }
+        }
+        return ['net-profit' => $net_profit, 'net-loss' => $net_loss];        
+    }
+}

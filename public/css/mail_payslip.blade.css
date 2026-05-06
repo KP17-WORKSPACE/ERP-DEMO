@@ -1,0 +1,357 @@
+@media only screen and (max-width:580px) {
+    .m_wd_full {
+        width: 100% !important;
+        min-width: 100% !important;
+        height: auto !important
+    }
+
+    .m_wd_full_db {
+        width: 100% !important;
+        min-width: 100% !important;
+        height: auto !important;
+        display: block;
+    }
+
+    .m_al {
+        text-align: left !important
+    }
+
+    .m_db {
+        display: block !important
+    }
+
+    .m_display_n {
+        height: 20px !important;
+        display: block;
+    }
+
+    .m_h10 {
+        height: 10px !important;
+        display: block;
+    }
+
+    .m_display_none {
+        display: none;
+    }
+
+    .m_img_mc_fix {
+        display: block !important;
+        text-align: center !important;
+    }
+}
+
+body {
+    margin: 20px;
+    padding: 0px;
+    background-color: #e4e5e7
+}
+
+.body_div {
+    margin: 0px;
+    padding: 0px;
+    background-color: #e4e5e7
+}
+
+.account_info_table {
+    background: #ffffff;
+}
+
+.account_info_table_tr_tbody_td {
+
+    padding: 20px;
+}
+
+.business_info_img {
+    min-width: 160px;
+    max-width: 160px;
+    height: auto;
+}
+
+.business_info_p {
+    font-weight: 300;
+    color: #828bb2 !important;
+}
+
+.business_info_p2 {
+    font-weight: 300;
+    color: #828bb2 !important;
+    margin-top: 15px;
+}
+
+.business_info_width_70 {
+    width: 70%;
+}
+
+.business_info_h3 {
+    color: #415094 !important;
+    font-size: 24px;
+    margin-top: 20px;
+    margin-bottom: 0;
+    padding-right: 26px;
+    line-height: 25px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.staff_info_td {
+    padding: 10px 25px 10px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    display: block;
+}
+
+.payslip_style {
+    padding: 5px 0px 5px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    display: block;
+}
+
+.payment_date {
+    padding: 10px 25px 10px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    display: block;
+}
+
+.staff_account_info_table {
+    padding: 0 5px 0 5px;
+}
+
+.staff_account_info_table_earning {
+    padding: 15px 10px 15px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    border-left: 1px solid #c5c1c1;
+    border-top: 1px solid #c5c1c1;
+}
+
+.staff_account_info_table_deductions {
+    padding: 15px 10px 15px 0px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    border-right: 1px solid #c5c1c1;
+    border-top: 1px solid #c5c1c1;
+}
+
+.amount_table {
+    border: 1px solid #c5c1c1
+}
+
+.amount_table_title {
+    padding: 5px 10px 5px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+}
+
+.amount_table_amount {
+    padding: 5px 10px 5px 0px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: right;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+}
+
+.basic_salary {
+    padding: 10px 10px 10px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+}
+
+.basic_salary_amount {
+    padding: 10px 10px 10px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: right;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+}
+
+.gross_earning {
+    padding: 10px 10px 10px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    border-right: 1px solid #c5c1c1;
+}
+
+.gross_earning_amount {
+    padding: 10px 10px 10px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: right;
+    border-right: 1px solid #c5c1c1;
+}
+
+.payslicp_title {
+    padding: 5px 10px 5px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+    border-top: 1px solid #c5c1c1;
+}
+
+.payslip_amount {
+    padding: 5px 10px 5px 0px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: right;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+    border-top: 1px solid #c5c1c1;
+}
+
+.earning_table {
+    margin-top: 30px;
+    border-top: 1px solid #c5c1c1;
+}
+
+.gross_earning_head {
+    padding: 5px 10px 5px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+    border-left: 1px solid #c5c1c1;
+}
+
+.total_deduction {
+    padding: 5px 10px 5px 0px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: right;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+}
+
+.net_salary {
+    padding: 5px 10px 5px 0px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: right;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+}
+
+.gross_earning_amount_2 {
+    padding: 10px 10px 10px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+    border-bottom: 1px solid #c5c1c1;
+    border-right: 1px solid #c5c1c1;
+    border-left: 1px solid #c5c1c1;
+}
+
+.bank_table {
+    margin-top: 30px
+}
+
+.bank_table_td {
+    padding: 10px 0px 10px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: left;
+}
+
+.bank_table_p {
+    color: #828bb2 !important;
+}
+
+.bank_table_tr_td {
+    padding: 10px 0px 10px 20px;
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #24252a;
+    line-height: 18px;
+    text-align: right;
+}
+
+.bank_table_img {
+    width: 1px;
+    display: block
+}
+
+.thanks_msg {
+    font-family: 'PT Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: normal;
+    color: #24252a;
+    line-height: 22px;
+    text-align: left;
+    display: block;
+}
+
+.dfc_bank {
+    padding: 0 5px 0 5px;
+}
+
+.dfc_bank2 {
+    padding: 0 25px 0 25px;
+}

@@ -1,0 +1,22 @@
+
+.error_401_style{
+		background-image: url({{ asset('/svg/403.svg') }});
+	}
+.error_403_style{
+		background-image: url({{ asset('/svg/403.svg') }});
+	}
+.error_403_style{
+		background-image: url({{ asset('/svg/404.svg') }});
+	}
+.error_419_style{
+		background-image: url({{ asset('/svg/403.svg') }});
+	}
+.error_429_style{
+		background-image: url({{ asset('/svg/403.svg') }});
+	}
+.error_500_style{
+		background-image: url({{ asset('/svg/500.svg') }});
+	}
+.error_503_style{
+		background-image: url({{ asset('/svg/503.svg') }});
+	}

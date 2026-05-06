@@ -1,0 +1,414 @@
+@extends('backEnd.newmasterpage')
+@section('mainContent')
+@php use Carbon\Carbon; @endphp
+@php
+$module_links = [];
+$permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+@endphp
+
+<style>
+.att-P { background:#fff; color:#0f5132; font-weight:600; }
+.att-A { background:#fff; color:red; font-weight:600; }
+.att-WO { background:#fff; color:grey; font-weight:600; }
+.att-H { background:#fff; color:blue; font-weight:600; }
+.att-- { color:#bbb; }
+
+/* ===== Table base ===== */
+.tbl { border-collapse:collapse; width:100%; table-layout:fixed; font-size:13px; }
+.tbl th, .tbl td { border:1px solid #e9ecef; padding:6px 8px; text-align:center; white-space:nowrap; height:36px; vertical-align:middle; background: #fff; }
+.tbl thead th { position:sticky; top:0; background:#f8f9fa; z-index:20; }
+
+/* ===== Sticky Columns (Freeze Left) ===== */
+.tbl th.sticky, .tbl td.sticky {
+  position: sticky;
+  background: #fff;
+  z-index: 15;
+}
+/* Default left placeholders will be overwritten by JS */
+.tbl th.sticky-1, .tbl td.sticky-1 { left: 0; z-index: 30; }
+
+/* ===== Split Layout ===== */
+.payroll-wrapper {
+  border:1px solid #dee2e6;
+  border-radius:.25rem;
+  max-height:70vh;
+  overflow:auto;
+  position:relative;
+}
+.payroll-split {
+  display:flex;
+  width:100%;
+  min-height:100%;
+  transition:all 0.4s ease;
+  position:relative;
+}
+.payroll-left {
+  flex:0 0 auto;
+  width:1350px; /* default width, inline may override */
+  border-right:2px solid #dee2e6;
+  background:#fff;
+  position:relative;
+  z-index:3;
+  transition:all 0.4s ease;
+  box-shadow:4px 0 5px -3px rgba(0,0,0,0.1);
+  overflow:hidden;
+}
+.payroll-right {
+  flex:1 1 auto;
+  overflow-x:auto;
+  overflow-y:hidden;
+  background:#fff;
+  position:relative;
+  z-index:1;
+}
+
+/* collapsed state */
+.collapsed #payrollLeft { width:0 !important; padding:0; overflow:hidden; border:none; }
+.collapsed .collapse-toggle { left:10px !important; }
+
+.day-col { width:42px; min-width:42px; }
+.row-highlight:hover td { background:#fdfde3; }
+
+/* ===== Toggle icon ===== */
+.collapse-toggle {
+  position:absolute;
+  top:50%;
+  left:1330px;
+  transform:translateY(-50%);
+  cursor:pointer;
+  z-index:20;
+  font-size:18px;
+  background:#fff;
+  border:1px solid #ccc;
+  border-radius:50%;
+  padding:6px 9px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.2);
+  transition:all 0.3s ease;
+}
+.collapse-toggle:hover { background:#f1f1f1; }
+.collapsed .collapse-toggle { left:10px !important; }
+
+/* ===== Resizer handle (draggable) ===== */
+.payroll-resizer {
+  width: 10px;
+  cursor: col-resize;
+  background: linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.06));
+  position:relative;
+  z-index:25;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  user-select: none;
+}
+.payroll-resizer:before {
+  content: "";
+  width: 2px;
+  height: 36px;
+  background: rgba(0,0,0,0.12);
+  border-radius:2px;
+}
+.payroll-split.collapsed #payrollLeft { width: 0 !important; padding:0; overflow:hidden; border:none; }
+
+/* small responsive tweak */
+@media (max-width:900px) {
+  .collapse-toggle { left: calc(100% - 50px); }
+}
+</style>
+
+<div class="container-fluid">
+
+  {{-- Summary --}}
+  <div class="card mb-3">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Payroll Summary – {{ $cycle->month }} {{ $cycle->year }}</h5>
+      <small class="text-muted">Scroll ↓↓ for employees, scroll →→ for days</small>
+    </div>
+    <div class="card-body">
+      <div class="row text-center">
+        <div class="col-lg-2">
+          <label class="form-label mb-1">Year</label>
+          <select name="year" class="form-control form-control-sm">
+            @for($y = date('Y'); $y >= 2020; $y--)
+              <option value="{{ $y }}" {{ $cycle->year == $y ? 'selected' : '' }}>{{ $y }}</option>
+            @endfor
+          </select>
+        </div>
+        <div class="col-lg-2">
+          <label class="form-label mb-1">Month</label>
+          <select name="month" class="form-control form-control-sm">
+            @foreach(['January','February','March','April','May','June','July','August','September','October','November','December'] as $m)
+              <option value="{{ $m }}" {{ $cycle->month == $m ? 'selected' : '' }}>{{ $m }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="col-md-1"><strong>From</strong><br>{{ Carbon::parse($cycle->from_date)->format('d-M-Y') }}</div>
+        <div class="col-md-1"><strong>To</strong><br>{{ Carbon::parse($cycle->to_date)->format('d-M-Y') }}</div>
+        <div class="col-md-1"><strong>Total</strong><br>{{ $cycle->total_days }}</div>
+        <div class="col-md-1"><strong>Working</strong><br>{{ $cycle->working_days }}</div>
+        <div class="col-md-2"><strong>Weekly Off</strong><br>{{ $cycle->weekly_off_days }}</div>
+        <div class="col-md-1"><strong>Holidays</strong><br>{{ $cycle->public_holidays ?: '-' }}</div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Table --}}
+  <div class="card position-relative">
+    {{-- Toggle button --}}
+    <div class="collapse-toggle" onclick="toggleFixedCols()">
+      <i id="collapseIcon" class="ico icon-outline-chevron-left text-secondary" title="Hide Fixed Columns">←</i>
+    </div>
+
+    <div class="payroll-wrapper">
+      <div class="payroll-split" id="payrollSplit">
+
+        {{-- LEFT FIXED (Now Sticky) --}}
+        <div class="payroll-left" id="payrollLeft" style="width:1350px;">
+          <table class="tbl" id="tbl-left">
+            <thead>
+              <tr>
+                <th class="sticky sticky-1">SL</th>
+                <th class="sticky sticky-2">Company</th>
+                <th class="sticky sticky-3">Visa</th>
+                <th class="sticky sticky-4">EMP ID</th>
+                <th class="sticky sticky-5">Employee</th>
+                <th class="sticky sticky-6">Department</th>
+                <th class="sticky sticky-7">Date of Joining</th>
+                <th class="sticky sticky-8">Basic Salary</th>
+                <th class="sticky sticky-9">Gross Salary</th>
+                <th class="sticky sticky-10">Net Payable</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($staffs as $emp)
+              <tr class="row-highlight">
+                <td class="sticky sticky-1">{{ $loop->iteration }}</td>
+                <td class="sticky sticky-2">{{ $emp->company ?: '-' }}</td>
+                <td class="sticky sticky-3">{{ $emp->visa ?: '-' }}</td>
+                <td class="sticky sticky-4">{{ $emp->emp_id ?: '-' }}</td>
+                <td class="sticky sticky-5 text-start">{{ $emp->name ?: '-' }}</td>
+                <td class="sticky sticky-6">{{ $emp->department_id ?: '-' }}</td>
+                <td class="sticky sticky-7">{{ $emp->doj ? Carbon::parse($emp->doj)->format('d-M-Y') : '-' }}</td>
+                <td class="sticky sticky-8">{{ $emp->basic_salary ? number_format($emp->basic_salary,2) : '-' }}</td>
+                <td class="sticky sticky-9">{{ $emp->gross_salary ? number_format($emp->gross_salary,2) : '-' }}</td>
+                <td class="sticky sticky-10">{{ $emp->net_salary ? number_format($emp->net_salary,2) : '-' }}</td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Resizer handle (drag to resize / dblclick to collapse) -->
+        <div class="payroll-resizer" id="payrollResizer" title="Drag to resize / double-click to collapse"></div>
+
+        {{-- RIGHT SCROLLABLE --}}
+        <div class="payroll-right">
+          <table class="tbl" id="tbl-right">
+            <thead>
+              <tr>
+                @for($d=1;$d<=$daysInMonth;$d++)
+                  <th class="day-col">{{ $d }}</th>
+                @endfor
+                <th>P</th><th>A</th><th>HD</th><th>H</th>
+                <th>Sick</th><th>Annual</th><th>Other</th><th>WO</th>
+                <th>Present</th><th>Absent</th>
+                <th>Basic</th><th>HRA</th><th>Transport</th><th>Allowance</th>
+                <th>Benefits</th><th>Gross</th>
+                <th>Absent</th><th>Loan</th><th>Other Ded.</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($staffs as $emp)
+              @php $p=0;$a=0;$wo=0;$h=0; @endphp
+              <tr class="row-highlight">
+                @for($d=1;$d<=$daysInMonth;$d++)
+                  @php 
+                    $t = ['P','A','HD','H'][rand(0,3)];
+                    if($t=='P') $p++; elseif($t=='A') $a++; elseif($t=='HD') $wo++; else $h++;
+                  @endphp
+                  <td class="day-col att-{{ $t }}">{{ $t }}</td>
+                @endfor
+                <td>{{ $p }}</td><td>{{ $a }}</td><td>{{ $wo }}</td><td>{{ $h }}</td>
+                <td>1</td><td>3</td><td>0</td><td>{{ $wo }}</td>
+                <td>{{ $p }}</td><td>{{ $a }}</td>
+                <td>5000</td><td>1500</td><td>1000</td><td>800</td><td>500</td><td>8800</td>
+                <td>2</td><td>0</td><td>100</td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+@push('scripts')
+<script>
+/* ---------- Utility ---------- */
+function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+/* Recompute left offsets for sticky columns in #tbl-left */
+function recomputeStickyLefts() {
+  const leftTable = document.getElementById('tbl-left');
+  if (!leftTable) return;
+
+  const headerRow = leftTable.tHead ? leftTable.tHead.rows[0] : (leftTable.rows.length ? leftTable.rows[0] : null);
+  if (!headerRow) return;
+
+  // Build offsets array from header cell widths
+  const colCount = headerRow.cells.length;
+  const offsets = new Array(colCount).fill(0);
+  let acc = 0;
+  for (let i = 0; i < colCount; i++) {
+    const w = headerRow.cells[i].getBoundingClientRect().width;
+    offsets[i] = acc;
+    acc += Math.round(w);
+  }
+
+  // Apply left for each cell in their column
+  const allRows = leftTable.querySelectorAll('tr');
+  for (let r = 0; r < allRows.length; r++) {
+    const cells = allRows[r].cells;
+    for (let c = 0; c < cells.length; c++) {
+      const cell = cells[c];
+      if (!cell) continue;
+      // Ensure sticky class exists so position:sticky is active
+      cell.classList.add('sticky');
+      cell.style.left = offsets[c] + 'px';
+      // z-index ladder: first column highest
+      if (c === 0) {
+        cell.style.zIndex = 35;
+      } else {
+        cell.style.zIndex = 30 - Math.min(20, c);
+      }
+    }
+  }
+
+  // Also ensure header sticky z-index stays above
+  if (leftTable.tHead) {
+    Array.from(leftTable.tHead.rows[0].cells).forEach((th, idx) => {
+      th.style.zIndex = (idx === 0) ? 40 : 35;
+    });
+  }
+}
+
+/* Keep left+right row heights synced */
+function syncHeights() {
+  const leftRows  = document.querySelectorAll('#tbl-left tbody tr');
+  const rightRows = document.querySelectorAll('#tbl-right tbody tr');
+  const n = Math.min(leftRows.length, rightRows.length);
+  for (let i=0; i<n; i++) {
+    leftRows[i].style.height  = rightRows[i].style.height = 'auto';
+    const h = Math.max(leftRows[i].offsetHeight, rightRows[i].offsetHeight);
+    leftRows[i].style.height  = rightRows[i].style.height = h + 'px';
+  }
+}
+
+/* ---------- Resizer (drag) behaviour ---------- */
+function initPayrollResizer() {
+  const resizer = document.getElementById('payrollResizer');
+  const split = document.getElementById('payrollSplit');
+  const leftPane = document.getElementById('payrollLeft');
+
+  if (!resizer || !leftPane || !split) return;
+
+  // min/max widths (px)
+  const minWidth = 220;
+  const maxWidth = Math.max(5000, window.innerWidth - 200);
+
+  let dragging = false;
+  let startX = 0;
+  let startWidth = 0;
+
+  resizer.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    dragging = true;
+    startX = e.clientX;
+    startWidth = leftPane.getBoundingClientRect().width;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    let newWidth = clamp(startWidth + dx, minWidth, maxWidth);
+    leftPane.style.width = newWidth + 'px';
+    recomputeStickyLefts();
+    syncHeights();
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+  });
+
+  // touch support
+  resizer.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    dragging = true;
+    startX = t.clientX;
+    startWidth = leftPane.getBoundingClientRect().width;
+    document.body.style.userSelect = 'none';
+  });
+  window.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    let newWidth = clamp(startWidth + dx, minWidth, maxWidth);
+    leftPane.style.width = newWidth + 'px';
+    recomputeStickyLefts();
+    syncHeights();
+  });
+  window.addEventListener('touchend', () => {
+    dragging = false;
+    document.body.style.userSelect = '';
+  });
+
+  // double click to toggle collapse/restore
+  resizer.addEventListener('dblclick', () => {
+    split.classList.toggle('collapsed');
+    if (split.classList.contains('collapsed')) {
+      // store current width to restore later
+      resizer.dataset.prevWidth = leftPane.style.width || (leftPane.getBoundingClientRect().width + 'px');
+      leftPane.style.width = '0';
+    } else {
+      const restore = resizer.dataset.prevWidth || '1350px';
+      leftPane.style.width = restore;
+    }
+    const icon = document.getElementById('collapseIcon');
+    if (icon) icon.textContent = split.classList.contains('collapsed') ? '→' : '←';
+    setTimeout(() => { recomputeStickyLefts(); syncHeights(); }, 120);
+  });
+}
+
+/* Toggle button already present - keep behavior consistent */
+function toggleFixedCols() {
+  const split = document.getElementById('payrollSplit');
+  const icon = document.getElementById('collapseIcon');
+  split.classList.toggle('collapsed');
+  icon.textContent = split.classList.contains('collapsed') ? '→' : '←';
+  setTimeout(() => { recomputeStickyLefts(); syncHeights(); }, 200);
+}
+
+/* Initialize on load */
+window.addEventListener('load', () => {
+  // make sure left pane has a width set (so getBoundingClientRect is stable)
+  const leftPane = document.getElementById('payrollLeft');
+  if (leftPane && !leftPane.style.width) leftPane.style.width = leftPane.getBoundingClientRect().width + 'px';
+
+  recomputeStickyLefts();
+  syncHeights();
+  initPayrollResizer();
+});
+
+window.addEventListener('resize', () => {
+  setTimeout(() => { recomputeStickyLefts(); syncHeights(); }, 150);
+});
+
+</script>
+@endpush
+@endsection

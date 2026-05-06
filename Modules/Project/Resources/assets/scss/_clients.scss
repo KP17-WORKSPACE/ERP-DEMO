@@ -1,0 +1,130 @@
+.clients_area{
+    background: #fff;
+    padding: 30px;
+    margin: 0 30px;
+    position: relative;
+    top: 30px;
+    @media #{$mobile_device} {
+        padding: 15px;
+        margin: 10px;
+        position: relative;
+        top: 15px;
+    }
+    @media #{$large_device} {
+        padding: 10px;
+        margin: 0 15px;
+    }
+    .client_header{
+        margin-bottom: 30px;
+    }
+    .client_title{
+        h4{
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 0;
+        }
+    }
+    .Add_Client{
+        a{
+            color: #4a9dff;
+            background: #ECF5FF;
+            font-size: 13px;
+            @include border-radius(4px);
+            padding: 8px 17px;
+            display: inline-block;
+            text-transform: capitalize;
+            i{
+                font-size: 13px;
+                margin-left: 3px;
+            }
+            @media #{$mobile_device} {
+                padding: 8px;
+            }
+        }
+    }
+    .single_client{
+        border: 1px solid rgba(187, 193, 201, 0.3);
+        padding: 30px 30px 48px 30px;
+        @include border-radius(4px);
+        @include transition(.3s);
+        @media #{$mobile_device} {
+            margin-bottom: 20px;
+        }
+        @media #{$tablet_device} {
+            margin-bottom: 20px;
+        }
+        @media #{$mid_device} {
+            margin-bottom: 20px;
+        }
+        @media #{$large_device} {
+            padding: 15px;
+        }
+        &:hover{
+            @include box-shadow(0 3px 6px 0 rgba(0, 0, 0, 0.06));
+        }
+        .client_logo{
+            span{
+                font-size: 24px;
+                padding: 21px 23px;
+                display: block;
+                @include border-radius(18px);
+                background: #FF7882;
+                color: #fff;
+                font-weight: 500;
+            }
+        }
+        .edit_delete{
+            a{
+                font-size: 13px;
+                font-weight: 400;
+                color: #92A2B7;
+                margin-left: 14px;
+                &:hover{
+                    color: #4A9DFF;
+                }
+            }
+        }
+        .client_info{
+            h3{
+                font-size: 20px;
+                font-weight: 500;
+                margin-top: 15px;
+                margin-bottom: 8px;
+            }
+            ul{
+                li{
+                    a{
+                        color: #647891;
+                        font-size: 13px;
+                        line-height: 21px;
+                        i{
+                            font-size: 13px;
+                            color: #92A2B7;
+                            margin-right: 3px;
+                        }
+                        &:hover{
+                            color: #4A9DFF;
+                        }
+                    }
+                }
+            }
+            p{
+                margin-bottom: 0;
+                font-size: 13px;
+                line-height: 1.62;
+                font-weight: 400;
+                margin-top: 16px;
+            }
+        }
+    }
+    .col-xl-3:nth-child(2) .single_client .client_logo span{
+        background: #FFC864;
+    } 
+    .col-xl-3:nth-child(3) .single_client .client_logo span{
+        background: #b2a9ff;
+    } 
+    .col-xl-3:nth-child(4) .single_client .client_logo span{
+        background: #7fd8aa;;
+    } 
+}

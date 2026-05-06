@@ -1,0 +1,18 @@
+[
+    {
+        "id": 2,
+        "staff_id": 182,
+        "qualification": "Bachelor",
+        "university": "Mumbai University",
+        "specialization": "Computer Aiml",
+        "year": "2024",
+        "result": "10",
+        "gpa": "8.50",
+        "mode": "Full-Time",
+        "country": "101",
+        "duration_years": "4.00",
+        "certificate_path": null,
+        "created_at": "2026-01-14 21:27:02",
+        "updated_at": "2026-01-14 21:27:02"
+    }
+]

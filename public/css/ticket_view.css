@@ -1,0 +1,188 @@
+ @import url('https://fonts.googleapis.com/css?family=Poppins&display=swap');
+        body{
+            font-family: 'Poppins', sans-serif;
+        }
+        img{
+        	width: 60px;
+        }
+        p{
+            margin-bottom: 0;
+            font-size: 14px;
+            line-height: 26px;
+        }
+        button{
+            cursor: pointer;
+        }
+            .infix_form_area{
+               padding-top: 40px;
+               padding-bottom: 40px;
+               
+            }
+            .infix_form_area form textarea{
+                width:  100%;
+                border: 1px solid #8f8f8f;
+                height: 200px;
+                margin-bottom: 20px;
+                padding: 20px;
+            }
+
+            .textarea-reply{
+                width:  100%;
+                border: 1px solid #8f8f8f;
+                height: 100px !important;
+                margin-bottom: 20px;
+                padding: 20px;
+            }
+            .infix_form_area form textarea::placeholder{
+                font-size: 14px;
+                font-weight: 400;
+                color: #8f8f8f;
+            }
+            .infix_form_area form button{
+                text-align: right;
+            }
+            .file_upload svg{
+                font-size: 14px;
+                width: 14px;
+            }
+            .file_upload span{
+                text-transform: uppercase;
+            }
+            .infix_form_area .custom-file-label::after {
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 3;
+                display: block;
+                height: calc(1.5em + .75rem);
+                padding: .375rem .75rem;
+                line-height: 1.5;
+                color: #495057;
+                content: "Browse";
+                background-color: #e9ecef;
+                border-left: inherit;
+                border-radius: 0 .25rem .25rem 0;
+                display: none;
+                text-align: left;
+            }
+            
+            .infix_form_area .custom-file-label {
+                cursor: pointer;
+                position: absolute;
+                top: 0;
+                right: 0;
+                left: 0;
+                z-index: 1;
+                height: calc(1.5em + .75rem + 2px);
+                padding: 7px;
+                font-weight: 400;
+                line-height: 1.5;
+                color: #495057;
+                background-color: transparent;
+                border: 1px solid #ced4da;
+                border-radius: .25rem;
+                border: none;
+                text-transform: capitalize;
+                font-size: 14px;
+                text-transform: capitalize;
+                font-weight: 400;
+                display: inline-block !important;
+                margin-bottom: 0;
+                width: 100%;
+                text-align: left;
+                
+            }
+            .infix_form_area .custom-file-label:focus{
+                outline: none;
+            }
+            .infix_form_area .input-group-text {
+                display: -ms-flexbox;
+                display: flex;
+                -ms-flex-align: center;
+                align-items: center;
+                padding: .375rem .75rem;
+                margin-bottom: 0;
+                font-size: 1rem;
+                font-weight: 400;
+                line-height: 1.5;
+                color: #495057;
+                text-align: center;
+                white-space: nowrap;
+                background-color: #e9ecef;
+                border: 1px solid #ced4da;
+                border-radius: .25rem;
+                background: transparent;
+                border: none;
+            }
+            .infix_form_area  button{
+                border: 0;
+                background: transparent;
+                text-transform: capitalize;
+                font-weight: 400;
+                font-size: 12px;
+                background: #ddd;
+            }
+            .comments_public .comments-thumb{
+               margin-bottom: 15px;
+            }
+            .comments_public .comments-thumb img{
+                margin-right: 20px;
+            }
+            .comments_public .comments-thumb p{
+                font-size: 12px;
+                font-weight: 300;
+            }
+            .comments_public > p{
+                font-size: 14px;
+                font-weight: 300;
+                color: #000;
+                margin-bottom: 0;
+                padding-left: 10px;
+            }
+            .comments_public p span{
+                font-size: 14px;
+                text-transform: uppercase;
+                font-weight: 400;
+                position: relative;
+            }
+            .comments_public p span a{
+                font-size: 12px;
+                text-transform: uppercase;
+                font-weight: 400;
+                color: #000;
+                text-decoration: none;
+
+            }
+            .comments_public-info{
+                text-align: right;
+            }
+            .comments_public-info p{
+                text-align: left;
+            }
+            .comments_public .single_comment_replay{
+                /* padding-right: 30px; */
+                margin-bottom: 15px;
+                margin-top: 15px;
+            }
+            .comments_public .single_comment_replay .comments-thumb{
+                justify-content: flex-end;
+                margin-bottom: 15px;
+            }
+            .comments_public .single_comment_replay .comments-thumb img{
+                margin-right: 0;
+                margin-left: 15px;
+            }
+            .comments_public .single_comment_replay .comments-thumb .comment-meta{
+                text-align: right;
+                font-size: 12px;
+            }
+            .common_text_area{
+                width:  100%;
+                width: 100%;
+                border: 1px solid #8f8f8f;
+                height: 100px;
+                margin-bottom: 20px;
+                padding: 10px;
+                margin:10px 0;
+            }

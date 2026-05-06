@@ -1,0 +1,487 @@
+Understood. You want the HTML structure and CSS for a premium, corporate-style website for "KP Systems" that strictly follows the established style guide, but you explicitly request that I **do not** make it fully responsive for all devices. This means the layout will be fixed or minimally fluid, best suited for large screens.
+
+Here is the HTML and CSS for a professional, high-value corporate site.
+
+### 💻 KP Systems: Desktop Website Code
+
+This structure assumes a minimum screen width of around **1200px** for optimal viewing.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KP Systems - Enterprise Digital Systems & Solutions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /*
+        * CSS Reset and Base Styles
+        * Note: Non-responsive design means minimal use of media queries or flexible units.
+        */
+        :root {
+            --color-white: #ffffff;
+            --color-deep-blue: #1A237E; /* Navy/Deep Blue for KP */
+            --color-orange: #FF6600; /* Vibrant Orange for Systems */
+            --color-dark-text: #212121;
+            --color-light-grey: #f4f4f7;
+            --color-border: #e0e0e0;
+            --max-width: 1280px;
+            --content-width: 1100px;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            color: var(--color-dark-text);
+            margin: 0;
+            padding: 0;
+            background-color: var(--color-white);
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Inter', sans-serif;
+            color: var(--color-deep-blue);
+            line-height: 1.2;
+            margin-top: 0;
+        }
+
+        h1 { font-size: 3.5rem; font-weight: 700; }
+        h2 { font-size: 2.2rem; font-weight: 600; }
+        h3 { font-size: 1.6rem; font-weight: 600; }
+        p { margin-bottom: 1.5rem; }
+
+        .container {
+            width: var(--content-width);
+            margin: 0 auto;
+            padding: 80px 0; /* Spacious padding */
+        }
+
+        /* --- Global Components --- */
+
+        .btn-primary {
+            display: inline-block;
+            padding: 14px 30px;
+            background: linear-gradient(90deg, var(--color-deep-blue) 0%, var(--color-orange) 100%);
+            color: var(--color-white);
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            transition: opacity 0.3s;
+            border: none;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            padding: 12px 28px;
+            color: var(--color-deep-blue);
+            border: 2px solid var(--color-deep-blue);
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            border-radius: 4px;
+            margin-left: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .btn-secondary:hover {
+            background-color: var(--color-deep-blue);
+            color: var(--color-white);
+        }
+
+        /* --- Header & Navigation --- */
+
+        header {
+            width: 100%;
+            background-color: var(--color-white);
+            border-bottom: 1px solid var(--color-border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-bar {
+            width: var(--content-width);
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+        }
+
+        .logo img {
+            height: 35px; /* Adjust based on your logo image size */
+            display: block;
+        }
+
+        nav a {
+            color: var(--color-dark-text);
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            margin-left: 35px;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+        nav a:hover {
+            color: var(--color-orange);
+        }
+
+        /* --- Section Styles --- */
+
+        /* Hero Section */
+        #hero {
+            text-align: center;
+            padding: 150px 0 100px 0;
+            background-color: var(--color-light-grey); /* Slight difference for the hero */
+            border-bottom: 8px solid var(--color-deep-blue);
+        }
+
+        #hero h1 {
+            max-width: 800px;
+            margin: 0 auto 30px auto;
+        }
+
+        #hero p {
+            font-size: 1.25rem;
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+            color: #555;
+        }
+
+        /* Who We Are & Government Section */
+        .section-light {
+            background-color: var(--color-light-grey);
+            border-top: 1px solid var(--color-border);
+        }
+
+        .split-content {
+            display: flex;
+            gap: 80px;
+            align-items: flex-start;
+        }
+
+        .text-column {
+            flex: 3;
+        }
+
+        .image-column {
+            flex: 2;
+            padding-top: 20px;
+        }
+
+        .image-column img {
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 30px;
+        }
+        .feature-list li {
+            position: relative;
+            padding-left: 25px;
+            margin-bottom: 15px;
+            font-size: 1.05rem;
+        }
+        .feature-list li:before {
+            content: '•';
+            color: var(--color-orange);
+            font-weight: 700;
+            position: absolute;
+            left: 0;
+        }
+
+        /* What We Deliver Section */
+        .capabilities-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .capability-card {
+            background-color: var(--color-white);
+            padding: 30px;
+            border: 1px solid var(--color-border);
+            border-top: 4px solid var(--color-deep-blue);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.3s;
+        }
+        .capability-card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .capability-card h3 {
+            color: var(--color-dark-text);
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+        .capability-card p {
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 0;
+        }
+
+        /* Government & GeM Capability Section */
+        #gem-capability {
+            padding-bottom: 50px;
+        }
+        .gem-points {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            gap: 40px;
+        }
+        .gem-point {
+            flex-basis: 25%;
+            text-align: center;
+        }
+        .gem-point h4 {
+            color: var(--color-orange);
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+        .gem-point p {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0;
+        }
+
+        /* Contact/CTA Section */
+        #contact-cta {
+            background-color: var(--color-deep-blue);
+            color: var(--color-white);
+            text-align: center;
+            padding: 100px 0;
+        }
+        #contact-cta h2 {
+            color: var(--color-white);
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+        }
+        #contact-cta p {
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #0d1245; /* Darker navy */
+            color: #a0a0a0;
+            padding: 50px 0 30px 0;
+            font-size: 0.9rem;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            width: var(--content-width);
+            margin: 0 auto;
+        }
+
+        .footer-logo h4 {
+            color: var(--color-white);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+
+        .footer-links a, .footer-contact a {
+            display: block;
+            color: #a0a0a0;
+            text-decoration: none;
+            margin-bottom: 8px;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover, .footer-contact a:hover {
+            color: var(--color-orange);
+        }
+
+        .footer-bottom {
+            width: var(--content-width);
+            margin: 30px auto 0 auto;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #2d3566;
+            font-size: 0.8rem;
+        }
+
+        .footer-bottom p {
+            margin: 5px 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="nav-bar">
+            <div class="logo">
+                <img src="KP Systems Logo.png" alt="KP Systems Logo - Technology Solutions">
+            </div>
+            <nav>
+                <a href="#who-we-are">Who We Are</a>
+                <a href="#capabilities">What We Deliver</a>
+                <a href="#gem-capability">Government & GeM</a>
+                <a href="#why-us">Why KP Systems</a>
+                <a href="#contact-cta">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <section id="hero">
+        <div class="container">
+            <h1>Engineering Digital Systems for Institution, Enterprise, and Government.</h1>
+            <p>KP Systems delivers scalable, secure, and compliance-driven technology platforms designed for operational excellence and long-term reliability.</p>
+            <div>
+                <a href="#contact-cta" class="btn-primary">Discuss Your Requirement</a>
+                <a href="#" class="btn-secondary">Partner With KP Systems</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="who-we-are" class="container">
+        <div class="split-content">
+            <div class="text-column">
+                <h2>The Execution Partner for Scalable Systems</h2>
+                <p>KP Systems is built on a foundation of process discipline and verifiable project success. We do not just code; we engage as a long-term technology partner committed to understanding and navigating complex workflows specific to government bodies, large enterprises, and high-growth MSMEs.</p>
+                <p>Our experience is rooted in structured execution, adherence to institutional compliance, and delivering platforms capable of supporting significant transactional volume.</p>
+                <ul class="feature-list">
+                    <li>**Process-Driven:** Methodical approach ensuring predictability and accountability.</li>
+                    <li>**Long-Term Support:** Systems are developed with maintenance and continuous operation in mind.</li>
+                    <li>**Workflow Expertise:** Deep understanding of enterprise and public sector operational needs.</li>
+                </ul>
+            </div>
+            <div class="image-column">
+                <img src="abstract-system-graphic-placeholder.jpg" alt="Abstract graphic illustrating interconnected digital systems">
+            </div>
+        </div>
+    </section>
+
+    <section id="capabilities" class="section-light">
+        <div class="container">
+            <h2>Core Technology Capabilities</h2>
+            <p>We deliver high-level solutions focused on specific operational outcomes, not simple feature lists.</p>
+            <div class="capabilities-grid">
+                <div class="capability-card">
+                    <h3>Digital Platforms & Systems</h3>
+                    <p>Deploying custom, secure, and centralized platforms for core business functions, public services, and large user bases. Built for performance and data integrity.</p>
+                </div>
+                <div class="capability-card">
+                    <h3>Enterprise & Mobile Solutions</h3>
+                    <p>Development and integration of complex enterprise applications, including ERP extensions, B2B portals, and bespoke mobile solutions for workforce enablement.</p>
+                </div>
+                <div class="capability-card">
+                    <h3>Automation & Process Digitization</h3>
+                    <p>Streamlining complex, paper-intensive, and redundant processes using automation frameworks to increase efficiency and enforce compliance across organizational tiers.</p>
+                </div>
+                <div class="capability-card">
+                    <h3>Secure & Scalable Architecture</h3>
+                    <p>Establishing high-availability, security-first architectures and providing ongoing technology management to ensure maximum uptime and operational security.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="gem-capability" class="container">
+        <h2>Trusted Execution in the Public Sector</h2>
+        <p>Serving government organizations and institutional contracts requires rigorous discipline and verifiable compliance. KP Systems is structured to meet these requirements.</p>
+        <div class="gem-points">
+            <div class="gem-point">
+                <img src="icon-tender.svg" alt="Tender Icon" style="width: 50px;">
+                <h4>GeM Tender Expertise</h4>
+                <p>Proficient in the entire Government e-Marketplace (GeM) process, documentation, and timely delivery as per public sector guidelines.</p>
+            </div>
+            <div class="gem-point">
+                <img src="icon-compliance.svg" alt="Compliance Icon" style="width: 50px;">
+                <h4>Compliance-Ready Documentation</h4>
+                <p>Providing complete, audited, and structured reports essential for institutional review and governance.</p>
+            </div>
+            <div class="gem-point">
+                <img src="icon-lifecycle.svg" alt="Lifecycle Icon" style="width: 50px;">
+                <h4>Structured Proposal Lifecycle</h4>
+                <p>Transparent engagement from analysis through deployment, mitigating risks for public funds and infrastructure.</p>
+            </div>
+            <div class="gem-point">
+                <img src="icon-delivery.svg" alt="Delivery Icon" style="width: 50px;">
+                <h4>Timely Project Delivery</h4>
+                <p>Proven capability in meeting strict institutional deadlines and budget requirements without compromise.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="why-us" class="section-light">
+        <div class="container">
+            <div class="split-content">
+                <div class="text-column">
+                    <h2>The Foundation of Long-Term Partnership</h2>
+                    <p>We believe a technology partner should prioritize stability and clear accountability above all else.</p>
+                    <ul class="feature-list">
+                        <li>**Reliability & Uptime:** Systems are architected for durability, minimizing operational interruptions.</li>
+                        <li>**Process Discipline:** Every project is managed through defined stages, ensuring predictable outcomes.</li>
+                        <li>**Security-First Mindset:** Security and privacy are integrated into the core design, not bolted on later.</li>
+                        <li>**Scalability Assurance:** Platforms are built to handle future growth and increased transactional volume.</li>
+                        <li>**Clear Communication:** Direct, objective, and professional reporting throughout the engagement lifecycle.</li>
+                    </ul>
+                </div>
+                <div class="text-column">
+                    <h2>Structured Engagement Model</h2>
+                    <p>We tailor the execution framework to the complexity and duration of your requirement, ensuring maximum client value and clarity.</p>
+                    <ul class="feature-list">
+                        <li>**Project-Based Execution:** For clearly defined scopes with fixed outcomes and timelines.</li>
+                        <li>**Long-Term Technology Partnership:** Ongoing retainer or dedicated team models for continuous support and system evolution.</li>
+                        <li>**Government & Institutional Contracts:** Adherence to defined tender requirements and specialized reporting structures.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact-cta">
+        <div class="container">
+            <h2>Initiate a Discussion</h2>
+            <p>Tell us about your requirement. Our team will evaluate the scope and respond with a structured approach, focusing on architecture, compliance, and execution feasibility.</p>
+            <a href="mailto:contact@kpsystems.in" class="btn-primary" style="padding: 18px 40px; font-size: 1.1rem;">Tell us about your requirement</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <h4>KP Systems</h4>
+                <p style="margin-top: 15px;">Engineering Digital Systems for India's Growth.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <a href="#who-we-are">Who We Are</a>
+                <a href="#capabilities">Our Capabilities</a>
+                <a href="#gem-capability">Public Sector Work</a>
+            </div>
+            <div class="footer-contact">
+                <h4>Contact Us</h4>
+                <p>Email: contact@kpsystems.in</p>
+                <p>Phone: (India) +91 XXXXX XXXXX</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 KP Systems. All rights reserved. | Based in India.</p>
+            <p style="margin-top: 5px;">Disclaimer: We are a technology solutions provider focused on secure, compliant, and scale-ready systems.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
+```

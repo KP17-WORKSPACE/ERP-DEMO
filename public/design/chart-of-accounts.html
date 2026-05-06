@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus - Chart of Accounts</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="./assets/css/_main.css" />
+</head>
+<body>
+    <div class="venus-app page-chart-of-accounts">
+        <header class="main-header">
+            <div class="logo"><img src="./assets/images/logo-gray.png" alt="VENUS LOGO" /></div>
+            <div class="right-section">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="dropdown-toggle-text">Syscom</div>
+                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Receipts</a></li>
+                        <li><a class="dropdown-item" href="#">Payments</a></li>
+                        <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-light add-btn"><i class="ico icon-outline-add-circle"></i></button>
+                <button class="btn btn-light notification-unread"><i class="ico icon-outline-bell"></i></button>
+                <div class="profile-dropdown">
+                    <div class="profile-img">
+                        <img src="./assets/images/profile.png" alt="PROFILE">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <div class="dropdown-toggle-text">
+                                <div class="title">Hamid Imran</div>
+                                <div class="role">Admin User</div>
+                            </div>
+                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown-body py-4 px-3">
+                            <div class="profile-content">
+                                <img src="./assets/images/profile_img.png" alt="profile_img" class="profile-image">
+                                <h4 class="profile_name">Saeed Hameed</h4>
+                               <div class="d-flex justify-content-center mb-3"> <h4 class="second-text">Super Admin </h4>
+                                <div class="company-name">SYSCOM</div></div>
+                                <div class="profile-second-section py-3">
+                                    <h4 class="company-details-text mb-3">Company Details</h4>
+                                    <div class="row">
+                                        <div class="col-7">Designation:
+                                            <h6 class="">Senior Accountant</h6>
+                                            staff ID:
+                                            <h6>UID1001</h6>
+                                        </div>
+                                        <div class="col-5">Departments:
+                                            <h6>Accounts</h6>
+                                            Date Of Joining:
+                                            <h6>01/01/1970</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="profile-third-section py-3">
+                                    <h4 class="personal-details-text">Personal Details</h4>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/telephone_Vector.png" class="telephone" alt="telephone_icon">
+                                        <h6>+971  50 123 4567</h6>
+                                    </div>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/envelop_Vector.png" class="email" alt="email_icon">
+                                        <h6>Saeed@syscom.com</h6>
+                                    </div>
+                                </div>
+                                <div class="profile-last-section">
+                                    <div>
+                                        <button class="btn ">
+                                            <i class="ico icon-outline-pen-2"></i>
+                                        </button>
+                                        <p class="button-text">Edit Profile</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Lock Keyhole Minimalistic.png" alt="lock_img">
+                                        </button>
+                                        <p class="button-text">Change Password</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Logout 2.png" alt="logout">
+                                        </button>
+                                        <p class="button-text-logout">Logout</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main>
+            <nav class="main-nav">
+                <div class="toggle-nav"></div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="" class="nav-link">
+                            <i class="ico icon-outline-widget-6"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item active">
+                        <div class="sub-menu-nav" data-subnav="subnavCRM">
+                            <i class="ico icon-bold-calculator"></i>
+                            <span class="nav-text">CRM</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavCRM">
+                            <div class="sub-nav-item">
+                                <a href="lead-list.html" class="sub-nav-link">Leads</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="deal-list.html" class="sub-nav-link">Deals</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track Status</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Sales Report</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Brand Sales Report</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavServiceDesk">
+                            <i class="ico icon-outline-checklist-minimalistic"></i>
+                            <span class="nav-text">Service Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavServiceDesk">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Service Desk Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavDatabase">
+                            <i class="ico icon-outline-database"></i>
+                            <span class="nav-text">Database</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavDatabase">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Database Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavPurchase">
+                            <i class="ico icon-outline-cart-large-4"></i>
+                            <span class="nav-text">Purchase</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavPurchase">
+                            <div class="sub-nav-item">
+                                <a href="supplier-register.html" class="sub-nav-link">Supplier Register</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="purchase-order.html" class="sub-nav-link">Purchase Order</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSales">
+                            <i class="ico icon-outline-bag-4"></i>
+                            <span class="nav-text">Sales</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSales">
+                            <div class="sub-nav-item">
+                                <a href="quotations.html" class="sub-nav-link">Quotations</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavInventory">
+                            <i class="ico icon-outline-server"></i>
+                            <span class="nav-text">Inventory</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavInventory">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Inventory Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavReports">
+                            <i class="ico icon-outline-document-text"></i>
+                            <span class="nav-text">Reports</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavReports">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Reports Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSettings">
+                            <i class="ico icon-outline-settings"></i>
+                            <span class="nav-text">Settings</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSettings">
+                            <div class="sub-nav-item">
+                                <a href="company.html" class="sub-nav-link">Company</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="shipping.html" class="sub-nav-link">Shipping</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="role.html" class="sub-nav-link">Role</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <section class="main-content">
+                <aside class="left-nav col-3">
+                    <h4 class="mb-4">Chart of Accounts</h4>
+                    <div class="left-nav-list">
+                        <ul class="nav flex-column nav-pills" id="chartOfAccountsTabNavs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="assets-tab" data-bs-toggle="tab" data-bs-target="#assets" type="button" role="tab" aria-controls="assets" aria-selected="true">Assets</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="liabilities-tab" data-bs-toggle="tab" data-bs-target="#liabilities" type="button" role="tab" aria-controls="liabilities" aria-selected="false">Liabilities</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="expenses-tab" data-bs-toggle="tab" data-bs-target="#expenses" type="button" role="tab" aria-controls="expenses" aria-selected="false">Expenses</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="incomes-tab" data-bs-toggle="tab" data-bs-target="#incomes" type="button" role="tab" aria-controls="incomes" aria-selected="false">Incomes</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="enquity-tab" data-bs-toggle="tab" data-bs-target="#enquity" type="button" role="tab" aria-controls="enquity" aria-selected="false">Enquity</button>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+                <div class="content-container col-9">
+                    <div class="tab-content" id="chartOfAccountsTabContent">
+                        <div class="tab-pane fade" id="assets" role="tabpanel" aria-labelledby="assets-tab">Assets</div>
+                        <div class="tab-pane fade" id="liabilities" role="tabpanel" aria-labelledby="liabilities-tab">Liabilities</div>
+                        <div class="tab-pane fade show active" id="expenses" role="tabpanel" aria-labelledby="expenses-tab">
+                            <div class="expenses-tab-content">
+                                <div class="expenses-tab-header">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Account</span>
+                                    </button>
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Chart of Account</span>
+                                    </button>
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Sub Group</span>
+                                    </button>
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Group</span>
+                                    </button>
+                                </div>
+                                <div class="accordion expenses-tab-accordion" id="expensesTabAccordion">
+                                    <div class="accordion-item accordion-item-direct-expenses">
+                                        <h2 class="accordion-header" id="headingDirectExpenses">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDirectExpenses" aria-expanded="true" aria-controls="collapseDirectExpenses">
+                                                Direct Expenses
+                                            </button>
+                                        </h2>
+                                        <div id="collapseDirectExpenses" class="accordion-collapse collapse" aria-labelledby="headingDirectExpenses" data-bs-parent="#expensesTabAccordion">
+                                            <div class="accordion-body">
+                                                Direct expenses content
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="accordion-item accordion-item-indirect-expenses">
+                                        <h2 class="accordion-header" id="headingIndirectExpenses">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIndirectExpenses" aria-expanded="false" aria-controls="collapseIndirectExpenses">
+                                                Indirect Expenses
+                                            </button>
+                                        </h2>
+                                        <div id="collapseIndirectExpenses" class="accordion-collapse collapse show" aria-labelledby="headingIndirectExpenses" data-bs-parent="#expensesTabAccordion">
+                                            <div class="accordion-body">
+                                                <h6 class="cards-title-outer">Employee Benfits Expenses</h6>
+                                                <div class="expense-cards">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h6>ACCA-1048 - Salary Expenses</h6>
+                                                            <ul class="list-group">
+                                                                <li class="list-group-item">SACCA-1004 - Akeel Salary</li>
+                                                                <li class="list-group-item">SACCA-1005 - Paveen Salary</li>
+                                                                <li class="list-group-item">SACCA-1006 - Abdul Salary</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <h6 class="cards-title-outer">Office Expenses</h6>
+                                                <div class="expense-cards">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h6 class="card-title">ACCA-1041</h6>
+                                                            <ul class="list-group">
+                                                                <li class="list-group-item">ACCD-1013 - Cash in Hand</li>
+                                                                <li class="list-group-item">ACCD-1014 - Petty Cash</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h6 class="card-title">ACCA-1042</h6>
+                                                            <ul class="list-group">
+                                                                <li class="list-group-item">ACCD-1015 - RAK Bank</li>
+                                                                <li class="list-group-item">ACCD-1016 - DIB Bank</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h6 class="card-title">ACCA-1043</h6>
+                                                            <ul class="list-group">
+                                                                <li class="list-group-item">CUSS-1388 - ZooM General Trading LLC</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <h6 class="cards-title-outer">Other Indirect Expenses</h6>
+                                                <div class="expense-cards">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h6 class="card-title">ACCA-1044</h6>
+                                                            <ul class="list-group">
+                                                                <li class="list-group-item">ACCD-1013 - Cash in Hand</li>
+                                                                <li class="list-group-item">ACCD-1014 - Petty Cash</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h6 class="card-title">ACCA-1045</h6>
+                                                            <ul class="list-group">
+                                                                <li class="list-group-item">ACCD-1015 - RAK Bank</li>
+                                                                <li class="list-group-item">ACCD-1016 - DIB Bank</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h6 class="card-title">ACCA-1046</h6>
+                                                            <ul class="list-group">
+                                                                <li class="list-group-item">CUSS-1388 - ZooM General Trading LLC</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="incomes" role="tabpanel" aria-labelledby="incomes-tab">Incomes</div>
+                        <div class="tab-pane fade" id="enquity" role="tabpanel" aria-labelledby="enquity-tab">Enquity</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="./assets/js/_main.js" type="text/javascript"></script>
+    <script src="./assets/js/chart-of-accounts.js" type="text/javascript"></script>
+</body>
+</html>

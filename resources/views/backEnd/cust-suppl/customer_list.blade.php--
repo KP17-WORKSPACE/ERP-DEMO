@@ -1,0 +1,188 @@
+@extends('backEnd.master')
+@section('mainContent')
+@php
+
+$modules = [];
+    $module_links = [];
+    $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+
+ 
+    foreach($permissions as $permission){ @$module_links[] = @$permission->module_link_id; @$modules[] = @$permission->moduleLink->module_id;}
+
+ 
+    $modules = array_unique(@$modules);
+
+@endphp
+<section class="sms-breadcrumb mb-20 white-box">
+    <div class="container-fluid">
+        <div class="row" style="float: left;">
+            <h1>@lang('Customer')</h1>
+        </div>
+            <div class="row" style="float: right;">
+                <a href="{{route('user.dashboard')}}" class="top-btn-r-l"><i class="far fa fa-home" aria-hidden="true"></i> Home</a>
+                <a href="{{url('add-customer')}}" class="top-btn-r"><i class="far fa fa-plus" aria-hidden="true"></i> New</a>
+                <a href="{{url('customers')}}" class="top-btn-r"><i class="far fa fa-file-text" aria-hidden="true"></i> View</a>
+                <a href="{{url('customers')}}" class="top-btn-r"><i class="far fa fa-file-text" aria-hidden="true"></i> List</a>
+                {{-- @if(isset($editData))
+                <a href="{{url('view-supplier',@$editData->id)}}" class="primary-btn small fix-gr-bg">  @lang('lang.view') </a> 
+            @endif --}}
+                <a href="#" class="top-btn-r"><i class="far fa fa-print" aria-hidden="true"></i> Print</a>
+                <a href="#" class="top-btn-r"><i class="far fa fa-pencil-square-o" aria-hidden="true"></i> Edit</a>
+                <a href="#" class="top-btn-r"><i class="far fa fa-floppy-o" aria-hidden="true"></i> Save</a>
+                <a href="#" class="top-btn-r"><i class="far fa fa-trash" aria-hidden="true"></i> Delete</a>
+                <a href="#" class="top-btn-r"><i class="far fa fa-tasks" aria-hidden="true"></i> Process</a>
+                <a href="javascript:location.reload();" class="top-btn-r-nobar"><i class="far fa fa-refresh" aria-hidden="true"></i> Refresh</a>
+        </div>
+    </div>
+</section>
+<hr style="margin-top: 33px;"/>
+    <div style="clear: both;"></div>
+
+
+    
+<section class="admin-visitor-area mr-2 ml-2">
+    <div class="container-fluid p-0">
+        
+        {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'customers', 'method' => 'POST', 'id' => 'crm-deals-search']) }}
+        <div class="row white-box leadbox ml-0 mr-0 mb-2">
+            <div class="col-lg-2">
+                Company Name
+                <input class="primary-input dynamicstxt_s w-100" type="text" autocomplete="off" name="company_name" value="">
+            </div>
+            <div class="col-lg-2">
+                Contact Name
+                <input class="primary-input dynamicstxt_s w-100" type="text" autocomplete="off" name="contact_name" value="">
+            </div>
+            <div class="col-lg-2">
+                Email
+                <input class="primary-input dynamicstxt_s w-100" type="text" autocomplete="off" name="email" value="">
+            </div>
+            <div class="col-lg-2">
+                Sales Person
+                <select class="w-100 dynamicstxt_s bb w-100 form-control" name="sales_person">
+                    <option value="">-Select-</option>
+                    @foreach ($staff as $value)
+                    <option value="{{ @$value->user_id }}">{{ @$value->full_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-lg-2"><br />
+                <button type="submit" class="btn btn-sm btn-dark pt-1 pb-1 pl-3 pr-3" id="btnSubmit">Filter</button>
+            </div>
+        </div>
+        {{ Form::close() }}
+
+        <div class="row">
+                <div class="col-lg-12">
+                 <div class="row">
+                        <div class="col-lg-12">
+                            <table id="table_custom" class="display school-table pl-2" cellspacing="0" width="100%">
+                                <thead>
+                                    @if(session()->has('message-success'))
+                                    <tr>
+                                        <td colspan="9"> 
+                                            <div class="alert alert-success">{{ session()->get('message-success') }}</div>
+                                              @elseif(session()->has('message-danger'))
+                                              <div class="alert alert-danger">
+                                                  {{ session()->get('message-danger') }}
+                                              </div>
+                                        </td>
+                                    </tr>                  
+                                    @endif
+                                    <tr>
+                                        {{-- <th>@lang('lang.sl') @lang('lang.no')</th> --}}
+                                        {{-- <th>@lang('lang.photo')</th> --}}
+                                        <th>@lang('Customer Name')</th>
+                                        <th>@lang('Contcat Person')</th>  
+                                        <th>@lang('Contact Number')</th>  
+                                        <th>@lang('VAT Number')</th>
+                                        <th>@lang('Mobile')</th>
+                                        <th>@lang('Email')</th>
+                                        <th>@lang('lang.action')</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @php $serialcount=1; @endphp
+                                    @foreach($customer as $value)
+                                    <tr>
+                                        {{-- <td>{{@$serialcount++}}</td> --}}
+                                        {{-- <td>
+                                            <img height="100" width="100" src="{{ file_exists(@$value->staff_photo) ? asset($value->staff_photo) : asset('public/uploads/staff/demo/staff.png') }}" alt="">
+                                        </td> --}}
+                                        <td><a href="{{url('view-customer')}}/{{@$value->id}}">
+                                            {{@$value->name}}</a>
+                                        </td>                                        
+                                        <td>
+                                            {{@$value->contcat_person}}
+                                        </td>
+                                        <td>
+                                            {{@$value->contcat_number}}
+                                        </td>
+                                        <td>
+                                            {{@$value->vat_number}}
+                                        </td>
+                                        <td>
+                                            {{@$value->mobile}}
+                                        </td>
+                                        <td>
+                                            {{@$value->email}}
+                                        </td>
+ 
+
+                                        <td>
+                                            <div class="dropdown">
+                                                <button type="button" class="btn dropdown-toggle" data-toggle="dropdown">
+                                                    @lang('lang.select')
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right">
+                                                    @if(in_array(147, @$module_links) || Auth::user()->role_id == 1)
+                                                    <a class="dropdown-item" href="{{url('view-customer')}}/{{@$value->id}}">@lang('lang.view')</a>
+                                                    @endif
+                                                    @if(in_array(145, @$module_links) || Auth::user()->role_id == 1)
+
+                                                    <a class="dropdown-item" href="{{url('customer-edit', $value->id)}}">@lang('lang.edit')</a>
+                                                    @endif
+                                                    @if(in_array(146, @$module_links) || Auth::user()->role_id == 1)
+
+                                                    <a class="dropdown-item" data-toggle="modal" data-target="#deleteClassModal{{@$value->id}}"  href="">@lang('lang.delete')</a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <div class="modal fade admin-query" id="deleteClassModal{{@$value->id}}" >
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h4 class="modal-title">@lang('lang.delete') @lang('lang.customer')</h4>
+                                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                            </div>
+
+                                            <div class="modal-body">
+                                                <div class="text-center">
+                                                    <h4>@lang('lang.are_you_sure_to_delete')</h4>
+                                                </div>
+
+                                                <div class="mt-40 d-flex justify-content-between">
+                                                    <button type="button" class="primary-btn tr-bg" data-dismiss="modal">@lang('lang.cancel')</button>
+                                                    <a href="{{url('delete/customer', [@$value->id])}}" class="text-light">
+                                                    <button class="primary-btn fix-gr-bg" type="submit">@lang('lang.delete')</button>
+                                                     </a>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</section>
+@endsection

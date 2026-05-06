@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Pipeline Arrow Sample</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f0f2f7;
+            padding: 40px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .demo-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        /* ---- CURRENT (margin-left: -1px) ---- */
+        .pipeline-current {
+            display: inline-flex;
+            align-items: stretch;
+            filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .14));
+        }
+
+        .pipeline-current .step {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            height: 28px;
+            padding: 0 12px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            position: relative;
+            background: #e9ecef;
+            color: #3d4554;
+        }
+
+        .pipeline-current .step:nth-child(1) {
+            z-index: 6
+        }
+
+        .pipeline-current .step:nth-child(2) {
+            z-index: 5
+        }
+
+        .pipeline-current .step:nth-child(3) {
+            z-index: 4
+        }
+
+        .pipeline-current .step:nth-child(4) {
+            z-index: 3
+        }
+
+        .pipeline-current .step:nth-child(5) {
+            z-index: 2
+        }
+
+        .pipeline-current .step:first-child:not(:last-child) {
+            padding-right: 20px;
+            clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 0 100%);
+        }
+
+        .pipeline-current .step:not(:first-child):not(:last-child) {
+            padding-left: 20px;
+            padding-right: 20px;
+            margin-left: -1px;
+            clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 11px 100%, 0 50%);
+        }
+
+        .pipeline-current .step:last-child:not(:first-child) {
+            padding-left: 20px;
+            margin-left: -1px;
+            clip-path: polygon(11px 0, 100% 0, 100% 100%, 11px 100%, 0 50%);
+        }
+
+        /* ---- PROPOSED (margin-left: -11px — interlocked) ---- */
+        .pipeline-new {
+            display: inline-flex;
+            align-items: stretch;
+            filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .14));
+        }
+
+        .pipeline-new .step {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            height: 28px;
+            padding: 0 12px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            position: relative;
+            background: #e9ecef;
+            color: #3d4554;
+        }
+
+        .pipeline-new .step:nth-child(1) {
+            z-index: 6
+        }
+
+        .pipeline-new .step:nth-child(2) {
+            z-index: 5
+        }
+
+        .pipeline-new .step:nth-child(3) {
+            z-index: 4
+        }
+
+        .pipeline-new .step:nth-child(4) {
+            z-index: 3
+        }
+
+        .pipeline-new .step:nth-child(5) {
+            z-index: 2
+        }
+
+        .pipeline-new .step:first-child:not(:last-child) {
+            padding-right: 20px;
+            clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 0 100%);
+        }
+
+        .pipeline-new .step:not(:first-child):not(:last-child) {
+            padding-left: 20px;
+            padding-right: 20px;
+            margin-left: -11px;
+            clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 11px 100%, 0 50%);
+        }
+
+        .pipeline-new .step:last-child:not(:first-child) {
+            padding-left: 20px;
+            margin-left: -11px;
+            clip-path: polygon(11px 0, 100% 0, 100% 100%, 11px 100%, 0 50%);
+        }
+
+        /* colour helpers */
+        .bg-success {
+            background-color: #2e7d32 !important;
+            color: #fff;
+        }
+
+        .bg-info {
+            background-color: #0277bd !important;
+            color: #fff;
+        }
+
+        .bg-warning {
+            background-color: #f57c00 !important;
+            color: #fff;
+        }
+
+        .bg-danger {
+            background-color: #c62828 !important;
+            color: #fff;
+        }
+
+        .bg-secondary {
+            background-color: #546e7a !important;
+            color: #fff;
+        }
+
+        .bg-purple {
+            background-color: #6a1b9a !important;
+            color: #fff;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: .75;
+        }
+
+        .label {
+            background: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #555;
+            border: 1px solid #dde;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2 style="font-size:18px;letter-spacing:0;text-transform:none;margin-bottom:24px;color:#1a1a2e">
+        Pipeline Arrow — Current vs Proposed
+    </h2>
+
+    <!-- ===== CURRENT ===== -->
+    <h2>Current &nbsp;(gap visible — margin-left: -1px)</h2>
+    <div class="demo-row">
+        <div class="pipeline-current">
+            <span class="step bg-success"><span class="dot"></span> Quotation</span>
+            <span class="step bg-info"><span class="dot"></span> Invoice</span>
+            <span class="step bg-warning"><span class="dot"></span> Delivery</span>
+            <span class="step bg-danger"><span class="dot"></span> Receipt</span>
+        </div>
+    </div>
+    <div class="demo-row">
+        <div class="pipeline-current">
+            <span class="step bg-success"><span class="dot"></span> Quotation</span>
+            <span class="step bg-info"><span class="dot"></span> Invoice</span>
+        </div>
+        <div class="pipeline-current">
+            <span class="step bg-secondary"><span class="dot"></span> Single</span>
+        </div>
+    </div>
+
+    <!-- ===== PROPOSED ===== -->
+    <h2>Proposed &nbsp;(interlocked — margin-left: -11px)</h2>
+    <div class="demo-row">
+        <div class="pipeline-new">
+            <span class="step bg-success"><span class="dot"></span> Quotation</span>
+            <span class="step bg-info"><span class="dot"></span> Invoice</span>
+            <span class="step bg-warning"><span class="dot"></span> Delivery</span>
+            <span class="step bg-danger"><span class="dot"></span> Receipt</span>
+        </div>
+    </div>
+    <div class="demo-row">
+        <div class="pipeline-new">
+            <span class="step bg-success"><span class="dot"></span> Quotation</span>
+            <span class="step bg-info"><span class="dot"></span> Invoice</span>
+        </div>
+        <div class="pipeline-new">
+            <span class="step bg-secondary"><span class="dot"></span> Single</span>
+        </div>
+    </div>
+    <div class="demo-row">
+        <div class="pipeline-new">
+            <span class="step bg-purple"><span class="dot"></span> Proforma</span>
+            <span class="step bg-success"><span class="dot"></span> Sales Inv</span>
+            <span class="step bg-warning"><span class="dot"></span> Delivery</span>
+            <span class="step bg-danger"><span class="dot"></span> Return</span>
+            <span class="step bg-info"><span class="dot"></span> Receipt</span>
+        </div>
+    </div>
+
+
+
+    <div class="container mt-4">
+    <div class="row g-3">
+
+        <!-- Stage 1 -->
+        <div class="col-md-6">
+            <div class="pipeline-card">
+                
+                <div class="pipeline-header inquiry-header">
+                    <span>Inquiry 6</span>
+                </div>
+
+                <div class="pipeline-amount">
+                    $232,000
+                </div>
+
+                <div class="pipeline-body">
+                    <div class="company-card">
+                        <span>Twister Sports</span>
+                        <img src="https://i.pravatar.cc/40" class="avatar">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Stage 2 -->
+        <div class="col-md-6">
+            <div class="pipeline-card">
+
+                <div class="pipeline-header pitch-header">
+                    <span>Pitch 2</span>
+                </div>
+
+                <div class="pipeline-amount">
+                    $34,000
+                </div>
+
+                <div class="pipeline-body">
+                    <div class="company-card">
+                        <span>Sheleg Industries</span>
+                        <img src="https://i.pravatar.cc/41" class="avatar">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .pipeline-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.pipeline-header {
+    position: relative;
+    padding: 18px 20px;
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.inquiry-header {
+    background: linear-gradient(90deg, #4f46e5, #4338ca);
+}
+
+.pitch-header {
+    background: linear-gradient(90deg, #60a5fa, #3b82f6);
+}
+
+.pipeline-header::after {
+    content: "";
+    position: absolute;
+    right: -20px;
+    top: 0;
+    width: 0;
+    height: 0;
+    border-top: 32px solid transparent;
+    border-bottom: 32px solid transparent;
+    border-left: 20px solid currentColor;
+}
+
+.inquiry-header::after {
+    border-left-color: #4338ca;
+}
+
+.pitch-header::after {
+    border-left-color: #3b82f6;
+}
+
+.pipeline-amount {
+    padding: 18px 20px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.pipeline-body {
+    padding: 20px;
+}
+
+.company-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 22px;
+    font-weight: 500;
+}
+
+.avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+}
+</style>
+
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+.pipeline-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding: 20px 0;
+}
+
+.pipeline-arrow {
+    position: relative;
+    min-width: 220px;
+    height: 70px;
+    color: white;
+    font-weight: 600;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    padding-left: 25px;
+    margin-right: 25px;
+    clip-path: polygon(0 0, 88% 0, 100% 50%, 88% 100%, 0 100%, 10% 50%);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.pipeline-arrow:first-child {
+    clip-path: polygon(0 0, 88% 0, 100% 50%, 88% 100%, 0 100%);
+}
+
+.pipeline-arrow.blue {
+    background: linear-gradient(90deg, #4f46e5, #3b82f6);
+}
+
+.pipeline-arrow.sky {
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+}
+
+.pipeline-arrow.green {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.pipeline-arrow.orange {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+</style>
+
+<div class="container mt-4">
+    <div class="pipeline-wrapper">
+        <div class="pipeline-arrow blue">Inquiry 6</div>
+        <div class="pipeline-arrow sky">Pitch 2</div>
+        <div class="pipeline-arrow green">Proposal 4</div>
+        <div class="pipeline-arrow orange">Closed 1</div>
+    </div>
+</div>
+
+</body>
+
+</html>

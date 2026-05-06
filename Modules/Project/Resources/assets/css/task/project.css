@@ -1,0 +1,43 @@
+ .pagination li {
+     padding: 5px;
+ }
+
+ .project_list_page .page-link {
+     white-space: nowrap;
+     margin: 0 0 25px;
+     display: inline-block;
+     width: auto;
+     padding: 8px 15px;
+ }
+
+ .project_main_content .single_project .progress .progress-bar .progress_parcent {
+     position: absolute;
+     right: auto !important;
+     color: #151B26;
+     top: -26px;
+     font-size: 13px;
+     font-weight: 500;
+ }
+
+ .bg-transparent img {
+     border: 1px solid #edc6fc;
+     border-radius: 50%;
+     padding: 15px;
+     height: 75px;
+     width: 75px;
+ }
+
+ .project .card {
+     border: 0px solid transparent;
+ }
+.project_part .single_project .project_top .edit_delete a {
+    margin-right: 14px !important;
+    margin-left: 0 !important;
+}  
+.project_part .single_project .project_top .icon {
+    margin-right: 15px !important;
+}
+
+.project_part .single_project {
+    padding: 20px !important;
+}

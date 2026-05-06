@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus - Cash Book</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="./assets/css/_main.css" />
+</head>
+
+<body>
+    <div class="venus-app page-cash-book">
+        <header class="main-header">
+            <div class="logo"><img src="./assets/images/logo-gray.png" alt="VENUS LOGO" /></div>
+            <div class="right-section">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="dropdown-toggle-text">Syscom</div>
+                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Receipts</a></li>
+                        <li><a class="dropdown-item" href="#">Payments</a></li>
+                        <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-light add-btn"><i class="ico icon-outline-add-circle"></i></button>
+                <button class="btn btn-light notification-unread"><i class="ico icon-outline-bell"></i></button>
+                <div class="profile-dropdown">
+                    <div class="profile-img">
+                        <img src="./assets/images/profile.png" alt="PROFILE">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <div class="dropdown-toggle-text">
+                                <div class="title">Hamid Imran</div>
+                                <div class="role">Admin User</div>
+                            </div>
+                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown-body py-4 px-3">
+                            <div class="profile-content">
+                                <img src="./assets/images/profile_img.png" alt="profile_img" class="profile-image">
+                                <h4 class="profile_name">Saeed Hameed</h4>
+                               <div class="d-flex justify-content-center mb-3"> <h4 class="second-text">Super Admin </h4>
+                                <div class="company-name">SYSCOM</div></div>
+                                <div class="profile-second-section py-3">
+                                    <h4 class="company-details-text mb-3">Company Details</h4>
+                                    <div class="row">
+                                        <div class="col-7">Designation:
+                                            <h6 class="">Senior Accountant</h6>
+                                            staff ID:
+                                            <h6>UID1001</h6>
+                                        </div>
+                                        <div class="col-5">Departments:
+                                            <h6>Accounts</h6>
+                                            Date Of Joining:
+                                            <h6>01/01/1970</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="profile-third-section py-3">
+                                    <h4 class="personal-details-text">Personal Details</h4>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/telephone_Vector.png" class="telephone" alt="telephone_icon">
+                                        <h6>+971  50 123 4567</h6>
+                                    </div>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/envelop_Vector.png" class="email" alt="email_icon">
+                                        <h6>Saeed@syscom.com</h6>
+                                    </div>
+                                </div>
+                                <div class="profile-last-section">
+                                    <div>
+                                        <button class="btn ">
+                                            <i class="ico icon-outline-pen-2"></i>
+                                        </button>
+                                        <p class="button-text">Edit Profile</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Lock Keyhole Minimalistic.png" alt="lock_img">
+                                        </button>
+                                        <p class="button-text">Change Password</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Logout 2.png" alt="logout">
+                                        </button>
+                                        <p class="button-text-logout">Logout</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main>
+            <nav class="main-nav">
+                <div class="toggle-nav"></div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="" class="nav-link">
+                            <i class="ico icon-outline-widget-6"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item active">
+                        <div class="sub-menu-nav" data-subnav="subnavCRM">
+                            <i class="ico icon-bold-calculator"></i>
+                            <span class="nav-text">CRM</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavCRM">
+                            <div class="sub-nav-item">
+                                <a href="lead-list.html" class="sub-nav-link">Leads</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="deal-list.html" class="sub-nav-link">Deals</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track Status</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Sales Report</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Brand Sales Report</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavServiceDesk">
+                            <i class="ico icon-outline-checklist-minimalistic"></i>
+                            <span class="nav-text">Service Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavServiceDesk">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Service Desk Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavDatabase">
+                            <i class="ico icon-outline-database"></i>
+                            <span class="nav-text">Database</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavDatabase">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Database Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavPurchase">
+                            <i class="ico icon-outline-cart-large-4"></i>
+                            <span class="nav-text">Purchase</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavPurchase">
+                            <div class="sub-nav-item">
+                                <a href="supplier-register.html" class="sub-nav-link">Supplier Register</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="purchase-order.html" class="sub-nav-link">Purchase Order</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSales">
+                            <i class="ico icon-outline-bag-4"></i>
+                            <span class="nav-text">Sales</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSales">
+                            <div class="sub-nav-item">
+                                <a href="quotations.html" class="sub-nav-link">Quotations</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavInventory">
+                            <i class="ico icon-outline-server"></i>
+                            <span class="nav-text">Inventory</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavInventory">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Inventory Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavReports">
+                            <i class="ico icon-outline-document-text"></i>
+                            <span class="nav-text">Reports</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavReports">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Reports Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSettings">
+                            <i class="ico icon-outline-settings"></i>
+                            <span class="nav-text">Settings</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSettings">
+                            <div class="sub-nav-item">
+                                <a href="company.html" class="sub-nav-link">Company</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="shipping.html" class="sub-nav-link">Shipping</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="role.html" class="sub-nav-link">Role</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <section class="main-content">
+                <aside class="left-nav col-3">
+                    <h4 class="left-nav-title">Cash Book</h4>
+                    <div class="search-filter-container">
+                        <div class="input-group flex-nowrap">
+                            <span class="input-group-text" id="addon-wrapping"><i class="ico icon-outline-magnifer"></i></span>
+                            <input type="text" class="form-control" placeholder="Search" aria-label="Search" aria-describedby="addon-wrapping">
+                        </div>
+                        <button class="btn btn-light">
+                            <i class="ico icon-outline-filter"></i>
+                        </button>
+                    </div>
+                    <div class="left-nav-list">
+                        <ul class="nav flex-column nav-pills" id="companyTabNavs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="cash-book-1-tab" data-bs-toggle="tab" data-bs-target="#cash-book-1" type="button" role="tab" aria-controls="cash-book-1" aria-selected="true">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">25-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Doc No:</label>
+                                            <div class="form-control-plaintext">OPB</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Narration:</label>
+                                            <div class="form-control-plaintext">Mr.Hameed</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Balance Amount:</label>
+                                            <div class="form-control-plaintext"><span class="text-success">4,60,750.00</span></div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="cash-book-2-tab" data-bs-toggle="tab" data-bs-target="#cash-book-2" type="button" role="tab" aria-controls="cash-book-2" aria-selected="false">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">20-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Doc No:</label>
+                                            <div class="form-control-plaintext">OPB</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Narration:</label>
+                                            <div class="form-control-plaintext">Mr. Savio Dias</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Balance Amount:</label>
+                                            <div class="form-control-plaintext"><span class="text-success">2,10,250.00</span></div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="cash-book-3-tab" data-bs-toggle="tab" data-bs-target="#cash-book-3" type="button" role="tab" aria-controls="cash-book-3" aria-selected="false">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">20-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Doc No:</label>
+                                            <div class="form-control-plaintext">OPB</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Narration:</label>
+                                            <div class="form-control-plaintext">Mr. Abdul</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Balance Amount:</label>
+                                            <div class="form-control-plaintext"><span class="text-success">1,60,750.00</span></div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="cash-book-4-tab" data-bs-toggle="tab" data-bs-target="#cash-book-4" type="button" role="tab" aria-controls="cash-book-4" aria-selected="false">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">19-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Doc No:</label>
+                                            <div class="form-control-plaintext">OPB</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Narration:</label>
+                                            <div class="form-control-plaintext">Mr. Abhilash</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Balance Amount:</label>
+                                            <div class="form-control-plaintext"><span class="text-success">1,20,750.00</span></div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="cash-book-5-tab" data-bs-toggle="tab" data-bs-target="#cash-book-5" type="button" role="tab" aria-controls="cash-book-5" aria-selected="false">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">19-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Doc No:</label>
+                                            <div class="form-control-plaintext">OPB</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Narration:</label>
+                                            <div class="form-control-plaintext">Mr. Hameed</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Balance Amount:</label>
+                                            <div class="form-control-plaintext"><span class="text-success">1,30,000.00</span></div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="cash-book-6-tab" data-bs-toggle="tab" data-bs-target="#cash-book-6" type="button" role="tab" aria-controls="cash-book-6" aria-selected="false">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">19-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Doc No:</label>
+                                            <div class="form-control-plaintext">OPB</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Narration:</label>
+                                            <div class="form-control-plaintext">Mr. Hameed</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Balance Amount:</label>
+                                            <div class="form-control-plaintext"><span class="text-success">1,30,000.00</span></div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+                <div class="content-container col-9">
+                    <div class="tab-content" id="companyTabContent">
+                        <div class="tab-pane fade show active" id="cash-book-1" role="tabpanel" aria-labelledby="cash-book-1-tab">
+                            <div class="cash-book-content-header">
+                                <h5 class="cash-book-content-header-left">
+                                    Account Details
+                                </h5>
+                                <div class="cash-book-content-header-right">
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Add Journal Voucher</span>
+                                    </button>
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Add Payments</span>
+                                    </button>
+                                    <button class="btn btn-light add-btn">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Add Receipt</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="cash-book-content-header justify-content-end">
+                                <button class="btn btn-light text-link border-0">Calculate Sum</button>
+                            </div>
+                            <div class="table-container">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th class="head-date sortable sort-asc"><span class="th-content">Date</span></th>
+                                            <th class="head-doc sortable"><span class="th-content">Doc No</span></th>
+                                            <th class="head-particular sortable"><span class="th-content">Particular</span></th>
+                                            <th class="head-debit sortable"><span class="th-content">Debit</span></th>
+                                            <th class="head-credit sortable"><span class="th-content">Credit</span></th>
+                                            <th class="head-balance sortable"><span class="th-content">Balance</span></th>
+                                            <th class="head-narration"><span class="th-content">Narration</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="data-date">2024-06-25</td>
+                                            <td class="data-doc">OPB</td>
+                                            <td class="data-particular">Cash in Hand</td>
+                                            <td class="data-debit">5,66,000.00</td>
+                                            <td class="data-credit">2,05,250.00</td>
+                                            <td class="data-balance">3,60,750.00</td>
+                                            <td class="data-narration">Opening Balance</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="data-date">2024-06-25</td>
+                                            <td class="data-doc">OPB</td>
+                                            <td class="data-particular">Cash in Hand</td>
+                                            <td class="data-debit">1,00,000.00</td>
+                                            <td class="data-credit">0</td>
+                                            <td class="data-balance">1,00,000.00</td>
+                                            <td class="data-narration">Opening Balance</td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="3" class="total-label"><span class="font-weight-700">Total</span></td>
+                                            <td class="data-debit-total"><span class="font-weight-700">6,00,000.00</span></td>
+                                            <td class="data-credit-total"><span class="font-weight-700">2,05,250.00</span></td>
+                                            <td class="data-balance-total"><span class="font-weight-700">4,60,750.00</span></td>
+                                            <td class="data-narration"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="cash-book-2" role="tabpanel" aria-labelledby="cash-book-2-tab">
+                            <div class="cash-book-content-header">
+                                <h5 class="cash-book-content-header-left">
+                                    Account Details
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="cash-book-3" role="tabpanel" aria-labelledby="cash-book-3-tab">
+                            <div class="cash-book-content-header">
+                                <h5 class="cash-book-content-header-left">
+                                    Account Details
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="cash-book-4" role="tabpanel" aria-labelledby="cash-book-4-tab">
+                            <div class="cash-book-content-header">
+                                <h5 class="cash-book-content-header-left">
+                                    Account Details
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="cash-book-5" role="tabpanel" aria-labelledby="cash-book-5-tab">
+                            <div class="cash-book-content-header">
+                                <h5 class="cash-book-content-header-left">
+                                    Account Details
+                                </h5>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="cash-book-6" role="tabpanel" aria-labelledby="cash-book-6-tab">
+                            <div class="cash-book-content-header">
+                                <h5 class="cash-book-content-header-left">
+                                    Account Details
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="./assets/js/_main.js" type="text/javascript"></script>
+    <script src="./assets/js/cash-book.js" type="text/javascript"></script>
+</body>
+</html>

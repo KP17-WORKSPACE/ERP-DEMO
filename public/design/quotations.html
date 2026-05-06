@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus - Quotations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="./assets/css/_main.css" />
+</head>
+<body>
+    <div class="venus-app page-quotations">
+        <header class="main-header">
+            <div class="logo"><img src="./assets/images/logo-gray.png" alt="VENUS LOGO" /></div>
+            <div class="right-section">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="dropdown-toggle-text">Syscom</div>
+                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Receipts</a></li>
+                        <li><a class="dropdown-item" href="#">Payments</a></li>
+                        <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-light add-btn"><i class="ico icon-outline-add-circle"></i></button>
+                <button class="btn btn-light notification-unread"><i class="ico icon-outline-bell"></i></button>
+                <div class="profile-dropdown">
+                    <div class="profile-img">
+                        <img src="./assets/images/profile.png" alt="PROFILE">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <div class="dropdown-toggle-text">
+                                <div class="title">Hamid Imran</div>
+                                <div class="role">Admin User</div>
+                            </div>
+                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown-body py-4 px-3">
+                            <div class="profile-content">
+                                <img src="./assets/images/profile_img.png" alt="profile_img" class="profile-image">
+                                <h4 class="profile_name">Saeed Hameed</h4>
+                               <div class="d-flex justify-content-center mb-3"> <h4 class="second-text">Super Admin </h4>
+                                <div class="company-name">SYSCOM</div></div>
+                                <div class="profile-second-section py-3">
+                                    <h4 class="company-details-text mb-3">Company Details</h4>
+                                    <div class="row">
+                                        <div class="col-7">Designation:
+                                            <h6 class="">Senior Accountant</h6>
+                                            staff ID:
+                                            <h6>UID1001</h6>
+                                        </div>
+                                        <div class="col-5">Departments:
+                                            <h6>Accounts</h6>
+                                            Date Of Joining:
+                                            <h6>01/01/1970</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="profile-third-section py-3">
+                                    <h4 class="personal-details-text">Personal Details</h4>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/telephone_Vector.png" class="telephone" alt="telephone_icon">
+                                        <h6>+971  50 123 4567</h6>
+                                    </div>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/envelop_Vector.png" class="email" alt="email_icon">
+                                        <h6>Saeed@syscom.com</h6>
+                                    </div>
+                                </div>
+                                <div class="profile-last-section">
+                                    <div>
+                                        <button class="btn ">
+                                            <i class="ico icon-outline-pen-2"></i>
+                                        </button>
+                                        <p class="button-text">Edit Profile</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Lock Keyhole Minimalistic.png" alt="lock_img">
+                                        </button>
+                                        <p class="button-text">Change Password</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Logout 2.png" alt="logout">
+                                        </button>
+                                        <p class="button-text-logout">Logout</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main>            
+            <nav class="main-nav">
+                <div class="toggle-nav"></div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="" class="nav-link">
+                            <i class="ico icon-outline-widget-6"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavCRM">
+                            <i class="ico icon-outline-calculator"></i>
+                            <span class="nav-text">CRM</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavCRM">
+                            <div class="sub-nav-item">
+                                <a href="lead-list.html" class="sub-nav-link">Leads</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="deal-list.html" class="sub-nav-link">Deals</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track Status</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Sales Report</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Brand Sales Report</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavServiceDesk">
+                            <i class="ico icon-outline-checklist-minimalistic"></i>
+                            <span class="nav-text">Service Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavServiceDesk">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Service Desk Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavDatabase">
+                            <i class="ico icon-outline-database"></i>
+                            <span class="nav-text">Database</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavDatabase">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Database Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavPurchase">
+                            <i class="ico icon-outline-cart-large-4"></i>
+                            <span class="nav-text">Purchase</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavPurchase">
+                            <div class="sub-nav-item">
+                                <a href="supplier-register.html" class="sub-nav-link">Supplier Register</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="purchase-order.html" class="sub-nav-link">Purchase Order</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item active">
+                        <div class="sub-menu-nav" data-subnav="subnavSales">
+                            <i class="ico icon-bold-bag-4"></i>
+                            <span class="nav-text">Sales</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSales">
+                            <div class="sub-nav-item active">
+                                <a href="quotations.html" class="sub-nav-link">Quotations</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavInventory">
+                            <i class="ico icon-outline-server"></i>
+                            <span class="nav-text">Inventory</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavInventory">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Inventory Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavReports">
+                            <i class="ico icon-outline-document-text"></i>
+                            <span class="nav-text">Reports</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavReports">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Reports Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSettings">
+                            <i class="ico icon-outline-settings"></i>
+                            <span class="nav-text">Settings</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSettings">
+                            <div class="sub-nav-item">
+                                <a href="company.html" class="sub-nav-link">Company</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="shipping.html" class="sub-nav-link">Shipping</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="role.html" class="sub-nav-link">Role</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <section class="main-content">
+                <aside class="left-nav col-3">
+                    <h4 class="mb-2">Quotations</h4>
+                    <div class="search-filter-container mb-4">
+                        <div class="input-group flex-nowrap">
+                            <span class="input-group-text" id="addon-wrapping"><i class="ico icon-outline-magnifer"></i></span>
+                            <input type="text" class="form-control" placeholder="Search" aria-label="Search" aria-describedby="addon-wrapping">
+                        </div>
+                    </div>
+                    <div class="left-nav-list">
+                        <ul class="nav flex-column nav-pills" id="quotationTabNavs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="quotation-1-tab" data-bs-toggle="tab" data-bs-target="#quotation-1" type="button" role="tab" aria-controls="quotation-1" aria-selected="true">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">25-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">QTN No:</label>
+                                            <div class="form-control-plaintext">JVS-1001</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Customer Name:</label>
+                                            <div class="form-control-plaintext">Mr.Hameed</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Amount:</label>
+                                            <div class="form-control-plaintext green-text">1,00,000.00</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="quotation-2-tab" data-bs-toggle="tab" data-bs-target="#quotation-2" type="button" role="tab" aria-controls="quotation-2" aria-selected="true">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">21-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">QTN No:</label>
+                                            <div class="form-control-plaintext">JVS-1002</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Customer Name:</label>
+                                            <div class="form-control-plaintext">Mr.Sojan</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Amount:</label>
+                                            <div class="form-control-plaintext green-text">2,00,000.00</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="quotation-3-tab" data-bs-toggle="tab" data-bs-target="#quotation-3" type="button" role="tab" aria-controls="quotation-3" aria-selected="true">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">20-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">QTN No:</label>
+                                            <div class="form-control-plaintext">JVS-1003</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Customer Name:</label>
+                                            <div class="form-control-plaintext">Mr.Abhilash</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Amount:</label>
+                                            <div class="form-control-plaintext green-text">1,50,000.00</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="quotation-4-tab" data-bs-toggle="tab" data-bs-target="#quotation-4" type="button" role="tab" aria-controls="quotation-4" aria-selected="true">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">19-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">QTN No:</label>
+                                            <div class="form-control-plaintext">JVS-1004</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Customer Name:</label>
+                                            <div class="form-control-plaintext">Mr.Hameed</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Amount:</label>
+                                            <div class="form-control-plaintext green-text">3,00,000.00</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="quotation-5-tab" data-bs-toggle="tab" data-bs-target="#quotation-5" type="button" role="tab" aria-controls="quotation-5" aria-selected="true">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">19-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">QTN No:</label>
+                                            <div class="form-control-plaintext">JVS-1005</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Customer Name:</label>
+                                            <div class="form-control-plaintext">Mr.Savio Tom</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Amount:</label>
+                                            <div class="form-control-plaintext green-text">1,00,000.00</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="quotation-6-tab" data-bs-toggle="tab" data-bs-target="#quotation-6" type="button" role="tab" aria-controls="quotation-6" aria-selected="true">
+                                    <div class="row nav-link-row">
+                                        <div class="col-6">
+                                            <label class="form-label">Doc Date:</label>
+                                            <div class="form-control-plaintext">19-06-2024</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">QTN No:</label>
+                                            <div class="form-control-plaintext">JVS-1005</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Customer Name:</label>
+                                            <div class="form-control-plaintext">Mr.Hameed</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Amount:</label>
+                                            <div class="form-control-plaintext green-text">1,00,000.00</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+                <div class="content-container col-9">
+                    <div class="tab-content" id="quotationsTabContent">
+                        <div class="tab-pane fade show active" id="quotation-1" role="tabpanel" aria-labelledby="quotation-1-tab">                            
+                            <div class="page-quotations-content-header">
+                                <h4 class="page-quotations-content-header-left m-0">
+                                    Deal Number - 1028
+                                </h4>
+                                <div class="page-quotations-content-header-right">
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Add Pre- Sales Request</span>
+                                    </button>
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Add Collaboration</span>
+                                    </button>
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-user"></i>
+                                        <span>End User</span>
+                                    </button>
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-trash-bin-minimalistic"></i>
+                                        <span>Delete</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="page-quotations-tab-content">
+                                <div class="tab-wrap">
+                                    <ul class="nav nav-tabs" id="dealTrackTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="deal-info-tab" data-bs-toggle="tab" data-bs-target="#deal-info" type="button" role="tab" aria-controls="deal-info" aria-selected="true">Deal Info</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="sales-person-info-tab" data-bs-toggle="tab" data-bs-target="#sales-person-info" type="button" role="tab" aria-controls="sales-person-info" aria-selected="false">Customer Info</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="customer-info-tab" data-bs-toggle="tab" data-bs-target="#customer-info" type="button" role="tab" aria-controls="customer-info" aria-selected="false">Sales Person Info</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="customer-info-tab" data-bs-toggle="tab" data-bs-target="#customer-info" type="button" role="tab" aria-controls="customer-info" aria-selected="false">Delivery Location/Address</button>
+                                        </li>
+                                    </ul>
+                                    <div class="tab-content mb-3" id="dealTrackTabsContent">
+                                        <div class="tab-pane fade show active" id="deal-info" role="tabpanel" aria-labelledby="deal-info-tab">
+                                            <div class="d-flex align-items-center gap-3 mt-2 mb-3">
+                                                <h5 class="m-0">Deal Info</h5>
+                                                <span class="badge bg-info">Reseller</span>
+                                                <div class="flex-fill"></div>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <div class="dropdown-toggle-text">Actions</div>
+                                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="#">Receipts</a></li>
+                                                        <li><a class="dropdown-item" href="#">Payments</a></li>
+                                                        <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="row gap-rows">
+                                                <div class="col-3">
+                                                    <label class="form-label">Deal Name:</label>
+                                                    <div class="form-control-plaintext">Fortinet</div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <label class="form-label">Brand:</label>
+                                                    <div class="form-control-plaintext">Fortinet</div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <label class="form-label">Deal Value:</label>
+                                                    <div class="form-control-plaintext">200.00 GBP <span><a href="" class="set-sales-text">Set Sales% </a></span></div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <label class="form-label">Profit Amount:</label>
+                                                    <div class="form-control-plaintext">100.00 GBP <span class="text-success">50.00%</span></div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <label class="form-label">Estimated Close Date:</label>
+                                                    <div class="form-control-plaintext">08/23/2024</div>
+                                                </div>
+                                                <div class="col-3">
+                                                    <label class="form-label">Stage:</label>
+                                                    <div class="form-control-plaintext d-flex align-items-center gap-2">
+                                                        <span class="badge bg-won">Won</span>
+                                                        <span class="badge bg-info-light">On Process</span>
+                                                        <button class="btn"><i class="ico icon-outline-pen-2 edit-link"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="sales-person-info" role="tabpanel" aria-labelledby="sales-person-info-tab">Sales Person Info</div>
+                                        <div class="tab-pane fade" id="customer-info" role="tabpanel" aria-labelledby="customer-info-tab">Customer Info</div>
+                                        <div class="tab-pane fade" id="delivery-location-address" role="tabpanel" aria-labelledby="delivery-location-address-tab">Delivery Location / Address</div>
+                                    </div>
+                                </div>
+                                <div class="page-quotations-content-header ">
+                                    <h5 class="page-quotations-content-header-left m-0">
+                                        Quote items <span class="text-divider"></span> Quote No 1
+                                    </h5>
+                                    <div class="page-quotations-content-header-right">
+                                        <button class="btn btn-light add-btn">
+                                            <i class="ico icon-outline-pen-2 edit-link"></i>
+                                            <span>Edit Quotation</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-container">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col" class="head-date sortable sort-asc text-nowrap"><span class="th-content">Part No</span></th>
+                                                <th scope="col" class="head-date">Description</th>
+                                                <th scope="col" class="head-date sortable text-nowrap"><span class="th-content">Cost</span></th>
+                                                <th scope="col" class="head-date sortable text-nowrap"><span class="th-content">Qty</span></th>
+                                                <th scope="col" class="head-date sortable text-nowrap"><span class="th-content">Unit Price</span></th>
+                                                <th scope="col" class="head-date sortable text-nowrap"><span class="th-content">Value</span></th>
+                                                <th scope="col" class="head-date sortable text-nowrap"><span class="th-content">Discount</span></th>
+                                                <th scope="col" class="head-date sortable text-nowrap"><span class="th-content">Taxable</span></th>
+                                                <th scope="col" class="head-date sortable text-nowrap"><span class="th-content">VAT</span></th>
+                                                <th scope="col" class="head-date sortable text-nowrap"><span class="th-content">Total</span></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td scope="row"><span class="font-weight-600 text-ellipsis">CBS350-24FP</span></td>
+                                                <td><span class="text-ellipsis">CBS350 Managed...</span></td>
+                                                <td><span class="text-ellipsis">3270.09</span></td>
+                                                <td><span class="text-ellipsis">5</span></td>
+                                                <td><span class="text-ellipsis">3,275.09</span></td>
+                                                <td><span class="text-ellipsis">16,375.45</span></td>
+                                                <td><span class="text-ellipsis">0.00</span></td>
+                                                <td><span class="text-ellipsis">16,375.45</span></td>
+                                                <td><span class="text-ellipsis">0.00</span></td>
+                                                <td><span class="text-ellipsis">16,375.45</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" class="font-weight-600">Total</td>
+                                                <td><span class="font-weight-600">619.80</span></td>
+                                                <td><span class="font-weight-600">10</span></td>
+                                                <td><span class="font-weight-600">9,279.09</span></td>
+                                                <td><span class="font-weight-600">20,375.45</span></td>
+                                                <td><span class="font-weight-600">0.00</span></td>
+                                                <td><span class="font-weight-600">14,375.45</span></td>
+                                                <td><span class="font-weight-600">0.00</span></td>
+                                                <td><span class="font-weight-600">20,453.15</span></td>
+                                            </tr>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                                    <h5 class="m-0">Quote</h5>
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <div class="dropdown-toggle-text">Actions</div>
+                                                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li><a class="dropdown-item" href="#">Receipts</a></li>
+                                                            <li><a class="dropdown-item" href="#">Payments</a></li>
+                                                            <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <div class="row gap-rows">
+                                                    <div class="col-4 d-flex align-items-center gap-2">
+                                                        <input class="form-check-input mt-0" type="checkbox" value="" aria-label="Checkbox for following text input"><span class="quote-content">With Part No</span>
+                                                    </div>
+                                                    <div class="col-4 d-flex align-items-center gap-2">
+                                                        <input class="form-check-input mt-0" type="checkbox" value="" aria-label="Checkbox for following text input"><span class="quote-content">Exclude VAT</span>
+                                                    </div>
+                                                    <div class="col-4 d-flex align-items-center gap-2">
+                                                        <input class="form-check-input mt-0" type="checkbox" value="" aria-label="Checkbox for following text input"><span class="quote-content">Without Total</span>
+                                                    </div>                                               
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center justify-content-between  mb-3">
+                                                    <h5 class="m-0">Quote</h5>
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <div class="dropdown-toggle-text">Actions</div>
+                                                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li><a class="dropdown-item" href="#">Receipts</a></li>
+                                                            <li><a class="dropdown-item" href="#">Payments</a></li>
+                                                            <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    Quote No: 1028 - 1
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center gap-2 mb-3">
+                                            <h5 class="m-0">Notes & Attachment</h5>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                Century Energy International, leading telecom system integrator in UAE, would like to request you to send quotation for one of our projects. 
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show" id="quotation-2" role="tabpanel" aria-labelledby="quotation-2-tab">
+                            <div class="quotation-content-header">
+                                <h4 class="quotation-content-header-left">
+                                    Deal Number - 1028
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="quotation-3" role="tabpanel" aria-labelledby="quotation-3-tab">
+                            <div class="quotation-content-header">
+                                <h4 class="quotation-content-header-left">
+                                    Deal Number - 1028
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show" id="quotation-4" role="tabpanel" aria-labelledby="quotation-4-tab">
+                            <div class="quotation-content-header">
+                                <h4 class="quotation-content-header-left">
+                                    Deal Number - 1028
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="quotation-5" role="tabpanel" aria-labelledby="quotation-5-tab">
+                            <div class="quotation-content-header">
+                                <h4 class="quotation-content-header-left">
+                                    Deal Number - 1028
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="quotation-6" role="tabpanel" aria-labelledby="quotation-6-tab">
+                            <div class="quotation-content-header">
+                                <h4 class="quotation-content-header-left">
+                                    Deal Number - 1028
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+            </section>
+        </main>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="./assets/js/_main.js" type="text/javascript"></script>
+    <script src="./assets/js/quotations.js" type="text/javascript"></script>
+</body>
+</html>

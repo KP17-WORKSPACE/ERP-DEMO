@@ -1,0 +1,46 @@
+.payroll_report_main_table {
+    width: 100%;
+    padding-top: 100px;
+}
+
+.payroll_report_main_table_td {
+    width: 100%;
+    vertical-align: top;
+    text-align: center;
+}
+
+.payroll_report_main_table_img {
+    min-width: 160px;
+    max-width: 160px;
+    height: auto;
+}
+
+.payroll_report_main_table_h3 {
+    color: #415094 !important;
+    font-size: 24px;
+    margin-top: 20px;
+    margin-bottom: 0;
+    padding-right: 26px;
+    line-height: 25px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.payroll_report_main_table_div {
+    width: 100%;
+}
+
+.payroll_report_main_table_p1 {
+    font-weight: 300;
+    color: #828bb2 !important;
+}
+
+.payroll_report_main_table_p2 {
+    font-weight: 300;
+    color: #828bb2 !important;
+    margin-top: 15px;
+}
+
+.payroll_report_main_table_td2 {
+    width: 50%;
+    padding-left: 5px
+}

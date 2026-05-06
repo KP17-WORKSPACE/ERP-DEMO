@@ -1,0 +1,181 @@
+/**************** banner part css start ****************/
+.banner_part{
+    height: 900px;
+    position: relative;
+    background-image: url(../img/banner_bg.jpg);
+    background-repeat: no-repeat;
+    background-position: center;
+    margin-bottom: 190px;
+    background-size: cover;
+    @media #{$small_mobile}{
+        height: 650px;
+        margin-bottom: 60px;
+        br{
+            display: none;
+        }
+    }
+    @media #{$large_mobile}{
+        height: 650px;
+        margin-bottom: 60px;
+        br{
+            display: none;
+        }
+    }
+    @media #{$tab_device}{
+        height: 650px;
+        br{
+            display: none;
+        }
+    }
+    @media #{$medium_device}{
+        height: 750px;
+    }
+    .banner_mockup_img{
+        position: absolute;
+        bottom: -223px;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        text-align: center;
+        @media #{$tab}{
+            bottom: -90px;
+        }
+        @media #{$small_mobile}{
+            bottom: -64px;
+        }
+        @media #{$tab_device}{
+            bottom: -150px;
+        }
+    }
+    .banner_text{
+        padding-top: 230px;
+        h5{
+            font-size: 14px;
+            text-transform: uppercase;
+            font-weight: 500;
+            color: $white_color;
+            margin-bottom: 14px;
+        }
+        h1{
+            font-size: 60px;
+            text-transform: capitalize;
+            font-weight: 700;
+            margin-bottom: 22px;
+            line-height: 66px;
+            color: $white_color;
+            position: relative;
+            br{
+                display: block !important;
+            }
+            &:after{
+                position: absolute;
+                content: "lite";
+                right: 91px;
+                bottom: 52px;
+                background-color: #f9dc3d;
+                color: $black_color;
+                width: 63px;
+                height: 31px;
+                text-align: center;
+                line-height: 30px;
+                font-size: 12px;
+                border-radius: 5px;
+                @media #{$tab}{
+                    right: 0px;
+                    bottom: 42px;
+                }
+            }
+            @media #{$tab}{
+                font-size: 30px;
+                margin-bottom: 15px;
+                line-height: 1.3;
+            }
+            @media #{$medium_device}{
+                font-size: 30px;
+                margin-bottom: 15px;
+                line-height: 1.4;
+            }
+            span{
+                color: $btn_bg;
+            }
+        }
+        p{
+            font-size: 14px;
+            line-height: 26px;
+            font-family: $font_stack_1; 
+            color: $white_color;
+            @media #{$medium_device}{
+                br{
+                    display: none;
+                }
+            }
+        }
+          
+        .btn_1{
+            @extend %custom_btn_bg_1;
+            box-shadow: 0px 10px 20px 0px rgba(108, 39, 255, 0.3);
+            margin-top: 53px;
+            padding: 13.5px 25px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            @media #{$small_mobile}{
+                margin-top: 20px;
+                margin-bottom: 5px;
+                padding: 10px 25px;
+            }
+            @media #{$large_mobile}{
+                margin-top: 20px;
+                padding: 10px 25px;
+            }
+            @media #{$tab_device}{
+                margin-top: 20px;
+                padding: 10px 25px;
+            }
+            @media #{$medium_device}{
+                margin-top: 20px;
+                margin-bottom: 70px;
+                padding: 10px 25px;
+            }
+            i{
+                margin-right: 14px;
+                font-size: 16px;
+            }
+        }
+          
+        .btn_2{
+            margin-top: 50px;
+            padding: 13.5px 25px;
+            margin-left: 16px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            color: #415094;
+            @media #{$small_mobile}{
+                margin-top: 20px;
+                margin-bottom: 10px;
+                padding: 10px 25px;
+                margin-left: 0;
+            }
+            @media #{$large_mobile}{
+                margin-top: 20px;
+                padding: 10px 25px;
+            }
+            @media #{$tab_device}{
+                margin-top: 20px;
+                padding: 10px 25px;
+            }
+            @media #{$medium_device}{
+                margin-top: 20px;
+                margin-bottom: 70px;
+                padding: 10px 25px;
+            }
+            i{
+                margin-right: 14px;
+                font-size: 16px;
+            }
+        }
+    }
+}
+  
+/**************** hero part css end ****************/

@@ -1,0 +1,124 @@
+.main_task_area{
+    margin: 30px;
+    padding: 0;
+    position: relative;
+    top: 30px;
+    background: #fff;
+    .task_heading{
+        padding: 30px;
+        a {
+            color: #4a9dff;
+            background: #ECF5FF;
+            font-size: 13px;
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+            padding: 8px 17px;
+            display: inline-block;
+            text-transform: capitalize;
+            i {
+                font-size: 13px;
+                margin-left: 3px;
+            }
+        }
+    }
+    .table{
+        margin-bottom: 0;
+        thead,tbody{
+            tr{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 22px 30px;
+                @include transition(.3s);
+                &:hover{
+                    background: #EFF7FF;
+                }
+            }
+            th,td{
+                width: 25%;
+                padding: 0;
+                margin: 0;
+                border: none;
+                span{
+                    font-size: 14px;
+                    font-weight: 400;
+                    color: #92A2B7;
+                    margin-bottom: 0;
+                    display: block;
+                }
+                h4{
+                    font-size: 14px;
+                    font-weight: 400;
+                    color: #151B26;
+                    margin-bottom: 0;
+                }
+                .progress{
+                    .progress-bar{
+
+                    }
+                    &.orange{
+                        .progress-bar{
+                            background: #FFC864;
+                        }
+                    }
+                    &.red{
+                        .progress-bar{
+                            background: #FF7882;
+                        }
+                    }
+                    &.blue{
+                        .progress-bar{
+                            background: #5DABFC;
+                        }
+                    }
+                    &.green{
+                        .progress-bar{
+                            background: #7FD8AA;
+                        }
+                    }
+                }
+            }
+            .wrapper {
+                display: inline-block;
+                margin-right: 15px;
+                float: left;
+                margin-bottom: 0;
+                &.completed{
+                    .checkbox label::after{
+                        opacity: 1;
+                        border-left: 2px solid #fff;
+                        border-bottom: 2px solid #fff;
+                    }
+                }
+                .checkbox.green label {
+                    border: 1px solid #647891;
+                    background: transparent ;
+                }
+                &.completed .checkbox.green label {
+                    border: 1px solid transparent;
+                    background:#4BE4D3 !important ;
+                }
+            }
+            .wrapper .checkbox label::after {
+                content: '';
+                position: absolute;
+                top: 34%;
+                left: 29%;
+                width: 46%;
+                height: 24%;
+                opacity: 0;
+                border-left: 2px solid #92A2B7;
+                border-bottom: 2px solid #92A2B7;
+                transform: rotate(-45deg);
+                transition: opacity 300ms ease;
+                opacity: 1;
+            }
+        }
+        .progress {
+            width: 56px;
+            height: 10px;
+            border-radius: 10px;
+        }
+    }
+}

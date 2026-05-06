@@ -1,0 +1,244 @@
+@extends('backEnd.masterpage')
+@section('mainContent')
+
+    @php
+    $module_links = [];
+    $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+    @endphp
+
+    <?php try { ?>
+
+        <div class="container-fluid">
+            <div class="d-sm-flex justify-content-between">
+                <div class="mb-3">
+                    <h2 class="page-heading m-0">Payable Outstanding</h2>
+                    <span class="page-label">Home - Payable Outstanding</span>
+                </div>
+                <div>
+                    {{--  <a href="{{ url('add-customer') }}" type="button" class="btn btn-info"><i class="fa fa-plus"></i> New Customer</a>
+                    <a href="{{ url('customers') }}" type="button" class="btn btn-info"><i class="fa fa-list"></i> Customer List</a>
+                    <a href="{{ url('customer-edit/' . @$custDetails->id) }}"><button class="btn btn-primary">Edit Profile</button></a>  --}}
+                </div>
+            </div>
+            <input type="hidden" id="base_url" value="{{ url('/') }}" />
+            
+            <div class="card p-4 mb-2">
+                {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'payables-outstanding', 'method' => 'POST', 'enctype' => 'multipart/form-data']) }}
+                                    <input type="hidden" name="url" id="url" value="{{URL::to('/')}}">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-20">
+                                            <div class="input-effect">
+                                                <label>@lang('Account')</label>
+                                                <select class="form-control js-example-basic-single" name="account_id[]" id="account_id" multiple>
+                                                    <option data-display="Account *" value="0">@lang('Account Name') *</option>
+                                                    @foreach ($accounts as $val)
+                                                        <option value="{{ @$val->id }}"
+                                                            @if($account_id != 0)
+                                                            @foreach ($account_id as $id)
+                                                                @if ($id == $val->id) selected @endif
+                                                            @endforeach
+                                                            @endif>{{ @$val->account_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 mb-20">
+                                            <div class="no-gutters input-right-icon">
+                                                <div class="col">
+                                                    <div class="input-effect">
+                                                        <label>@lang('As of Date')</label>
+                                                        <input class="form-control" id="till_date" type="date" name="till_date" value="{{ @$till_date }}" autocomplete="off">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 mt-4">
+                                            <div class="input-effect" id="sectionSubgroupDiv">
+                                                <button class="btn btn-primary" name="btn_submit">
+                                                    <span class="ti-search"></span>
+                                                    @lang('Search')
+                                                </button>
+                                                {{--  <button class="btn btn-info" name="btn_submit" value="1">
+                                                    <span class="ti-search"></span>
+                                                    @lang('Search All Account')
+                                                </button>  --}}
+                                            </div>
+                                        </div>
+                                    </div>
+    
+                                    {{ Form::close() }}
+                                    <script>
+                                        function download_outstanding(id){
+                                            var date = $('#till_date').val();                                                                        
+                                            var url = $("#base_url").val()+"/payables-outstanding-download/"+id+"/"+date;
+                                            window.location.href = url;
+                                        }
+                                    </script>
+            </div>
+    
+            <div class="card p-4">
+                
+                  <div class="accordion" id="accordionExample">
+                  @if(count($data_all)>0)
+                  <?php $no=1; $all_total=0; ?>
+                  @foreach($data_all as $data)
+                  <?php
+                  if(count($data)>0){
+                        $data_adjestment = @App\SysPurchaseReturnAdjestment::select('piv_no',DB::raw('sum(paid_amount) as paid_amount'))->wherein('piv_no',$data->pluck("transaction_no"))->groupby('piv_no')->get();
+        
+                        $data_payment = DB::table('sys_payment as p')->select('pa.bi_doc_no','p.doc_number','pa.bi_amount','p.payment_through','p.payment_date','p.cheque_number','p.cheque_bank_name')
+                        ->join('sys_payment_adjustments as pa','pa.bi_doc_number','p.doc_number')->where('pa.account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->where('p.status',1)->get();
+                        
+                        $data_payment2 = DB::table('sys_journalvoucher as j')->select('pa.bi_doc_no','j.doc_number','pa.bi_amount','j.doc_date')
+                        ->join('sys_payment_adjustments as pa','pa.bi_doc_number','j.doc_number')->where('pa.account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->where('j.status',1)->get();
+                  ?>
+                  
+                <?php $aname = $accounts->where('id',$data[0]->account_id)->first();
+                
+                $cust_det = @App\SysHelper::get_customer_contact_detail($aname->account_code); ?>
+
+                <script>
+                    function set_total(id,at){
+                        $('#sum_'+id).text(at.toFixed(@json(session('logged_session_data.decimal_point'))));
+                        $('#collapse'+id).css('display','');
+                        $('#account_table'+id).css('display','');
+                    }
+                </script>
+
+                <table id="account_table{{ $aname->id }}" class="table" style="border: solid 1px #e3e6f0; margin-bottom: -1px !important; display: none;">
+                    <thead>
+                      <tr>
+                          <th class="border text-center" width="100px"><a href="{{url('get-url-supplier/'.$aname->account_code)}}" target="_blank">{{ $aname->account_code }}</a></th>
+                          <th class="border text-left"><a class="text-left" type="button" data-toggle="collapse" data-target="#collapse{{ $aname->id }}" aria-expanded="true" aria-controls="collapse{{ $aname->id }}">{{ $aname->account_name }} <span style="font-weight: normal; color: #3d3d3d;">{!! $cust_det !!}</span></a>
+                            <a class="text-danger ml-2 float-right" title="Download" onclick="download_outstanding({{ $aname->id }})"><i class="fa fa-download" aria-hidden="true"></i></a></th>
+                          <th class="border text-right" width="100px"><label id="sum_{{ $aname->id }}"></label></th>
+                      </tr>
+                    </thead>
+                </table>
+                  
+                <div id="collapse{{ $aname->id }}" class="collapse" data-parent="#accordionExample" style="margin-left: 100px; display: none;">
+                <table class="table" style="border: solid 1px #e3e6f0; width:auto;">
+                    <thead>
+                      <tr>
+                          <th class="border text-center" width="68px">Doc Date</th>
+                          <th class="border text-center" width="80px">Doc No</th>
+                          <th class="border text-center" width="70px">Deal ID</th>
+                          <th class="border text-center" width="100px">Amount</th>
+                          <th class="border text-center" width="100px">Adjustments</th>
+                          <th class="border text-center" width="100px">Balance</th>
+                          <th class="border text-center" width="100px">Total Balance</th>
+                          <th class="border text-center hidecol_{{ $aname->id }}" width="150px">Receipt Date</th>
+                          <th class="border text-center hidecol_{{ $aname->id }}" width="150px">Doc Number</th>
+                          {{--  <th class="border text-center" width="150px">Sales Person</th>  --}}
+                          {{--  <th class="border text-center" width="150px">Cheque Number</th>
+                          <th class="border text-center" width="150px">Bank Name</th>  --}}
+                      </tr>
+                    </thead>
+                    <tbody>
+                        @php $adjustments = 0; $b=0; @endphp
+                        @if (count($data)>0)
+                        @php $sum_b=0; @endphp
+                        @foreach ($data as $dt)
+                        @php
+                        $adjustments = 0; $receipt_date=''; $doc_number=''; $cheque_number=''; $bank_name=''; $bi_amount=0; $bi_amount2=0; $paid=0;
+                        @endphp
+                        @php
+                            $adjustments = $data_adjestment->where('piv_no',$dt->transaction_no)->max('paid_amount');
+                            $payment = $data_payment->where('bi_doc_no',$dt->transaction_no);
+                            if(count($payment)>0){
+                                foreach($payment as $p){
+                                    $receipt_date .= date('d/m/Y', strtotime($p->payment_date)).',';
+                                    $doc_number .= $p->doc_number.',';
+                                    if ($p->cheque_number != ""){
+                                        $cheque_number .= $p->cheque_number.',';
+                                    }                                
+                                    if ($p->cheque_bank_name != ""){
+                                        $bank_name .= $p->cheque_bank_name.',';
+                                    }
+                                    $bi_amount += $p->bi_amount;
+                                }
+                            }
+
+                            $payment2 = $data_payment2->where('bi_doc_no',$dt->transaction_no);
+                            if(count($payment2)>0){
+                                foreach($payment2 as $p){
+                                    $receipt_date .= date('d/m/Y', strtotime($p->doc_date)).',';
+                                    $doc_number .= $p->doc_number.',';
+
+                                    $bi_amount2 += $p->bi_amount;
+                                }
+                            }
+
+                            $paid += $adjustments+$bi_amount+$bi_amount2;
+
+                            $deal_id="";
+                            $deal_code="";
+                            $sales_person="";
+                            $deal = @App\SysHelper::get_deal_detail_for_payable_outstanding($dt->transaction_no);
+                            if(isset($deal) && $deal != ""){
+                                $deal_id=$deal->id;
+                                $deal_code=$deal->code;
+                                $sales_person=$deal->full_name;
+                            }
+
+
+                        @endphp
+
+                        @if($dt->credit_amount != $paid)
+                        <tr>
+                            <td class="border text-center">{{ date('d/m/Y', strtotime($dt->transaction_date)) }}</td>
+                            <td class="border text-center"><a href="{{url('get-url-purchase-invoice/'.$dt->transaction_no)}}" target="_blank">{{ $dt->transaction_no }}</a></td>
+                            <td class="border text-center"><a href="{{url('crm-deals/'.$deal_id.'/view')}}" target="_blank">{{ $deal_code }}</a></td>
+                            <td class="border text-center">{{ $dt->credit_amount }}</td>
+                            <td class="border text-center">{{ @App\SysHelper::com_curr_format($paid,2,'.',',') }}</td>
+                            <td class="border text-center">{{ @App\SysHelper::com_curr_format($dt->credit_amount-abs($paid),2,'.',',') }} @php $b += $dt->credit_amount-abs($paid); @endphp</td>
+                            <td class="border text-center">{{ @App\SysHelper::com_curr_format($b,2,'.',',') }}</td>
+                            
+                            @php $sum_b += $dt->credit_amount-abs($paid); $all_total += $dt->credit_amount-abs($paid); @endphp
+                            <script>
+                                set_total({{ $aname->id }},{{ $sum_b }});
+                            </script>
+
+                            <td class="border text-center hidecol_{{ $aname->id }}">{{ rtrim($receipt_date, ',') }}</td>
+                            <td class="border text-center hidecol_{{ $aname->id }}">{{ rtrim($doc_number, ',') }}</td>
+                            {{--  <td class="border text-center">{{ $sales_person }}</td>  --}}
+                            {{--  <td class="border text-center">{{ rtrim($cheque_number, ',') }}</td>
+                            <td class="border text-center">{{ rtrim($bank_name, ',') }}</td>  --}}
+                        </tr>
+                        @endif
+                            @if(count($payment)==0)
+                            <script>
+                                $('.hidecol_'+{{ $aname->id }}).css('display','none');
+                            </script>
+                            @endif
+
+                        @endforeach
+                        @endif
+                        <?php $tot = 0; $total=0; $total_dr=0; $total_cr=0; ?>    
+                    </tbody>
+                  </table>
+                  </div>
+                  <?php } ?>
+
+                  @endforeach
+                  <table class="table" style="border: solid 1px #e3e6f0;">
+                    <thead>
+                        <tr>
+                            <th class="border text-center" width="100px"></th>
+                            <th class="border text-right">Total</th>
+                            <th class="border text-right" width="200px">{{ $all_total }}</th>
+                        </tr>
+                    </thead>
+                  </table>
+                  @endif
+                  </div>
+
+
+
+            </div>
+        </div>
+    
+        <?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
+
+        
+@endsection

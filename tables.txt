@@ -1,0 +1,3 @@
+sys_business_entity_types
+sm_industries
+sm_business_activities

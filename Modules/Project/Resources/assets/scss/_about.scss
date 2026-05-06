@@ -1,0 +1,89 @@
+.about_area {
+	
+    margin-left: 165px;
+    margin-top: 30px;
+    @media #{$mobile_device} {
+        margin-left: 0;
+    }
+    @media #{$tablet_device} {
+        margin-left: 0;
+    }
+    @media #{$mid_device} {
+        margin-left: 0;
+    }
+    @media #{$large_device} {
+        margin-left: 0;
+    }
+    .team_area{
+        background: #fff;
+        // padding: 50px;
+        margin-bottom: 30px;
+        h3{
+            font-size: 28px;
+            font-weight: 500;
+            color: #151B26;
+            margin-bottom: 26px;
+            padding-top: 50px;
+            padding-left: 50px;
+            @media #{$mobile_device}{
+                font-size: 23px;
+            }
+        }
+        .single_team{
+            padding: 50px 0;
+            .team_img{
+
+            }
+            h4{
+                font-size: 20px;
+                font-weight: 500;
+                color: #151B26;
+                margin-top: 20px;
+                margin-bottom: 7px;
+            }
+            p{
+                font-size: 14px;
+                color: #647891;
+            }
+        }
+    }
+    .about_info{
+        background: #fff;
+        padding: 35px;
+        @media #{$mobile_device} {
+            padding: 20px;
+        }
+        .about_d-thumb{
+            img{
+                width: 100%;
+            }
+        }
+        .about_info_text{
+            padding-left: 30px;
+            @media #{$mobile_device} {
+                padding-left: 0;
+                margin-top: 30px;
+            }
+            @media #{$tablet_device} {
+                margin-top: 30px;
+                padding-left: 0;
+            }
+            @media #{$mid_device} {
+                margin-top: 30px;
+                padding-left: 0;
+            }
+            h3{
+                font-size: 28px;
+                font-weight: 500;
+                color: #151B26;
+                margin-bottom: 11px;
+            }
+            p{
+                font-size: 14px;
+                color: #647891;
+                line-height: 24px;
+                margin-bottom: 0;
+            }
+        }
+    }
+}

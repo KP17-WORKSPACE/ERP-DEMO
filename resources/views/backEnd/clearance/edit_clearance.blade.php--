@@ -1,0 +1,717 @@
+@extends('backEnd.master')
+@section('mainContent')
+    @php
+    $modules = [];
+    $module_links = [];
+    $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+    foreach($permissions as $permission){ @$module_links[] = @$permission->module_link_id; @$modules[] =
+    @$permission->moduleLink->module_id;}
+    $modules = array_unique(@$modules);
+    $generalSetting=App\SmGeneralSettings::where('id',1)->first();
+    $currency_symbol = @$generalSetting->currency_symbol;
+    
+    if(isset($generalSetting->logo)){ @$logo = @$generalSetting->logo; }
+    else{ $logo = 'public/uploads/settings/logo.png'; }
+
+    $sm_staff= App\SmStaff::where('user_id',Auth::user()->id)->first();
+    if(!empty(@$sm_staff)){
+        @$profile_image = @$sm_staff->staff_photo;
+        if(empty(@$profile_image)){
+            @$profile_image ='public/uploads/staff/staff1.jpg';
+        }
+    }
+    @endphp
+    <section class="sms-breadcrumb mb-20 white-box">
+        <div class="container-fluid">
+            <div class="row" style="float: left;">
+                <h1>@lang('Customs Clearance')</h1>
+            </div>
+                <div class="row" style="float: right;">
+                    <a href="{{route('user.dashboard')}}" class="top-btn-r-l"><i class="far fa fa-home" aria-hidden="true"></i> Home</a>
+                    <a href="{{url('clearance/create')}}" class="top-btn-r"><i class="far fa fa-plus" aria-hidden="true"></i> New</a>
+                    <a href="{{url('clearance')}}" class="top-btn-r"><i class="far fa fa-file-text" aria-hidden="true"></i> View</a>
+                    <a href="javascript:location.reload();" class="top-btn-r-nobar"><i class="far fa fa-refresh" aria-hidden="true"></i> Refresh</a>
+                {{-- <div class="bc-pages">
+                    <a href="{{ url('dashboard') }}">@lang('lang.dashboard')</a>
+                    <a href="{{ url('purchase-invoice') }}">@lang('Purchase Invoice')</a>
+                    <a href="{{ url('purchase-invoice/create') }}" class="active">@lang('lang.create')</a>
+                </div> --}}
+            </div>
+        </div>
+    </section>
+    <hr style="margin-top: 33px;"/>
+        <div style="clear: both;"></div>
+
+        <section class="sms-breadcrumb mb-20 white-box top-2">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-4">
+                    </div>
+                    <div class="col-8" style="text-align: right;">
+                        <div class="top-2-text top-2-text-last"><span>{{ Auth::user()->full_name }}</span><br />Owner</div>
+                        {{-- <div class="top-2-text"><b>{{ date('m/d/Y') }}</b><br />Doc Date</div>
+                        <div class="top-2-text"><b>{{ 'SYZ-' . sprintf('%03d', @App\SysClearance::max('id') + 1) }}</b><br />Doc Number</div> --}}
+                    </div>
+                    {{-- <div class="bc-pages">
+                        <a href="{{ url('dashboard') }}">@lang('lang.dashboard')</a>
+                        <a href="{{ url('purchase-invoice') }}">@lang('Purchase Invoice')</a>
+                        <a href="{{ url('purchase-invoice/create') }}" class="active">@lang('lang.create')</a>
+                    </div> --}}
+                </div>
+            </div>
+        </section>
+        
+    <section class="admin-visitor-area">
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            {{-- @if (isset($edit))
+                                {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => '/quotations/' . $edit->id, 'method' => 'PUT', 'id' => 'sales-invoice-create-form']) }}
+                            @else --}}
+                                {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'clearance-update', 'method' => 'POST', 'id' => 'clearance-create-form']) }}
+                            {{-- @endif --}}
+                            <input type="hidden" name="url" id="url" value="{{URL::to('/')}}">
+                            <input type="hidden" name="id" value="{{ isset($clearance) ? $clearance->id : '' }}">
+                            <div class="white-box">
+
+                                <div class="col-lg-12 text-right">
+                                    @if (session()->has('message-success') != '' || session()->get('message-danger') != '')
+                                        @if (session()->has('message-success'))
+                                            <p class="text-success">
+                                                {{ session()->get('message-success') }}
+                                            </p>
+                                        @elseif(session()->has('message-danger'))
+                                            <p class="text-danger">
+                                                {{ session()->get('message-danger') }}
+                                            </p>
+                                        @endif
+                                    @endif
+                                </div>
+
+                                <div class="add-visitor">
+                                    <div class="row ">
+                                        <div class="col-lg-4">
+                                            <div class="invoice-details-left">
+                                                {{-- <div class="mb-20">
+                                                    <img src="{{ asset($company->company_logo) }}" class="tender-create-logo">
+                                                </div> --}}
+                                                <div class="business-info">
+                                                    <h3>Syscom FZE</h3>
+                                                    <p>RA08FD03<br />Jebel Ali Freezone, PO Box 124402<br />Dubai, UAE</p>
+                                                </div>
+                                                <hr>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-8">
+                                            <div class="row">
+                                                <div class="col-lg-4 mb-10">
+                                                    <div class="input-effect">
+                                                        <label class="txtlbl">@lang('Doc') @lang('Number')<span>*</span></label>
+                                                        <input class="txtbx primary-input form-control {{ $errors->has('doc_no') ? ' is-invalid' : '' }}"
+                                                            type="text" name="doc_no" autocomplete="off" id="doc_no"
+                                                            value="{{ $clearance->doc_no }}"
+                                                            readonly>
+                                                        <span class="focus-border"></span>
+                                                        @if ($errors->has('doc_no'))
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $errors->first('doc_no') }}</strong>
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-10">
+                                                    <div class="no-gutters input-right-icon">
+                                                        <div class="col">
+                                                            <div class="input-effect">
+                                                                <label class="txtlbl">@lang('Invoice') @lang('lang.date')</label>
+                                                                <input class="primary-input date" id="invoice_date" type="text" autocomplete="off" name="invoice_date" value="{{ date('m/d/Y', strtotime($clearance->invoice_date)) }}">
+                                                                <span class="focus-border"></span>
+                                                                @if ($errors->has('invoice_date'))
+                                                                    <span class="invalid-feedback" role="alert">
+                                                                        <strong>{{ $errors->first('invoice_date') }}</strong>
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-auto">
+                                                            <button class="" type="button">
+                                                                <i class="ti-calendar" id="end-date-icon"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-lg-4 mb-10">
+                                                    <div class="input-effect">
+                                                        <label class="txtlbl">Created By</label>
+                                                        <input class="primary-input form-control {{ $errors->has('createdby') ? ' is-invalid' : '' }}" type="text" name="createdby" autocomplete="off" id="createdby" value="{{ Auth::user()->full_name }}" readonly>
+                                                        <span class="focus-border"></span>
+                                                        @if ($errors->has('createdby'))
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $errors->first('createdby') }}</strong>
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-10">
+                                                    <div class="input-effect">
+                                                        <label class="txtlbl">@lang('Invoice') @lang('Number')<span>*</span></label>
+                                                        <input class="txtbx primary-input form-control {{ $errors->has('invoice_no') ? ' is-invalid' : '' }}"
+                                                            type="text" name="invoice_no" autocomplete="off" id="invoice_no"
+                                                            value="{{ $clearance->invoice_no }}" readonly required>                                                        
+                                                        <span class="focus-border"></span>
+                                                        @if ($errors->has('invoice_no'))
+                                                            <span class="invalid-feedback" role="alert">
+                                                                <strong>{{ $errors->first('invoice_no') }}</strong>
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-10">
+                                                    <label class="txtlbl">@lang('Currency')<span>*</span></label>
+                                                    <select
+                                                        class="niceSelect w-100 bb form-control {{ $errors->has('currency') ? ' is-invalid' : '' }}"
+                                                        name="currency" id="currency">
+                                                        @foreach ($currency as $value)
+                                                            <option value="{{ @$value->id }}" <?php if($clearance->currency==$value->id) { ?> Selected <?php } ?>>
+                                                                {{ @$value->code }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @if ($errors->has('currency'))
+                                                        <span class="invalid-feedback invalid-select" role="alert">
+                                                            <strong>{{ $errors->first('currency') }}</strong>
+                                                        </span>
+                                                    @endif
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+
+                                    <div class="row mb-10">
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                            <label class="txtlbl">@lang('Bill To') <span></span></label>
+                                            <textarea type="text" class="txtbx primary-input form-control" id="bill_to" name="bill_to" required>{{ $clearance->bill_to }}</textarea>
+                                                
+                                                <span class="focus-border textarea"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                            <label class="txtlbl">@lang('Ship To') <span></span></label>
+                                            <textarea type="text" class="txtbx primary-input form-control" id="ship_to" name="ship_to" required>{{ $clearance->ship_to }}</textarea>
+                                                <span class="focus-border textarea"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Payment Method') <span></span></label>
+                                                <select class="niceSelect w-100 bb form-control" name="payment_method[]" id="payment_method">
+                                                    <option value="" ></option>
+                                                    <option value="CDR Cash" <?php if($clearance->payment_method=='CDR Cash') { ?> Selected <?php } ?>>CDR Cash</option>
+                                                    <option value="CDR Bank" <?php if($clearance->payment_method=='CDR Bank') { ?> Selected <?php } ?>>CDR Bank</option>
+                                                    <option value="Deposit" <?php if($clearance->payment_method=='Deposit') { ?> Selected <?php } ?>>Deposit</option>
+                                                    <option value="Credit A/C*" <?php if($clearance->payment_method=='Credit A/C*') { ?> Selected <?php } ?>>Credit A/C*</option>
+                                                    <option value="Stan. G*" <?php if($clearance->payment_method=='Stan. G*') { ?> Selected <?php } ?>>Stan. G*</option>
+                                                    <option value="Bank G*" <?php if($clearance->payment_method=='Bank G*') { ?> Selected <?php } ?>>Bank G*</option>
+                                                    <option value="FTT" <?php if($clearance->payment_method=='FTT') { ?> Selected <?php } ?>>FTT</option>
+                                                    <option value="Alcohol" <?php if($clearance->payment_method=='Alcohol') { ?> Selected <?php } ?>>Alcohol</option>
+                                                    <option value="Other" <?php if($clearance->payment_method=='Other') { ?> Selected <?php } ?>>Other</option>
+                                                </select>
+
+                                                    
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Customer Bill Type') <span></span></label>
+                                                <select class="niceSelect w-100 bb form-control" name="customer_bill_type[]" id="customer_bill_type">
+                                                    <option value="" ></option>
+                                                    <option value="Import" <?php if($clearance->customer_bill_type=='Import') { ?> Selected <?php } ?>>Import</option>
+                                                    <option value="Import for Re-Export" <?php if($clearance->customer_bill_type=='Import for Re-Export') { ?> Selected <?php } ?>>Import for Re-Export</option>
+                                                    <option value="Temporary Exit" <?php if($clearance->customer_bill_type=='Temporary Exit') { ?> Selected <?php } ?>>Temporary Exit</option>
+                                                    <option value="Free Zone Internal Transfer"<?php if($clearance->customer_bill_type=='Free Zone Internal Transfer') { ?> Selected <?php } ?>>Free Zone Internal Transfer</option>
+                                                    <option value="Bill of Entry" <?php if($clearance->customer_bill_type=='Bill of Entry') { ?> Selected <?php } ?>>Bill of Entry</option>
+                                                </select>
+
+                                                    
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-10">
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                            <label class="txtlbl">@lang('Free Zone Bill of Entry No') <span></span></label>
+                                            <input type="text" class="txtbx primary-input form-control" id="free_zone_bill_no" name="free_zone_bill_no" required value="{{ $clearance->free_zone_bill_no }}">
+                                                <span class="focus-border textarea"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Description of Goods') <span></span></label>
+                                            <input type="text" class="txtbx primary-input form-control" id="goods_description" name="goods_description" required value="{{ $clearance->goods_description }}">
+                                                <span class="focus-border textarea"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                            <label class="txtlbl">@lang('BOE No') <span></span></label>
+                                            <input type="text" class="txtbx primary-input form-control" id="boe_no" name="boe_no" value="{{ $clearance->boe_no }}">
+                                                <span class="focus-border textarea"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-10">
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Box Type') <span></span></label>
+                                                <select class="txtbx niceSelect w-100 bb form-control" name="box_type" id="box_type">
+                                                    <option value="" ></option>
+                                                    <option value="PCS" <?php if($clearance->box_type=='PCS') { ?> Selected <?php } ?>>PCS</option>
+                                                    <option value="Box" <?php if($clearance->box_type=='Box') { ?> Selected <?php } ?>>Box</option>
+                                                    <option value="Pallet" <?php if($clearance->box_type=='Pallet') { ?> Selected <?php } ?>>Pallet</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                            <label class="txtlbl">@lang('Box Qty') <span></span></label>
+                                            <input type="text" class="txtbx primary-input form-control" id="box_qty" name="box_qty" value="{{ $clearance->box_qty }}">
+                                                <span class="focus-border textarea"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Volume CBM') <span></span></label>
+                                            <input type="text" class="txtbx primary-input form-control" id="cbm" name="cbm" value="{{ $clearance->cbm }}">
+                                                <span class="focus-border textarea"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    
+                                    <div class="equipment comon-status row mt-40 d-block">
+                                        <table class="sstable" cellspacing="0" width="100%" id="po-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:100px;">@lang('Part No')</th>
+                                                    <th style="width:150px;">@lang('Description')</th>
+                                                    <th style="width:200px;">@lang('COO')</th>
+                                                    <th style="width:70px;">@lang('H.S Code')</th>
+                                                    <th style="width:70px;">@lang('Weight')</th>
+                                                    <th style="width:70px;">@lang('Qty')</th>
+                                                    <th style="width:80px;">@lang('Unit Price')</th>
+                                                    <th style="width:100px;">@lang('Amount')</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+
+                                                @for ($roid= 1;  $roid <= count($clearanceitems) ; $roid++)
+                                                <tr id="rowone{{$roid}}" onclick="fn_addRow({{$roid}})">
+                                                    <td><select class="w-100 sstxtbx" name="part_number[]" id="part_number_{{$roid}}" onchange="ddl_part_change({{$roid}})">
+                                                            <option value="none"></option>
+                                                            @foreach ($items as $key => $value)
+                                                                <option value="{{ @$value->id }}"  <?php if($clearanceitems[$roid-1]->pid==$value->id) { ?> selected <?php } ?>>{{ @$value->part_number }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <input class="w-100 sstxtbx" type="hidden" id="partno_{{$roid}}" name="partno[]" value="{{@$clearanceitems[$roid-1]->partno}}">
+                                                    </td>
+                                                    <td>
+                                                        <select class="w-100 sstxtbx" name="part_number_txt[]" id="part_number_txt_{{$roid}}" readonly="true" hidden>
+                                                            <option value="none"></option>
+                                                            @foreach ($items as $key => $value)
+                                                                <option value="{{ @$value->id }}">{{ @$value->description }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <input class="w-100 sstxtbx" type="text" id="description_{{$roid}}" name="description[]" autocomplete="off" readonly="true" value="{{@$clearanceitems[$roid-1]->description}}">
+                                                    </td>
+                                                    <td>
+                                                        <select class="w-100 sstxtbx" name="part_number_coo[]" id="part_number_coo_{{$roid}}" readonly="true" hidden>
+                                                            <option value="none"></option>
+                                                            @foreach ($items as $key => $value)
+                                                                <option value="{{ @$value->id }}">{{ @$value->coo }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <input class="w-100 sstxtbx" type="text" id="coo_{{$roid}}" name="coo[]" autocomplete="off" value="{{@$clearanceitems[$roid-1]->coo}}">
+                                                    </td>
+                                                    <td>
+                                                        <select class="w-100 sstxtbx" name="part_number_hscode[]" id="part_number_hscode_{{$roid}}" readonly="true" hidden>
+                                                            <option value="none"></option>
+                                                            @foreach ($items as $key => $value)
+                                                                <option value="{{ @$value->id }}">{{ @$value->hscode }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <input class="w-100 sstxtbx" type="text" id="hscode_{{$roid}}" name="hscode[]" autocomplete="off" value="{{@$clearanceitems[$roid-1]->hscode}}">
+                                                    </td>
+                                                    <td>
+                                                        <select class="w-100 sstxtbx" name="part_number_weight[]" id="part_number_weight_{{$roid}}" readonly="true" hidden>
+                                                            <option value="none"></option>
+                                                            @foreach ($items as $key => $value)
+                                                                <option value="{{ @$value->id }}">{{ @$value->weight }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <input type="hidden" id="hweight_{{$roid}}" name="hweight[]">
+                                                        <input class="w-100 sstxtbx" type="text" id="weight_{{$roid}}" name="weight[]" autocomplete="off" onchange="calc_change({{$roid}})" value="{{@$clearanceitems[$roid-1]->weight}}">
+                                                    </td>
+                                                    <td>
+                                                        <input class="w-100 sstxtbx" type="number" id="qty_{{$roid}}" name="qty[]" autocomplete="off" min="0" onchange="calc_change({{$roid}})" value="{{@$clearanceitems[$roid-1]->qty}}">
+                                                    </td>
+                                                    <td>
+                                                        <input class="w-100 sstxtbx" type="text" id="price_{{$roid}}" name="price[]" autocomplete="off" min="0" onchange="calc_change({{$roid}})" value="{{@$clearanceitems[$roid-1]->price}}">
+                                                    </td>
+                                                    <td>
+                                                        <input class="w-100 sstxtbx" type="text" id="totalprice_{{$roid}}" name="totalprice[]" autocomplete="off" min="0" onchange="calc_change({{$roid}})" readonly value="{{@$clearanceitems[$roid-1]->totalprice}}">
+                                                    </td>
+                                                </tr>
+                                                @endfor
+                                                <?php $roid--;?>
+                                                <input type="hidden" id="cl-row-count" value="{{$roid}}">
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td class="sstablefoot"><label id="weight_total">{{ $total[0]->weight1 }}</label></td>
+                                                    <td class="sstablefoot"><label id="qty_total">{{ $total[0]->qty1 }}</label></td>
+                                                    <td class="sstablefoot"><label id="price_total">{{ $total[0]->price1 }}</label></td>
+                                                    <td class="sstablefoot"><label id="totalprice_total">{{ $total[0]->totalprice1 }}</label></td>
+                                                </tr>
+                                                </tfoot>
+                                        </table>
+                                        <div style="display: none;">
+                                            <button type="button" class="primary-btn small fix-gr-bg" id="addRowCL"><span class="ti-plus pr-2"></span>@lang('lang.item')</button>
+                                        </div>
+
+<script>
+    function fn_addRow(id)
+    {
+        var rownum = document.getElementById('cl-row-count').value;        
+        if(id==rownum)
+        {
+            document.getElementById('cl-row-count').value = (Number(rownum) + Number(1));
+            document.getElementById('addRowCL').click();
+        }
+    }
+    function ddl_part_change(id)
+    {
+        var selOpt = $('#part_number_'+id+' :selected').val();
+        $('#part_number_txt_'+id+' option[value='+selOpt+']').attr('selected','selected');
+        var selOpt2 = $('#part_number_txt_'+id+' :selected').text();
+
+        $('#part_number_coo_'+id+' option[value='+selOpt+']').attr('selected','selected');
+        var selOpt3 = $('#part_number_coo_'+id+' :selected').text();
+
+        $('#part_number_hscode_'+id+' option[value='+selOpt+']').attr('selected','selected');
+        var selOpt4 = $('#part_number_hscode_'+id+' :selected').text();
+
+        $('#part_number_weight_'+id+' option[value='+selOpt+']').attr('selected','selected');
+        var selOpt5 = $('#part_number_weight_'+id+' :selected').text();
+        
+
+        $('#partno_'+id+'').val($("#part_number_"+id+" option:selected").text());
+        $('#description_'+id+'').val(selOpt2);
+        $('#coo_'+id+'').val(selOpt3);
+        $('#hscode_'+id+'').val(selOpt4);
+        $('#weight_'+id+'').val(selOpt5);
+        $('#hweight_'+id+'').val(selOpt5);
+
+        // $('#description_'+id+'').focus();
+        // $('#coo_'+id+'').focus();
+        // $('#hscode_'+id+'').focus();
+    }
+
+    function calc_change(id)
+    {        
+        var weight = $('#weight_'+id+'').val();
+        var hweight = $('#hweight_'+id+'').val();
+
+        var qty = $('#qty_'+id+'').val();
+        var unitprice = $('#price_'+id+'').val();
+        var value = $('#totalprice_'+id+'').val();
+
+        weight = (weight === '') ? '0' : weight;
+        qty = (qty === '') ? '0' : qty;
+        unitprice = (unitprice === '') ? '0' : unitprice;
+        var fin_value = (unitprice * qty);
+        $('#totalprice_'+id+'').val(fin_value.toFixed(@json(session('logged_session_data.decimal_point'))));
+        
+        var fin_weight = (hweight * qty);
+        $('#weight_'+id+'').val(fin_weight.toFixed(3));
+
+        
+        // value = (value === '') ? '0' : value;
+        // discount = (discount === '') ? '0' : discount;
+        // customcharges = (customcharges === '') ? '0' : customcharges;
+        // var fin_taxableamount = ((unitprice * qty) + Number(customcharges) - Number(discount)) * ((Number(net_vat) + 100)/100);
+        // $('#taxableamount_'+id+'').val(fin_taxableamount.toFixed(@json(session('logged_session_data.decimal_point'))));
+
+        // var fin_vatamount = ((unitprice * qty) + Number(customcharges) - Number(discount)) * ((Number(net_vat))/100);
+        // var vatamount = $('#vatamount_'+id+'').val(fin_vatamount.toFixed(@json(session('logged_session_data.decimal_point'))));
+
+        calc_total();
+    }
+
+    function calc_total()
+    {
+        var countrow = document.getElementById('cl-row-count').value;
+        var t1=0, t2=0, t3=0, t4=0;
+        for(var i=1; i<=countrow; i++)
+        {
+            t1 += Number($('#weight_'+i).val());
+            t2 += Number($('#qty_'+i).val());
+            t3 += Number($('#price_'+i).val());
+            t4 += Number($('#totalprice_'+i).val());
+        }
+        $('#weight_total').text(t1.toFixed(3));
+        $('#qty_total').text(t2);
+        $('#price_total').text(t3.toFixed(@json(session('logged_session_data.decimal_point'))));
+        $('#totalprice_total').text(t4.toFixed(@json(session('logged_session_data.decimal_point'))));
+    }
+
+
+    
+</script>
+
+
+
+                                        </div>
+
+                                        <div class="equipment comon-status row mt-25 d-block" style="display:none !important;">
+                                            <div class="col-lg-12 text-right">
+                                                <button type="button" class="primary-btn small fix-gr-bg"
+                                                    id="addRowEquipment">
+                                                    <span class="ti-plus pr-2"></span>@lang('lang.item')</button>
+                                            </div>
+                                        </div>
+                                        
+                                   
+
+
+
+
+
+
+                                    <div class="row mt-40">
+                                        <div class="col-lg-12 text-right">
+                                            <button type="submit" class="primary-btn fix-gr-bg" id="btnSubmit">
+                                                <span class="ti-check"></span>
+                                                @if (isset($edit))
+                                                    @lang('lang.update')
+                                                @else
+                                                    @lang('lang.save')
+                                                @endif
+                                                @lang('Clearance')
+
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {{ Form::close() }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <div class="modal fade admin-query" id="add_to_do">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header m-0 p-3">
+                    <h4 class="modal-title">Add Shipping</h4>
+                    <button class="close" data-dismiss="modal" type="button">
+                        ×
+                    </button>
+                </div>
+                <div class="modal-body m-0 p-3">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-lg-12 mb-20">
+                                <div class="input-effect">
+                                    <input class="primary-input form-control {{$errors->has('shipping_name') ? 'is-invalid' : ' '}}" type="text" id="shipping_name_add" name="shipping_name" value="{{isset($editData)?@$editData->shipping_name:old('shipping_name')}}" >
+                                    <label>  @lang('Shipping Name') <span>*</span> </label>
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_1 red_alert"></span>                                    
+                                </div>
+                            </div>
+                            <div class="col-lg-12 mb-20">
+                                <div class="input-effect">
+                                    <input class="primary-input form-control {{$errors->has('contact_name') ? 'is-invalid' : ' '}}" type="text" id="contact_name_add" name="contact_name" value="{{isset($editData)?@$editData->contact_name:old('contact_name')}}" >
+                                    <label>  @lang('Contact Name') <span>*</span> </label>
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_2 red_alert"></span>
+                                </div>
+                            </div>
+                            <div class="col-lg-12 mb-20">
+                                <div class="input-effect">
+                                    <input class="primary-input form-control{{ $errors->has('contact_no') ? ' is-invalid' : '' }}" type="number" id="contact_no_add" name="contact_no" value="{{isset($editData)?@$editData->contact_no:old('contact_no')}}">
+                                    <label>  @lang('Contact No') <span>*</span> </label>
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_3 red_alert"></span>
+                                </div>
+                            </div>
+                            <div class="col-lg-12 mb-20">
+                                <div class="input-effect">
+                                    <input class="primary-input form-control{{ $errors->has('address1') ? ' is-invalid' : '' }}" type="text" id="address1_add" name="address1" value="{{isset($editData)?@$editData->address1:old('address1')}}">
+                                    <label>  @lang('Address 1') <span>*</span> </label>  
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_4 red_alert"></span>                                  
+                                </div>
+                            </div>
+                            <div class="col-lg-12 mb-20">
+                                <div class="input-effect">
+                                    <input class="primary-input form-control{{ $errors->has('address2') ? ' is-invalid' : '' }}" type="text" id="address2_add" name="address2" value="{{isset($editData)?@$editData->address2:old('address2')}}">
+                                    <label>  @lang('Address 2') <span>*</span> </label>    
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_5 red_alert"></span>                              
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-12">    
+                                <div class="col-lg-12 text-center">
+                                    <div class="mt-40 d-flex justify-content-between">
+                                        <button class="primary-btn tr-bg" data-dismiss="modal" type="button" id="btn_close2">
+                                            @lang('lang.cancel')
+                                        </button>
+                                        <input class="primary-btn fix-gr-bg" type="submit" value="save" onclick="return validateAttachForm()">
+    
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script>
+    function validateAttachForm() {
+    var val1 = $("#shipping_name_add").val();
+    var val2 = $("#contact_name_add").val();
+    var val3 = $("#contact_no_add").val();
+    var val4 = $("#address1_add").val();
+    var val5 = $("#address2_add").val();
+
+    if (val1 === "") {
+        $('.modal_input_validation_1').show();
+        $(".modal_input_validation_1").html("<font style='color:red;'>Must be Fill Up</font>");
+        $("span.modal_input_validation_1").addClass("red_alert");
+        return false;
+    }
+    if (val2 === "") {
+        $('.modal_input_validation_2').show();
+        $(".modal_input_validation_2").html("<font style='color:red;'>Must be Fill Up</font>");
+        $("span.modal_input_validation_2").addClass("red_alert");
+        return false;
+    }
+    if (val3 === "") {
+        $('.modal_input_validation_3').show();
+        $(".modal_input_validation_3").html("<font style='color:red;'>Must be Fill Up</font>");
+        $("span.modal_input_validation_3").addClass("red_alert");
+        return false;
+    }
+    if (val4 === "") {
+        $('.modal_input_validation_4').show();
+        $(".modal_input_validation_4").html("<font style='color:red;'>Must be Fill Up</font>");
+        $("span.modal_input_validation_4").addClass("red_alert");
+        return false;
+    }
+    if (val5 === "") {
+        $('.modal_input_validation_5').show();
+        $(".modal_input_validation_5").html("<font style='color:red;'>Must be Fill Up</font>");
+        $("span.modal_input_validation_5").addClass("red_alert");
+        return false;
+    }
+    //return true;
+
+    var url = $('#url').val();
+    $.ajax({
+        type: "POST",
+        data: {
+            shipping_name: val1,
+            contact_name: val2,
+            contact_no: val3,
+            address1: val4,
+            address2: val5
+        },
+
+        //url: 'http://syscom.company/venus-erp/shipping-store2',
+        //url: 'http://localhost:81/venus-erp/shipping-store2',
+        url: url + '/' + 'shipping-store2',
+              cache: false,
+        success: function(response) {
+            var response = JSON.parse(response);
+            var len = 0;
+            if(response['data']=="ERROR")
+            {
+                alert("Error found in something!!");
+            }
+            else{
+                if (response['data'] != null) {
+                len = response['data'].length;
+                }
+                if(len > 0){
+                    
+                    //$('#shipping_name').find('option').not(':first').remove();
+
+                    for(var i=0; i<len; i++){
+                        var id = response['data'][i].id;
+                        var name = response['data'][i].shipping_name;
+                        var option = "<option value='"+id+"'>"+name+"</option>";
+                        //$("#shipping_name").append($(option));
+                        //$('#shipping_name').append(new Option(name, id));
+                        $("#shipping_name").append(option);
+                        $("#vendor").append(option);
+                    }
+                    
+                    alert('Shipping Added Successfully!!');
+                        $('#btn_close2').click();
+                }
+            }            
+        },
+        error: function(XMLHttpRequest, textStatus, errorThrown) {}
+    });
+
+
+    //preventDefault();
+    }
+
+    function cfc_amount_change(id)
+    {
+        var amt = $("#cfc_amount_"+id).val();
+        $("#cfc_cal_amount_"+id).val(amt);
+    }
+
+    </script>
+@endsection
+
+@section('script')
+    <script>
+
+$('input').keypress(function(event) {
+        if (event.keyCode == 13) {
+            event.preventDefault();
+        }
+    });
+
+        // $(document).ready(function () {
+        //     $("#btnSubmit").click(function () {
+        //         setTimeout(function () { disableButton(); }, 0);
+        //     });
+        //     function disableButton() {
+        //         $("#btnSubmit").prop('disabled', true);
+        //     }
+        // });
+    </script>
+@endsection

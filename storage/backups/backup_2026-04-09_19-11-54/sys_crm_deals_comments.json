@@ -1,0 +1,15 @@
+[
+    {
+        "id": 57,
+        "deal_id": 43,
+        "comments": "<span class=\"text-success\">[Qualified] Sent to Sales<\/span>",
+        "commentsdoc": null,
+        "status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "deleted_by": null,
+        "deleted_at": null,
+        "created_at": "2026-04-09 18:40:44",
+        "updated_at": "2026-04-09 18:40:44"
+    }
+]

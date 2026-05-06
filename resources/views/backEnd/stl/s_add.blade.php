@@ -1,0 +1,1016 @@
+    <?php try { ?>
+
+        
+
+            {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'stl-store', 'method' => 'POST', 'id' => 'stl-store']) }}
+            <input type="hidden" name="url" id="url" value="{{ URL::to('/') }}">
+            
+
+
+
+    <style>
+        /* Align checkbox + label in STL pending list and similar UI places */
+        #plist input[type="checkbox"], #po_pending_popup_win input[type="checkbox"], #pi_pending_popup_win input[type="checkbox"] {
+            vertical-align: middle;
+            margin: 0 6px 0 0;
+            position: relative;
+            top: -1px;
+        }
+
+        #plist label, #po_pending_popup_win label, #pi_pending_popup_win label {
+            vertical-align: middle;
+            margin-left: 2px;
+            line-height: 1.35;
+            display: inline-block;
+            max-width: calc(100% - 24px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #plist .checkbox-row, #po_pending_popup_win .checkbox-row, #pi_pending_popup_win .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 0;
+        }
+    </style>
+
+    <div class="purchase-order-content-header">
+        <h4 class="purchase-order-content-header-left">
+            New ({{ @App\SysHelper::get_new_code('sys_stl','STL' ,'doc_number') }})
+        </h4>
+        <div class="purchase-order-content-header-right">
+            <button type="submit" class="btn btn-light">
+                <i class="ico icon-outline-bookmark-opened text-success"></i> Save
+            </button>
+             {{-- <div class="dropdown">
+                <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="ico icon-outline-hamburger-menu"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><button class="dropdown-item"><i class="ico icon-outline-document-medicine text-success"></i> Save & Download</button></li>
+                </ul>
+            </div> --}}
+        </div>
+    </div>
+    
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row gap-rows">
+                                        <div class="col-lg-9">
+                    <div class="row">
+                        
+                        <div class="col-lg-2 mb-2">
+                            <div class="input-effect">
+                                <label class="form-label">Doc Number<span>*</span></label>
+                                <input
+                                    class="form-control"
+                                    type="text" name="doc_number" autocomplete="off" id="doc_number"
+                                    value="{{ @App\SysHelper::get_new_code('sys_stl','STL' ,'doc_number') }}"
+                                    readonly>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 mb-2">
+                            <div class="no-gutters input-right-icon">
+                                <div class="col">
+                                    <div class="input-effect">
+                                        <label class="form-label">Doc Date</label>
+                                        <input class="form-control date-picker" id="doc_date" type="text" autocomplete="off" name="doc_date" value="{{ date('d/m/Y') }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 mb-2">
+                            <label class="form-label">@lang('Bank') <span>*</span></label>
+                            <select class="form-control js-example-basic-single" name="bank" id="bank" onchange="set_rate()" required>
+                                <option value=""></option>
+                                @foreach ($bank as $value)
+                                <option value="{{ @$value->id }}">
+                                    {{ @$value->account_name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <script>
+                            function set_rate(){
+
+                                var bank = $('#bank').val();
+                                if(bank == 7996){ //RAK BANK
+                                    $('#exchange_rate').val('3.674');
+                                } else {
+                                    $('#exchange_rate').val('3.675');
+                                }
+                                $('#amount_usd').val('');
+                                $('#amount_aed').val('');
+                            }
+                            function set_amount_usd(){
+                                var rate = $('#exchange_rate').val();
+                                var usd = $('#amount_usd').val();
+                                var aed = $('#amount_aed').val();
+                                if(usd != "" || usd != "0" || usd != "0.00"){
+                                    //$('#amount_aed').val(usd*rate);
+                                    $('#amount_aed').val(formatAmount(usd * rate));
+                                }
+                                $('#amount_usd').val(formatAmount(usd));
+                            }
+                            function set_amount_aed(){
+                                var rate = $('#exchange_rate').val();
+                                var usd = $('#amount_usd').val();
+                                var aed = $('#amount_aed').val();
+                                if(aed != "" || aed != "0" || aed != "0.00"){
+                                    //$('#amount_usd').val(aed/rate);
+                                    $('#amount_usd').val(formatAmount(aed / rate));
+                                }
+                                $('#amount_aed').val(formatAmount(aed));
+                            }
+                        </script>
+
+                        
+                        <div class="col-1-5 mb-2">
+                            <div class="no-gutters input-right-icon">
+                                <div class="col">
+                                    <div class="input-effect">
+                                        <label class="form-label">Ex Rate</label>
+                                        <input class="form-control" id="exchange_rate" type="number" step="Any" autocomplete="off" name="exchange_rate" value="" onchange="set_amount_usd()" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-1-5 mb-2">
+                            <div class="input-effect">
+                                <label class="dynamicslbl">Currency</label>
+                                <select class="form-control js-example-basic-single" name="currency_m" id="currency_m">
+                                    @foreach ($currency as $value)
+                                        <option value="{{ @$value->id }}"
+                                            @if(5 == $value->id) selected @endif>
+                                            {{ @$value->code }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <script>
+                            function get_currency_code(){
+                                $('#amt_txt').text('Amount in '+$('#currency :selected').text());
+                            }
+                        </script>
+                        <div class="col-1-5 mb-2">
+                            <div class="no-gutters input-right-icon">
+                                <div class="col">
+                                    <div class="input-effect">
+                                        <label class="form-label">Amount</label>
+                                        <input class="form-control" id="amount_usd" type="text" autocomplete="off" name="amount_usd" value="" onchange="set_amount_usd()" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2 mb-2">
+                            <div class="input-effect">
+                                <label class="dynamicslbl">Currency</label>
+                                <select class="form-control js-example-basic-single" name="currency" id="currency" onchange="get_currency_code()">
+                                    @foreach ($currency as $value)
+                                        <option value="{{ @$value->id }}"
+                                            @if($company->currency_id == $value->id) selected @endif>
+                                            {{ @$value->code }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-2 mb-2">
+                            <div class="no-gutters input-right-icon">
+                                <div class="col">
+                                    <div class="input-effect">
+                                        <label class="form-label" id="amt_txt">Amount in {{ $currency_code }}</label>
+                                        <input class="form-control" id="amount_aed" type="text" autocomplete="off" name="amount_aed" value="" onchange="set_amount_aed()" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 mb-2">
+                            <div class="no-gutters input-right-icon">
+                                <div class="col">
+                                    <div class="input-effect">
+                                        <label class="form-label">Syscom Representative</label>
+                                        <input class="form-control" id="owner_name" type="text" autocomplete="off" name="owner_name" value="Hamidudin Kutbuddin Ansari" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-5 mb-2">
+                            <div class="no-gutters input-right-icon">
+                                <div class="col">
+                                    <div class="input-effect">
+                                        <label class="form-label">Bank Representative</label>
+                                        <input class="form-control" id="bank_representative" type="text" autocomplete="off" name="bank_representative" value="Philemon George" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-2">
+                            <label class="form-label">@lang('Vendor Name') <span>*</span></label>
+                            <select class="form-control js-example-basic-single" name="vendor" id="vendor" required>
+                                <option value=""></option>
+                                @foreach ($vendor as $value)
+                                <option value="{{ @$value->id }}">
+                                    {{ @$value->account_name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-lg-3 mb-2">
+                            <label class="form-label">@lang('Payment Type') <span>*</span></label>
+                            <select class="form-control js-example-basic-single" name="payment_type" id="payment_type" required onchange="if_partial()">
+                                <option value=""></option>
+                                <option value="Partial">Partial</option>
+                                <option value="Full">Full</option>
+                            </select>
+                        </div>
+                        <script>
+                            function if_partial(){
+                                if($('#payment_type').val()=="Partial"){
+                                    $('#div_partial_remarks').css('display',''); $('#partial_remarks').prop('required',true);
+                                    var usd = $('#amount_usd').val();
+                                    var vend = $('#vendor :selected').text();
+                                    var curr = $('#currency :selected').text();
+                                    var rem_text = "Special Instruction:\n\
+•	Mudaraba Financing is required for "+curr.trim()+" "+usd.trim()+"\n\
+•	Balance amount we will pay from our own sources.\n\
+TT Value to "+vend.trim()+" to be "+curr.trim()+" "+usd.trim()+" as per below details";
+                                    $('#partial_remarks').val(rem_text);
+                                    
+                                } else {
+                                     $('#div_partial_remarks').css('display','none'); $('#partial_remarks').prop('required',false); 
+                                    var rem_text="";
+                                    $('#partial_remarks').val(rem_text);
+                                    }
+                            }
+                        </script>
+                        <div class="col-2-5 mb-2">
+                            <label class="form-label">@lang('PI / PI / PO') <span>*</span></label>
+                            <select class="form-control" name="pi_no" id="pi_no" onchange="get_pending_list()" required>
+                                <option value=""></option>
+                                <option value="1">Purchase Invoice</option>
+                                <option value="2">Proforma Invoice</option>
+                                <option value="3">Purchase Order</option>
+                            </select>
+                        </div>
+                        <div class="col-2-5 mb-2">
+                            <div class="no-gutters input-right-icon">
+                                <div class="col">
+                                    <div class="input-effect">
+                                        <label class="form-label">Submission Date</label>
+                                        <input class="form-control date-picker" id="submition_date" type="text" autocomplete="off" name="submition_date" value="" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-12 mb-2" id="div_partial_remarks" style="display: none;">
+                            <div class="no-gutters input-right-icon">
+                                <div class="col">
+                                    <div class="input-effect">
+                                        <label class="form-label">Remarks (Partial Payment)</label>
+                                        <textarea class="form-control" id="partial_remarks" rows="5" autocomplete="off" name="partial_remarks">
+                                        </textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-7 mb-2">
+                            <div class="no-gutters input-right-icon">
+                                <div class="col">
+                                    <div class="input-effect">
+                                        <label class="form-label">Narration</label>
+                                        <input class="form-control" id="narration" type="text" autocomplete="off" name="narration" value="" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2-5 mb-2">
+                            <label class="form-label">@lang('With / Without Amount') <span>*</span></label>
+                            <select class="form-control" name="with_amount" id="with_amount">
+                                <option value="0">Without Amount</option>
+                                <option value="1">With Amount</option>
+                            </select>
+                        </div>
+
+
+                    </div>
+                </div>
+                <div class="col-lg-3 mb-2">
+                    <div class="input-effect">
+                        <label class="form-label">Pending list</label>
+                        <div id="plist" style="width: 100%; height: 140px; border: solid 1px #dfe1d7; border-radius: 5px; padding: 5px 5px; overflow-y: scroll;"></div>
+                        <a data-bs-toggle="modal" data-bs-target="#pi_pending_popup_win" id="addPIPendingSTL" data-toggle="modal"></a>
+                        <a data-bs-toggle="modal" data-bs-target="#po_pending_popup_win" id="addPOPendingSTL" data-toggle="modal"></a>
+                        <input type="hidden" id="pi_id" name="pi_id">
+                        <input type="hidden" id="po_id" name="po_id">
+                    </div>
+                </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row gap-rows">
+
+
+        <div class="col-lg-12"><br /><b>List of <label id="list_name"></label></b><hr /></div>
+    </div>
+                                    <div class="row gap-rows">
+        <div class="col-lg-12">
+            <div class="table-striped" id="ptable">
+
+            </div>
+        </div>
+    </div>
+                                    <div class="row gap-rows mt-3">
+
+                                        <div class="col-lg-12">
+            <table class="table-striped" style="width: 350px;">
+                <tr><td style="width: 130px;">&nbsp;Value of Hardware</td><td class="text-end"><label class="mt-1" id="total_hardware">0.00</label></td></tr>
+                <tr><td>&nbsp;Value of Licence</td><td class="text-end"><label class="mt-1" id="total_license">0.00</label></td></tr>
+                <tr><td>&nbsp;<b>Total</b></td><td class="text-end"><label class="mt-1 font-weight-bold" id="total_hl">0.00</label></td></tr>
+            </table>
+        </div>
+
+                                    </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                              
+                            {{ Form::close() }}
+
+
+<script>
+        function get_pending_list() {
+
+    document.getElementById('total_hardware').textContent = '0.00';
+    document.getElementById('total_license').textContent = '0.00';
+    document.getElementById('total_hl').textContent = '0.00';
+
+            if($('#pi_no').val()==2){
+                $("#plist").empty();
+                $("#ptable").empty();
+                $('#btn_performa_invoice_modal').click();
+                $("#list_name").text('Proforma Invoice');
+                return false;
+            }
+            if($('#pi_no').val()==1){
+                get_pi_list();
+                $("#list_name").text('Purchase Invoice');
+            }
+            if($('#pi_no').val()==3){
+                get_po_list();
+                $("#list_name").text('Purchase Order');
+            }
+        }
+        
+        function get_pi_list() {
+            $("#ptable").empty();
+            $("#loading_bg").css("display", "block");
+            var action = "{{ URL::to('get-pi-for-stl') }}";
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    id: $('#vendor').val(),
+                },
+                cache: false,
+                success: function(dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    var len = 0;
+                        if(dataResult['data'] != null){
+                            len = dataResult['data'].length;
+                        }
+                        if(len > 0){
+                            $("#plist").empty();
+                            for(var i=0; i<len; i++){
+                                    var id = dataResult['data'][i].id;
+                                    var doc_number = dataResult['data'][i].doc_number;
+                                    var bill_number = dataResult['data'][i].bill_number;
+                                    var option = "<option value='" + id + "'>" + doc_number +"</option>";
+                                    var innerHtml =
+                                        "<input type='checkbox' onclick='popup_pi_pending(" + id + ")' id='pending_pi_" + i +
+                                        "' name='pending_pi' value='" + doc_number +
+                                        "'> <label class='truncate-text' for='pending_pi_" + i + "'> " + doc_number +' - '+ bill_number +"</label><br />";
+
+                                    var innerTable =
+                                        "<table  id='table_id_stl_"+id+"' class='table table-hover form-item-table' cellspacing='0' width='100%' style='display:none; border: solid 1px #f2f2f2;'>\
+                                        <thead><tr><th class='mt-2'></th><th><span id='table_id_stl_docno_"+id+"'></span></th><th><span id='table_id_stl_billno_"+id+"'></span>&nbsp;|&nbsp;<span id='table_id_stl_awbno_"+id+"'></span>&nbsp;|&nbsp;<span id='table_id_stl_boeno_"+id+"'></span></th><th></th><th class='text-center'><a class='btn-sm btn-light' onclick='deleteTable(this)'><i class='ico icon-outline-trash-bin-minimalistic text-dark' style='font-size: 16px;'></i></a></th></tr>\
+                                                <tr><th style='width: 50px;'>Sr. No</th>\
+                                                <th style='width: 250px;'>Item Part Number</th>\
+                                                <th>Description of Goods</th>\
+                                                <th style='width: 150px;' class='text-end'>Amount</th>\
+                                                <th style='width: 150px;' class='text-center'>&nbsp;&nbsp;&nbsp;&nbsp; Action</th></tr></thead><tbody></tbody>\
+                                                <tfoot><tr><th></th><th></th><th></th><th class='text-end'><span id='table_id_total_"+id+"'></span></th><th></th></tr></tfoot></table>";
+
+                                    $("#plist").append(innerHtml);
+                                    $("#ptable").append(innerTable);
+                            }                        
+                        }
+                        else{
+                            $("#plist").empty();
+                        }
+                        
+                        $("#loading_bg").css("display", "none");
+                }
+            });
+        }
+        function get_po_list() {
+            $("#ptable").empty();
+            $("#loading_bg").css("display", "block");
+            var action = "{{ URL::to('get-po-for-stl') }}";
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    id: $('#vendor').val(),
+                },
+                cache: false,
+                success: function(dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    var len = 0;
+                        if(dataResult['data'] != null){
+                            len = dataResult['data'].length;
+                        }
+                        if(len > 0){
+                            $("#plist").empty();
+                            for(var i=0; i<len; i++){
+                                    var id = dataResult['data'][i].id;
+                                    var doc_number = dataResult['data'][i].doc_number;
+                                    var bill_number = dataResult['data'][i].bill_number;
+                                    var option = "<option value='" + id + "'>" + doc_number +"</option>";
+                                    var innerHtml =
+                                        "<input type='checkbox' onclick='popup_po_pending(" + id + ")' id='pending_po_" + i +
+                                        "' name='pending_po' value='" + doc_number +
+                                        "'> <label for='pending_po_" + i + "'> " + doc_number +"</label><br />";
+
+                                    var innerTable =
+                                        "<table  id='po_table_id_stl_"+id+"' class='table table-hover form-item-table' cellspacing='0' width='100%' style='display:none; border: solid 1px #f2f2f2;'>\
+                                        <thead><tr><th class='mt-2'></th><th><span id='table_id_stl_docno_"+id+"'></span></th><th><span id='table_id_stl_billno_"+id+"'></span>&nbsp;|&nbsp;<span id='table_id_stl_awbno_"+id+"'></span>&nbsp;|&nbsp;<span id='table_id_stl_boeno_"+id+"'></span></th><th></th><th class='text-center'>&nbsp;&nbsp;&nbsp;&nbsp;<a class='btn-sm btn-light' onclick='deleteTable(this)'><i class='ico icon-outline-trash-bin-minimalistic text-dark' style='font-size: 16px;'></i></a></th></tr>\
+                                                <tr><th style='width: 50px;'>Sr. No</th>\
+                                                <th style='width: 250px;'>Item Part Number</th>\
+                                                <th>Description of Goods</th>\
+                                                <th style='width: 150px;' class='text-end'>Amount</th>\
+                                                <th style='width: 150px;' class='text-center'>&nbsp;&nbsp;&nbsp;&nbsp;Action</th></tr></thead><tbody></tbody>\
+                                                <tfoot><tr><th></th><th></th><th></th><th class='text-end'><span id='table_id_total_"+id+"'></span></th><th></th></tr></tfoot></table>";
+
+                                    $("#plist").append(innerHtml);
+                                    $("#ptable").append(innerTable);
+                            }                        
+                        }
+                        else{
+                            $("#plist").empty();
+                        }
+                        $('#po_pending_popup_win').modal('hide');
+                        $("#loading_bg").css("display", "none");
+                }
+            });
+        }
+        function popup_pi_pending(id) {
+            $("#loading_bg").css("display", "block");
+            $("#hd_pending_pi_id").val(id);
+            $("#pi_id").val(id);
+            document.getElementById('addPIPendingSTL').click();
+            $("#loading_bg").css("display", "none");
+        }
+        function popup_po_pending(id) {
+            $("#loading_bg").css("display", "block");
+            $("#hd_pending_po_id").val(id);
+            $("#po_id").val(id);
+            document.getElementById('addPOPendingSTL').click();
+            $("#loading_bg").css("display", "none");
+        }
+
+        $(document).ready(function() {
+  // Handle click event for edit/save toggle button
+  $('body').on('click', '.edit-btn', function() {
+    var $row = $(this).closest('tr');
+    var $inputs = $row.find('input[type="text"], input[type="number"]');
+
+    if ($(this).hasClass('is-saving')) {
+      // Save state (back to edit icon)
+      $inputs.prop('readonly', true);
+      $(this).removeClass('is-saving btn-success').addClass('btn-info').html('<i class="ico icon-outline-pen-2 text-success" style="font-size: 16px;"></i>');
+    } else {
+      // Edit state (show save icon)
+      $inputs.not(':first').prop('readonly', false);
+      $inputs.first().attr('onclick', 'get_item(this)');
+      $(this).addClass('is-saving btn-success').removeClass('btn-info').html('<i class="ico icon-outline-bookmark-opened text-success" style="font-size: 16px;"></i>');
+    }
+  });
+
+  // Disable misuse of generic button class for row save action
+  $('body').on('click', '.btn-light', function(e) {
+    // preserve action for global Save/other buttons, not row edit control
+    if ($(this).closest('tr').length && $(this).hasClass('edit-btn')) {
+      e.preventDefault();
+      return false;
+    }
+  });
+
+  // Handle click event for delete button (optional, already provided)
+  $('body').on('click', '.delete-btn', function() {
+    // Show confirmation popup
+    var confirmed = confirm("Are you sure you want to delete this row?");
+    
+    if (confirmed) {
+      // If confirmed, remove the row
+      $(this).closest('tr').remove();
+    }
+  });
+});
+
+        </script>
+
+
+
+<form id="pi">
+    <div class="modal side-panel fade" id="pi_pending_popup_win" data-bs-backdrop="false" tabindex="-1" aria-labelledby="addPIPendingSTL" aria-hidden="true">
+        <div class="modal-dialog modal-lg" style="height: 250px !important;"> 
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Purchase Invoice Pending List</h4>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body m-0 p-0">
+                    <input type="hidden" id="hd_pending_pi_id" />
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="equipment comon-status row mt-40 d-block">
+                                    <table id="table_id" class="table table-hover form-item-table" cellspacing="0"
+                                        width="100%">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 25px;">@lang('#') </th>
+                                                <th style="width: 250px;">@lang('Item Part Number')</th>
+                                                <th>@lang('Description of Goods')</th>
+                                                <th class="text-end" style="width: 150px;">@lang('Amount')</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+					<div class="modal-footer">
+                                    <button type="button" class="btn btn-light add-btn ms-2" id="addPIPendingSTLItems">
+                                        <i class="ico icon-outline-bookmark-opened text-success"></i> Add Selected
+                                    </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<form id="po">
+    <div class="modal side-panel fade" id="po_pending_popup_win" data-bs-backdrop="false" tabindex="-1" aria-labelledby="addPOPendingSTL" aria-hidden="true">
+        <div class="modal-dialog modal-lg" style="height: 250px !important;"> 
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Purchase Order Pending List</h4>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body m-0 p-0">
+                    <input type="hidden" id="hd_pending_po_id" />
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="equipment comon-status row mt-40 d-block">
+                                    <table id="po_table_id" class="table table-hover form-item-table" cellspacing="0"
+                                        width="100%">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 25px;">@lang('#') </th>
+                                                <th style="width: 250px;">@lang('Item Part Number')</th>
+                                                <th>@lang('Description of Goods')</th>
+                                                <th class="text-end" style="width: 150px;">@lang('Amount')</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+					<div class="modal-footer">
+                                    <button type="button" class="btn btn-light add-btn ms-2" id="addPOPendingSTLItems">
+                                        <i class="ico icon-outline-bookmark-opened text-success"></i> Add Selected
+                                    </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<button data-bs-toggle="modal" data-bs-target="#PerformaInvoiceModal" id="btn_performa_invoice_modal" data-toggle="modal" hidden></button>
+    <div class="modal side-panel fade" id="PerformaInvoiceModal" data-bs-backdrop="false" tabindex="-1" aria-labelledby="addPOPendingSTL" aria-hidden="true">
+        <div class="modal-dialog modal-lg" style="height: 250px !important;"> 
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Proforma Invoice</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-lg-3 pt-2">Invoice Count</div>
+                    <div class="col-lg-9">
+                    <input class="form-control" id="invoice_count" type="number" autocomplete="off" name="invoice_count" value="" onchange="set_invoice_count()">
+                    <br />
+                    <div id="invoice_boxes"></div>
+                </div>
+            </div>
+        </div>
+        
+					<div class="modal-footer">
+                                    <button type="button" class="btn btn-light add-btn ms-2" onclick="addInvoices()">
+                                        <i class="ico icon-outline-bookmark-opened text-success"></i> Add
+                                    </button>
+                        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function set_invoice_count() {
+        var count = document.getElementById("invoice_count").value;
+        var container = document.getElementById("invoice_boxes");
+
+        container.innerHTML = "";
+
+        for (var i = 0; i < count; i++) {
+            var inputHTML = "<div class='mb-3'><input class='form-control' type='text' name='invoiceno_" + (i + 1) + "' placeholder='Invoice #" + (i + 1) + "'></div>";
+            container.innerHTML += inputHTML;
+        }
+    }
+
+    function addInvoices() {
+            var invoiceCount = document.getElementById("invoice_count").value;
+            var invoiceInputs = document.querySelectorAll('input[name^="invoiceno_"]');
+            var invoiceNumbers = [];
+            invoiceInputs.forEach(function(input) {
+                if (input.value.trim() !== "") {
+                    invoiceNumbers.push(input.value.trim());
+                }
+            });
+            var invoiceValues = invoiceNumbers.join(',');
+            console.log(invoiceValues);
+            var invoiceNumbers = invoiceValues.split(',');
+
+            var tableBody = document.getElementById("ptable");
+
+            tableBody.innerHTML = "";
+
+            for (var i = 0; i < invoiceCount; i++) {
+                if (i < invoiceNumbers.length) {
+                    var invoice = invoiceNumbers[i].trim();
+                    var invoiceNo = i;
+                    var ctrl_id = invoiceNo+'_'+i;
+                    var p_c="cl_"+invoiceNo;
+                    var rowHTML = "<table width='100%' id='profoma_table_"+invoiceNo+"' style='border: solid 1px #f2f2f2;'>\
+                        <thead><tr><td></td><td><input type='text' class='form-control' name='purchase_inv[]' value='"+invoice+"'></td><td></td><td><a class='btn-sm' style='color: #fff; background-color: #1cc88a; border-color: #1cc88a;' onclick='open_import("+invoiceNo+")'>Import</a></td><td class='text-center'><a class='btn-sm btn-light' onclick='deleteTable(this)'><i class='ico icon-outline-trash-bin-minimalistic text-dark' style='font-size: 16px;'></i></a></td></tr>\
+                        <tr><th style='width: 50px;'>Sr. No</th>\
+                                                <th style='width: 250px;'>Item Part Number</th>\
+                                                <th>Description of Goods</th>\
+                                                <th style='width: 150px;' class='text-end'>Amount</th>\
+                                                <th style='width: 150px;' class='text-center'>&nbsp;&nbsp;&nbsp;Action</th></tr></thead>\
+                                                <tbody><tr><td></td>\
+                                    <td><input class='form-control' type='text' name='part_number[]' onclick='get_item(this)' placeholder='Part Number'><input type='hidden' name='partno[]'><input type='hidden' id='pi_inv_no_" + invoiceNo + "' name='pi_inv_no[]' value='"+invoice+"'/><input type='hidden' name='awbno[]' value=''/><input type='hidden' name='boeno[]' value=''/></td>\
+                                    <td><input class='form-control' type='text' name='description[]' placeholder='Description of Goods'></td>\
+                                    <td><input class='form-control text-end "+p_c+"' type='number' name='amount[]' placeholder='Amount' onchange='set_total2("+invoiceNo+")'></td>\
+                                    <td><a class='btn-sm btn-light edit-btn'><i class='ico icon-outline-pen-2 text-success' style='font-size: 16px;'></i></a>\
+                                        <a class='btn-sm btn-light delete-btn' onclick='deleteRow(this)'><i class='ico icon-outline-trash-bin-minimalistic text-dark' style='font-size: 16px;'></i></a>\
+                                        <button type='button' class='btn-sm btn-primary' onclick='addRow(this)'>+</button>\
+                                    </td>\
+                                </tr></tbody><tfoot><tr><th></th><th></th><th></th><th class='text-end'><span id='table_id_total_"+invoiceNo+"'></span></th></tr></tfoot></table><br />";
+                    tableBody.innerHTML += rowHTML;
+                }
+            }
+            
+            $('#closeInvoices').click();
+            $('#PerformaInvoiceModal').modal('hide');
+        }
+
+function addRow(button) {
+    var currentRow = button.closest('tr');
+    var tableBody = currentRow.parentNode;    
+    var newRow = currentRow.cloneNode(true);    
+    var inputs = newRow.querySelectorAll('input');
+    inputs.forEach(function(input) {
+        if (input.name !== 'pi_inv_no[]') {
+            input.value = '';
+        }
+    });    
+    var elementsToRemoveClass = newRow.querySelectorAll('.license, .networking');
+    elementsToRemoveClass.forEach(function(element) {
+        element.classList.remove('license');
+        element.classList.remove('networking');
+    });
+    tableBody.insertBefore(newRow, currentRow.nextSibling);
+    button.style.display = 'none';
+}
+
+
+
+        function deleteRow(btn) {
+            var row = btn.closest("tr");
+            row.parentNode.removeChild(row);
+        }
+
+        function deleteTable(btn) {
+            var confirmDelete = confirm("Are you sure you want to delete this?");
+            if (confirmDelete) {
+                $(btn).closest('table').remove();
+            }
+        }
+        function importTable(btn) {
+            var confirmDelete = confirm("Are you sure you want to delete this?");
+            if (confirmDelete) {
+                $(btn).closest('table').remove();
+            }
+        }
+        
+
+var clicked_part_number_input = null;
+var clicked_description_input = null;
+var clicked_pno_input = null;
+var clicked_amount_input = null;
+
+function get_item(element) {
+    clicked_part_number_input = $(element);
+    clicked_pno_input = $(element).next('input');
+    clicked_description_input = $(element).closest('td').next('td').find('input');
+    clicked_amount_input = $(element).closest('td').next('td').next('td').find('input');
+    $('#btn_product_list_modal').click();
+}
+
+function add_get_item() {
+    var id = $('#part_no').val();
+
+    var description=$('#part_no_des_'+id).val(); 
+    if (description.toLowerCase().includes('license'.toLowerCase())) {
+        description = "Networking license ";
+        clicked_amount_input.addClass('license');
+    }
+    else if (description.toLowerCase().includes('licence'.toLowerCase())) {
+        description = "Networking License ";
+        clicked_amount_input.addClass('license');
+    } else {
+        description = "Networking " + $('#part_no_cat_'+id).val();
+        clicked_amount_input.addClass('networking');
+    }
+    
+    clicked_part_number_input.val($('#part_number_'+id).val());
+    clicked_description_input.val(description);
+    clicked_pno_input.val($('#part_no').val());
+
+    $('#productlistModal').modal('hide');
+}
+
+
+function set_total() {
+    let license_amounts = document.querySelectorAll('.license');
+    let networking_amounts = document.querySelectorAll('.networking');
+    let license_total = 0;
+    let networking_total = 0;
+
+    license_amounts.forEach(function(input) {
+        // Remove commas and convert to float
+        let value = input.value.replace(/,/g, '');
+        license_total += parseFloat(value) || 0;
+    });
+
+    networking_amounts.forEach(function(input) {
+        // Remove commas and convert to float
+        let value = input.value.replace(/,/g, '');
+        networking_total += parseFloat(value) || 0;
+    });
+
+    let decimalPoint = @json(session('logged_session_data.decimal_point'));
+    document.getElementById('total_hardware').textContent = formatAmount(networking_total.toFixed(decimalPoint));
+    document.getElementById('total_license').textContent = formatAmount(license_total.toFixed(decimalPoint));
+    document.getElementById('total_hl').textContent = formatAmount((networking_total + license_total).toFixed(decimalPoint));
+}
+function set_total2(id) {
+
+let amts = document.querySelectorAll('.cl_' + id);
+let amt_total = 0;
+amts.forEach(function(input) {
+    // Remove commas and convert to float
+    let value = input.value.replace(/,/g, '');
+    amt_total += parseFloat(value) || 0;
+});
+let decimalPoint = @json(session('logged_session_data.decimal_point'));
+    document.getElementById('table_id_total_' + id).textContent = formatAmount(amt_total.toFixed(decimalPoint));
+
+let license_amounts = document.querySelectorAll('.license');
+let networking_amounts = document.querySelectorAll('.networking');
+let license_total = 0;
+let networking_total = 0;
+
+license_amounts.forEach(function(input) {
+    // Remove commas and convert to float
+    let value = input.value.replace(/,/g, '');
+    license_total += parseFloat(value) || 0;
+});
+
+networking_amounts.forEach(function(input) {
+    // Remove commas and convert to float
+    let value = input.value.replace(/,/g, '');
+    networking_total += parseFloat(value) || 0;
+});
+
+document.getElementById('total_hardware').textContent = networking_total.toFixed(@json(session('logged_session_data.decimal_point')));
+document.getElementById('total_license').textContent = license_total.toFixed(@json(session('logged_session_data.decimal_point')));
+document.getElementById('total_hl').textContent = (networking_total + license_total).toFixed(@json(session('logged_session_data.decimal_point')));
+}
+
+
+
+</script>
+
+
+<a data-toggle="modal" id="btn_product_list_modal" data-target="#productlistModal" data-toggle="modal" data-backdrop="static" data-keyboard="false"></a>
+
+
+<div class="modal fade bd-example-modal-lg" id="productlistModal" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Select Product</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          <div class="row">
+              <div class="col-lg-3 pt-2">Part Number</div>
+                  <div class="col-lg-9">
+                  <select id="part_no" class="form-control js-example-basic-single">
+                    <option>Select</option>
+                    @foreach ($product as $p)
+                    <option value="{{ $p->id }}">{{ $p->part_number }}</option>
+                    @endforeach
+                </select>    
+
+                    @foreach ($product as $pr)
+                    <input type="hidden" id="part_number_{{ $pr->id }}" value="{{ $pr->part_number }}"/>
+                    <input type="hidden" id="part_no_cat_{{ $pr->id }}" value="{{ $pr->cat_name }}" />
+                    <input type="hidden" id="part_no_des_{{ $pr->id }}" value="{{ $pr->description }}" />
+
+                    @if (str_contains(strtolower($pr->description), 'license'))
+                        <input type="hidden" id="dyna_part_no_des_{{ strtolower(preg_replace('/[^a-z0-9]/i', '', trim($pr->part_number))) }}" value="Networking License" />
+                    @elseif (str_contains(strtolower($pr->description), 'licence'))
+                        <input type="hidden" id="dyna_part_no_des_{{ strtolower(preg_replace('/[^a-z0-9]/i', '', trim($pr->part_number))) }}" value="Networking License" />
+                    @else
+                        <input type="hidden" id="dyna_part_no_des_{{ strtolower(preg_replace('/[^a-z0-9]/i', '', trim($pr->part_number))) }}" value="Networking {{ $pr->cat_name }}" />
+                    @endif
+
+                    @endforeach 
+
+                    
+                                 
+              </div>
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="closeInvoices" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="add_get_item()">Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<a data-toggle="modal" id="btn_import_modal" data-target="#importModal" data-toggle="modal" data-backdrop="static" data-keyboard="false"></a>
+  <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Import Items</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-lg-12 pt-2">
+                    Select File 
+                    <input type="file" id="excel-file" /> (<a href="{{ url('public/uploads/product_upload/profoma_invoice_import_sample.xlsx') }}" target="_blank">Sample File</a>)
+                    <input type="hidden" id="profoma_id"/>
+                </div>
+                </div>
+            </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="closeimport" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+
+
+
+  </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+
+    <script>
+        function open_import(id){
+            $("#profoma_id").val(id);
+            $('#btn_import_modal').click();
+        }
+
+        $(document).ready(function() {
+            $("#excel-file").change(function(e) {
+                var file = e.target.files[0];
+                
+                if (file && file.name.endsWith(".xlsx")) {
+                    var reader = new FileReader();
+
+                    reader.onload = function(event) {
+                        var data = event.target.result;
+
+                        // Use SheetJS to read the Excel file
+                        var workbook = XLSX.read(data, { type: 'array' });
+
+                        // Get the first sheet
+                        var sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+                        // Convert the sheet to a JSON object (array of rows)
+                        var jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                        var id = $("#profoma_id").val();
+                        // Populate the table with the rows
+                        var tableBody = $("#profoma_table_"+id+" tbody");
+                        tableBody.empty(); // Clear any existing rows
+
+                        for (var i = 1; i < jsonData.length; i++) { // Skip the header row
+                            var rowData = jsonData[i];
+                            
+                            var dyna_des = $('#dyna_part_no_des_'+rowData[0].trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')).val();
+                            //alert(dyna_des);
+                            //alert(rowData[0].trim().toLowerCase());
+
+                            var row = $("<tr></tr>");
+
+                            // Part Number (Cell 1)
+                            row.append('<td>'+i+'</td>');
+                            row.append('<td><input class="form-control" type="text" name="part_number[]" value="' + rowData[0] + '" onclick="get_item(this)" placeholder="Part Number"><input type="hidden" value="0" name="partno[]"></td>');
+
+                            // Description (Cell 2)
+                            row.append('<td><input class="form-control" type="text" name="description[]" value="' + dyna_des + '" placeholder="Description of Goods"></td>');
+
+                            // Amount (Cell 3)
+                            row.append('<td><input class="form-control text-end cl_'+(i-1)+'" type="text" name="amount[]" value="' + formatAmount(rowData[1]) + '" placeholder="Amount" onchange="set_total2('+id+')"></td>');
+
+                            // Actions (Cell 4)
+                            row.append('<td><a class="btn-sm btn-light edit-btn"><i class="ico icon-outline-pen-2 text-success" style="font-size: 16px;"></i></a><a class="btn-sm btn-light delete-btn" onclick="deleteRow(this)"><i class="ico icon-outline-trash-bin-minimalistic text-dark" style="font-size: 16px;"></i></a><button type="button" class="btn-sm btn-primary" onclick="addRow(this)">+</button></td>');
+
+                            tableBody.append(row);
+                        }
+                    };
+
+                    reader.readAsArrayBuffer(file);
+                    $('#closeimport').click();
+                } else {
+                    alert("Please upload a valid Excel file.");
+                }
+                $("#excel-file").val('');
+            });
+        });
+
+    </script>
+
+
+<?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>

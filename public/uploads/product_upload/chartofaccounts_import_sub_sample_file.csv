@@ -1,0 +1,8 @@
+account_name,sub_account_name,debit_amount,credit_amount,date,Department,Prepaid/Accrued Exp
+Purchase,sub account name 1,200,,2/1/2025,Sales,yes
+Purchase,sub account name 2,201,,2/1/2025,Purchase,no
+Purchase,sub account name 3,,300,2/1/2025,Accounts,yes
+Sales,sub account name 4,,301,2/1/2025,Sales,no
+Sales,sub account name 5,,302,2/1/2025,Purchase,yes
+Sales,sub account name 6,,303,2/1/2025,Accounts,yes
+Sales,sub account name 7,,304,2/1/2025,Procurement,yes

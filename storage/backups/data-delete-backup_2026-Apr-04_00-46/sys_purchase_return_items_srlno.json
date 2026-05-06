@@ -1,0 +1,38 @@
+[
+    {
+        "id": 1,
+        "prt_id": 2,
+        "piv_id": null,
+        "part_no": 8,
+        "srl_no": "121212",
+        "status": 2,
+        "item_id": 0
+    },
+    {
+        "id": 2,
+        "prt_id": 2,
+        "piv_id": null,
+        "part_no": 8,
+        "srl_no": "121212",
+        "status": 2,
+        "item_id": 0
+    },
+    {
+        "id": 3,
+        "prt_id": 4,
+        "piv_id": null,
+        "part_no": 10,
+        "srl_no": "",
+        "status": 1,
+        "item_id": 0
+    },
+    {
+        "id": 4,
+        "prt_id": 4,
+        "piv_id": null,
+        "part_no": 10,
+        "srl_no": "",
+        "status": 1,
+        "item_id": 0
+    }
+]

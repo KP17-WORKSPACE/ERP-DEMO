@@ -1,0 +1,342 @@
+[
+    {
+        "id": 1,
+        "title": "CASH ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": 4,
+        "created_at": "2024-04-04 13:18:50",
+        "updated_at": "2020-10-27 06:47:38",
+        "days_calculation": 0
+    },
+    {
+        "id": 2,
+        "title": "CDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": 4,
+        "created_at": "2024-04-04 13:19:01",
+        "updated_at": "2020-10-27 06:47:56",
+        "days_calculation": 0
+    },
+    {
+        "id": 3,
+        "title": "ADVANCE PAYMENT",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-04-04 13:19:04",
+        "updated_at": "2020-10-27 06:48:04",
+        "days_calculation": 0
+    },
+    {
+        "id": 4,
+        "title": "PDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-04-04 13:19:07",
+        "updated_at": "2020-10-27 06:48:11",
+        "days_calculation": 0
+    },
+    {
+        "id": 6,
+        "title": "30 DAYS PDC",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": 6,
+        "created_at": "2024-07-19 19:30:11",
+        "updated_at": "2024-03-30 20:01:29",
+        "days_calculation": 30
+    },
+    {
+        "id": 7,
+        "title": "45 DAYS PDC",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:16",
+        "updated_at": "2022-10-18 21:50:51",
+        "days_calculation": 45
+    },
+    {
+        "id": 8,
+        "title": "60 DAYS PDC",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:18",
+        "updated_at": "2022-10-18 21:51:04",
+        "days_calculation": 60
+    },
+    {
+        "id": 9,
+        "title": "30 DAYS PDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:21",
+        "updated_at": "2022-10-19 16:39:39",
+        "days_calculation": 30
+    },
+    {
+        "id": 10,
+        "title": "45 DAYS PDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:23",
+        "updated_at": "2022-10-19 16:39:43",
+        "days_calculation": 45
+    },
+    {
+        "id": 11,
+        "title": "40 DAYS PDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:25",
+        "updated_at": "2022-10-19 16:39:51",
+        "days_calculation": 40
+    },
+    {
+        "id": 12,
+        "title": "60 DAYS PDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:27",
+        "updated_at": "2022-10-19 16:39:56",
+        "days_calculation": 60
+    },
+    {
+        "id": 13,
+        "title": "BANK TRANSFER",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-04-04 13:19:38",
+        "updated_at": "2022-10-19 16:40:15",
+        "days_calculation": 0
+    },
+    {
+        "id": 14,
+        "title": "10 DAYS PDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": 6,
+        "created_at": "2024-07-19 19:30:38",
+        "updated_at": "2024-03-30 20:03:54",
+        "days_calculation": 10
+    },
+    {
+        "id": 15,
+        "title": "NET 30 DAYS",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:39",
+        "updated_at": "2022-10-19 16:40:38",
+        "days_calculation": 30
+    },
+    {
+        "id": 16,
+        "title": "NET 60 DAYS",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:40",
+        "updated_at": "2022-10-19 16:40:44",
+        "days_calculation": 60
+    },
+    {
+        "id": 17,
+        "title": "NET 90 DAYS",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:41",
+        "updated_at": "2022-10-19 16:40:48",
+        "days_calculation": 90
+    },
+    {
+        "id": 18,
+        "title": "HSBC BILL DISCOUNTING",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-04-04 13:19:53",
+        "updated_at": "2022-10-19 16:40:51",
+        "days_calculation": 0
+    },
+    {
+        "id": 19,
+        "title": "CARD PAYMENT",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-04-04 13:19:56",
+        "updated_at": "2022-10-19 18:34:26",
+        "days_calculation": 0
+    },
+    {
+        "id": 20,
+        "title": "50% ADVANCE 50% ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-04-04 13:19:59",
+        "updated_at": "2022-10-20 19:55:52",
+        "days_calculation": 0
+    },
+    {
+        "id": 21,
+        "title": "50% ADVANCE 50% BEFORE DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-04-04 13:20:01",
+        "updated_at": "2022-10-20 19:56:09",
+        "days_calculation": 0
+    },
+    {
+        "id": 22,
+        "title": "OTHER",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-04-04 13:20:04",
+        "updated_at": "2022-10-21 18:33:32",
+        "days_calculation": 0
+    },
+    {
+        "id": 23,
+        "title": "15 DAYS PDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:30:59",
+        "updated_at": "2022-12-10 01:09:31",
+        "days_calculation": 15
+    },
+    {
+        "id": 24,
+        "title": "NET 45 DAYS",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:31:00",
+        "updated_at": "2022-12-23 19:12:47",
+        "days_calculation": 45
+    },
+    {
+        "id": 25,
+        "title": "BANK TRANSFER AFTER DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-04-04 13:20:12",
+        "updated_at": "2023-03-31 18:24:49",
+        "days_calculation": 0
+    },
+    {
+        "id": 26,
+        "title": "50% ADVANCE & 50% NET 30 DAYS",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": 6,
+        "created_at": "2024-07-19 19:31:11",
+        "updated_at": "2024-03-30 20:02:11",
+        "days_calculation": 30
+    },
+    {
+        "id": 27,
+        "title": "50% ADVANCE & 50% 30 DAYS PDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:31:13",
+        "updated_at": "2024-04-05 20:39:56",
+        "days_calculation": 30
+    },
+    {
+        "id": 28,
+        "title": "NET 15 DAYS",
+        "active_status": 1,
+        "created_by": null,
+        "updated_by": 1,
+        "created_at": "2024-07-19 19:31:14",
+        "updated_at": "2024-06-07 22:53:23",
+        "days_calculation": 15
+    },
+    {
+        "id": 29,
+        "title": "10% Adv 90% 30 DAYS PDC",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:31:19",
+        "updated_at": "2024-06-04 20:34:53",
+        "days_calculation": 30
+    },
+    {
+        "id": 30,
+        "title": "7 Days PDC",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:31:20",
+        "updated_at": "2024-06-04 20:36:32",
+        "days_calculation": 7
+    },
+    {
+        "id": 31,
+        "title": "35 DAYS PDC",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:31:25",
+        "updated_at": "2024-06-07 03:22:12",
+        "days_calculation": 35
+    },
+    {
+        "id": 32,
+        "title": "25% Advance & 75% 30 Days PDC",
+        "active_status": 1,
+        "created_by": 24,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:31:27",
+        "updated_at": "2024-06-27 18:06:16",
+        "days_calculation": 30
+    },
+    {
+        "id": 33,
+        "title": "75 DAYS PDC ON DELIVERY",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2024-07-19 19:31:28",
+        "updated_at": "2024-06-29 01:10:32",
+        "days_calculation": 75
+    },
+    {
+        "id": 34,
+        "title": "90 DAYS PDC",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2025-01-21 01:26:52",
+        "updated_at": "2025-01-21 01:26:52",
+        "days_calculation": 0
+    },
+    {
+        "id": 35,
+        "title": "25% Advance CDC and 75% CDC on Delivery",
+        "active_status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2025-06-24 07:57:13",
+        "updated_at": "2025-06-24 07:57:13",
+        "days_calculation": 0
+    }
+]

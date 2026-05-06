@@ -1,0 +1,65 @@
+.footer_area{
+    margin-left: 270px;
+    padding-bottom: 43px;
+    @media #{$mobile_device} {
+        margin-left: 0;
+    }
+    @media #{$tablet_device} {
+        margin-left: 0;
+    }
+    .copy_right{
+        padding-left: 30px;
+        @media #{$mobile_device} {
+            padding: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        @media #{$tablet_device} {
+            text-align: center;
+        }
+        @media #{$mid_device} {
+            text-align: center;
+        }
+        p{
+            font-size: 13px;
+            margin-bottom: 0;
+            color: #92a2b7;
+        a{
+            color: #40E8DD;
+        }
+        }
+    }
+    .quick_links{
+        text-align: right;
+        margin-right: 30px;
+        @media #{$tablet_device} {
+            text-align: center;
+            margin-top: 20px;
+        }
+        @media #{$mid_device} {
+            text-align: center;
+        }
+        li{
+            display: inline-block;
+            a{
+                font-size: 13px;
+                font-weight: 400;
+                color: #647891;
+                margin-left: 45px;
+                &:hover{
+                    color: #40E8DD;
+                }
+            }
+        }
+        
+    }
+    &.minus_margin{
+        margin-left: 80px;
+        @media #{$mobile_device} {
+            margin-left: 0;
+        }
+        @media #{$tablet_device} {
+            margin-left: 0;
+        }
+    }
+}

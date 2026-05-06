@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus ERP</title>
+    <link rel="icon" href="{{ asset('public/design') }}/assets/images/erp-logo-icon.png" type="image/png"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ asset('public/design') }}/assets/css/_main.css" />
+    <link rel="stylesheet" href="{{ asset('public/design') }}/assets/css/_icomoon.css" />
+    <link rel="stylesheet" href="{{ asset('public/design') }}/assets/css/login.css" />
+</head>
+
+<body>
+    <div class="venus-app page-login">
+        <section class="content-container">
+            <div class="content-bg">
+                <div class="company-details">
+                    <div class="logo"><img src="{{ asset('public/design') }}/assets/images/logo-color.png" alt="LOGO" /></div>
+                    <div class="caption">Empowering you to close more deals and <span class="caption-highlight">Grow smarter every day.</span></div>
+                    <div class="caption-details">Welcome to your ultimate sales companion! Track performance, manage leads, monitor deals, and stay on top of targets effortlessly.</div>
+                </div>
+                <form  method="POST" action="{{ url('crm-auth-update') }}" class="login-box" >
+                    @csrf
+											@if(session()->has('message-success') != "")
+												@if(session()->has('message-success'))
+													<p class="text-success">{{session()->get('message-success')}}</p>
+												@endif
+											@endif
+											@if(session()->has('message-danger') != "")
+												@if(session()->has('message-danger'))
+													<p class="text-danger">{{session()->get('message-danger')}}</p>
+												@endif
+											@endif
+                    <h3>Authentication Code</h3>
+                    <div class="login-fields">
+                        <div class="login-field">
+                            <label for="exampleFormControlInput1" class="form-label">Code</label>
+                            <input type="text" class="form-control" id="exampleFormControlInput1" name="code" placeholder="Enter Code Here" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-dark btn-login-submit">Submit</button>
+                    <div class="create-account"><a href="{{ route('logout')}}">Logout</a></div>                  
+
+                </form>
+            </div>
+        </section>
+        <footer class="login-footer">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-8">Copyright © {{ date('Y') }}  Venus, All Rights Reserved</div>
+                    <div class="col-4 d-flex justify-content-end">
+                        <div class="powered-by">
+                            <span>Powered By</span>
+                            <img src="{{ asset('public/design') }}/assets/images/powered-by.png" alt="Powered by" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="{{ asset('public/design') }}/assets/js/_main.js" type="text/javascript"></script>
+</body>
+
+</html>
+
+
+<?php /*
+<?php
+$setting = App\SmGeneralSettings::find(1);
+if(isset($setting->copyright_text)){ $copyright_text = $setting->copyright_text; }else{ $copyright_text = 'Copyright © 2019 All rights reserved | This template is made with by Codethemes'; }
+if(isset($setting->logo)) { $logo = $setting->logo; } else{ $logo = 'public/uploads/settings/logo.png'; }
+if(isset($setting->favicon)) { $favicon = $setting->favicon; } else{ $favicon = 'public/backEnd/img/favicon.png'; }
+
+$login_background = App\SmBackgroundSetting::where([['is_default',1],['title','Login Background']])->first(); 
+ 
+if(empty($login_background)){
+    $css = "background: url(".url('public/backEnd/img/login-bg.jpg').")  no-repeat center; background-size: cover; ";
+}else{
+    if(!empty($login_background->image)){
+        $css = "background: url('". url($login_background->image) ."')  no-repeat center;  background-size: cover;";
+    }else{
+        $css = "background:".$login_background->color;
+    }
+} 
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{{ asset('public/admin-iroid/') }}/img/erp-logo-icon.png" type="image/png"/>
+    <title>Venus ERP - Forgot Password</title>
+    <!-- Custom fonts for this template-->
+    <link href="{{asset('public/admin-iroid/')}}/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link
+        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+        rel="stylesheet">
+    <!-- Custom styles for this template-->
+    <link href="{{asset('public/admin-iroid/')}}/css/style.css" rel="stylesheet">
+</head>
+
+<body class="bg-gradient-primary" style="background-image: url({{asset('public/admin-iroid/')}}/img/crm-login-bg.jpg); background-position: center; background-size: cover;">
+    <div class="content-container">
+        <!-- Outer Row -->
+        <div class="row justify-content-center">
+
+            <div class="col-xl-10 col-lg-12 col-md-9">
+
+                <div class="card o-hidden border-0 shadow-lg my-5">
+                    <div class="card-body p-0">
+                        <!-- Nested Row within Card Body -->
+                        <div class="row">
+                            <div class="col-lg-5 d-none d-lg-block bg-password-image"></div>
+                            <div class="col-lg-7">
+                                <div class="p-5">
+                                    <div class="text-center">
+                                        <img src="{{asset('public/admin-iroid/')}}/img/erp-logo-b.png" width="150" alt=""><br /><br />
+                                        <h1 class="h4 text-gray-900 mb-2 font-weight-bold">Forgot Your Password?</h1>
+                                        <p class="mb-4">We get it, stuff happens. Just enter your email address below
+                                            and we ll send you a link to reset your password!</p>
+                                    </div>
+                                    @if(session()->has('message-success') != "")
+			                    @if(session()->has('message-success'))
+			                    <p class="text-success">{{session()->get('message-success')}}</p>
+			                    @endif
+			                @endif
+			                @if(session()->has('message-danger') != "")
+			                    @if(session()->has('message-danger'))
+			                    <p class="text-danger">{{session()->get('message-danger')}}</p>
+			                    @endif
+			                @endif
+									<form class="user" method="POST" action="{{ url('email/verify') }}">
+										@csrf
+                                        <div class="form-group">
+                                            <input type="email" name='email' class="form-control form-control-user"
+                                                id="exampleInputEmail" aria-describedby="emailHelp"
+                                                placeholder="Enter Email Address">
+												@if ($errors->has('email'))
+													<span class="invalid-feedback text-left pl-3" role="alert">
+														<strong>{{ $errors->first('email') }}</strong>
+													</span>
+												@endif
+                                        </div>
+										<button type="submit" class="btn btn-primary btn-user btn-block"><span class="ti-lock mr-2"></span>Reset Password</button>
+                                    </form>
+                                    
+                                    <div class="text-center mt-3">
+                                        <a class="" href="{{ url('login') }}">Back To Login</a>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+       <!-- script -->
+       <script src="{{asset('public/admin-iroid/')}}/vendor/jquery/jquery.min.js"></script>
+       <script src="{{asset('public/admin-iroid/')}}/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+       <script src="{{asset('public/admin-iroid/')}}/vendor/jquery-easing/jquery.easing.min.js"></script>
+       <script src="{{asset('public/admin-iroid/')}}/js/sb-admin-2.min.js"></script>
+       <script src="{{asset('public/admin-iroid/')}}/vendor/chart.js/Chart.min.js"></script>
+       <script src="{{asset('public/admin-iroid/')}}/js/demo/chart-area-demo.js"></script>
+       <script src="{{asset('public/admin-iroid/')}}/js/demo/chart-pie-demo.js"></script>
+       <!-- script -->
+   </body>
+   </html>
+
+   */ 
+   
+   ?>

@@ -1,0 +1,160 @@
+// form
+
+  .todo_list{
+    background: #fff;
+    padding: 30px;
+    margin-top: 30px;
+    position: relative;
+    // form {
+    //     outline: 0;
+    //     height: 36px;
+    //     margin-top: 5%;
+    //     border: 3px solid #3b3b3b;
+    //   }      
+    .todo_heading {
+        margin-bottom: 25px;
+    }
+    .add-items{
+        position: relative;
+        .gray_btn{
+            position: absolute;
+            top: -55px;
+            right: 0px;
+        }
+        span{
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ddd;
+            display: block;
+            border-radius: 50%;
+            top: 50%;
+            position: absolute;
+            left: 20px;
+            transform: translateY(-50%);
+            &:after {
+                border: 1px solid #647891;
+                border-top: none;
+                border-top: none;
+                border-right: none;
+                content: "";
+                height: 6px;
+                left: 5px;
+                opacity: 1;
+                position: absolute;
+                top: 8px;
+                transform: rotate(-45deg);
+                width: 12px;
+                top: 5px;
+                transform: rotate(-45deg);
+                width: 9px;
+              }
+        }
+    }
+    .form-control:focus {
+        color: #495057;
+        background-color: #fff;
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: none;
+    
+    }
+   input[type="text"] {
+        outline: 0;
+        width: 100%;
+        height: 50px;
+        border: none;
+        font-size: 14px;
+        font-weight: normal;
+        padding-left: 10px;
+        color: #151B26;
+        border:  1px dashed rgba(187, 193, 201, 0.5);
+        padding-left: 65px;
+        &::placeholder{
+            color: #151B26;
+        }
+        &:focus{
+            outline: none;
+        }
+    }
+      
+      
+    #list-items li {
+        height: 50px;
+        line-height: 50px;
+        padding-left: 38px;
+        position: relative;
+    }
+      
+      
+      input[type="checkbox"] { width: 30px; }
+      
+      .remove {
+        float: right;
+        cursor: pointer;
+      }
+      
+      .completed { text-decoration: line-through; }
+  }
+
+  .remove {
+	font-size: 11px;
+	right: 10px;
+	position: absolute;
+	color: #647891 !important;
+}
+
+//   ..........
+#list-items{
+    margin: 10px 0 0 0;
+    label {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 50%;
+        cursor: pointer;
+        height: 20px;
+        left: 0;
+        position: absolute;
+        top: 0;
+        width: 20px;
+        position: absolute;
+        top: 50%;
+        left: 20px;
+        @include transform(translateY(-50%));
+        &:after {
+            border: 1px solid #647891;
+            border-top: none;
+            border-top: none;
+            border-right: none;
+            content: "";
+            height: 6px;
+            left: 5px;
+            opacity: 1;
+            position: absolute;
+            top: 8px;
+            transform: rotate(-45deg);
+            width: 12px;
+            top: 5px;
+            transform: rotate(-45deg);
+            width: 9px;
+          }
+      }
+      input[type="checkbox"] {
+        visibility: visible;
+        position: relative;
+        left: -22px;
+        z-index: 99;
+        opacity: 0;
+      }
+      input[type="checkbox"]:checked + label {
+        @extend %check_bg;
+        border: transparent;
+        
+      }
+      input[type="checkbox"]:checked + label:after {
+        opacity: 1;
+        border-color: #fff;
+      }
+}
+
+
+  

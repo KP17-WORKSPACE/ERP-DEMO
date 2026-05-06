@@ -1,0 +1,2368 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\ApiBaseMethod;
+use App\SmInspectingDepartment;
+use App\SmItem;
+use Illuminate\Http\Request;
+use App\SmItemStore;
+use App\SmStaff;
+use App\SysBrand;
+use App\SysChartofAccounts;
+use App\SysCompany;
+use App\SysCountries;
+use App\SysCrmDeals;
+use App\SysCrmDealsComments;
+use App\SysCrmDealTrack;
+use App\SysCrmDealTrackApprovalAccounts;
+use App\SysCrmDealTrackApprovalDelivery;
+use App\SysCrmDealTrackApprovalInvoice;
+use App\SysCrmDealTrackApprovalPurchease;
+use App\SysCrmDealTrackApprovalPurcheaseGrn;
+use App\SysCrmDealTrackApprovalReceivables;
+use App\SysCrmDealTrackApprovalSales;
+use App\SysCrmDealTrackApprovalTechnical;
+use App\SysCrmDealTrackTemp;
+use App\SysCrmQuoteCharges;
+use App\SysCrmQuoteItems;
+use App\SysCurrencySettings;
+use App\SysCustSuppl;
+use App\SysCustSupplAddressbook;
+use App\SysDealItemInvoiced;
+use App\SysDealPurchaseOrderItems;
+use App\SysDeliveryNote;
+use App\SysDriver;
+use App\SysHelper;
+use App\SysItemOpeningStock;
+use App\SysItemStock;
+use App\SysPaymentTerms;
+use App\SysProformaInvoice;
+use App\SysPurchaseOrder;
+use App\SysPurchaseOrderItems;
+use App\SysPurchaseOrderItemsCart;
+use App\SysReceipt;
+use App\SysSalesInvoice;
+use App\SysShipping;
+use App\SysStockIn;
+use App\SysStockInSerialNo;
+use App\SysSupplierType;
+use Brian2694\Toastr\Facades\Toastr;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use PhpParser\Node\Stmt\Return_;
+use Validator;
+
+class SysCrmDealTrackController extends Controller
+{
+    public function __construct(){
+        $this->middleware('PM');
+    }
+
+    public function crmdealtracksubmit(Request $request)
+    {
+        $lpo_file = ""; $purchease_quote_file = ""; $cheque_copy_file = "";
+
+        if ($request->file('lpo') != "") {
+            $files = $request->file('lpo');
+            for ($i=0; $i<count($files); $i++) {
+                $file1 = $files[$i];
+                $lpo_file = md5(time()) . "_lpo_".$i."." . $file1->getclientoriginalextension();
+                $file1->move('public/uploads/crm_deal_track_doc/', $lpo_file);
+                $lpo[]=$lpo_file;
+            }
+            $lpo_file = implode("|",$lpo);
+        }
+        if ($request->file('purchease_quote') != "") {
+            $files = $request->file('purchease_quote');
+            for ($i=0; $i<count($files); $i++) {
+                $file2 = $files[$i];
+                $purchease_quote_file = md5(time()) . "_po_".$i."." . $file2->getclientoriginalextension();
+                $file2->move('public/uploads/crm_deal_track_doc/', $purchease_quote_file);
+                $purchease[]=$purchease_quote_file;
+            }
+            $purchease_quote_file = implode("|",$purchease);
+        }
+        if ($request->file('cheque_copy') != "") {
+            $files = $request->file('cheque_copy');
+            for ($i=0; $i<count($files); $i++) {
+                $file3 = $files[$i];
+                $cheque_copy_file = md5(time()) . "_cc_".$i."." . $file3->getclientoriginalextension();
+                $file3->move('public/uploads/crm_deal_track_doc/', $cheque_copy_file);
+                $cheque[]=$cheque_copy_file;
+            }
+            $cheque_copy_file = implode("|",$cheque);
+        }
+        //$b= explode("|",$lpo_str);
+
+        // if($request->purchease_required==""){
+        //     $request->purchease_required=0;
+        // }
+
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+
+        SysProformaInvoiceController::re_generate($request->deal_id,$request->reference_no,$request->reference_date);
+        
+        if($request->btnSubmit=="save"){
+
+            try {
+                DB::beginTransaction();
+                $check = SysCrmDealTrackTemp::select('id','accounts','sales','purchease','invoice','delivery','receivables','tech')->where('deal_id',$request->deal_id)->first();
+                if(isset($check)){
+
+                    $scd = SysCrmDealTrackTemp::find($check->id);
+                    $scd->delivery_date = date('Y-m-d', strtotime($request->delivery_date));
+                    
+                    if($check->accounts !=1 ){
+                        $scd->payment_terms = $request->payment_terms;
+                    }
+                    
+                    $scd->payment_mode = $request->payment_mode;
+                    if($request->payment_mode_sec!=""){
+                    $scd->payment_mode_sec = $request->payment_mode_sec;}
+
+                    $scd->purchease_required = $request->purchease_required;
+                    $scd->partial_delivery = $request->partial_delivery;
+                    $scd->technical = $request->technical;
+                    $scd->technical_detail = $request->technical_detail;
+                    $scd->remarks = $request->remarks;
+                    $scd->reference_no = $request->reference_no;
+                    $scd->reference_date = $request->reference_date;
+
+                    $scd->purchease_approval = $request->purchease_approval;
+                    $scd->invoice_approval = $request->invoice_approval;
+                    $scd->delivery_approval = $request->delivery_approval;
+                    $scd->receivables_approval = $request->receivables_approval;
+                
+                    $scd->start_date = $request->start_date;
+                    $scd->end_date = $request->end_date;
+
+                    if( $lpo_file != "" ){ $scd->lpo = $lpo_file; }
+                    if( $purchease_quote_file != "" ){ $scd->purchease_quote = $purchease_quote_file; }
+                    if( $cheque_copy_file != "" ){ $scd->cheque_copy = $cheque_copy_file; }
+
+                    $scd->updated_by = Auth::user()->id;
+                    $scd->updated_at = $trn_time;
+                    $scd->save();
+                }
+                else{
+                    $scd = new SysCrmDealTrackTemp();
+                    $scd->deal_id = $request->deal_id;
+                    $scd->delivery_date = date('Y-m-d', strtotime($request->delivery_date));
+                    $scd->payment_terms = $request->payment_terms;
+                    
+                    $scd->payment_mode = $request->payment_mode;
+                    if($request->payment_mode_sec!=""){
+                    $scd->payment_mode_sec = $request->payment_mode_sec;}
+
+                    $scd->lpo = $lpo_file;
+                    $scd->purchease_quote = $purchease_quote_file;
+                    $scd->cheque_copy = $cheque_copy_file;
+                    $scd->purchease_required = $request->purchease_required;
+                    $scd->partial_delivery = $request->partial_delivery;
+                    $scd->technical = $request->technical;
+                    $scd->technical_detail = $request->technical_detail;
+                    $scd->remarks = $request->remarks;
+                    $scd->reference_no = $request->reference_no;
+                    $scd->reference_date = $request->reference_date;
+
+                    $scd->purchease_approval = $request->purchease_approval;
+                    $scd->invoice_approval = $request->invoice_approval;
+                    $scd->delivery_approval = $request->delivery_approval;
+                    $scd->receivables_approval = $request->receivables_approval;
+                    $scd->start_date = $request->start_date;
+                    $scd->end_date = $request->end_date;
+
+                    $scd->accounts = 0;
+                    $scd->sales = 0;
+                    $scd->purchease = 0;
+                    $scd->invoice = 0;
+                    $scd->delivery = 0;
+                    $scd->receivables = 0;
+                    $scd->tech = 0;
+                    $scd->created_by = Auth::user()->id;
+                    $scd->created_at = $trn_time;
+                    $scd->company_id = session('logged_session_data.company_id');
+                    $scd->save();
+                    $scd->toArray();
+                }
+                DB::commit();
+                Toastr::success('Saved successfully', 'Success');
+                return redirect()->back();
+            } catch (\Throwable $th) {
+                DB::rollBack();
+                throw $th;
+                Toastr::error('Operation Failed', 'Failed');
+                return redirect()->back();
+            }
+
+        }
+
+        DB::beginTransaction();
+        try {
+            $check = SysCrmDealTrack::select('id','accounts','sales','purchease','invoice','delivery','receivables','tech')->where('deal_id',$request->deal_id)->first();
+            if(isset($check)){
+
+                $scd = SysCrmDealTrack::find($check->id);
+                $scd->delivery_date = date('Y-m-d', strtotime($request->delivery_date));
+                
+                if($check->accounts !=1 ){
+                    $scd->payment_terms = $request->payment_terms;
+                }
+                
+                $scd->payment_mode = $request->payment_mode;
+                if($request->payment_mode_sec!=""){
+                $scd->payment_mode_sec = $request->payment_mode_sec;}
+
+                $scd->purchease_required = $request->purchease_required;
+                $scd->partial_delivery = $request->partial_delivery;
+                $scd->technical = $request->technical;
+                $scd->technical_detail = $request->technical_detail;
+                $scd->remarks = $request->remarks;
+                $scd->reference_no = $request->reference_no;
+                $scd->reference_date = $request->reference_date;
+                $scd->purchease_approval = $request->purchease_approval;
+                $scd->invoice_approval = $request->invoice_approval;
+                $scd->delivery_approval = $request->delivery_approval;
+                $scd->receivables_approval = $request->receivables_approval;
+                $scd->start_date = $request->start_date;
+                $scd->end_date = $request->end_date;
+                
+                if( $lpo_file != "" ){ $scd->lpo = $lpo_file; }
+                if( $purchease_quote_file != "" ){ $scd->purchease_quote = $purchease_quote_file; }
+                if( $cheque_copy_file != "" ){ $scd->cheque_copy = $cheque_copy_file; }
+                
+                if($check->accounts == 2){ $scd->accounts = 0; 
+                    SysHelper::Erp_Notify_re_submit(8, $scd->id, $request->deal_id);
+                }
+                if($check->sales == 2){ $scd->sales = 0;
+                    SysHelper::Erp_Notify_re_submit(27, $scd->id, $request->deal_id);
+                }
+                if($check->purchease == 2){ $scd->purchease = 0;
+                    SysHelper::Erp_Notify_re_submit(20, $scd->id, $request->deal_id);
+                }
+                if($check->invoice == 2){ $scd->invoice = 0;
+                    SysHelper::Erp_Notify_re_submit(35, $scd->id, $request->deal_id);
+                }
+                if($check->delivery == 2){ $scd->delivery = 0;
+                    SysHelper::Erp_Notify_re_submit(34, $scd->id, $request->deal_id);
+                }
+                if($check->tech == 2){ $scd->tech = 0;
+                    SysHelper::Erp_Notify_re_submit(33, $scd->id, $request->deal_id);
+                }
+                if($check->receivables == 2){ $scd->receivables = 0;
+                    SysHelper::Erp_Notify_re_submit(2, $scd->id, $request->deal_id);
+                }
+
+                $scd->updated_by = Auth::user()->id;
+                $scd->updated_at = $trn_time;
+                $scd->save();
+            }
+            else{
+
+                $is_saved = SysCrmDealTrackTemp::where('deal_id',$request->deal_id)->orderby('id','desc')->first();
+                if(isset($is_saved)){
+
+                    $lpo_file = ""; $purchease_quote_file = ""; $cheque_copy_file = "";
+
+                    $scd = new SysCrmDealTrack();
+                    $scd->deal_id = $is_saved->deal_id;
+                    $scd->delivery_date = date('Y-m-d', strtotime($is_saved->delivery_date));
+                    $scd->payment_terms = $is_saved->payment_terms;
+                    
+                    $scd->payment_mode = $is_saved->payment_mode;
+                    if($is_saved->payment_mode_sec!=""){
+                    $scd->payment_mode_sec = $is_saved->payment_mode_sec;}
+
+                    if($lpo_file != ""){
+                        $scd->lpo = $lpo_file;
+                    } else { $scd->lpo = $is_saved->lpo; }
+                    
+                    if($purchease_quote_file != ""){
+                        $scd->purchease_quote = $purchease_quote_file;
+                    } else { $scd->purchease_quote = $is_saved->purchease_quote; }
+                    
+                    if($cheque_copy_file != ""){
+                        $scd->cheque_copy = $cheque_copy_file;
+                    } else { $scd->cheque_copy = $is_saved->cheque_copy; }
+
+                    $scd->purchease_required = $is_saved->purchease_required;
+                    $scd->partial_delivery = $is_saved->partial_delivery;
+                    $scd->technical = $is_saved->technical;
+                    $scd->technical_detail = $is_saved->technical_detail;
+                    $scd->remarks = $is_saved->remarks;
+                    $scd->reference_no = $is_saved->reference_no;
+                    $scd->reference_date = $is_saved->reference_date;
+                    
+                    $scd->purchease_approval = $is_saved->purchease_approval;
+                    $scd->invoice_approval = $is_saved->invoice_approval;
+                    $scd->delivery_approval = $is_saved->delivery_approval;
+                    $scd->receivables_approval = $is_saved->receivables_approval;
+                    $scd->start_date = $request->start_date;
+                    $scd->end_date = $request->end_date;
+
+                    $scd->accounts = 0;
+                    $scd->sales = 0;
+                    $scd->purchease = 0;
+                    $scd->invoice = 0;
+                    $scd->delivery = 0;
+                    $scd->receivables = 0;
+                    $scd->tech = 0;
+                    $scd->created_by = Auth::user()->id;
+                    $scd->created_at = $trn_time;
+                    $scd->company_id = session('logged_session_data.company_id');
+                    $scd->save();
+                    $scd->toArray();
+
+
+                } else {
+                    $scd = new SysCrmDealTrack();
+                    $scd->deal_id = $request->deal_id;
+                    $scd->delivery_date = date('Y-m-d', strtotime($request->delivery_date));
+                    $scd->payment_terms = $request->payment_terms;
+                    
+                    $scd->payment_mode = $request->payment_mode;
+                    if($request->payment_mode_sec!=""){
+                    $scd->payment_mode_sec = $request->payment_mode_sec;}
+
+                    $scd->lpo = $lpo_file;
+                    $scd->purchease_quote = $purchease_quote_file;
+                    $scd->cheque_copy = $cheque_copy_file;
+                    $scd->purchease_required = $request->purchease_required;
+                    $scd->partial_delivery = $request->partial_delivery;
+                    $scd->technical = $request->technical;
+                    $scd->technical_detail = $request->technical_detail;
+                    $scd->remarks = $request->remarks;
+                    $scd->reference_no = $request->reference_no;
+                    $scd->reference_date = $request->reference_date;
+                    
+                    $scd->purchease_approval = $request->purchease_approval;
+                    $scd->invoice_approval = $request->invoice_approval;
+                    $scd->delivery_approval = $request->delivery_approval;
+                    $scd->receivables_approval = $request->receivables_approval;
+                    $scd->start_date = $request->start_date;
+                    $scd->end_date = $request->end_date;
+                    
+                    $scd->accounts = 0;
+                    $scd->sales = 0;
+                    $scd->purchease = 0;
+                    $scd->invoice = 0;
+                    $scd->delivery = 0;
+                    $scd->receivables = 0;
+                    $scd->tech = 0;
+                    $scd->created_by = Auth::user()->id;
+                    $scd->created_at = $trn_time;
+                    $scd->company_id = session('logged_session_data.company_id');
+                    $scd->save();
+                    $scd->toArray();
+                }
+                
+                $user = DB::table('sm_staffs')->select('user_id')->where('role_id',27)->get(); //Accounts
+                if(count($user)>0){
+                    foreach($user as $u){
+                        SysHelper::exe_web_push($u->user_id,'Track Received','Deal '.$request->deal_id,'crm-deal-track-approval/'.$scd->id);
+                        SysHelper::Erp_Notify_in($u->user_id,'Deal '.$request->deal_id.' Track Received',$u->user_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$scd->id.'');
+                    }
+                }
+            }
+
+            DB::table('sys_crm_deals_comments')->insert([
+                'deal_id' => $request->deal_id,
+                'comments' => $request->remarks,
+                'status' => 1,
+                'created_by' => Auth::user()->id,
+                'created_at' => Carbon::now('+04:00'),
+            ]);
+
+           $results=0;
+           DB::commit();
+           
+        if ($results==0) {
+            Toastr::success('Deal Track has been added successfully', 'Success');
+            return redirect('crm-deal-track/'.$request->deal_id.'/view');
+        } else {
+            Toastr::error('Operation Failed', 'Failed');
+            return redirect()->back();
+        }
+
+       } catch (\Exception $e) {
+           return $e;
+           DB::rollback();
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back();
+       }       
+    }
+
+    public function crmdealtracksubmitedit(Request $request)
+    {
+        $lpo_file = ""; $purchease_quote_file = ""; $cheque_copy_file = "";
+
+        if ($request->file('lpo') != "") {
+            $files = $request->file('lpo');
+            for ($i=0; $i<count($files); $i++) {
+                $file1 = $files[$i];
+                $lpo_file = md5(time()) . "_lpo_".$i."." . $file1->getclientoriginalextension();
+                $file1->move('public/uploads/crm_deal_track_doc/', $lpo_file);
+                $lpo[]=$lpo_file;
+            }
+            $lpo_file = implode("|",$lpo);
+        }
+        if ($request->file('purchease_quote') != "") {
+            $files = $request->file('purchease_quote');
+            for ($i=0; $i<count($files); $i++) {
+                $file2 = $files[$i];
+                $purchease_quote_file = md5(time()) . "_po_".$i."." . $file2->getclientoriginalextension();
+                $file2->move('public/uploads/crm_deal_track_doc/', $purchease_quote_file);
+                $purchease[]=$purchease_quote_file;
+            }
+            $purchease_quote_file = implode("|",$purchease);
+        }
+        if ($request->file('cheque_copy') != "") {
+            $files = $request->file('cheque_copy');
+            for ($i=0; $i<count($files); $i++) {
+                $file3 = $files[$i];
+                $cheque_copy_file = md5(time()) . "_cc_".$i."." . $file3->getclientoriginalextension();
+                $file3->move('public/uploads/crm_deal_track_doc/', $cheque_copy_file);
+                $cheque[]=$cheque_copy_file;
+            }
+            $cheque_copy_file = implode("|",$cheque);
+        }
+        //$b= explode("|",$lpo_str);
+
+        // if($request->purchease_required==""){
+        //     $request->purchease_required=0;
+        // }
+
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        
+         
+
+        DB::beginTransaction();
+        try {
+            SysProformaInvoiceController::re_generate($request->deal_id,$request->reference_no,$request->reference_date);
+            
+            $check = SysCrmDealTrack::select('id','accounts','sales','purchease','invoice','delivery','receivables','tech')->where('deal_id',$request->deal_id)->first();
+            if(isset($check)){
+
+                $scd = SysCrmDealTrack::find($check->id);
+                $scd->delivery_date = date('Y-m-d', strtotime($request->delivery_date));
+                
+                if($check->accounts !=1 ){
+                    $scd->payment_terms = $request->payment_terms;
+                }
+                
+                $scd->payment_mode = $request->payment_mode;
+                if($request->payment_mode_sec!=""){
+                $scd->payment_mode_sec = $request->payment_mode_sec;}
+
+                $scd->purchease_required = $request->purchease_required;
+                $scd->partial_delivery = $request->partial_delivery;
+                $scd->technical = $request->technical;
+                $scd->technical_detail = $request->technical_detail;
+                $scd->remarks = $request->remarks;
+                $scd->reference_no = $request->reference_no;
+                $scd->reference_date = $request->reference_date;
+                $scd->start_date = $request->start_date;
+                $scd->end_date = $request->end_date;
+
+                if($scd->accounts==0){}
+                if($scd->sales==0){}
+                if($scd->purchease==0){$scd->purchease_approval = $request->purchease_approval;}
+                if($scd->invoice==0){$scd->invoice_approval = $request->invoice_approval;}
+                if($scd->delivery==0){$scd->delivery_approval = $request->delivery_approval;}
+                if($scd->receivables==0){$scd->receivables_approval = $request->receivables_approval;}                
+                
+                if( $lpo_file != "" ){ $scd->lpo = $lpo_file; }
+                if( $purchease_quote_file != "" ){ $scd->purchease_quote = $purchease_quote_file; }
+                if( $cheque_copy_file != "" ){ $scd->cheque_copy = $cheque_copy_file; }
+                
+
+                $scd->updated_by = Auth::user()->id;
+                $scd->updated_at = $trn_time;
+                $scd->save();
+            }
+
+           $results=0;
+           DB::commit();
+           
+        if ($results==0) {
+            Toastr::success('Deal Track has been added successfully', 'Success');
+            return redirect('crm-deal-track/'.$request->deal_id.'/view');
+        } else {
+            Toastr::error('Operation Failed', 'Failed');
+            return redirect()->back();
+        }
+
+       } catch (\Exception $e) {
+           return $e;
+           DB::rollback();
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back();
+       }
+    }
+
+    public function view($id)
+    {
+        $check_quote = SysCrmQuoteItems::where('deal_id',$id)->count();        
+        if($check_quote==0){
+            Toastr::error('Quotation Not Found. Please Create Quotation', 'Failed');
+            return redirect()->back();
+        }
+        try{
+            $paymentterms = SysPaymentTerms::all();
+            $edit = SysCrmDeals::where('id',$id)->first();
+            $comments = SysCrmDealsComments::where('deal_id',$id)->orderBy('id','DESC')->get();            
+            $quoteitems = SysCrmQuoteItems::where('deal_id',$id)->where('quote_id',$edit->quote_id)->get();
+            $quote_charges = SysCrmQuoteCharges::where('deal_id',$id)->where('quote_id',$edit->quote_id)->get();
+
+            $dealtrack = SysCrmDealTrack::where('deal_id',$id)->first();
+            //if($id==10686){
+            //    $addressbook = SysCustSupplAddressbook::where('cust_suppl_id',$edit->cust_id)->where('id',68)->orderBy('id','desc')->first();
+            //}else{
+                $addressbook = SysCustSupplAddressbook::where('cust_suppl_id',$edit->cust_id)->where('set_default',1)->orderBy('id','desc')->first();
+            //}
+
+            if(isset($dealtrack)){
+                $accounts = SysCrmDealTrackApprovalAccounts::where('deal_track_id',$dealtrack->id)->get();
+                $sales = SysCrmDealTrackApprovalSales::where('deal_track_id',$dealtrack->id)->get();
+                $purchease = SysCrmDealTrackApprovalPurchease::where('deal_track_id',$dealtrack->id)->get();
+                $invoice = SysCrmDealTrackApprovalInvoice::where('deal_track_id',$dealtrack->id)->get();
+                $delivery = SysCrmDealTrackApprovalDelivery::where('deal_track_id',$dealtrack->id)->get();
+                $receivables = SysCrmDealTrackApprovalReceivables::where('deal_track_id',$dealtrack->id)->get();
+                $tech = SysCrmDealTrackApprovalTechnical::where('deal_track_id',$dealtrack->id)->get();
+                
+            }
+            else{
+                $accounts = [];
+                $sales = [];
+                $purchease = [];
+                $invoice = [];
+                $delivery = [];
+                $receivables = [];
+                $tech = [];
+            }
+            return view('backEnd.crm.DealTrack', compact('edit','comments','quoteitems','paymentterms','dealtrack','accounts','sales','purchease','invoice','delivery','receivables','tech','addressbook','quote_charges'));
+        }catch (\Exception $e) {
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back();
+        }
+    }
+
+    public function crmdealtrackapprovallisting()
+    {
+        try {
+            $dealtrack = session('deal_track_query.dealtrack');
+            $vendors = session('deal_track_query.vendors');
+            $staff = session('deal_track_query.staff');
+            $ctrl_deal_id = session('deal_track_query.ctrl_deal_id');
+            $ctrl_company_id = session('deal_track_query.ctrl_company_id');
+            $ctrl_owner_id = session('deal_track_query.ctrl_owner_id');
+            $ctrl_status_id = session('deal_track_query.ctrl_status_id');
+            $ctrl_date = session('deal_track_query.ctrl_date');
+            $ctrl_partial_delivery = session('deal_track_query.ctrl_partial_delivery');            
+
+            return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date','ctrl_partial_delivery'));
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public function crmdealtrackapprovallist(Request $request)
+    {
+        $r = SysHelper::get_data_by_role();
+        $company_id = $r[0];
+        $staff      = SmStaff::select('user_id','full_name')->wherein('company_id',$company_id)->orderby('full_name','asc')->get();
+        $vendors = SysCustSuppl::select('id','code','name')->wherein('company_id',$company_id)->where('catid',1)->orderby('name','asc')->get(); // 1 customers, 2 suppliers
+
+        $company_list = SysCompany::select('id','company_name')->orderby('sort_id','asc')->get();
+
+        $ctrl_deal_id="";
+        $ctrl_company_id="";
+        $ctrl_owner_id="";
+        $ctrl_status_id="10";
+        $ctrl_date='';
+        $ctrl_partial_delivery='';
+        try{
+            $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id');
+            /*
+            //accounts
+            if(session('logged_session_data.designation_id')==8){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id');
+            }
+            //sales
+            if(session('logged_session_data.designation_id')==27){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where([['accounts','=',1]]);
+            }
+            //purchease
+            if(session('logged_session_data.designation_id')==20){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where([['accounts','=',1],['sales','=',1]]);
+            }
+            //invoice
+            if(session('logged_session_data.designation_id')==35){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency','sys_crm_deal_track_approval_invoice.invoice_no')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_track_id','sys_crm_deal_track.id')->where([['accounts','=',1],['sales','=',1]])->wherein('purchease',[1,4]);
+            }
+            //delivery
+            if(session('logged_session_data.designation_id')==34){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where([['accounts','=',1],['sales','=',1],['purchease','=',1],['invoice','=',1]]);
+            }
+            //technical
+            if(session('logged_session_data.designation_id')==33){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where([['accounts','=',1],['sales','=',1],['invoice','=',1],['delivery','=',1]])
+                ->where('sys_crm_deal_track.technical', 1)->where('sys_crm_deal_track.tech','!=', 1);
+            }
+            //receivables
+            if(session('logged_session_data.designation_id')==2){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where([['accounts','=',1],['sales','=',1],['purchease','=',1],['invoice','=',1],['delivery','=',1]])
+                ->where(function($query) {$query->where('sys_crm_deal_track.technical', 0)->orwhere('sys_crm_deal_track.tech',1);});
+            }
+            */
+            //if($_POST){
+            if(count($request->all()) > 0){
+                if ($request->deal_id != "") {
+                    $query->where('sys_crm_deals.code', $request->deal_id);
+                    $ctrl_deal_id=$request->deal_id;
+                }
+                if ($request->company_id != "") {
+                    $query->where('sys_crm_deals.cust_id', $request->company_id);
+                    $ctrl_company_id=$request->company_id;
+                }
+                if ($request->owner_id != "") {
+                    $query->where('sys_crm_deals.owner', $request->owner_id);
+                    $ctrl_owner_id=$request->owner_id;
+                }
+                if ($request->date != "") {
+                    $query->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') = '".date('Y-m-d', strtotime($request->date))."'");
+                    $ctrl_date=$request->date;
+                }
+                if ($request->partial_delivery != "") {
+                    $query->where('sys_crm_deal_track.partial_delivery', $request->partial_delivery);
+                    $ctrl_partial_delivery=$request->partial_delivery;
+                }
+                
+
+
+                if ($request->status_id !="" && $request->status_id != "10" ) {
+                    $ctrl_status_id=$request->status_id;
+                    
+                    $track = str_split($request->status_id, 1)[0];
+                    $status = str_split($request->status_id, 1)[1];
+                    //accounts
+                    if($track=="A"){
+                        $query->where('sys_crm_deal_track.accounts', $status);
+                    }
+                    //sales
+                    else if($track=="S"){
+                        $query->where('sys_crm_deal_track.sales', $status);
+                    }
+                    //purchease
+                    else if($track=="P"){
+                        $query->where('sys_crm_deal_track.purchease', $status);
+                    }
+                    //invoice
+                    else if($track=="I"){
+                        $query->where('sys_crm_deal_track.invoice', $status);
+                    }
+                    //delivery
+                    else if($track=="D"){
+                        $query->where('sys_crm_deal_track.delivery', $status);
+                    }
+                    //receivables
+                    else if($track=="R"){
+                        $query->where('sys_crm_deal_track.receivables', $status);
+                    }
+                    else{
+                        if($request->status_id==0){
+                            $query->orwhere('sys_crm_deal_track.accounts', $request->status_id);
+                        }else{
+                            $query->orwhere('sys_crm_deal_track.accounts', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.sales', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.purchease', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.invoice', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.delivery', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.receivables', $request->status_id);
+                        }
+                    }
+                }
+            }else{
+                $query->where('sys_crm_deal_track.receivables','!=', 1);
+            }
+
+            if(session('logged_session_data.company_id') != 1){ $query->wherein('sys_crm_deal_track.company_id',$company_id); }
+            
+            //$query->wherein('r.created_by',$r[1]);
+
+            if(Auth::user()->role_id == 5){
+                $query->where('sys_crm_deal_track.created_by', Auth::user()->id);
+            }
+
+            /*if(session('logged_session_data.designation_id')==2){
+                $query->where('sys_crm_deals.stage','=', 4);
+                $dealtrack = $query->orderby('receivables','asc')->orderby('id','desc')->paginate(50);
+            }else{*/
+                $query->where('sys_crm_deals.stage','=', 4);
+                $dealtrack = $query->orderby('id','desc')->paginate(50);
+                
+            /*}*/
+            
+            $ctrl_company_id2="";
+            return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date','ctrl_partial_delivery','company_list','ctrl_company_id2'));
+
+            /*$form_data = [
+                'dealtrack' => $dealtrack,
+                'vendors' => $vendors,
+                'staff' => $staff,
+                'ctrl_deal_id' => $ctrl_deal_id,
+                'ctrl_company_id' => $ctrl_company_id,
+                'ctrl_owner_id' => $ctrl_owner_id,
+                'ctrl_status_id' => $ctrl_status_id,
+                'ctrl_date' => $ctrl_date,
+                'ctrl_partial_delivery' => $ctrl_partial_delivery,                
+            ];
+            session()->put('deal_track_query', $form_data);
+            return redirect('crm-deal-track-approval-listing');*/
+            //return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+
+        }catch (\Exception $e) {
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function crmdealtrackapprovallistsort(Request $request)
+    {
+        $r = SysHelper::get_data_by_role();
+        $company_id = $r[0];
+        $staff      = SmStaff::select('user_id','full_name')->wherein('company_id',$company_id)->orderby('full_name','asc')->get();
+        $vendors = SysCustSuppl::select('id','code','name')->wherein('company_id',$company_id)->where('catid',1)->orderby('name','asc')->get(); // 1 customers, 2 suppliers
+
+        $company_list = SysCompany::select('id','company_name')->orderby('sort_id','asc')->get();
+
+        $ctrl_deal_id="";
+        $ctrl_company_id="";
+        $ctrl_company_id2="";
+        $ctrl_owner_id="";
+        $ctrl_status_id="10";
+        $ctrl_date='';
+        $ctrl_partial_delivery='';
+        try{
+            $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id');
+            
+            if(count($request->all()) > 0){
+                if ($request->company_id2 != "") {
+                    $query->where('sys_crm_deals.company_id', $request->company_id2);
+                    $ctrl_company_id2=$request->company_id2;
+                }
+                if ($request->status_id !="" && $request->status_id != "10" ) {
+                    $ctrl_status_id=$request->status_id;
+                    
+                    $track = str_split($request->status_id, 1)[0];
+                    $status = str_split($request->status_id, 1)[1];
+                    //return $track .' / '.$status;
+                    //accounts
+                    if($track=="A"){
+                        $query->where('sys_crm_deal_track.accounts', $status);
+                        $query->where('sys_crm_deal_track.sales', 0);
+                        $query->where('sys_crm_deal_track.purchease', 0);
+                        $query->where('sys_crm_deal_track.invoice', 0);
+                        $query->where('sys_crm_deal_track.delivery', 0);
+                        $query->where('sys_crm_deal_track.receivables', 0);
+
+                    }
+                    //sales
+                    else if($track=="S"){
+                        $query->where('sys_crm_deal_track.sales', $status);
+                        $query->where('sys_crm_deal_track.purchease', 0);
+                        $query->where('sys_crm_deal_track.invoice', 0);
+                        $query->where('sys_crm_deal_track.delivery', 0);
+                        $query->where('sys_crm_deal_track.receivables', 0);
+                    }
+                    //purchease
+                    else if($track=="P"){
+                        $query->where('sys_crm_deal_track.purchease', $status);
+                        $query->where('sys_crm_deal_track.invoice', 0);
+                        $query->where('sys_crm_deal_track.delivery', 0);
+                        $query->where('sys_crm_deal_track.receivables', 0);
+                    }
+                    //invoice
+                    else if($track=="I"){
+                        $query->where('sys_crm_deal_track.invoice', $status);
+                        $query->where('sys_crm_deal_track.delivery', 0);
+                        $query->where('sys_crm_deal_track.receivables', 0);
+                    }
+                    //delivery
+                    else if($track=="D"){
+                        $query->where('sys_crm_deal_track.delivery', $status);
+                        $query->where('sys_crm_deal_track.receivables', 0);
+                    }
+                    //receivables
+                    else if($track=="R"){
+                        $query->where('sys_crm_deal_track.receivables', $status);
+                    }
+                    else{
+                        if($request->status_id==0){
+                            $query->orwhere('sys_crm_deal_track.accounts', $request->status_id);
+                        }else{
+                            $query->orwhere('sys_crm_deal_track.accounts', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.sales', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.purchease', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.invoice', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.delivery', $request->status_id);
+                            $query->orwhere('sys_crm_deal_track.receivables', $request->status_id);
+                        }
+                    }
+                }
+            }else{
+                $query->where('sys_crm_deal_track.receivables','!=', 1);
+            }
+
+            if(session('logged_session_data.company_id') != 1){ $query->wherein('sys_crm_deal_track.company_id',$company_id); }
+            
+            //$query->wherein('r.created_by',$r[1]);
+
+            if(Auth::user()->role_id == 5){
+                $query->where('sys_crm_deal_track.created_by', Auth::user()->id);
+            }
+
+            /*if(session('logged_session_data.designation_id')==2){
+                $query->where('sys_crm_deals.stage','=', 4);
+                $dealtrack = $query->orderby('receivables','asc')->orderby('id','desc')->paginate(50);
+            }else{*/
+                $query->where('sys_crm_deals.stage','=', 4);
+                $dealtrack = $query->orderby('id','desc')->paginate(50);
+                
+            /*}*/
+            
+            return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date','ctrl_partial_delivery','company_list','ctrl_company_id2'));
+
+            /*$form_data = [
+                'dealtrack' => $dealtrack,
+                'vendors' => $vendors,
+                'staff' => $staff,
+                'ctrl_deal_id' => $ctrl_deal_id,
+                'ctrl_company_id' => $ctrl_company_id,
+                'ctrl_owner_id' => $ctrl_owner_id,
+                'ctrl_status_id' => $ctrl_status_id,
+                'ctrl_date' => $ctrl_date,
+                'ctrl_partial_delivery' => $ctrl_partial_delivery,                
+            ];
+            session()->put('deal_track_query', $form_data);
+            return redirect('crm-deal-track-approval-listing');*/
+            //return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+
+        }catch (\Exception $e) {
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function crmdealtrackapproval($id)
+    {
+        try{
+            SysPurchaseOrderItemsCart::where(['cart_id' => session('logged_session_data.cart_id')])->delete();
+            SysDealPurchaseOrderItems::where(['cart_id' => session('logged_session_data.cart_id')])->delete();
+
+            $deal = SysCrmDealTrack::find($id);
+            $del = SysCrmDeals::where('id',$deal->deal_id)->first();
+            $cust = SysCustSuppl::where('id',$del->cust_id)->first();
+            
+            $paymentterms = SysPaymentTerms::orderby('title','asc')->get();
+            
+            $comments = SysCrmDealsComments::where('deal_id',$deal->deal_id)->orderBy('id','DESC')->get();
+            $quoteitems = SysCrmQuoteItems::where('deal_id',$deal->deal_id)->where('quote_id',$del->quote_id)->get();
+
+            $quote_charges = SysCrmQuoteCharges::where('deal_id',$deal->deal_id)->where('quote_id',$del->quote_id)->get();
+
+            $check_po = SysPurchaseOrder::where('deal_id',$deal->deal_id)->get();
+            // $items_in_po=[];
+            // if(count($check_po)>0){
+            //     $items_in_po = SysPurchaseOrderItems::select('part_number',db::raw('sum(qty) as qty'))->wherein('po_id',$check_po->pluck('id'))->groupby('part_number','unitprice')->get();
+            // }
+
+            $quoteitems_invoiced = SysDealItemInvoiced::where('deal_id',$deal->deal_id)->sum('qty');
+            //$sales_invoice = SysSalesInvoice::where('deal_id',$deal->deal_id)->count();
+                        
+            $accounts = SysCrmDealTrackApprovalAccounts::where('deal_track_id',$id)->get();
+            $sales = SysCrmDealTrackApprovalSales::where('deal_track_id',$id)->get();
+            $purchease = SysCrmDealTrackApprovalPurchease::where('deal_track_id',$id)->get();
+
+            $po_detail = DB::table('sys_purchase_order as po')->select('po.doc_number', 'po.currency', 'ca.account_name' ,DB::raw('sum(taxableamount) + sum(vatamount) as amount'))
+            ->join('sys_purchase_order_items as poi','poi.po_id','po.id')
+            ->join('sys_chartofaccounts as ca','ca.id','po.vendors')
+            ->where('deal_id',$deal->deal_id)->groupby('po.doc_number','po.currency','ca.account_name')->get();
+
+            $invoice = SysCrmDealTrackApprovalInvoice::where('deal_track_id',$id)->get();
+            $invo_detail = SysSalesInvoice::select('doc_number')->where('deal_id',$deal->deal_id)->get();
+
+            $delivery = SysCrmDealTrackApprovalDelivery::where('deal_track_id',$id)->get();
+            
+            $dn_detail = SysDeliveryNote::select('doc_number')->where('deal_id',$deal->deal_id)->get();
+
+            $receivables = SysCrmDealTrackApprovalReceivables::where('deal_track_id',$id)->get();
+
+            $receipt_details = SysReceipt::select('cheque_number','cheque_date','receipt_through','debit_amount','receipt_date')
+            ->join('sys_chartofaccounts_transaction as cat','cat.transaction_no','sys_receipt.doc_number')
+            ->wherein('transaction_type',['bankreceipt','cashreceipt'])->where('is_main_account',1)->where('deal_id',$deal->deal_id)->get();
+
+            $tech = SysCrmDealTrackApprovalTechnical::where('deal_track_id',$id)->get();
+
+            $shipping = SysShipping::select('id','shipping_name')->where('status',1)->get();
+            $driver = SysDriver::where('status',1)->get();
+            if($deal->deal_id==10686){
+                $addressbook = SysCustSupplAddressbook::where('cust_suppl_id',$del->cust_id)->where('id',68)->orderBy('id','desc')->first();
+            }else{
+                $addressbook = SysCustSupplAddressbook::where('cust_suppl_id',$del->cust_id)->where('set_default',1)->orderBy('id','desc')->first();
+            }
+            
+            $receivable_amount_sum=0;
+            $check_receipt = DB::table('sys_receipt as r')->select('r.doc_number','r.id',db::raw('sum(c.debit_amount) as amount'))
+            ->join('sys_chartofaccounts_transaction as c','c.transaction_no','r.doc_number')
+            ->where('deal_id',$deal->deal_id)->groupby('r.doc_number','r.id')->get();
+
+            if(count($receivables)>0){
+                $receivable_amount_sum += $receivables->sum('amount');
+                $receivable_amount_sum += $receivables->sum('amount2');
+                $receivable_amount_sum += $receivables->sum('amount3');
+            }
+            $currencylist = SysCurrencySettings::select('id','code')->where('status',1)->orderBy('code','ASC')->get();
+            return view('backEnd.crm.DealTrackApproval', compact('deal','accounts','sales','purchease','invoice','delivery','receivables','tech','cust','del','comments','quoteitems','shipping','driver','addressbook','paymentterms','currencylist','po_detail','invo_detail','dn_detail','receipt_details','quoteitems_invoiced','check_receipt','check_po','receivable_amount_sum','quote_charges'));
+        }catch (\Exception $e) {
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function crmdealtrackapprovalaccounts(Request $request)
+    {
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        try {
+            $status=1;
+            if($request->customer_status == 2 || $request->credit_limit == 2 || $request->payment_terms == 2 || $request->pending_payment == 2 || $request->other == 2){
+                $status=2;
+            }
+            $check=DB::table('sys_crm_deal_track_approval_accounts')->select('id','remarks')->where('deal_id',$request->deal_id)->first();
+            
+            if(isset($check)){
+                DB::table('sys_crm_deal_track_approval_accounts')->where('id', $check->id)->update(
+                    [
+                        'customer_status' => $request->customer_status,
+                        'credit_limit' => $request->credit_limit,
+                        'payment_terms' => $request->payment_terms,
+                        'pending_payment' => $request->pending_payment,
+                        'other' => $request->other,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+            }
+            else{
+                DB::table('sys_crm_deal_track_approval_accounts')->insert(
+                    [
+                        'deal_track_id' => $request->deal_track_id,
+                        'deal_id' => $request->deal_id,
+                        'customer_status' => $request->customer_status,
+                        'credit_limit' => $request->credit_limit,
+                        'payment_terms' => $request->payment_terms,
+                        'pending_payment' => $request->pending_payment,
+                        'other' => $request->other,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+            }
+
+            DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['accounts' => $status]);
+
+            if($status==2){
+                SysHelper::exe_web_push($request->owner_id,'Deal Track Rejected','Deal'.$request->deal_id.' Rejected','crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_in($request->owner_id,'Deal'.$request->deal_id.' Rejected',$request->owner_id,'http://erp.venushrms.com/crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_track_reject($request->deal_id,$request->owner_name, $request->owner_email, "Accounts",$request->remarks);
+            }
+            if($status==1){
+                $user = DB::table('sm_staffs')->select('user_id')->where('role_id',8)->get(); //Sales
+                if(count($user)>0){
+                    foreach($user as $u){
+                        SysHelper::exe_web_push($u->user_id,'Deal Track Received','Deal '.$request->deal_id,'crm-deal-track-approval/'.$request->deal_track_id.'');
+                        SysHelper::Erp_Notify_in($u->user_id,'Deal Track Received',$u->user_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+                    }
+                }
+                SysHelper::Erp_Notify_in($request->owner_id,'Accounts Approved',$request->owner_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+            }
+
+            if( $status==1){
+                Toastr::success('Approved successfully', 'Success');}
+            else if ( $status==2){
+                Toastr::error('Rejected successfully', 'Rejected');}
+            else{
+                Toastr::warning('Updated successfully', 'Updated');}
+
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+            return $th;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    public function crmdealtrackapprovalsales(Request $request)
+    {
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        try {
+            $status=1;
+            if($request->margin == 2 || $request->stock == 2 || $request->purcease_quote == 2 || $request->other == 2){
+                $status=2;
+            }
+            
+
+            $check=DB::table('sys_crm_deal_track_approval_sales')->select('id','remarks')->where(['deal_id' => $request->deal_id])->first();
+            if(isset($check)){
+                DB::table('sys_crm_deal_track_approval_sales')->where('id', $check->id)->update(
+                    [
+                        'margin' => $request->margin,
+                        'stock' => $request->stock,
+                        'purcease_quote' => $request->purcease_quote,
+                        'other' => $request->other,
+                        'purchase_approval' => $request->purchase_approval,
+                        'invoice_approval' => $request->invoice_approval,
+                        'delivery_approval' => $request->delivery_approval,
+                        'receivables_approval' => $request->receivables_approval,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+            }
+            else{
+                DB::table('sys_crm_deal_track_approval_sales')->insert(
+                    [
+                        'deal_track_id' => $request->deal_track_id,
+                        'deal_id' => $request->deal_id,
+                        'margin' => $request->margin,
+                        'stock' => $request->stock,
+                        'purcease_quote' => $request->purcease_quote,
+                        'other' => $request->other,
+
+                        'purchase_approval' => $request->purchase_approval,
+                        'invoice_approval' => $request->invoice_approval,
+                        'delivery_approval' => $request->delivery_approval,
+                        'receivables_approval' => $request->receivables_approval,
+
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+            }
+            
+            DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['sales' => $status]);
+
+
+            //test to delete
+            // if($request->purchease_approval==2 && $status==1){
+            //     DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['purchease' => 1]);
+            // }            
+            // $status_purchase_approval = $request->purchase_approval;
+            // if($status_purchase_approval==2){$status_purchase_approval=0;}
+            // $status_invoice_approval = $request->invoice_approval;
+            // if($status_invoice_approval==2){$status_invoice_approval=0;}
+            // $status_delivery_approval = $request->delivery_approval;
+            // if($status_delivery_approval==2){$status_delivery_approval=0;}
+            // $status_receivables_approval = $request->receivables_approval;
+            // if($status_receivables_approval==2){$status_receivables_approval=0;}
+            //test to delete
+
+            
+            //purchase_approval 1 required, 2 notapplicable
+            if($request->purchase_approval==2 && $status==1){
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['purchease' => 1, 'purchease_approval' => 0]);
+            }
+            if($request->purchase_approval==1 && $status==1){
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->where(['purchease_approval' => 0])->update(['purchease' => 0]);
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['purchease_approval' => 1]);
+            }
+            //return $request->invoice_approval;
+            //invoice_approval
+            if($request->invoice_approval==2 && $status==1){
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['invoice' => 1, 'invoice_approval' => 0]);
+            }
+            if($request->invoice_approval==1 && $status==1){
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->where(['invoice_approval' => 0])->update(['invoice' => 0]);
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['invoice_approval' => 1]);
+            }
+            
+            //delivery_approval
+            if($request->delivery_approval==2 && $status==1){
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['delivery' => 1, 'delivery_approval' => 0]);
+            }
+            if($request->delivery_approval==1 && $status==1){
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->where(['delivery_approval' => 0])->update(['delivery' => 0]);
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['delivery_approval' => 1]);
+            }
+            
+            //receivables_approval
+            if($request->receivables_approval==2 && $status==1){
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['receivables' => 1, 'receivables_approval' => 0]);
+            }
+            if($request->receivables_approval==1 && $status==1){
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->where(['receivables_approval' => 0])->update(['receivables' => 0]);
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['receivables_approval' => 1]);
+            }
+
+            if($status==2){
+                SysHelper::exe_web_push($request->owner_id,'Deal Track Rejected','Deal'.$request->deal_id.' Rejected','crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_in($request->owner_id,'Deal'.$request->deal_id.' Rejected',$request->owner_id,'http://erp.venushrms.com/crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_track_reject($request->deal_id,$request->owner_name, $request->owner_email, "Sales",$request->remarks);
+            }
+            if($status==1){
+                $user = DB::table('sm_staffs')->select('user_id')->where('role_id',9)->get(); //Purchase
+                if(count($user)>0){
+                    foreach($user as $u){
+                        SysHelper::exe_web_push($u->user_id,'Deal Track Received','Deal '.$request->deal_id,'crm-deal-track-approval/'.$request->deal_track_id.'');
+                        SysHelper::Erp_Notify_in($u->user_id,'Deal Track Received',$u->user_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+                    }
+                }
+                SysHelper::Erp_Notify_in($request->owner_id,'Sales Approved',$request->owner_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+            }
+
+            if( $status==1){
+                Toastr::success('Approved successfully', 'Success');}
+            else if ( $status==2){
+                Toastr::error('Rejected successfully', 'Rejected');}
+            else{
+                Toastr::warning('Updated successfully', 'Updated');}
+
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+            return $th;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    public function crmdealtrackapprovalpurchease(Request $request)
+    {
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        if($request->cost_of_purchase){
+            $cost_of_purchase = $request->cost_of_purchase;
+            $cost_of_purchase_currency = $request->cost_of_purchase_currency;
+        }else{
+            $cost_of_purchase = 0.00;
+            $cost_of_purchase_currency=1;
+        }
+
+        $fileone = ""; $filetwo = ""; $filethree = "";
+        if ($request->file('fileone') != "") {
+            $file1 = $request->file('fileone');
+            $fileone = md5(time()) . "fileone." . $file1->getclientoriginalextension();
+            $file1->move('public/uploads/crm_deal_track_doc/', $fileone);
+            $fileone = $fileone;
+        }
+        if ($request->file('filetwo') != "") { 
+            $file2 = $request->file('filetwo');
+            $filetwo = md5(time()) . "filetwo." . $file2->getclientoriginalextension();
+            $file2->move('public/uploads/crm_deal_track_doc/', $filetwo);
+            $filetwo = $filetwo;
+        }
+        if ($request->file('filethree') != "") { 
+            $file3 = $request->file('filethree');
+            $filethree = md5(time()) . "filethree." . $file3->getclientoriginalextension();
+            $file3->move('public/uploads/crm_deal_track_doc/', $filethree);
+            $filethree = $filethree;
+        }
+
+        try {
+            $status=1;
+            if($request->purchease_quote == 2 || $request->quote_request == 2 || $request->validation == 2 || $request->other == 2){
+                $status=2;
+            }
+            if($request->validation == 4){
+                $status=4;
+            }
+            if($request->validation == 3){
+                $status=3;
+                SysCrmDealTrackApprovalPurcheaseGrn::insert([
+                    'deal_id' => $request->deal_id,
+                    'deal_track_id' => $request->deal_track_id,
+                    'remarks' => $request->remarks,
+                    'status' => 0,
+                    'created_by' => Auth::user()->id,
+                    'created_at' => $trn_time,
+                ]);
+            }
+            $check=DB::table('sys_crm_deal_track_approval_purchease')->select('id','remarks','fileone','filetwo','filethree')->where(['deal_id' => $request->deal_id])->first();
+            if(isset($check)){
+
+                if( $fileone != "" ){ $fileone = $check->fileone; }
+                if( $filetwo != "" ){ $filetwo = $check->filetwo; }
+                if( $filethree != "" ){ $filethree = $check->filethree; }
+
+                DB::table('sys_crm_deal_track_approval_purchease')->where('id', $check->id)->update(
+                    [
+                        'purchease_quote' => $request->purchease_quote,
+                        'three_quote_request' => $request->quote_request,
+                        'validation' => $request->validation,
+                        'other' => $request->other,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                        'fileone' => $fileone,
+                        'filetwo' => $filetwo,
+                        'filethree' => $filethree,
+                        'lpo_no' => $request->lpo_no,
+                        'supplier_name' => $request->supplier_name,
+                        'part_no' => $request->part_no,
+                        'cost_of_purchase' => $cost_of_purchase,
+                        'cost_of_purchase_currency' => $cost_of_purchase_currency,
+                        'delivery_date' => date('Y-m-d', strtotime($request->delivery_date)),
+                        'partial_delivery_note' => $request->partial_delivery_note,
+                    ]
+                );
+            }
+            else{
+                DB::table('sys_crm_deal_track_approval_purchease')->insert(
+                    [
+                        'deal_track_id' => $request->deal_track_id,
+                        'deal_id' => $request->deal_id,
+                        'purchease_quote' => $request->purchease_quote,
+                        'three_quote_request' => $request->quote_request,
+                        'validation' => $request->validation,
+                        'other' => $request->other,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                        'fileone' => $fileone,
+                        'filetwo' => $filetwo,
+                        'filethree' => $filethree,
+                        'lpo_no' => $request->lpo_no,
+                        'supplier_name' => $request->supplier_name,
+                        'part_no' => $request->part_no,
+                        'cost_of_purchase' => $cost_of_purchase,
+                        'cost_of_purchase_currency' => $cost_of_purchase_currency,
+                        'delivery_date' => date('Y-m-d', strtotime($request->delivery_date)),
+                        'partial_delivery_note' => $request->partial_delivery_note,
+                    ]
+                );
+            }
+
+            
+            if($request->validation==4){
+                DB::table('sys_crm_deals')->where('id',$request->deal_id)->update(['is_partial_delivery' => 1]);                
+            }
+            else{
+                DB::table('sys_crm_deals')->where('id',$request->deal_id)->update(['is_partial_delivery' => 0]);
+            }
+
+            DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['purchease' => $status, 'purchease_approval' => 1]);
+
+            if($status==2){
+                SysHelper::exe_web_push($request->owner_id,'Deal Track Rejected','Deal'.$request->deal_id.' Rejected','crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_in($request->owner_id,'Deal'.$request->deal_id.' Rejected',$request->owner_id,'http://erp.venushrms.com/crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_track_reject($request->deal_id,$request->owner_name, $request->owner_email, "Purchase",$request->remarks);
+            }
+            if($status==1){
+                
+                DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->where('invoice_approval',1)->update(['invoice' => 3]);
+
+                $user = DB::table('sm_staffs')->select('user_id')->where('role_id',4)->get(); //Invoice
+                if(count($user)>0){
+                    foreach($user as $u){
+                        SysHelper::exe_web_push($u->user_id,'Deal Track Received','Deal '.$request->deal_id,'crm-deal-track-approval/'.$request->deal_track_id.'');
+                        SysHelper::Erp_Notify_in($u->user_id,'Deal Track Received',$u->user_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+                    }
+                }
+                SysHelper::Erp_Notify_in($request->owner_id,'Purchase Approved',$request->owner_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+            }
+
+            if( $status==1){
+                Toastr::success('Approved successfully', 'Success');}
+            else if ( $status==2){
+                Toastr::error('Rejected successfully', 'Rejected');}
+            else{
+                Toastr::warning('Updated successfully', 'Updated');}
+
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+            return $th;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    public function crmdealtrackapprovalinvoice(Request $request)
+    {
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        try {
+            $status=1;
+            if($request->delivery_advice == 3 || $request->validation == 3 || $request->hold == 3 || $request->print == 3){
+                $status=3;
+            }
+            elseif($request->delivery_advice == 2 || $request->validation == 2 || $request->hold == 2 || $request->print == 2){
+                $status=2;
+            }
+            $partial_invoice_amount = $request->partial_invoice_amount;
+            if($request->partial_invoice_amount=="")
+            {
+                $partial_invoice_amount = 0.00;
+            }
+
+            $check=DB::table('sys_crm_deal_track_approval_invoice')->select('id','remarks')->where(['deal_id' => $request->deal_id])->first();
+            if(isset($check)){
+                DB::table('sys_crm_deal_track_approval_invoice')->where('id', $check->id)->update(
+                    [
+                        'delivery_advice' => $request->delivery_advice,
+                        'validation' => $request->validation,
+                        'hold' => $request->hold,
+                        'print' => $request->print,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'invoice_no' => $request->invoice_no,
+                        'partial_invoice' => $request->partial_invoice,
+                        'partial_invoice_amount' => $partial_invoice_amount,
+                        'updated_by' => Auth::user()->id,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+            }
+            else{
+                DB::table('sys_crm_deal_track_approval_invoice')->insert(
+                    [
+                        'deal_track_id' => $request->deal_track_id,
+                        'deal_id' => $request->deal_id,
+                        'delivery_advice' => $request->delivery_advice,
+                        'validation' => $request->validation,
+                        'hold' => $request->hold,
+                        'print' => $request->print,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'invoice_no' => $request->invoice_no,
+                        'partial_invoice' => $request->partial_invoice,
+                        'partial_invoice_amount' => $partial_invoice_amount,
+                        'created_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                    ]
+                );
+            }
+            if($request->partial_invoice==1){
+                //update GP
+                SysHelper::set_deal_profit($request->deal_id);
+                
+                DB::table('sys_crm_deals')->where('id',$request->deal_id)->update(['is_partial_invoice' => 1]);                
+            }
+            else{
+                DB::table('sys_crm_deals')->where('id',$request->deal_id)->update(['is_partial_invoice' => 0]);
+            }
+
+            DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['invoice' => $status, 'invoice_approval' => 1]);
+            
+            if($status==2){
+                SysHelper::exe_web_push($request->owner_id,'Deal Track Rejected','Deal '.$request->deal_id,'crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_in($request->owner_id,'Deal'.$request->deal_id.' Rejected',$request->owner_id,'http://erp.venushrms.com/crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_track_reject($request->deal_id,$request->owner_name, $request->owner_email, "Invoice",$request->remarks);
+            }
+            if($status==1){
+
+                $deals = SysCrmDeals::where('id',$request->deal_id)->first();
+                $products=SysCrmQuoteItems::where('deal_id',$request->deal_id)->first();
+                $deals_track=SysCrmDealTrack::where('deal_id',$request->deal_id)->first();
+            if($deals_track->start_date == null)
+              $start_date =  date('Y-m-d h:i:s', time());
+            else
+            $start_date=$deals_track->start_date;
+
+            if($deals_track->end_date == null)
+              $end_date = date('Y-m-d h:i:s', time());
+            else
+              $end_date=$deals_track->end_date;
+
+            $deals = SysCrmDeals::where('id',$request->deal_id)->first();  
+
+            $is_amc_item = SysCrmQuoteItems::wherein('product_id',[35657])->where('deal_id',$request->deal_id)->where('quote_id',$deals->quote_id)->count();  
+            
+            if($is_amc_item >0){
+                DB::table('sys_crm_amc_table')->insert(
+                    [
+                        'deal_id' => $request->deal_id,
+                        'date' => Carbon::now('+04:00')->format('Y-m-d'),
+                        'start_date' => $start_date,
+                        'end_date' => $end_date,
+                        'cust_name' => $deals->cust_name,
+                        'amount' => $products->price,
+                        'sales_person' => $deals->owner,
+                        'status' => 0,
+                        'company_id' => session('logged_session_data.company_id'),
+                    ]
+                );
+            }
+
+                //AMC Update;
+                SysHelper::set_amc_per_month($request->deal_id,$request->owner_id,12);
+
+                $user = DB::table('sm_staffs')->select('user_id')->where('role_id',29)->get(); //Delivery
+                if(count($user)>0){
+                    foreach($user as $u){
+                        SysHelper::exe_web_push($u->user_id,'Deal Track Received','Deal '.$request->deal_id,'crm-deal-track-approval/'.$request->deal_track_id.'');
+                        SysHelper::Erp_Notify_in($u->user_id,'Deal Track Received',$u->user_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+                    }
+                }
+                SysHelper::Erp_Notify_in($request->owner_id,'Invoice Approved',$request->owner_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+            }
+
+            if( $status==1){
+                Toastr::success('Approved successfully', 'Success');}
+            else if ( $status==2){
+                Toastr::error('Rejected successfully', 'Rejected');}
+            else{
+                Toastr::warning('Updated successfully', 'Updated');}
+
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    
+    public function crmdealtrackapprovalinvoiceupdate(Request $request)
+    {
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        try {
+           
+                DB::table('sys_crm_deal_track_approval_invoice')->where('id', $request->inv_id)->update(
+                    [
+                        'remarks' => $request->inv_remarks,
+                        'invoice_no' => $request->inv_no,
+                        'updated_by' => Auth::user()->id,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+            Toastr::success('Invoice No Updated Successfully', 'Success');
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    public function crmdealtrackapprovalaccountsupdate(Request $request)
+    {
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        try {
+                DB::table('sys_crm_deal_track')->where('id', $request->acc_deal_id)->update(
+                    [
+                        'accounts' => $request->acc_status,
+                        'updated_by' => Auth::user()->id,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+                
+                //'deal_id' => $request->acc_deal_id, this is teal track id
+                DB::table('sys_crm_deal_track_approval_accounts_pending')->insert(
+                    [
+                        'deal_id' => $request->acc_deal_id,
+                        'status' => $request->acc_status,
+                        'remarks' => $request->acc_remarks,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+            Toastr::success('Accounts Status Updated Successfully', 'Success');
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function crm_deal_track_approval_purchase_not_required(Request $request)
+    {
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        try {
+                DB::table('sys_crm_deal_track')->where('deal_id', $request->purchase_not_required_deal_id)->update(
+                    [
+                        'purchease' => 1,
+                        'purchease_approval' => 0,
+                    ]
+                );
+            Toastr::success('Purchase Not Required Updated Successfully', 'Success');
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function crmdealtrackapprovaldelivery(Request $request)
+    {
+        $deliver_by=""; $driver="";
+        if($request->deliver_by==1){$deliver_by="Courier";
+            if($request->courier=="Other"){ $driver=$request->other_courier; }
+            else { $driver=$request->courier; }
+        }
+        if($request->deliver_by==2){$deliver_by="Driver";
+            if($request->driver=="Other"){ $driver=$request->other_driver; }
+            else { $driver=$request->driver; }
+        }
+        if($request->deliver_by==3){$deliver_by="Local Delivery";
+            if($request->localdelivery=="Other"){ $driver=$request->other_localdelivery;}
+            else { $driver=$request->localdelivery;}        
+        }
+        if($request->deliver_by==4){$deliver_by="Office Boy";
+            if($request->officeboy=="Other"){ $driver=$request->other_officeboy;}
+            else { $driver=$request->officeboy;}        
+        }
+        if($request->deliver_by==5){$deliver_by="Collection by Client"; $driver=$request->collectionbyclient;}
+        if($request->deliver_by==6){$deliver_by="By Email"; $driver=$request->byemail;}
+        
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        $cheque_collection_file = "";
+        if ($request->file('cheque_collection_file') != "") {
+            $file1 = $request->file('cheque_collection_file');
+            $cheque_collection_file = md5(time()) . "cheque." . $file1->getclientoriginalextension();
+            $file1->move('public/uploads/crm_deal_track_doc/', $cheque_collection_file);
+            $cheque_collection_file = $cheque_collection_file;
+        }
+        $attach_file = "";
+        if ($request->file('attach_file') != "") {
+            $file1 = $request->file('attach_file');
+            $attach_file = md5(time()) . "awb." . $file1->getclientoriginalextension();
+            $file1->move('public/uploads/crm_deal_track_doc/', $attach_file);
+            $attach_file = $attach_file;
+        }
+
+        try {
+            $status=1;
+            if($request->do_status == 2 || $request->cheque_collection == 2){
+                $status=2;
+            }
+            else if($request->delivery_status==3){
+                $status=3;
+            }
+            else if($request->delivery_status==4){
+                $status=5;
+            }
+            else if($request->delivery_status==5){
+                $status=6;
+            }
+            else if($request->delivery_status==2){
+                $status=4;
+            }
+            else if($request->delivery_status==1){
+                $status=1;
+            }
+            $check=DB::table('sys_crm_deal_track_approval_delivery')->select('id','remarks','cheque_collection_file','attach_file')->where(['deal_id' => $request->deal_id])->first();
+            if(isset($check)){
+
+                if( $cheque_collection_file == "" ){ $cheque_collection_file = $check->cheque_collection_file; }
+                if( $attach_file == "" ){ $attach_file = $check->attach_file; }
+                
+                DB::table('sys_crm_deal_track_approval_delivery')->where('id', $check->id)->update(
+                    [
+                        'do_status' => $request->do_status,
+                        'do_no' => $request->do_no,
+                        'print_invoice_no' => $request->print_invoice_no,
+                        'cheque_collection' => $request->cheque_collection,
+                        'cheque_collection_file' => $cheque_collection_file,
+                        'delivery_status' => $request->delivery_status,
+                        'deliver_by' => $deliver_by,
+                        'driver' => $driver,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                        'cash_collected' => $request->cash_collected,
+                        'contact_no' => $request->contact_no,
+                        'id_no' => $request->id_no,
+                        'attach_file' => $attach_file,
+                        'awb_no' => $request->awb_no,
+                    ]
+                );
+            }
+            else{
+                DB::table('sys_crm_deal_track_approval_delivery')->insert(
+                    [
+                        'deal_track_id' => $request->deal_track_id,
+                        'deal_id' => $request->deal_id,
+                        'do_status' => $request->do_status,
+                        'do_no' => $request->do_no,
+                        'print_invoice_no' => $request->print_invoice_no,
+                        'cheque_collection' => $request->cheque_collection,
+                        'cheque_collection_file' => $cheque_collection_file,
+                        'delivery_status' => $request->delivery_status,
+                        'deliver_by' => $deliver_by,
+                        'driver' => $driver,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                        'cash_collected' => $request->cash_collected,
+                        'contact_no' => $request->contact_no,
+                        'id_no' => $request->id_no,
+                        'attach_file' => $attach_file,
+                        'awb_no' => $request->awb_no,
+                    ]
+                );
+            }
+
+            DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['delivery' => $status, 'delivery_approval' => 1]);
+            
+            if($status==2){
+                SysHelper::exe_web_push($request->owner_id,'Deal Track Rejected','Deal'.$request->deal_id.' Rejected','crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_in($request->owner_id,'Deal'.$request->deal_id.' Rejected',$request->owner_id,'http://erp.venushrms.com/crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_track_reject($request->deal_id,$request->owner_name, $request->owner_email, "Delivery",$request->remarks);
+            }
+            if($status==1){
+                $user = DB::table('sm_staffs')->select('user_id')->where('role_id',3)->get(); //Receivable
+                if(count($user)>0){
+                    foreach($user as $u){
+                        SysHelper::exe_web_push($u->user_id,'Deal Track Received','Deal '.$request->deal_id,'crm-deal-track-approval/'.$request->deal_track_id.'');
+                        SysHelper::Erp_Notify_in($u->user_id,'Deal Track Received',$u->user_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+                    }
+                }
+                SysHelper::Erp_Notify_in($request->owner_id,'Delivery Approved',$request->owner_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+            }            
+
+            if( $status==1){
+                Toastr::success('Approved successfully', 'Success');}
+            else if ( $status==2){
+                Toastr::error('Rejected successfully', 'Rejected');}
+            else{
+                Toastr::warning('Updated successfully', 'Updated');}
+
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+            return $th;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    
+    public function crmdealtrackapprovalprofessionalservice(Request $request)
+    {
+        try {
+            $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+            $status=1;
+            if($request->technical_approve == 2){
+                $status=2;
+            }
+            $check=DB::table('sys_crm_deal_track_approval_technical')->select('id','remarks')->where(['deal_id' => $request->deal_id])->first();
+            if(isset($check)){
+
+                
+                DB::table('sys_crm_deal_track_approval_technical')->where('id', $check->id)->update(
+                    [
+                        'technical_approve' => $request->technical_approve,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+            }
+            else{
+                DB::table('sys_crm_deal_track_approval_technical')->insert(
+                    [
+                        'deal_track_id' => $request->deal_track_id,
+                        'deal_id' => $request->deal_id,
+                        'technical_approve' => $request->technical_approve,
+                        'remarks' => $request->remarks,
+                        'status' => $status,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'created_at' => $trn_time,
+                        'updated_at' => $trn_time,
+                    ]
+                );
+            }
+            
+            DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['tech' => $status]);
+            
+            if($status==2){
+                SysHelper::exe_web_push($request->owner_id,'Deal Track Rejected','Deal'.$request->deal_id.' Rejected','crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_in($request->owner_id,'Deal'.$request->deal_id.' Rejected',$request->owner_id,'http://erp.venushrms.com/crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_track_reject($request->deal_id,$request->owner_name, $request->owner_email, "Professional Service",$request->remarks);
+            }
+            if($status==1){
+                $user = DB::table('sm_staffs')->select('user_id')->where('designation_id',2)->get();
+                if(count($user)>0){
+                    foreach($user as $u){
+                        SysHelper::exe_web_push($u->user_id,'Deal Track Received','Deal '.$request->deal_id,'crm-deal-track-approval/'.$request->deal_track_id.'');
+                        SysHelper::Erp_Notify_in($u->user_id,'Deal Track Received',$u->user_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+                    }
+                }
+            }            
+
+            if( $status==1){
+                Toastr::success('Approved successfully', 'Success');}
+            else if ( $status==2){
+                Toastr::error('Rejected successfully', 'Rejected');}
+            else{
+                Toastr::warning('Updated successfully', 'Updated');}
+
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+            return $th;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function crmdealtrackapprovalreceivables(Request $request)
+    {
+        $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        $cheque_copy = ""; $banktt_copy = "";
+        if ($request->file('cheque_copy') != "") {
+            $files = $request->file('cheque_copy');
+            for ($i=0; $i<count($files); $i++) {
+                $file1 = $files[$i];
+                $cheque_copy = md5(time()) . "_cheque_".$i."." . $file1->getclientoriginalextension();
+                $file1->move('public/uploads/crm_deal_track_doc/', $cheque_copy);
+                $cheque[]=$cheque_copy;
+            }
+            $cheque_copy = implode("|",$cheque);
+        }
+        if ($request->file('banktt_copy') != "") {
+            $files = $request->file('banktt_copy');
+            for ($i=0; $i<count($files); $i++) {
+                $file2 = $files[$i];
+                $banktt_copy = md5(time()) . "_banktt_".$i."." . $file2->getclientoriginalextension();
+                $file2->move('public/uploads/crm_deal_track_doc/', $banktt_copy);
+                $banktt[]=$banktt_copy;
+            }
+            $banktt_copy = implode("|",$banktt);
+        }
+
+        // if ($request->file('cheque_copy') != "") {
+        //     $file1 = $request->file('cheque_copy');
+        //     $cheque_copy = md5(time()) . "cheque." . $file1->getclientoriginalextension();
+        //     $file1->move('public/uploads/crm_deal_track_doc/', $cheque_copy);
+        //     $cheque_copy = $cheque_copy;
+        // }
+        // if ($request->file('banktt_copy') != "") {
+        //     $file2 = $request->file('banktt_copy');
+        //     $banktt_copy = md5(time()) . "banktt." . $file2->getclientoriginalextension();
+        //     $file2->move('public/uploads/crm_deal_track_doc/', $banktt_copy);
+        //     $banktt_copy = $banktt_copy;
+        // }
+
+        try {
+            $status=1;
+            $payment_status=0;
+            $amount=0;
+            if($request->payment_collection == 2){
+                $status=2;
+            }
+            if($request->payment_collection == 3){
+                $status=4;
+            }
+            if($request->payment_collection != 3){
+                $payment_status=$request->payment_status;
+                $amount=$request->amount;
+                if($request->payment_status == 2){
+                    $status=3;
+                }
+            }
+            $check=DB::table('sys_crm_deal_track_approval_receivables')->select('id','remarks')->where(['deal_id' => $request->deal_id])->first();
+            if(isset($check)){
+
+                if( $cheque_copy != "" ){ $cheque_copy = $check->cheque_copy; }
+                if( $banktt_copy != "" ){ $banktt_copy = $check->banktt_copy; }
+                
+                $rec = SysCrmDealTrackApprovalReceivables::find($check->id);
+                $rec->deal_track_id = $request->deal_track_id;
+                $rec->deal_id = $request->deal_id;
+                $rec->payment_collection = $request->payment_collection;
+                $rec->payment_status = $payment_status;
+
+                if($request->reminder_date != ""){
+                    $rec->reminder_date = date('Y-m-d H:i:s', strtotime($request->reminder_date.''.$request->reminder_time));
+                }
+
+
+                $rec->remarks = $request->remarks;
+                $rec->status = $status;
+                $rec->created_by = Auth::user()->id;
+                $rec->updated_by = Auth::user()->id;
+                $rec->created_at = $trn_time;
+                $rec->updated_at = $trn_time;
+                $rec->paymenttype = $request->payment_mode;
+                $rec->amount = $amount;
+
+                if($request->amount2 !=''){$rec->amount2 = $request->amount2;}
+                if($request->amount3 !=''){$rec->amount3 = $request->amount3;}
+
+                if($request->balance_amount !=''){$rec->balance_amount = $request->balance_amount;}
+
+                if($request->payment_mode==1){
+                    if($request->thousand !=''){$rec->thousand = $request->thousand;}
+                    if($request->fivehundred !=''){$rec->fivehundred = $request->fivehundred;}
+                    if($request->hundred !=''){$rec->hundred = $request->hundred;}
+                    if($request->fifty !=''){$rec->fifty = $request->fifty;}
+                    if($request->twenty !=''){$rec->twenty = $request->twenty;}
+                    if($request->ten !=''){$rec->ten = $request->ten;}
+                    if($request->five !=''){$rec->five = $request->five;}
+                    if($request->one !=''){$rec->one = $request->one;}
+                    if($request->fiftyp !=''){$rec->fiftyp = $request->fiftyp;}
+                    if($request->twentyfivep !=''){$rec->twentyfivep = $request->twentyfivep;}
+                $rec->cash_date = date('Y-m-d', strtotime($request->cash_date));
+
+                if($request->cash_date2 !=''){$rec->cash_date2 = date('Y-m-d', strtotime($request->cash_date2));}
+                if($request->cash_date3 !=''){$rec->cash_date3 = date('Y-m-d', strtotime($request->cash_date3));}
+
+                }
+                if($request->payment_mode==2){
+                $rec->cheque_no = $request->cheque_no;
+                if($request->cheque_no2 !=''){$rec->cheque_no2 = $request->cheque_no2;}
+                if($request->cheque_no3 !=''){$rec->cheque_no3 = $request->cheque_no3;}
+
+                $rec->cheque_date = date('Y-m-d', strtotime($request->cheque_date));
+                if($request->cheque_date2 !=''){$rec->cheque_date2 = date('Y-m-d', strtotime($request->cheque_date2));}
+                if($request->cheque_date3 !=''){$rec->cheque_date3 = date('Y-m-d', strtotime($request->cheque_date3));}
+
+                $rec->cheque_copy = $cheque_copy;
+                }
+                if($request->payment_mode==3){
+                $rec->bank_name = $request->bank_name;
+                $rec->deposit_date = date('Y-m-d', strtotime($request->deposit_date));
+                $rec->deposit_date2 = date('Y-m-d', strtotime($request->deposit_date2));
+                }
+                if($request->payment_mode==4){
+                $rec->open_credit_date = date('Y-m-d', strtotime($request->open_credit_date));
+                }
+                if($request->payment_mode==5){
+                $rec->credit_card_type = $request->credit_card_type;
+                $rec->payment_date = date('Y-m-d', strtotime($request->payment_date));
+                $rec->credit_card_deposit_date = date('Y-m-d', strtotime($request->credit_card_deposit_date));
+                }
+                if($request->payment_mode==6){
+                $rec->banktt_copy = $banktt_copy;
+                $rec->banktt_date = date('Y-m-d', strtotime($request->banktt_date));
+                if($request->banktt_date2 !=''){$rec->banktt_date2 = date('Y-m-d', strtotime($request->banktt_date2));}
+                if($request->banktt_date3 !=''){$rec->banktt_date3 = date('Y-m-d', strtotime($request->banktt_date3));}
+                }
+                $rec->credit_note = $request->credit_note;
+                $rec->update();
+            }
+            else{
+                $rec = new SysCrmDealTrackApprovalReceivables();
+                $rec->deal_track_id = $request->deal_track_id;
+                $rec->deal_id = $request->deal_id;
+                $rec->payment_collection = $request->payment_collection;
+                $rec->payment_status = $payment_status;
+
+                if($request->reminder_date != ""){
+                    $rec->reminder_date = date('Y-m-d H:i:s', strtotime($request->reminder_date.''.$request->reminder_time));
+                }
+
+                $rec->remarks = $request->remarks;
+                $rec->status = $status;
+                $rec->created_by = Auth::user()->id;
+                $rec->updated_by = Auth::user()->id;
+                $rec->created_at = $trn_time;
+                $rec->updated_at = $trn_time;
+                $rec->paymenttype = $request->payment_mode;
+                $rec->amount = $amount;
+                
+                if($request->amount2 !=''){$rec->amount2 = $request->amount2;}
+                if($request->amount3 !=''){$rec->amount3 = $request->amount3;}
+
+                if($request->balance_amount !=''){$rec->balance_amount = $request->balance_amount;}
+
+                if($request->payment_mode==1){
+                if($request->thousand !=''){$rec->thousand = $request->thousand;}
+                if($request->fivehundred !=''){$rec->fivehundred = $request->fivehundred;}
+                if($request->hundred !=''){$rec->hundred = $request->hundred;}
+                if($request->fifty !=''){$rec->fifty = $request->fifty;}
+                if($request->twenty !=''){$rec->twenty = $request->twenty;}
+                if($request->ten !=''){$rec->ten = $request->ten;}
+                if($request->five !=''){$rec->five = $request->five;}
+                if($request->one !=''){$rec->one = $request->one;}
+                if($request->fiftyp !=''){$rec->fiftyp = $request->fiftyp;}
+                if($request->twentyfivep !=''){$rec->twentyfivep = $request->twentyfivep;}
+                $rec->cash_date = date('Y-m-d', strtotime($request->cash_date));
+
+                if($request->cash_date2 !=''){$rec->cash_date2 = date('Y-m-d', strtotime($request->cash_date2));}
+                if($request->cash_date3 !=''){$rec->cash_date3 = date('Y-m-d', strtotime($request->cash_date3));}
+
+                }
+                if($request->payment_mode==2){
+                $rec->cheque_no = $request->cheque_no;
+                if($request->cheque_no2 !=''){$rec->cheque_no2 = $request->cheque_no2;}
+                if($request->cheque_no3 !=''){$rec->cheque_no3 = $request->cheque_no3;}
+
+                $rec->cheque_date = date('Y-m-d', strtotime($request->cheque_date));
+                if($request->cheque_date2 !=''){$rec->cheque_date2 = date('Y-m-d', strtotime($request->cheque_date2));}
+                if($request->cheque_date3 !=''){$rec->cheque_date3 = date('Y-m-d', strtotime($request->cheque_date3));}
+
+                $rec->cheque_copy = $cheque_copy;
+                }
+                if($request->payment_mode==3){
+                $rec->bank_name = $request->bank_name;
+                $rec->deposit_date = date('Y-m-d', strtotime($request->deposit_date));
+                $rec->deposit_date2 = date('Y-m-d', strtotime($request->deposit_date2));
+                }
+                if($request->payment_mode==4){
+                $rec->open_credit_date = date('Y-m-d', strtotime($request->open_credit_date));
+                }
+                if($request->payment_mode==5){
+                $rec->credit_card_type = $request->credit_card_type;
+                $rec->payment_date = date('Y-m-d', strtotime($request->payment_date));
+                $rec->credit_card_deposit_date = date('Y-m-d', strtotime($request->credit_card_deposit_date));
+                }
+                if($request->payment_mode==6){
+                $rec->banktt_copy = $banktt_copy;
+                $rec->banktt_date = date('Y-m-d', strtotime($request->banktt_date));
+                if($request->banktt_date2 !=''){$rec->banktt_date2 = date('Y-m-d', strtotime($request->banktt_date2));}
+                if($request->banktt_date3 !=''){$rec->banktt_date3 = date('Y-m-d', strtotime($request->banktt_date3));}
+                }
+                $rec->credit_note = $request->credit_note;
+                $rec->save();
+            }
+            
+            DB::table('sys_crm_deal_track')->where('deal_id',$request->deal_id)->update(['receivables' => $status, 'receivables_approval' => 1]);
+
+            if($status==2){
+                SysHelper::exe_web_push($request->owner_id,'Deal Track Rejected','Deal'.$request->deal_id.' Rejected','crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_in($request->owner_id,'Deal'.$request->deal_id.' Rejected',$request->owner_id,'http://erp.venushrms.com/crm-deal-track/'.$request->deal_id.'/view');
+                SysHelper::Erp_Notify_track_reject($request->deal_id,$request->owner_name, $request->owner_email, "Receivables",$request->remarks);
+            }
+            if( $status==1){
+
+                //update GP
+                SysHelper::set_deal_profit($request->deal_id);
+
+                SysHelper::exe_web_push($request->owner_id,'Deal Track Compleated','Deal '.$request->deal_id,'crm-deal-track-approval/'.$request->deal_track_id.'');
+                SysHelper::Erp_Notify_in($request->owner_id,'Receivables Approved',$request->owner_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$request->deal_track_id.'');
+                Toastr::success('Approved successfully', 'Success');}
+            else if( $status==2){
+                Toastr::error('Rejected successfully', 'Rejected');}
+            else {
+                Toastr::warning('Updated successfully', 'Updated');}
+
+            return redirect()->back(); 
+        } catch (\Throwable $th) {
+            return $th;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    public function getdriverbyshipping(Request $request)
+    {
+        try {
+            $shipping = SysShipping::select('id')->where('shipping_name',$request->deliver_by)->first();
+            $driver = SysDriver::select('driver_name')->where('shipping_id',$shipping->id)->get();
+            return json_encode(array('data'=>$driver));
+
+       }catch (\Exception $e) {         
+           $retData="ERROR";
+           return json_encode(array('data'=>$retData));
+       }
+    }
+    public function crmcustomercolor(Request $request)
+    {
+        try {
+            DB::table('sys_cust_suppl')->where('id', $request->color_customer_id)->update(
+                [
+                    'type' => $request->edit_color,
+                    'updated_by' => Auth::user()->id
+                ]
+            );
+            Toastr::success('Color updated successfully', 'Success');
+            return redirect()->back(); 
+       }catch (\Exception $e) {
+            Toastr::error('Color Updation Failed', 'Failed');
+            return redirect()->back(); 
+       }
+    }
+    public function crmdealtrackapprovalreceivablespaymentmode(Request $request)
+    {
+        try {
+            DB::table('sys_crm_deal_track')->where('deal_id', $request->edit_payment_mode_id)->update(
+                [
+                    'payment_mode' => $request->edit_payment_mode,
+                    'updated_by' => Auth::user()->id
+                ]
+            );
+            Toastr::success('Color updated successfully', 'Success');
+            return redirect()->back(); 
+       }catch (\Exception $e) {
+            Toastr::error('Color Updation Failed', 'Failed');
+            return redirect()->back(); 
+       }
+    }
+    public function crmdealtrackapprovalreceivablespaymenttermsmode(Request $request)
+    {
+        try {
+            DB::table('sys_crm_deal_track')->where('deal_id', $request->edit_payment_mode_id)->update(
+                [
+                    'payment_mode' => $request->edit_payment_mode,
+                    'payment_terms' => $request->edit_payment_terms,
+                    'updated_by' => Auth::user()->id
+                ]
+            );
+            Toastr::success('Color updated successfully', 'Success');
+            return redirect()->back(); 
+       }catch (\Exception $e) {
+            Toastr::error('Color Updation Failed', 'Failed');
+            return redirect()->back(); 
+       }
+    }
+
+    public function trackpagefilter($track)
+    {
+        $staff      = SmStaff::select('user_id','full_name')->orderby('full_name','asc')->get();
+        $vendors = SysCustSuppl::select('id','code','name')->where('catid',1)->orderby('name','asc')->get(); // 1 customers, 2 suppliers
+        $ctrl_deal_id="";
+        $ctrl_company_id="";
+        $ctrl_owner_id="";
+        $ctrl_status_id="10";
+        $ctrl_date='';
+        try{
+
+            if($track=="pendingpayments"){
+                
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')
+                ->join('sys_crm_deals','sys_crm_deal_track.deal_id','sys_crm_deals.id')
+                ->join('sys_crm_deal_track_approval_receivables','sys_crm_deals.id','sys_crm_deal_track_approval_receivables.deal_id')
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_receivables.created_at, '%Y-%m') = '".date('Y-m')."'")->where('sys_crm_deal_track.receivables','!=', 1)->where('sys_crm_deal_track.delivery', 1)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));                
+                $dealtrack->orderby('sys_crm_deal_track_approval_receivables.id','asc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+
+            if($track=="orderinprocess"){
+            $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->whereRaw("DATE_FORMAT(sys_crm_deal_track.created_at, '%Y-%m') = '".date('Y-m')."'")->where('sys_crm_deal_track.receivables','!=', 1)
+            ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+            $dealtrack->orderby('sys_crm_deal_track.id','desc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+
+            if($track=="paymentreminder"){
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')
+                ->join('sys_crm_deal_track_approval_receivables','sys_crm_deal_track_approval_receivables.deal_id','sys_crm_deal_track.deal_id')
+                ->where([['sys_crm_deal_track.receivables', 3]])->whereRaw("DATE_FORMAT(reminder_date, '%Y-%m-%d') >= '".date('Y-m-d')."'")
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('reminder_date','asc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+
+            if($track=="paymentpendingafterreminder"){
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')
+                ->join('sys_crm_deal_track_approval_receivables','sys_crm_deal_track_approval_receivables.deal_id','sys_crm_deal_track.deal_id')
+                ->where([['sys_crm_deal_track.receivables', 3]])->whereRaw("DATE_FORMAT(reminder_date, '%Y-%m-%d') < '".date('Y-m-d')."'")
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('reminder_date','asc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+
+            if($track=="salesorderinprocess"){
+
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')
+                ->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track.created_at, '%Y-%m') = '".date('Y-m')."'")
+                ->where('sys_crm_deals.owner', Auth::user()->id)->where('sys_crm_deal_track.receivables','!=', 1)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track.id','desc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+
+            if($track=="salesteamorderinprocess"){
+                $teams= array(Auth::user()->id);
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')
+                ->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track.created_at, '%Y-%m') = '".date('Y-m')."'")
+                ->wherein('sys_crm_deals.owner', $teams)->where('sys_crm_deal_track.receivables','!=', 1)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track.id','desc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+
+            if($track=="salespendingpayments"){
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')
+                ->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')
+                ->join('sys_crm_deal_track_approval_receivables','sys_crm_deals.id','sys_crm_deal_track_approval_receivables.deal_id')
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_receivables.created_at, '%Y-%m') = '".date('Y-m')."'")->where('sys_crm_deal_track.receivables','!=', 1)->where('sys_crm_deal_track.delivery', 1)->where('owner', Auth::user()->id)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track_approval_receivables.id','asc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+            
+            if($track=="salesteampendingpayments"){
+                
+                $teams= array(Auth::user()->id);
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')
+                ->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')
+                ->join('sys_crm_deal_track_approval_receivables','sys_crm_deals.id','sys_crm_deal_track_approval_receivables.deal_id')
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_receivables.created_at, '%Y-%m') = '".date('Y-m')."'")->where('sys_crm_deal_track.receivables','!=', 1)->where('sys_crm_deal_track.delivery', 1)->wherein('owner', $teams)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track_approval_receivables.id','asc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+            
+            if($track=="partialdelivery"){
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where('sys_crm_deal_track.purchease', 4)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track.id','desc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+            
+            if($track=="purchasecompleted"){
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')
+                ->join('sys_crm_deal_track_approval_purchease','sys_crm_deal_track_approval_purchease.deal_id','sys_crm_deal_track.deal_id')
+                ->where('sys_crm_deal_track_approval_purchease.validation', 1)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track.id','desc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+            
+            if($track=="underpurchase"){
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')
+                ->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')
+                ->join('sys_crm_deal_track_approval_purchease','sys_crm_deal_track_approval_purchease.deal_id','sys_crm_deal_track.deal_id')
+                ->where('sys_crm_deal_track.purchease', 3)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track.id','desc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+            
+            if($track=="salesapprovedlist"){
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->whereRaw("DATE_FORMAT(sys_crm_deal_track.created_at, '%Y-%m') = '".date('Y-m')."'")->where('sys_crm_deal_track.sales', 1)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track.id','desc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+            
+            if($track=="doonprocess"){
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->whereRaw("DATE_FORMAT(sys_crm_deal_track.created_at, '%Y-%m') = '".date('Y-m')."'")->where([['sys_crm_deal_track.delivery', '=', 3],['sys_crm_deal_track.delivery', '=', 4],['sys_crm_deal_track.invoice', 1]])
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track.id','desc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+            
+            if($track=="dopending"){
+                $dealtrack = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->whereRaw("DATE_FORMAT(sys_crm_deal_track.created_at, '%Y-%m') = '".date('Y-m')."'")->where('sys_crm_deal_track.delivery', 0)
+                ->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'));
+                $dealtrack->orderby('sys_crm_deal_track.id','asc')->get();
+
+                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            }
+
+            if($track=="0"){
+
+            $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id');
+            
+            //Accounts:- Ananthu Satheesh (accounts@sysllc.com) Accounts Dept Head 27
+            //Sales :- Parveen Sheik Asif (parveen@sysllc.com) Sales Department Head 8
+            //Purchase:- Zahid Khan (procurement@sysllc.com) Procurement Dept Head 9
+            //Invoice:- Hennie Navales (hennie@sysllc.com) Billing 4
+            //Delivery :- Nihad Shaikh (nihad@sysllc.com) Logistic Dept. Head 29
+            //Receivable :- Shameen Khot (accounts1@sysllc.com) Accounts Receivable 3
+
+            //Accounts Dept Head
+            if(Auth::user()->role_id == 27){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id');
+            }
+            //sales
+            if(Auth::user()->role_id == 8){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where([['accounts','=',1]]);
+            }
+            //purchease
+            if(Auth::user()->role_id == 9){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where([['accounts','=',1],['sales','=',1]]);
+            }
+            //invoice
+            if(Auth::user()->role_id == 4){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deal_track_approval_invoice.invoice_no','sys_crm_deals.company_id','sys_crm_deal_track.company_id')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_track_id','sys_crm_deal_track.id')->where([['accounts','=',1],['sales','=',1]])->wherein('purchease',[1,4]);
+
+                                
+            }
+            //delivery
+            if(Auth::user()->role_id == 29){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where([['accounts','=',1],['sales','=',1],['purchease','=',1],['invoice','=',1]]);
+            }
+            //receivables
+            if(Auth::user()->role_id == 3){
+                $query = SysCrmDealTrack::select('sys_crm_deal_track.*','sys_crm_deals.cust_id','sys_crm_deals.owner','sys_crm_deals.deal_value','sys_crm_deals.deal_currency')->join('sys_crm_deals','sys_crm_deals.id','sys_crm_deal_track.deal_id')->where([['accounts','=',1],['sales','=',1],['purchease','=',1],['invoice','=',1],['delivery','=',1]]);
+                
+            } 
+                    $ctrl_status_id=$track;
+                    //accounts
+                    if(Auth::user()->role_id == 27){
+                        $query->where('sys_crm_deal_track.accounts', $track);
+                    }
+                    //sales
+                    else if(Auth::user()->role_id == 8){
+                        $query->where('sys_crm_deal_track.sales', $track);
+                    }
+                    //purchease
+                    else if(Auth::user()->role_id == 9){
+                            $query->where('sys_crm_deal_track.purchease', $track);                        
+                    }
+                    //invoice
+                    else if(Auth::user()->role_id == 4){
+                        $query->where('sys_crm_deal_track.invoice', $track);
+                    }
+                    //delivery
+                    else if(Auth::user()->role_id == 29){
+                        $query->where('sys_crm_deal_track.delivery', $track);
+                    }
+                    //receivables
+                    else if(Auth::user()->role_id == 3){
+                        $query->where('sys_crm_deal_track.receivables', $track);
+                    }
+                    else{
+                        if($track==0){
+                            $query->orwhere('sys_crm_deal_track.accounts', $track);
+                        }else{
+                            $query->orwhere('sys_crm_deal_track.accounts', $track);
+                            $query->orwhere('sys_crm_deal_track.sales', $track);
+                            $query->orwhere('sys_crm_deal_track.purchease', $track);
+                            $query->orwhere('sys_crm_deal_track.invoice', $track);
+                            $query->orwhere('sys_crm_deal_track.delivery', $track);
+                            $query->orwhere('sys_crm_deal_track.receivables', $track);
+                        }
+                    }
+                    $dealtrack = $query->where('stage',4)->where('sys_crm_deal_track.company_id',session('logged_session_data.company_id'))->orderby('id','desc')->get();
+                    //return $dealtrack;
+                    
+                    // if(session('logged_session_data.designation_id')==2){
+                    //     $query->where('sys_crm_deals.stage','=', 4);
+                    //     $dealtrack = $query->orderby('receivables','asc')->orderby('id','desc')->get();
+                    // }else{
+                    //     $query->where('sys_crm_deals.stage','=', 4);
+                    //     $dealtrack = $query->orderby('id','desc')->get();
+                    // }
+                }
+
+            return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+        }catch (\Exception $e) {
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    
+    public function crmdealuploadimgview()
+    {
+        try{            
+            return view('backEnd.crm.uploadForm');
+        }catch (\Exception $e) {
+            return $e;
+        }
+    }
+    public function crmdealuploadimg(Request $request)
+    {
+        try {
+            
+        $lpo_file = "";
+
+        if ($request->file('lpo') != "") {
+            $files = $request->file('lpo');
+            for ($i=0; $i<count($files); $i++) {
+                $file1 = $files[$i];
+                
+                if(str_contains($file1->getClientOriginalName(),'dubai-uae'))
+                {
+                    $newname = str_replace('dubai-uae', 'georgia-us', $file1->getClientOriginalName());
+                }
+                else if(str_contains($file1->getClientOriginalName(),'dubai'))
+                {
+                    $newname = str_replace('dubai', 'georgia', $file1->getClientOriginalName());
+                }
+                else if(str_contains($file1->getClientOriginalName(),'Dubai'))
+                {
+                    $newname = str_replace('Dubai', 'georgia', $file1->getClientOriginalName());
+                }
+                else if(str_contains($file1->getClientOriginalName(),'UAE'))
+                {
+                    $newname = str_replace('UAE', 'us', $file1->getClientOriginalName());
+                }
+                else if(str_contains($file1->getClientOriginalName(),'uae'))
+                {
+                    $newname = str_replace('uae', 'us', $file1->getClientOriginalName());
+                }
+                else
+                {
+                    $newname = $file1->getClientOriginalName();
+                }
+
+                $lpo_file = $newname;
+                $file1->move('public/uploads/syscom_us/', $lpo_file);
+                $lpo[]=$lpo_file;
+            }
+        }
+        return "success";
+        
+    } catch (\Throwable $th) {
+        return $th;
+    }
+
+    }
+
+    public function crmdealsdeliveryupdateitems(Request $request)
+    {
+        try {
+            foreach($request->checkbx as $chk)
+            {
+                $a='qty_'.$chk;
+                $quote_item_id = $chk;
+                $qty = $request->$a;
+
+                $values = array('deal_id' => $request->update_item_deal_id,'quote_item_id' => $quote_item_id,'qty' => $qty, 'updated_on' => Carbon::now('+04:00')->format('Y-m-d H:i:00'));
+                $chk = DB::table('sys_crm_deal_delivery_items')->where($values)->count();
+                if($chk==0){
+                    DB::table('sys_crm_deal_delivery_items')->insert($values);
+                }
+            }
+            Toastr::success('Item QTY Updated Successfully', 'Success');
+            return redirect()->back(); 
+        
+        } catch (\Throwable $th) {
+            //return $th;
+            Toastr::error('Something went wrong, please try again', 'Failed');
+            return redirect()->back();
+        }
+
+    }
+
+}

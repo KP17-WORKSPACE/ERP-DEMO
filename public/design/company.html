@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus - Company</title>    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="./assets/css/_main.css" />
+</head>
+<body>
+    <div class="venus-app page-company">
+        <header class="main-header">
+            <div class="logo"><img src="./assets/images/logo-gray.png" alt="VENUS LOGO" /></div>
+            <div class="right-section">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="dropdown-toggle-text">Syscom</div>
+                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Receipts</a></li>
+                        <li><a class="dropdown-item" href="#">Payments</a></li>
+                        <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-light add-btn"><i class="ico icon-outline-add-circle"></i></button>
+                <button class="btn btn-light notification-unread"><i class="ico icon-outline-bell"></i></button>
+                <div class="profile-dropdown">
+                    <div class="profile-img">
+                        <img src="./assets/images/profile.png" alt="PROFILE">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <div class="dropdown-toggle-text">
+                                <div class="title">Hamid Imran</div>
+                                <div class="role">Admin User</div>
+                            </div>
+                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown-body py-4 px-3">
+                            <div class="profile-content">
+                                <img src="./assets/images/profile_img.png" alt="profile_img" class="profile-image">
+                                <h4 class="profile_name">Saeed Hameed</h4>
+                               <div class="d-flex justify-content-center mb-3"> <h4 class="second-text">Super Admin </h4>
+                                <div class="company-name">SYSCOM</div></div>
+                                <div class="profile-second-section py-3">
+                                    <h4 class="company-details-text mb-3">Company Details</h4>
+                                    <div class="row">
+                                        <div class="col-7">Designation:
+                                            <h6 class="">Senior Accountant</h6>
+                                            staff ID:
+                                            <h6>UID1001</h6>
+                                        </div>
+                                        <div class="col-5">Departments:
+                                            <h6>Accounts</h6>
+                                            Date Of Joining:
+                                            <h6>01/01/1970</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="profile-third-section py-3">
+                                    <h4 class="personal-details-text">Personal Details</h4>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/telephone_Vector.png" class="telephone" alt="telephone_icon">
+                                        <h6>+971  50 123 4567</h6>
+                                    </div>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/envelop_Vector.png" class="email" alt="email_icon">
+                                        <h6>Saeed@syscom.com</h6>
+                                    </div>
+                                </div>
+                                <div class="profile-last-section">
+                                    <div>
+                                        <button class="btn ">
+                                            <i class="ico icon-outline-pen-2"></i>
+                                        </button>
+                                        <p class="button-text">Edit Profile</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Lock Keyhole Minimalistic.png" alt="lock_img">
+                                        </button>
+                                        <p class="button-text">Change Password</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Logout 2.png" alt="logout">
+                                        </button>
+                                        <p class="button-text-logout">Logout</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main>
+            <nav class="main-nav">
+                <div class="toggle-nav"></div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="" class="nav-link">
+                            <i class="ico icon-outline-widget-6"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavCRM">
+                            <i class="ico icon-outline-calculator"></i>
+                            <span class="nav-text">CRM</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavCRM">
+                            <div class="sub-nav-item">
+                                <a href="lead-list.html" class="sub-nav-link">Leads</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="deal-list.html" class="sub-nav-link">Deals</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track Status</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Sales Report</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Brand Sales Report</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavServiceDesk">
+                            <i class="ico icon-outline-checklist-minimalistic"></i>
+                            <span class="nav-text">Service Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavServiceDesk">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Service Desk Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavDatabase">
+                            <i class="ico icon-outline-database"></i>
+                            <span class="nav-text">Database</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavDatabase">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Database Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavPurchase">
+                            <i class="ico icon-outline-cart-large-4"></i>
+                            <span class="nav-text">Purchase</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavPurchase">
+                            <div class="sub-nav-item">
+                                <a href="supplier-register.html" class="sub-nav-link">Supplier Register</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="purchase-order.html" class="sub-nav-link">Purchase Order</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSales">
+                            <i class="ico icon-outline-bag-4"></i>
+                            <span class="nav-text">Sales</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSales">
+                            <div class="sub-nav-item">
+                                <a href="quotations.html" class="sub-nav-link">Quotations</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavInventory">
+                            <i class="ico icon-outline-server"></i>
+                            <span class="nav-text">Inventory</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavInventory">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Inventory Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavReports">
+                            <i class="ico icon-outline-document-text"></i>
+                            <span class="nav-text">Reports</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavReports">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Reports Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item active">
+                        <div class="sub-menu-nav" data-subnav="subnavSettings">
+                            <i class="ico icon-bold-settings"></i>
+                            <span class="nav-text">Settings</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSettings">
+                            <div class="sub-nav-item active">
+                                <a href="company.html" class="sub-nav-link">Company</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="shipping.html" class="sub-nav-link">Shipping</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="role.html" class="sub-nav-link">Role</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <section class="main-content">
+                <aside class="left-nav col-3">
+                    <h4 class="mb-4">Company</h4>
+                    <div class="left-nav-list">
+                        <ul class="nav flex-column nav-pills" id="companyTabNavs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="company-1-tab" data-bs-toggle="tab" data-bs-target="#company-1" type="button" role="tab" aria-controls="company-1" aria-selected="true">
+                                    <img src="./assets/images/company-logo-1.png" alt="Syscom Logo" />
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="company-2-tab" data-bs-toggle="tab" data-bs-target="#company-2" type="button" role="tab" aria-controls="company-2" aria-selected="false">
+                                    <img src="./assets/images/company-logo-1.png" alt="Syscom Logo" />
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="company-3-tab" data-bs-toggle="tab" data-bs-target="#company-3" type="button" role="tab" aria-controls="company-3" aria-selected="false">
+                                    <img src="./assets/images/company-logo-1.png" alt="Syscom Logo" />
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="company-4-tab" data-bs-toggle="tab" data-bs-target="#company-4" type="button" role="tab" aria-controls="company-4" aria-selected="false">
+                                    <img src="./assets/images/company-logo-1.png" alt="Syscom Logo" />
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="company-5-tab" data-bs-toggle="tab" data-bs-target="#company-5" type="button" role="tab" aria-controls="company-5" aria-selected="false">
+                                    <img src="./assets/images/company-logo-1.png" alt="Syscom Logo" />
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+                <div class="content-container col-9">
+                    <div class="tab-content" id="companyTabContent">
+                        <div class="tab-pane fade show active" id="company-1" role="tabpanel" aria-labelledby="company-1-tab">                            
+                            <div class="company-content-header">
+                                <button class="btn btn-light add-btn">
+                                    <i class="ico icon-outline-pen-2"></i>
+                                    <span>Edit</span>
+                                </button>
+                                <button class="btn btn-light add-btn">
+                                    <i class="ico icon-outline-trash-bin-minimalistic"></i>
+                                    <span>Delete</span>
+                                </button>
+                                <button class="btn btn-dark add-btn">
+                                    <i class="ico icon-outline-add-circle"></i>
+                                    <span class="font-size-16">Company</span>
+                                </button>
+                            </div>
+                            <div class="company-tab-content">
+                                <h6 class="cards-title-outer">Basic Information</h6>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Company Name:</label>
+                                                <div class="form-control-plaintext">Syscom</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Country:</label>
+                                                <div class="form-control-plaintext">United Arab Emirates</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">City:</label>
+                                                <div class="form-control-plaintext">Dubai</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Email:</label>
+                                                <div class="form-control-plaintext">sales@sysllc.com</div>
+                                            </div>
+
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Telephone:</label>
+                                                <div class="form-control-plaintext">+971 04 3522433</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Fax:</label>
+                                                <div class="form-control-plaintext">+971 04 3522432</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Mobile: </label>
+                                                <div class="form-control-plaintext">+971 52 8863140</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Website:</label>
+                                                <div class="form-control-plaintext">sysllc.com</div>
+                                            </div>
+                                            
+                                            <div class="col-12 mb-3">
+                                                <label class="form-label">Company Address:</label>
+                                                <div class="form-control-plaintext">Office 102, Easa Saleh Al Gurg Building, Khalid Bin Waleed Street, Dubai, United Arab Emirates</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h6 class="cards-title-outer">Other Details</h6>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">VAT Number:</label>
+                                                <div class="form-control-plaintext">100014280000003</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Trade License Number:</label>
+                                                <div class="form-control-plaintext">696506</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Trade License Expiry Date:</label>
+                                                <div class="form-control-plaintext">29-10-2024</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h6 class="cards-title-outer">Bank Details</h6>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Bank Name:</label>
+                                                <div class="form-control-plaintext">National Bank Of Ras Al Khaimah (RAK bank)</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Account Number:</label>
+                                                <div class="form-control-plaintext">0332136326001</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">IBAN:</label>
+                                                <div class="form-control-plaintext">-</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Branch & SWIFT Code:</label>
+                                                <div class="form-control-plaintext">-</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Currency:</label>
+                                                <div class="form-control-plaintext">AED</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h6 class="cards-title-outer">Images</h6>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Company Logo:</label>
+                                                <img class="d-block" src="./assets/images/company-logo-1.png" alt="Syscom Logo" />
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Digital Stamp:</label>
+                                                <div class="form-control-plaintext">--</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Sales Code:</label>
+                                                <div class="form-control-plaintext">SID</div>
+                                            </div>
+                                            <div class="col-3 mb-3">
+                                                <label class="form-label">Other Code:</label>
+                                                <div class="form-control-plaintext">S</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="company-2" role="tabpanel" aria-labelledby="company-2-tab">company-2</div>
+                        <div class="tab-pane fade" id="company-3" role="tabpanel" aria-labelledby="company-3-tab">company-3</div>
+                        <div class="tab-pane fade" id="company-4" role="tabpanel" aria-labelledby="company-4-tab">company-4</div>
+                        <div class="tab-pane fade" id="company-5" role="tabpanel" aria-labelledby="company-5-tab">company-5</div>
+                    </div>                    
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="./assets/js/_main.js" type="text/javascript"></script>
+    <script src="./assets/js/company.js" type="text/javascript"></script>
+</body>
+</html>

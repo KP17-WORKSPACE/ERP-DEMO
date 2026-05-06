@@ -1,0 +1,90 @@
+    .border {
+        border: 1px solid black !important;
+    }
+
+    .add-visitor {
+        padding: 30px;
+    }
+
+    .without-box-shadow {
+        box-shadow: 0px 0px 0px !important;
+        padding-left: 0px !important;
+        padding-right: 0px !important;
+    }
+
+    .without-box-shadow thead {
+        background: rgba(130, 139, 178, 0.3);
+    }
+
+    .without-box-shadow th {
+        padding-left: 20px !important;
+        margin: 12px 0;
+    }
+
+    .item_name {
+        width: 15% !important;
+    }
+
+    .invoice-tab-content textarea {
+        border: 1px solid #ddd;
+        padding: 5px;
+    }
+
+    .invoice-student-details .nav-tabs {
+        justify-content: space-between;
+        padding: 0px !important;
+        margin: 0px !important;
+    }
+
+    .invoice-student-details .nav-tabs li {
+        width: 19%;
+    }
+
+    @media (max-width: 768px) {
+        .invoice-student-details .nav-tabs li {
+            width: 48%;
+            margin-bottom: 10px;
+        }
+    }
+
+    .invoice-student-details .nav-tabs .nav-link {
+        background: #cad5f3;
+        color: #415094;
+        border: 0;
+        font-size: 12px;
+        text-transform: uppercase;
+        font-weight: 500;
+        padding: 8px 17px;
+        border-radius: 0px;
+        margin-right: 0px;
+    }
+
+    @media (max-width: 768px) {
+        .invoice-student-details .nav-tabs .nav-link {
+            padding: 8px 14px;
+        }
+    }
+
+    #signature {
+        border-left: 1px solid #ddd;
+        border-right: 1px solid #ddd;
+        border-top: 1px solid #ddd;
+    }
+
+    #signature input {
+        padding: 5px;
+    }
+
+
+    .invoice-student-details .nav-tabs .nav-link.active {
+        background: #415094 !important;
+        color: #ffffff !important;
+    }
+
+    .invoive-number {
+        position: absolute;
+        left: 0;
+        padding-left: 40px !important;
+        font-size: 14px;
+        padding-bottom: 4px;
+    }

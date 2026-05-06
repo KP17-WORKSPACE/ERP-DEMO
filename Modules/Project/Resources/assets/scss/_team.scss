@@ -1,0 +1,259 @@
+.team_member_area{
+    padding: 30px;
+    @media #{$mobile_device} {
+        padding: 15px;
+    }
+    .group_area{
+        background: #fff;
+        padding: 30px 30px 0 30px;
+        @media #{$mobile_device}{
+            padding: 20px;
+        }
+        .team_header{
+            h4{
+                font-size: 13px;
+                font-weight: 400;
+                text-transform: uppercase;
+            }
+        }
+        .single_team{
+            background: #fff;
+            border: 1px solid #EAECEF;
+            padding: 30px;
+            @include border-radius(4px);
+            margin-bottom: 30px;
+            @media #{$mobile_device} {
+                padding: 20px;
+            }
+            .team_info{
+                @media #{$mobile_device}{
+                    display: block !important;
+                }
+                @media #{$large_device}{
+                    display: block !important;
+                }
+            }
+            .group_icon{
+                padding-right: 19px;
+                @media #{$mobile_device}{
+                    margin-bottom: 30px;
+                }
+                i{
+                    width: 55px;
+                    height: 55px;
+                    background: #7FD8AA;
+                    text-align: center;
+                    line-height: 55px;
+                    font-size: 26px;
+                    color: #fff;
+                    @include border-radius(50%);
+                }
+                &.orange{
+                    i{
+                        background: #FFC864;
+                    }
+                }
+                &.gray{
+                    i{
+                        background: #707070;
+                    }
+                }
+            }
+            .team_name_details{
+                h3{
+                    font-size: 20px;
+                    color: #151B26;
+                    margin-bottom: 7px;
+                    @media #{$large_device} {
+                        margin-top: 10px;
+                    }
+                }
+                p{
+                    color: #647891;
+                    font-size: 13px;
+                    line-height: 21px;
+                    margin-bottom: 25px;
+                }
+                .all_team_member_image{
+                    a{
+                        display: inline-block;
+                        width: 30px;
+                        height: 30px;
+                        @include border-radius(50%);
+                        margin-right: 2px;
+                        span{
+                            font-size: 13px;
+                            color:#92A2B7;
+                            font-weight: 500; 
+                        }
+                        img{
+                            width: 100%;
+                        }
+                    }
+                }
+            }
+            .rename_delete{
+                cursor: pointer;
+                i{
+                    color: #BBC1C9;
+                }
+                top: -8px;
+                right: -8px;
+                height: 24px;
+                position: relative;
+                .rename_generate{
+                    width: 130px;
+                    background: #fff;
+                    position: absolute;
+                    border: 1px solid #EAECEF;
+                    border-radius: 4px;
+                    right: 0;
+                    top: 25px;
+                    opacity: 0;
+                    visibility: hidden;
+                    @include transition(.3s);
+                    @include box-shadow(0 3px 6px 0 rgba(0, 0, 0, 0.08));                        
+                    ul{
+                        li{
+                            display: block;
+                            a{
+                                font-size: 13px;
+                                color: #92A2B7;
+                                font-weight: 400;
+                                // line-height: 40px;
+                                padding-left: 20px;
+                                // 
+                                padding: 12px 0 3px 20px;
+                                display: block;
+                                &:hover{
+                                    color: #151B26;
+                                }
+                            }
+                            &:last-child a{
+                                padding: 8px 0 9px 20px;
+                            }
+                        }
+                    }
+                }
+                &:hover .rename_generate{
+                    top: 20px;
+                    opacity: 1;
+                    visibility: visible;
+                }
+            }
+        }
+    }
+    .members_list{
+        background: #fff;
+        padding-bottom: 30px;
+        @media #{$mobile_device} {
+            margin-bottom: 30px;
+        }
+        @media #{$mid_device} {
+            margin-bottom: 30px;
+        }
+        @media #{$tablet_device} {
+            margin-bottom: 30px;
+        }
+        .member_list_titile{
+            padding: 30px;
+            border-bottom: 1px solid #EAECEF;
+            h3{
+                color: #151B26;
+                font-size: 13px;
+                text-transform: uppercase;
+            }
+        }
+        ul{
+            padding: 30px;
+            max-height: 900px;
+            overflow-y: scroll;
+            li{
+                margin-bottom: 15px;
+                .single_member_list{
+                    .member_thumb{
+                        margin-right: 15px;
+                        width: 54px;
+                        height: 54px;
+                        @include border-radius(50%);
+                        overflow: hidden;
+                        img{
+                            width: 100%;
+                        }
+                        &.add_member_icon{
+                            text-align: center;
+                            line-height: 54px;
+                            border: 1px dashed #A4CEFF;
+                            i{
+                               color:#4A9DFF;
+                               font-size: 17px;
+                            }
+                        }
+                    }
+                    .member_name{
+                        h4{
+                            font-size: 14px;
+                            color: #151B26;
+                            margin-bottom: 0;
+                        }
+                        a{
+                            font-size: 12px;
+                            color: #92A2B7;
+                        }
+                        span{
+                            font-size: 13px;
+                            color: #647891;
+                            font-weight: 400;
+                            cursor: pointer;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+.team_header{
+    margin-bottom: 30px;
+    .client_title{
+        h4{
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 0;
+        }
+    }
+    .Add_team{
+        a{
+            color: #4a9dff;
+            background: #ECF5FF;
+            font-size: 13px;
+            @include border-radius(4px);
+            padding: 8px 17px;
+            display: inline-block;
+            text-transform: capitalize;
+            @media #{$mobile_device} {
+                width: 100%;
+                text-align: center;
+            }
+            i{
+                font-size: 13px;
+                margin-left: 3px;
+            }
+        }
+    }
+}
+
+
+.content {
+    display: none;
+  }
+  #loadMore {
+    font-size: 13px;
+    color: #FF7882;
+  }
+  .noContent {
+    color: #000 !important;
+    background-color: transparent !important;
+    pointer-events: none;
+  }

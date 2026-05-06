@@ -1,0 +1,189 @@
+.app_design_main_area{
+    padding: 30px;
+    @media #{$mobile_device} {
+        padding: 15px;
+    }
+    .single_app_design{
+        background: #fff;
+        padding: 20px;
+        @media #{$large_device} {
+            margin-bottom: 30px;
+        }
+        .generate{
+            border: 1px solid #EAECEF;
+            border-radius: 4px;
+            padding: 14px 20px;
+            margin-bottom: 15px;
+            span{
+                font-size: 16px;
+                font-weight: 500;
+                color: #647891;
+            }
+            .rename_delete{
+                position: relative;
+                cursor: pointer;
+                i{
+                    color: #BBC1C9;
+                }
+                .rename_generate{
+                    width: 150px;
+                    background: #fff;
+                    position: absolute;
+                    border: 1px solid #EAECEF;
+                    border-radius: 4px;
+                    left: 0;
+                    top: 25px;
+                    opacity: 0;
+                    visibility: hidden;
+                    @include transition(.3s);
+                    @include box-shadow(0 3px 6px 0 rgba(0, 0, 0, 0.08)); 
+                    z-index: 9;     
+                    @media #{$mobile_device} {
+                        right: 0;
+                        left: auto;
+                    }                  
+                    ul{
+                        li{
+                            display: block;
+                            a{
+                                font-size: 13px;
+                                color: #92A2B7;
+                                font-weight: 400;
+                                line-height: 40px;
+                                padding-left: 20px;
+                                &:hover{
+                                    color: #151B26;
+                                }
+                            }
+                        }
+                    }
+                }
+                &:hover .rename_generate{
+                    top: 20px;
+                    opacity: 1;
+                    visibility: visible;
+                    border: transparent;
+                }
+            }
+        }
+        .add_tesk_btn a {
+            display: block;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .single_drag_app{
+            margin-bottom: 15px;
+            border: 1px solid #EAECEF;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.06);
+            .app_heading{
+                span{
+                    font-size: 16px;
+                    color: #151B26;
+                    font-weight: 500;
+                }
+                .rename_delete{
+                    cursor: pointer;
+                    i{
+                        color: #BBC1C9;
+                    }
+                    position: relative;
+                    .edit_copy_hover{
+                        width: 150px;
+                        background: #fff;
+                        position: absolute;
+                        border: 1px solid #EAECEF;
+                        border-radius: 4px;
+                        left: 0;
+                        top: 25px;
+                        opacity: 0;
+                        visibility: hidden;
+                        @include transition(.3s);
+                        @include box-shadow(0 3px 6px 0 rgba(0, 0, 0, 0.08));  
+                        z-index: 9;      
+                        @media #{$mobile_device} {
+                            left: auto;
+                            right: 0;
+                        }                
+                        ul{
+                            li{
+                                display: block;
+                                a{
+                                    font-size: 13px;
+                                    color: #92A2B7;
+                                    font-weight: 400;
+                                    line-height: 40px;
+                                    padding-left: 20px;
+                                    &:hover{
+                                        color: #151B26;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    &:hover .edit_copy_hover{
+                        top: 20px;
+                        opacity: 1;
+                        visibility: visible;
+                    }
+                }
+            }
+            .profile_name{
+                margin-top: 10px;
+                margin-bottom: 15px;
+                img{
+
+                }
+                span{
+                    color: #92A2B7;
+                    font-size: 13px;
+                    font-weight:400;
+                    margin-left: 6px;
+                }
+            }
+            .link_date{
+                span{
+                    font-size: 13px;
+                    color: #92A2B7;
+                    i{
+                        margin-right: 5px;
+                    }
+                }
+                .share_comment{
+                    a{
+                        font-size: 15px;
+                        color: #92A2B7;
+                        margin-left: 20px;
+
+                        i{
+                            margin-right: 10px;
+                        }
+                        &:hover{
+                            i{
+                                color: #4A9DFF;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .add_new_column{
+            cursor: pointer;
+            border: 1px solid  #EAECEF;
+            border-radius: 4px;
+            padding: 14px 20px;
+            @include box-shadow(0 3px 6px 0 rgba(0, 0, 0, 0.08));
+            span{
+                font-size: 16px;
+                color: #647891;
+                text-transform: capitalize;
+                i{
+                    color: #4A9DFF;
+                    font-size: 11px;
+                    margin-left: 5px;
+                }
+            }
+        }
+    }
+}

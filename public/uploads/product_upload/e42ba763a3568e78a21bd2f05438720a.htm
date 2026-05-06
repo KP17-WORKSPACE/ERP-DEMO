@@ -1,0 +1,2997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="http://localhost:8000/public/design/images/erp-logo-icon.png" type="image/png"/>
+    <title>Venus ERP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="http://localhost:8000/public/design/assets/css/_main.css" />
+    <link rel="stylesheet" href="http://localhost:8000/public/design/assets/css/_icomoon.css" />
+    <link rel="stylesheet" href="http://localhost:8000/public/design/assets/css/_header.css" />
+    <link rel="stylesheet" href="http://localhost:8000/public/design/assets/css/_navbar.css" />
+    <link rel="stylesheet" href="http://localhost:8000/public/design/assets/css/purchase-order.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+ 
+
+    <!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+</head>
+<body>
+    
+    
+        <div id="loading_bg"
+        style="width: 100vw; height: 100vh; background: #00000085; position: fixed; z-index:9999; text-align: center; display:none;">
+        <img src="http://localhost:8000/public/design/assets/images/loader.gif" style="margin: 20%;">
+    </div>
+
+    <div class="venus-app page-purchase-order">
+        
+        <header class="main-header">
+    
+            <div class="logo"><img src="http://localhost:8000/public/design/assets/images/logo-white.png" alt="VENUS LOGO" /></div>
+            <div class="right-section">
+            
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="dropdown-toggle-text">SYSCOM</div>
+                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                                             <li>
+                            <a class="dropdown-item active"
+                            
+                            onclick="app_company_change(1)">
+                                SYSCOM
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(6)">
+                                SYSCOM DISTRIBUTIONS LLC
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(2)">
+                                SYSCOM FZE
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(3)">
+                                SYSCOM DISTRIBUTIONS LLC BRANCH ABU DHABI 1
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(5)">
+                                SYSCOM IT SOLUTIONS LLC
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(4)">
+                                SYSCOM DISTRIBUTION LTD
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(7)">
+                                STACK LINK UK LTD
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(8)">
+                                SUPREME SYSTEM TRADING ESTABLISHMENT
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(9)">
+                                SYSCOM DISTRIBUTION WLL
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(10)">
+                                SUPREME SYSTEM DISTRIBUTORS SPC
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(11)">
+                                SYSCOM DISTRIBUTION LIMITED
+                            </a>
+                        </li>
+                                             <li>
+                            <a class="dropdown-item "
+                            
+                            onclick="app_company_change(12)">
+                                TRIANGLE SYSTEMS LLC
+                            </a>
+                        </li>
+                                         </ul>
+                </div>
+                 <script>
+            function app_company_change (companyid) {
+                
+                var action = "http://localhost:8000/set-company-id";
+                    $.ajax({
+                        url: action,
+                        type: "POST",
+                        data: {
+                            _token: 'WOSjYx8aiq3SS2vj69rK8gBoAJEwNJbIwbArzGOi',
+                            companyid: companyid,
+                        },
+                        cache: false,
+                        success: function(dataResult) {
+                            var returl = "http://localhost:8000/crm-dashboard";
+                            window.location.href = returl;
+                            //location.reload();
+                        },
+                    });
+                $("#loading_bg").css("display", "block");
+            }
+        </script>
+
+                <button class="btn btn-light add-btn"><i class="ico icon-outline-add-circle"></i></button>
+                <button class="btn btn-light notification-unread"><i class="ico icon-outline-bell"></i></button>
+                <div class="profile-dropdown">
+                    <div class="profile-img">
+                                            <img width="26px" height="26px" src="http://localhost:8000/public/uploads/staff/13c1d3613d09ce0830b7d9937181a6bc.jpg" alt="">
+                                        </div>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <div class="dropdown-toggle-text">
+                              
+                                <div class="title">Kunal Yadav Pandharkar</div>
+                                <div class="role">Kunal@sysllc.com</div>
+                            </div>
+                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico text-white"></i>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown-body py-4 px-3">
+                            <div class="profile-content">
+                                <img width="26px" height="26px" src="http://localhost:8000/public/uploads/staff/13c1d3613d09ce0830b7d9937181a6bc.jpg" alt="profile_img" class="profile-image">
+                                <h4 class="profile_name">Kunal Yadav Pandharkar</h4>
+                               <div class=""> <h4 class="second-text">Super Admin</h4></div>
+                                <div class="company-name">SYSCOM DISTRIBUTIONS LLC</div>
+                                <div class="profile-second-section py-3">
+                                    <h4 class="company-details-text mb-3">Company Details</h4>
+                                    <div class="row">
+                                        <div class="col-7">Designation:
+                                            <h6 class="">Software Developer</h6>
+                                            Staff ID:
+                                            <h6>UIS-1054</h6>
+                                        </div>
+                                        <div class="col-5">Departments:
+                                            <h6>Information Technology (I.T.)</h6>
+                                            Date Of Joining:
+                                            <h6> 1st May, 2025</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="profile-third-section py-3">
+                                    <h4 class="personal-details-text">Personal Details</h4>
+                                    <div class="contact-email">
+                                        <img src="http://localhost:8000/public/design/assets/images/telephone_Vector.png" class="telephone" alt="telephone_icon">
+                                        <h6>+91 7774843561</h6>
+                                    </div>
+                                    <div class="contact-email">
+                                        <img src="http://localhost:8000/public/design/assets/images/envelop_Vector.png" class="email" alt="email_icon">
+                                        <h6>Kunal@sysllc.com</h6>
+                                    </div>
+                                </div>
+                                <div class="profile-last-section">
+                                    <div>
+                                        <button class="btn ">
+                                            <i class="ico icon-outline-pen-2"></i>
+                                        </button>
+                                        <p class="button-text">Edit Profile</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="http://localhost:8000/public/design/assets/images/Lock Keyhole Minimalistic.png" alt="lock_img">
+                                        </button>
+                                        <p class="button-text">Change Password</p>
+                                    </div>
+                                    <div >
+                                        <button class="btn">
+                                            <img src="http://localhost:8000/public/design/assets/images/Logout 2.png" alt="logout">
+                                        </button>
+                                        <p class="button-text-logout">Logout</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            
+        <nav class="main-nav">
+                <div class="toggle-nav"></div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="http://localhost:8000/crm-dashboard" class="nav-link">
+                            <!-- <i class="ico icon-outline-widget-6"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/dashboard.png" height="24px" title="Dashboard">
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+
+         
+                    
+                                                            <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavAccounts">
+                            <!-- <i class="ico icon-outline-calculator"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/accounts.png" height="24px" title="Accounts">
+                            <span class="nav-text">Accounts</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavAccounts">
+                                                        <div class="sub-nav-item">
+                                <a href="http://localhost:8000/chartofaccounts" class="sub-nav-link">Chart of Accounts</a>
+                                <a href="http://localhost:8000/chartofaccounts-opening-balance" class="sub-nav-link">Opening Balance</a>
+                            </div>
+                            
+                                                        <div class="sub-nav-item">
+                                <a href="http://localhost:8000/journalvoucher" class="sub-nav-link">Journal Voucher</a>
+                            </div>
+                                                                                    <div class="sub-nav-item">
+                                <a href="http://localhost:8000/cashbook" class="sub-nav-link">Cash Book</a>
+                            </div>
+                                                                                            <div class="sub-nav-item">
+                                        <a href="http://localhost:8000/bankbook" class="sub-nav-link">Bank Book</a>
+                                    </div>
+                                                                                            <div class="sub-nav-item">
+                                        <a href="http://localhost:8000/stl-report" class="sub-nav-link">STL Report</a>
+                                    </div>
+                                                    </div>
+                    </li>
+                                        
+
+                    
+                                                            <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavCRM">
+                            <!-- <i class="ico icon-outline-calculator"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/hrms.png" height="24px" title="CRM">
+                            <span class="nav-text">CRM</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavCRM">
+                            <div class="sub-nav-item">
+                                                                <a href="http://localhost:8000/crm-leads/show"  class="sub-nav-link">Leads</a>
+                                                                                                <a href="http://localhost:8000/crm-deals/show"  class="sub-nav-link">Deals</a>
+                                                                                                <a href="http://localhost:8000/crm-deal-track-approval-list"  class="sub-nav-link">Deals Track</a>
+                                                                                                <a href="http://localhost:8000/crm-deal-track-status"  class="sub-nav-link">Deals Track Status</a>
+                                                                                                <a href="http://localhost:8000/crm-deals-sales-report-company"  class="sub-nav-link">Sales Report</a>
+                                <a href="http://localhost:8000/crm-deals-brand-sales-report-new"  class="sub-nav-link">Brand Sales Report</a>
+                                                            </div>
+                        </div>
+                    </li>
+                                        
+
+                    
+                                                            <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavServiceDesk">
+                            <!-- <i class="ico icon-outline-headphones-round"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/service.png" height="24px" title="Service Desk">
+                            <span class="nav-text">Service Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavServiceDesk">
+                            <div class="sub-nav-item">
+                                                                <a href="http://localhost:8000/crm-amc-list" target="_blank" class="sub-nav-link">Annual Maintenance Contract</a>
+                                                                                                <a href="http://localhost:8000/crm-ps-track-service-list" target="_blank" class="sub-nav-link">Project Service Request</a>
+                                                                                                <a href="http://localhost:8000/crm-deal-support-list" target="_blank" class="sub-nav-link">Pre-Sales Request</a>
+                                                                                                <a href="http://localhost:8000/crm-engineer-tracking" target="_blank" class="sub-nav-link">Engineer Tracking</a>
+                                
+                                                                <a href="http://localhost:8000/crm-reimbursement-request" target="_blank" class="sub-nav-link">Reimbursement Request</a>
+                                                            </div>
+                        </div>
+                    </li>
+                                        
+                    
+                    
+                                                            <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavDatabase">
+                            <!-- <i class="ico icon-outline-database"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/execution-desk.png" height="24px" title="Execution Desk">
+                            <span class="nav-text">Execution Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavDatabase">
+                            <div class="sub-nav-item">
+                                <a href="http://localhost:8000/crm-user-tasks" target="_blank" class="sub-nav-link">Task</a>
+                                <a href="http://localhost:8000/user-todo-list" target="_blank" class="sub-nav-link">Todo List</a>
+                                <a href="#" target="_blank" class="sub-nav-link">Notes</a>
+                                <a href="#" target="_blank" class="sub-nav-link">Activity Tracker</a>
+                            </div>
+                        </div>
+                    </li>
+                                        
+                    
+                    
+                                                            <li class="nav-item active">
+                        <div class="sub-menu-nav" data-subnav="subnavPurchase">
+                            <!-- <i class="ico icon-bold-cart-large-4"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/purchase.png" height="24px" title="Purchase">
+                            <span class="nav-text">Purchase</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavPurchase">
+                            <div class="sub-nav-item">
+                                                        <a href="http://localhost:8000/suppliers" target="_blank" class="sub-nav-link">Supplier Register</a>
+                                                                                    <a href="http://localhost:8000/purchase-order" target="_blank" class="sub-nav-link">Purchase Order</a>
+                                                                                    <a href="http://localhost:8000/goods-receipt-note-list" target="_blank" class="sub-nav-link">Goods Receipt Note</a>
+                                                                                    <a href="http://localhost:8000/purchase-invoice" target="_blank" class="sub-nav-link">Purchase Invoice</a>
+                                                                                    <a href="http://localhost:8000/purchase-return" target="_blank" class="sub-nav-link">Purchase Return</a>
+                                                                                    <a href="http://localhost:8000/payment" class="sub-nav-link">Payments</a>
+                                                                                    <a href="http://localhost:8000/payables-outstanding" class="sub-nav-link">Payables Outstanding</a>
+                                                                                    <a href="http://localhost:8000/pi-adjustment-report" class="sub-nav-link">PI Adjustment Report</a>
+                                                        </div>
+                        </div>
+                    </li>
+                                        
+
+                    
+                                                            <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSales">
+                            <!-- <i class="ico icon-outline-bag-4"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/sales.png" height="24px" title="Sales">
+                            <span class="nav-text">Sales</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSales">
+                            <div class="sub-nav-item">
+                                                                <a href="http://localhost:8000/customers" target="_blank" class="sub-nav-link">Customer Register</a>
+                                                                                                <a href="http://localhost:8000/quotations" target="_blank" class="sub-nav-link">Quotation</a>
+                                                                                                <a href="http://localhost:8000/proforma-invoice" target="_blank" class="sub-nav-link">Proforma Invoice</a>
+                                                                                                <a href="http://localhost:8000/sales-invoice" target="_blank" class="sub-nav-link">Sales Invoice</a>
+                                                                                                <a href="http://localhost:8000/delivery-note" target="_blank" class="sub-nav-link">Delivery Note</a>
+                                                                                                <a href="http://localhost:8000/sales-return" target="_blank" class="sub-nav-link">Sales Return</a>
+                                                                                                <a href="http://localhost:8000/receipt" class="sub-nav-link">Receipts</a>
+                                                                                                <a href="http://localhost:8000/receivable-outstanding" class="sub-nav-link">Receivable Outstanding</a>
+                                                                                                <a href="http://localhost:8000/si-adjustment-report" class="sub-nav-link">SI Adjustment Report</a>
+                                
+                                                            </div>
+                        </div>
+                    </li>
+                                        
+                    
+                    
+                                                            <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavInventory">
+                            <!-- <i class="ico icon-outline-server"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/inventory.png" height="24px" title="Inventory">
+                            <span class="nav-text">Inventory</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavInventory">
+                            <div class="sub-nav-item">
+                                                                <a href="http://localhost:8000/item-add" class="sub-nav-link">Products</a>
+                                                                                                <a href="http://localhost:8000/item-store/show" class="sub-nav-link">Opening Stock</a>
+                                                                                                <a href="http://localhost:8000/stock-register" class="sub-nav-link">Stock Register</a>
+                                                                                                <a href="http://localhost:8000/stock-ledger" class="sub-nav-link">Stock Ledger</a>
+                                                                                                <a href="http://localhost:8000/stock-in" class="sub-nav-link">Excess Stock</a>
+                                                                                                <a href="http://localhost:8000/stock-out" class="sub-nav-link">Shortage Stock</a>
+                                                                                                <a href="http://localhost:8000/packing-list" class="sub-nav-link">Packing List</a>
+                                                            </div>
+                        </div>
+                    </li>
+                                        
+                    
+                    
+                                                            <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavReports">
+                            <!-- <i class="ico icon-outline-document-text"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/report.png" height="24px" title="Reports">
+                            <span class="nav-text">Reports</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavReports">
+                            <div class="sub-nav-item">
+                                                                <a href="http://localhost:8000/inventory-report" target="_blank" class="sub-nav-link">Inventory Report</a>
+                                                                                                <a href="http://localhost:8000/sales-invoice-report" target="_blank" class="sub-nav-link">Sales Report</a>
+                                                                                                <a href="http://localhost:8000/generalledger" class="sub-nav-link">General Ledger</a>
+                                                                                                <a href="http://localhost:8000/trial-balance" target="_blank" class="sub-nav-link">Trial Balance</a>
+                                                                                                <a href="http://localhost:8000/trading-account" target="_blank" class="sub-nav-link">Trading Account</a>
+                                                                                                <a href="http://localhost:8000/profit-and-loss-account" target="_blank" class="sub-nav-link">Profit & Loss Account</a>
+                                                                                                <a href="http://localhost:8000/balancesheet" target="_blank" class="sub-nav-link">Balancesheet</a>
+                                                            </div>
+                        </div>
+                    </li>
+                                        
+                    
+                    
+                                                            
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSettings">
+                            <!-- <i class="ico icon-outline-settings"></i> -->
+                            <img src="http://localhost:8000/public/design/assets/images/icons/settings.png" height="24px" title="Settings">
+                            <span class="nav-text">Settings</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSettings">
+                            <div class="sub-nav-item">
+                                                                    <a href="http://localhost:8000/company" class="sub-nav-link">Company</a>
+                                                                                                    <a href="http://localhost:8000/department" class="sub-nav-link">Department</a>
+                                                                                                    <a href="http://localhost:8000/designation" class="sub-nav-link">Designation</a>
+                                                                                                    <a href="http://localhost:8000/role" class="sub-nav-link">Role</a>
+                                                                                                    <a href="http://localhost:8000/staff-directory" class="sub-nav-link">User</a>
+                                                                                                    <a href="http://localhost:8000/module" class="sub-nav-link">Module</a>
+                                                                                                    <a href="http://localhost:8000/base-setup" class="sub-nav-link">Base Setup</a>
+                                                                                                    <a href="http://localhost:8000/daily-quotes" class="sub-nav-link">Daily Quote</a>
+                                                                                                    <a href="http://localhost:8000/currency-settings" class="sub-nav-link">Manage Currency</a>
+                                                                                                    <a href="http://localhost:8000/payment-terms" class="sub-nav-link">Payment Terms</a>
+                                                                                                    <a href="http://localhost:8000/payment-cheque-print-template" class="sub-nav-link">Cheque Print Template</a>
+                                                                                                    <a href="http://localhost:8000/shipping-add" class="sub-nav-link">Shipping</a>
+                                                                                                    <a href="http://localhost:8000/vat-settings" class="sub-nav-link">VAT Settings</a>
+                                                                                                    <a href="http://localhost:8000/accountgroup-add" class="sub-nav-link">Main Heads</a>
+                                                                                                    <a href="http://localhost:8000/general-settings" class="sub-nav-link">General Settings</a>
+                                                                                                    <a href="http://localhost:8000/background-setting" class="sub-nav-link">Background Settings</a>
+                                                                                                    <a href="http://localhost:8000/backup-settings" class="sub-nav-link">Backup</a>
+                                                            </div>
+                        </div>
+                    </li>
+                                        
+                </ul>
+            </nav>
+            <section class="main-content">
+
+                
+                
+<script>
+    
+let isFullList = false;
+
+function list_style_new() {
+  const leftNav = document.querySelector('.left-nav');
+  const content = document.querySelector('.content-container');
+
+  if (!isFullList) {
+    // Switch to FULL LIST VIEW
+    isFullList = true;
+
+    leftNav.classList.remove('col-3');
+    leftNav.classList.add('col-12');
+    leftNav.style.width = '100%';
+
+    content.classList.add('d-none');
+
+    $('#long-list').removeClass('d-none');
+    $('#short-list').addClass('d-none');
+
+    $('#filters-long').removeClass('d-none');
+    $('#filters-short').addClass('d-none');
+  } else {
+    // Switch to COMPACT VIEW
+    isFullList = false;
+
+    leftNav.classList.remove('col-12');
+    leftNav.classList.add('col-3');
+    leftNav.style.width = '';
+
+    content.classList.remove('d-none');
+
+    $('#long-list').addClass('d-none');
+    $('#short-list').removeClass('d-none');
+
+    $('#filters-short').removeClass('d-none');
+    $('#filters-long').addClass('d-none');
+  }
+}
+
+
+//added ny kp
+function toggleLongFilters() {
+  console.log("clicked");
+  document.querySelectorAll('#filters-long .filter-field').forEach(el => {
+    el.classList.toggle('d-none');
+  });
+}
+
+</script>
+
+    <style>
+        .venus-app .table.table-hover td {
+            padding: 1px 5px;
+        }
+    </style>
+
+    <style>
+        #long-list td,
+        #long-list th {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #long-list tr.expand td {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+            height: auto !important;
+        }
+
+        /* Optional for pointer on rows */
+        #long-list tbody tr {
+            cursor: pointer;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            $('#long-list tbody tr').on('click', function () {
+                $(this).toggleClass('expand');
+            });
+        });
+    </script>
+
+    <style>
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #d9d9d9 !important;
+            border-radius: 0px;
+            height: 25px;
+            line-height: 10px;
+            width: 100%
+        }
+
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 24px;
+            font-weight: 500;
+
+        }
+
+        .select2-container {
+            font-size: 13px
+        }
+
+        .col-1-5 {
+            flex: 0 0 auto;
+            width: 12.5%;
+        }
+
+        @media (min-width: 576px) {
+            .col-sm-1-5 {
+                flex: 0 0 auto;
+                width: 12.5%;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .col-md-1-5 {
+                flex: 0 0 auto;
+                width: 12.5%;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .col-lg-1-5 {
+                flex: 0 0 auto;
+                width: 12.5%;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .col-xl-1-5 {
+                flex: 0 0 auto;
+                width: 12.5%;
+            }
+        }
+
+        a {
+            color: #198754 !important
+        }
+    </style>
+
+
+    
+        <aside class="left-nav col-3" id="leftSidebar">
+        <div class="resizer" id="sidebarResizer"></div>
+        <div class="short-list" id="filters-short">
+            <h4 class="mb-2">Purchase Order
+            </h4>
+            <div class="search-filter-container mb-4">
+                <div class="input-group flex-nowrap">
+                    <input type="text" class="form-control" placeholder="Document No" aria-label="Search"
+                        aria-describedby="addon-wrapping">
+                </div>
+
+                <button class="btn btn-light">
+                    <i class="ico icon-outline-magnifer"></i>
+                </button>
+                <button class="btn btn-light" id="list_style_button" onclick="list_style_new()">
+                    <i class="ico icon-outline-list-down"></i>
+                </button>
+            </div>
+
+        </div>
+
+        <div class="long-list  d-none" id="filters-long">
+            <div class="d-flex align-items-center justify-content-between">
+                <h4 class="mb-2">Purchase Order
+                </h4>
+                <div class="search-filter-container mb-0">
+
+
+                    <button class="btn btn-light" onclick="toggleLongFilters()">
+                        <i class="ico icon-outline-magnifer"></i>
+                    </button>
+                    <button class="btn btn-light" id="list_style_button" onclick="list_style_new()">
+                        <i class="ico icon-outline-list-down"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="search-filter-container mt-1 mb-4 filter-field d-none border">
+
+                <div class="card">
+                    <div class="card-body">
+
+                        <form method="GET" action="http://localhost:8000/purchase-order" accept-charset="UTF-8" class="form-horizontal" id="purchase-order-search" enctype="multipart/form-data">
+                        <div class="row">
+
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Documents Number</label>
+                                <input class="form-control" type="text" autocomplete="off" name="documents_number" value="">
+                            </div>
+
+                            <div class="col-md-3 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Supplier</label>
+                                <select class=" js-account-select" name="supplier" id="supplier" style="width: 100%;">
+                                    <option value=""></option>
+                                    
+                                </select>
+                            </div>
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Customer</label>
+                                <input class="form-control" type="text" autocomplete="off" name="customer" value="">
+                            </div>
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Deal ID</label>
+                                <input class="form-control" type="text" autocomplete="off" name="deal_number" value="">
+                            </div>
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Currency</label>
+                                <div class="form-group">
+                                    <select class="form-control" name="currency" id="currency">
+                                        <option value=""></option>
+                                                                                    <option value="1">AED</option>
+                                                                                    <option value="2">QAR</option>
+                                                                                    <option value="3">OMR</option>
+                                                                                    <option value="4">SAR</option>
+                                                                                    <option value="5">USD</option>
+                                                                                    <option value="6">INR</option>
+                                                                                    <option value="7">BHD</option>
+                                                                                    <option value="8">KWD</option>
+                                                                                    <option value="9">GBP</option>
+                                                                                    <option value="10">Euro</option>
+                                                                            </select>
+                                    <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                </div>
+                            </div>
+
+
+
+
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">GRN Number</label>
+                                <input class="form-control" type="text" autocomplete="off" name="grn_number" value="">
+                            </div>
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Purchase Invoice Number</label>
+                                <input class="form-control" type="text" autocomplete="off" name="purchase_invoice_number"
+                                    value="">
+                            </div>
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Purchase Return Number</label>
+                                <input class="form-control" type="text" autocomplete="off" name="purchase_return_number"
+                                    value="">
+                            </div>
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">From Date</label>
+                                <input class="form-control" type="date" autocomplete="off" name="from_date" id="from_date"
+                                    value="">
+                            </div>
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">To Date</label>
+                                <input class="form-control" type="date" autocomplete="off" name="to_date" id="to_date"
+                                    value="">
+                            </div>
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Attachment</label>
+
+                                <div class="form-group">
+                                    <select class="form-control" name="attachments" id="attachments">
+                                        <option value="">Select</option>
+                                        <option value="1">With Attachments Only</option>
+                                        <option value="2">Without Attachments Only</option>
+                                        <option value="3">All</option>
+                                    </select>
+                                    <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+
+                                </div>
+                            </div>
+                            <div class="col-1-5 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Filter By</label>
+                                <select class="form-control" name="filter_by" id="filter_by">
+                                    <option value=""  selected >-Select-</option>
+                                    <option value="this_month" >This Month
+                                    </option>
+                                    <option value="today" >Today</option>
+                                    <option value="this_week" >This Week
+                                    </option>
+                                    <option value="last_week" >Last Week
+                                    </option>
+                                    <option value="last_month" >Last Month
+                                    </option>
+                                    <option value="this_quarter" >This
+                                        Quarter</option>
+                                    <option value="pre_quarter" >Previous
+                                        Quarter</option>
+                                    <option value="this_year" >This Year
+                                    </option>
+                                    <option value="last_year" >Last Year
+                                    </option>
+                                </select>
+                            </div>
+                            <script>
+                                function set_filter() {
+                                    if ($('#from_date').val() != "" || $('#to_date').val() != "") {
+                                        $('#filter_by').val('')
+                                    }
+                                }
+                            </script>
+
+                            <div class="col-md-3 filter-field d-none">
+                                <button type="submit" class="btn btn-primary mt-4 rounded-0" id="btnSubmit">Filter</button>
+                            </div>
+                        </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="left-nav-list">
+
+            <ul id="short-list" class="nav flex-column nav-pills" id="companyTabNavs" role="tablist">
+                
+                                        
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item active" data-id="4037"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">POS-1007</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">21/05/2025</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">1,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                SYSCOM FZE</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="4018"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">POS-1006</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">20/05/2025</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">1,400.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                SYSCOM DISTRIBUTIONS LLC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="3911"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">POS-1005</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">09/05/2025</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">12,750.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                SYSCOM DISTRIBUTIONS LLC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1361"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">POS-1004</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">25/06/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">444.44</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                SYSCOM DISTRIBUTION LTD</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1282"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">POS-1003</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">11/06/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">5,844.30</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                StarLink DMCC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1252"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">POS-1002</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">04/06/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">2,457.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                REDINGTON GULF FZE</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1238"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">POS-1001</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">31/05/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">2,625.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                APTEC DISTRIBUTION FZ LLC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1018"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">POD-1002</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">03/04/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">22,500.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                Logicom Distribution Gulf</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1014"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">POD-1001</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">26/03/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">13,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                Logicom Distribution Gulf</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1006"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">PO-1006</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">29/02/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">3,675.23</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                APTEC DISTRIBUTION FZ LLC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1005"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">PO-1005</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">29/02/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">3,150.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                Logicom Distribution Gulf</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1004"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">PO-1003</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">29/02/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">8,400.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                REDINGTON GULF FZE.</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1002"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">PO-1002</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">29/02/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">6,300.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                Logicom Distribution Gulf</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+                                                    <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link po-item " data-id="1001"
+                                    id="purchase-order-1-tab" data-bs-toggle="tab" data-bs-target="#purchase-order-1" type="button"
+                                    role="tab" aria-controls="purchase-order-1" aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-4">
+                                            <div class="form-control-plaintext">PO-1001</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="form-control-plaintext">29/02/2024</div>
+                                        </div>
+                                        <div class="col-4 text-end">
+                                            <div class="form-control-plaintext">5,250.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">
+                                                Logicom Distribution Gulf</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        
+                    
+
+                            </ul>
+
+
+
+
+            <div class="table-responsive mb-4 mt-4">
+                <table id="long-list" class="table table-hover d-none" style="table-layout: fixed;width:100%">
+
+                    <thead class="text-center">
+                        <tr>
+                            <th style="width: 80px;">PO Date</th>
+                            <th style="width: 60px;">PO No</th>
+
+
+                            <th style="width: 200px;">Supplier</th>
+                            <th style="width: 190px;">Customer</th>
+                            <th style="width: 80px;">GRN No                            </th>
+                            <th style="width: 80px;">PIV No                            </th>
+                            <th style="width: 80px;">PRT No                            </th>
+                            <th style="width: 60px;">Deal No</th>
+                            <th style="width: 60px;">Currency</th>
+                            <th style="width: 100px;">Amount</th>
+                            <th style="width: 30px;"> <i class="ico icon-bold-paperclip"></i> </th>
+                            <th style="width: 90px;">Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    <tbody>
+                                                
+                                                            <tr  class="bg-dark" >
+                                    <td class="text-center">21/05/2025</td>
+                                    <td><a href="http://localhost:8000/purchase-order/4037/view"
+                                            target="_blank">POS-1007</a></td>
+                                    <td>SYSCOM FZE</td>
+                                    <td>123</td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-grn/GRS-1003"
+                                                    target="_blank">GRS-1003</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-invoice/PIS-1003"
+                                                    target="_blank">PIS-1003</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1051"
+                                                    target="_blank">1051</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">1,000.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/4037/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/4037/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-success btn-sm"
+                                                    href="http://localhost:8000/purchase-order/4037/restore"
+                                                    onclick="return confirm('Are you sure you want to restore this item?');">
+                                                    <i class="ico icon-bold-restart text-white" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr  class="bg-dark" >
+                                    <td class="text-center">20/05/2025</td>
+                                    <td><a href="http://localhost:8000/purchase-order/4018/view"
+                                            target="_blank">POS-1006</a></td>
+                                    <td>SYSCOM DISTRIBUTIONS LLC</td>
+                                    <td>DREAMS COMPUTERS LTD</td>
+
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1041"
+                                                    target="_blank">1041</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">1,400.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/4018/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/4018/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-success btn-sm"
+                                                    href="http://localhost:8000/purchase-order/4018/restore"
+                                                    onclick="return confirm('Are you sure you want to restore this item?');">
+                                                    <i class="ico icon-bold-restart text-white" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">09/05/2025</td>
+                                    <td><a href="http://localhost:8000/purchase-order/3911/view"
+                                            target="_blank">POS-1005</a></td>
+                                    <td>SYSCOM DISTRIBUTIONS LLC</td>
+                                    <td>STOCK ORDER</td>
+
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1006"
+                                                    target="_blank">1006</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">12,750.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/3911/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/3911/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/3911/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">25/06/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1361/view"
+                                            target="_blank">POS-1004</a></td>
+                                    <td>SYSCOM DISTRIBUTION LTD</td>
+                                    <td>Stacklink UK LTD</td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-grn/GRS-1002"
+                                                    target="_blank">GRS-1002</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-invoice/PIS-1002"
+                                                    target="_blank">PIS-1002</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1028"
+                                                    target="_blank">1028</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">444.44</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1361/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1361/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1361/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">11/06/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1282/view"
+                                            target="_blank">POS-1003</a></td>
+                                    <td>StarLink DMCC</td>
+                                    <td>RAK PROPERTIES PJSC</td>
+
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1490"
+                                                    target="_blank">1490</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">5,844.30</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1282/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1282/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1282/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">04/06/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1252/view"
+                                            target="_blank">POS-1002</a></td>
+                                    <td>REDINGTON GULF FZE</td>
+                                    <td>Moons Nature Trading Est</td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-grn/GRS-1001"
+                                                    target="_blank">GRS-1001</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-invoice/PIS-1001"
+                                                    target="_blank">PIS-1001</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1027"
+                                                    target="_blank">1027</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">2,457.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1252/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1252/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1252/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">31/05/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1238/view"
+                                            target="_blank">POS-1001</a></td>
+                                    <td>APTEC DISTRIBUTION FZ LLC</td>
+                                    <td>ACB</td>
+
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">2,625.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1238/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1238/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1238/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">03/04/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1018/view"
+                                            target="_blank">POD-1002</a></td>
+                                    <td>Logicom Distribution Gulf</td>
+                                    <td>Quality Circle Infotech LLC</td>
+
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">22,500.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1018/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1018/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1018/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">26/03/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1014/view"
+                                            target="_blank">POD-1001</a></td>
+                                    <td>Logicom Distribution Gulf</td>
+                                    <td>Quality Circle Infotech LLC</td>
+
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1006"
+                                                    target="_blank">1006</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">13,000.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1014/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1014/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1014/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">29/02/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1006/view"
+                                            target="_blank">PO-1006</a></td>
+                                    <td>APTEC DISTRIBUTION FZ LLC</td>
+                                    <td>Data Circle Trading LLC</td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-grn/GRN-1004"
+                                                    target="_blank">GRN-1004</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-invoice/PIV-1004"
+                                                    target="_blank">PIV-1004</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-return/PRT-1001"
+                                                    target="_blank">PRT-1001</a>                                                                                                                        </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1004"
+                                                    target="_blank">1004</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">3,675.23</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1006/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1006/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1006/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">29/02/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1005/view"
+                                            target="_blank">PO-1005</a></td>
+                                    <td>Logicom Distribution Gulf</td>
+                                    <td>Datalink Network Systems Technology</td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-grn/GRN-1003"
+                                                    target="_blank">GRN-1003</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-invoice/PIV-1003"
+                                                    target="_blank">PIV-1003</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1005"
+                                                    target="_blank">1005</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">3,150.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1005/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1005/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1005/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">29/02/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1004/view"
+                                            target="_blank">PO-1003</a></td>
+                                    <td>REDINGTON GULF FZE.</td>
+                                    <td>Data Circle Trading LLC</td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-grn/GRD-1001"
+                                                    target="_blank">GRD-1001</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-invoice/PID-1001"
+                                                    target="_blank">PID-1001</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1003"
+                                                    target="_blank">1003</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">8,400.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1004/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1004/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1004/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">29/02/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1002/view"
+                                            target="_blank">PO-1002</a></td>
+                                    <td>Logicom Distribution Gulf</td>
+                                    <td>Data Circle Trading LLC</td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-grn/GRN-1002"
+                                                    target="_blank">GRN-1002</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-invoice/PIV-1002"
+                                                    target="_blank">PIV-1002</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1002"
+                                                    target="_blank">1002</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">6,300.00</td>
+                                    <td class="text-center">
+                                        
+                                                                            </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1002/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1002/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1002/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                        
+                                                            <tr >
+                                    <td class="text-center">29/02/2024</td>
+                                    <td><a href="http://localhost:8000/purchase-order/1001/view"
+                                            target="_blank">PO-1001</a></td>
+                                    <td>Logicom Distribution Gulf</td>
+                                    <td>Data Circle Trading LLC</td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-grn/GRN-1001"
+                                                    target="_blank">GRN-1001</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-purchase-invoice/PIV-1001"
+                                                    target="_blank">PIV-1001</a>                                                                                                                        </td>
+                                    <td class="text-center">
+                                                                                    <span class="text-warning">Pending</span>
+                                                                            </td>
+
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/get-url-deal-track/1001"
+                                                    target="_blank">1001</a>                                                                                                                        </td>
+                                    <td class="text-center">AED</td>
+                                    <td class="text-end">5,250.00</td>
+                                    <td class="text-center">
+                                                                                                                                    <a href="http://localhost:8000/public/uploads/product_upload/589b1b9a8ff53772699dbc18589eee05.pdf" target="_blank"><i class="ico icon-bold-paperclip"
+                                                        aria-hidden="true"></i></a>&nbsp;
+                                                                                                                        </td>
+                                    <td class="">
+                                        <div class="d-flex justify-content-center align-items-center gap-1">
+                                            <a href="http://localhost:8000/purchase-order/1001/edit"
+                                                class="btn btn-sm btn-warning" title="Comments">
+                                                <i class="ico icon-outline-pen-2" style="font-size: 16px;"></i>
+                                            </a>
+
+                                            <a href="http://localhost:8000/purchase-order/1001/print"
+                                                class="btn btn-sm btn-primary" title="Comments">
+                                                <i class="ico icon-bold-download-minimalistic text-white"
+                                                    style="font-size: 16px;"></i>
+                                            </a>
+
+                                                                                            <a class="btn btn-danger btn-sm"
+                                                    href="http://localhost:8000/purchase-order/1001/delete"
+                                                    onclick="return confirm('Are you sure you want to delete this item?');">
+                                                    <i class="ico icon-bold-trash-bin-2" style="font-size: 16px;"></i>
+                                                </a>
+                                            
+                                        </div>
+                                        
+                                    </td>
+                                </tr>
+                            
+                                            </tbody>
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+    </aside>
+
+    <div class="content-container col-9">
+        <div class="tab-content display-flex-tabs" id="purchaseOrderTabContent">
+
+            <script>
+
+
+
+                $(document).ready(function () {
+                    $('.po-item').on('click', function () {
+
+                        var id = $(this).data('id');
+                        console.log(id)
+                        $('.po-item').removeClass('active');
+                        $('.po-item[data-id="' + id + '"]').addClass('active');
+
+                        var action = "http://localhost:8000/purchase-details/" + id;
+                        $.ajax({
+                            url: action,
+                            method: 'GET',
+                            success: function (response) {
+                                $('#po-details').html(response);
+                            },
+                            error: function () {
+                                $('#po-details').html('<p class="text-danger">Error loading details.</p>');
+                            }
+                        });
+                    });
+                });
+            </script>
+
+
+                            <div class="" role="tabpanel" aria-labelledby="po-tab" id="po-details">
+                                            <style>
+    .pdfarea header {
+        position: fixed;
+        left: 20px;
+        top: -50px;
+        right: 20px;
+        height: 80px;
+        background-color: white;
+        text-align: center;
+        border-bottom: solid 0px #808080;
+        color: #555555;
+    }
+
+   
+
+    .pdfarea footer .page:after {
+        content: counter(page, upper-roman);
+    }
+
+    .pdfarea {
+        font-family: Verdana, sans-serif;
+        font-size: 12px;
+        color: #555555;
+        background-image: url('http://localhost:8000/public/backEnd/img/syscom-watermark-sm.png');
+    }
+
+    .pdfarea th,
+    .pdfarea td {
+        padding: 5px 5px;
+    }
+
+    .tdd {
+        border: dashed 1px #9e9e9e;
+        border-width: 0 0 1px 0;
+    }
+
+    b {
+        font-size: 14px;
+    }
+
+    .m1 table {
+        border: 0px solid #9e9e9e;
+    }
+
+    .m1 td {
+        border: 1px solid #9e9e9e;
+    }
+
+    .tmc ol {
+        padding: 0px;
+        margin: 0px;
+    }
+
+    .bottom_b {
+        font-size: 12px;
+    }
+
+    .page-break {
+        page-break-after: always;
+    }
+
+    .m-0 {
+        margin: 0px;
+    }
+
+    .p-0 {
+        padding: 0px;
+    }
+
+    .item-head-row {
+        background: #2c2b6d;
+        color: #ffffff;
+    }
+
+    .item-row {
+        border-bottom: solid 1px #2c2b6d;
+    }
+</style>
+
+
+
+
+
+<div class="purchase-order-content-header d-flex align-items-center justify-content-between mb-1 gap-2">
+    <h4 class="purchase-order-content-header-left">
+POS-1007
+    </h4>
+   <div class="purchase-order-content-header-right d-flex align-items-center justify-content-end gap-2">
+                            <button class="btn btn-light">
+                                <i class="ico icon-outline-pen-2"></i> Edit
+                            </button>
+                            <button class="btn btn-dark">
+                                <i class="ico icon-outline-add-circle"></i> Add
+                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="ico icon-outline-hamburger-menu"></i>
+                                </button>
+                                <ul class="dropdown-menu" style="">
+                                    <li><a class="dropdown-item" href="#">
+                                            <i class="ico icon-outline-minimize-square"></i>
+                                            Merge</a></li>
+                                    <li><a class="dropdown-item" href="#">
+                                            <i class="ico icon-outline-import text-success"></i>
+                                            Import</a></li>
+                                    <li><a class="dropdown-item" href="#"><i class="ico icon-outline-trash-bin-minimalistic text-danger"></i>
+                                            Delete</a></li>
+
+                                </ul>
+                            </div>
+    </div>
+</div>
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="" id="deal-info" role="tabpanel" aria-labelledby="deal-info-tab">
+           
+            <div class="row">
+                <div class="col-2 mb-2">&nbsp;</div>
+                <div class="col-8 mb-2 pdfarea">
+
+
+ 
+
+
+
+    <style>
+      .pagenum:before {
+           content: counter(page);
+       }
+   </style>
+    
+  
+
+
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+      <tr>
+          <td align="left"><img  src="http://localhost:8000/public/uploads/staff/b529e19c5bd88e7a4b50a3eafefe289c.png" width="150px"/></td>
+          <td align="right"><b style="font-size: 30px; font-weight: 400;">Purchase Order</b></td>
+      </tr>
+  </table>
+  <br />
+
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td width="50%" valign="top" style="line-height: 17px;">
+            <b>To,</b><br>
+            <b>SYSCOM FZE</b><br>
+            Attn. Mr Hamid Ansari<br>
+            
+            Dubai, United Arab Emirates<br>
+            T: +971 4 3522433, M: +971 4 3522433<br>
+            
+            TRN No: 104144838000003<br>          </td>
+          <td style="line-height: 18px;" valign="top">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td class="m-0 p-0" align="right">Purchase Order No:</td>
+                  <td class="m-0 p-0" align="right">POS-1007</td>
+                </tr>
+                <tr>
+                  <td class="m-0 p-0" align="right">Purchase Order Date:</td>
+                  <td class="m-0 p-0" align="right">21/05/2025</td>
+                </tr>
+                <tr>
+                  <td class="m-0 p-0" align="right">Delivery Date:</td>
+                  <td class="m-0 p-0" align="right">
+                                        --
+                                    
+                </td>
+                </tr>
+                <tr>
+                  <td class="m-0 p-0" align="right">Payment Terms:</td>
+                  <td class="m-0 p-0" align="right">NET 90 DAYS</td>
+                </tr>
+            </table>
+          </td>
+        </tr>
+    </table>
+    <br />
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td width="70%" valign="top" style="line-height: 18px;">Bill To,<br />
+            <b style="font-size: 90%;">SYSCOM</b><br />
+            Nimmy Soman<br />            
+            
+             DUBAI,  United Arab Emirates<br />            T: +971 04 3522433, M: +971528863140<br />
+            
+            TRN: 100014280000003
+          </td>
+          <td valign="top" style="line-height: 18px;">Ship To,<br />
+            <b style="font-size: 90%;">SYSCOM FZE</b><br />
+            Mr. Subeesh Sukumaran<br />            
+            Dubai,  United Arab Emirates<br />            T: +971 4 3522433, M: 0543092141<br />
+            
+            TRN: 104144838000003
+          </td>
+        </tr>
+    </table>
+    <br />
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr class="item-head-row">
+          <td style="width: 20px;">No</td>
+          <td>Description</td>
+          <td style="width: 20px; text-align: center;">Qty</td>
+          <td style="width: 70px; text-align: right;">Rate</td>
+          <td style="width: 70px; text-align: right;">Taxable</td>
+          <td style="width: 30px; text-align: right;">VAT%</td>
+          <td style="width: 80px; text-align: right;">VAT Amount</td>
+          <td style="width: 80px; text-align: right;">Amount</td>
+        </tr>
+    </table>
+                        
+
+
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+            <td class="item-row" style="width: 20px;">1   <span id="spn_"2></span></td>
+            <td class="item-row" >
+              <span style="font-weight:bold;">FG-100E</span><br />
+              <span style="font-size:11px;">20 x GE RJ45 ports (including 2 x WAN ports, 1 x DMZ port, 1 x Mgmt port, 2 x HA ports, 14 x switch ports), 2 x Shared Media pairs (Including 2 x GE RJ45 ports, 2 x SFP slots). Max managed FortiAPs (Total / Tunnel) 64 / 32</span></td>
+            <td class="item-row" style="width:20px; text-align: center;">1</td>
+            <td class="item-row" style="width:70px; text-align: right;">1,000.00</td>
+            <td class="item-row" style="width:70px; text-align: right;">1,000.00</td>
+            <td class="item-row" style="width:30px; text-align: right;">0.00</td>
+            <td class="item-row" style="width:80px; text-align: right;">0.00</td>
+            <td class="item-row" style="width:80px; text-align: right;">1,000.00</td>
+                    </tr>
+    </table>
+    
+
+    
+                                                        
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td>AED  One Thousand Dirham
+ Only</td>
+              <td style="width: 110px; text-align: left; font-weight: bold; border-bottom: solid 1px #2c2b6d;">Sub Total AED</td>
+              <td style="width: 80px; text-align: right; font-weight: bold; border-bottom: solid 1px #2c2b6d;">1,000.00</td>
+            </tr>
+          </table>
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td></td>
+              <td style="width: 110px; text-align: left; font-weight: bold; border-bottom: solid 1px #2c2b6d;">Taxable Amt. AED</td>
+              <td style="width: 80px; text-align: right; font-weight: bold; border-bottom: solid 1px #2c2b6d;">1,000.00</td>
+            </tr>
+          </table>
+                              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td></td>
+              <td style="width: 110px; text-align: left; font-weight: bold; border-bottom: solid 1px #2c2b6d;">Total Amount AED</td>
+              <td style="width: 80px; text-align: right; font-weight: bold; border-bottom: solid 1px #2c2b6d;">1,000.00</td>
+            </tr>
+          </table>
+          
+<div style="bottom: 0px; height:200px;">
+    <table width="70%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+        <td>
+          <b>Terms & Conditions</b>
+          <ul style="padding: 10px 0px 0px 15px; margin: 0px; font-size: 9px; text-align: justify;">
+            <li>Kindly mention the LPO number on all correspondence, invoice and delivery notes.</li>
+            <li>In the event of your failing to deliver or execute the said order on or before the stiputated date or such extended time as permitted by us, SYSCOM. reserves the full right and authority to cancel such order.</li>
+            <li>The supplier shall, at its own cost, replace and/or rectify the goods supplied in the event of any defects in the material.</li>
+        </ul>          
+      </td>
+      </tr>
+  </table>
+</div>
+
+  <footer>
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="width: 30%; border: none; font-size: 10px;" align="left" valign="bottom">Nimmy Soman<br/><b class="bottom_b">Prepared By</b></td>
+          <td style="width: 40%; border: none; font-size: 10px;" align="center" valign="bottom"><br/><br/>This document is computer generated Signature is not required</td>
+          <td style="width: 30%; border: none; font-size: 10px;" align="right" valign="bottom">SYSCOM <br /><br /><br /><br /><b class="bottom_b">Authorised Signature</b></td>
+        </tr>
+        <tr>
+          <td colspan="3" style="border: none; font-size: 10px;" align="right" valign="top">
+            Page No <span style="" class="pagenum"></span> of POS-1007</td>
+        </tr>
+    </table>
+    <img  src="http://localhost:8000/public/uploads/crm_pdf_img/new-syscom-pdf-footer.jpg"  width="100%"/></td>
+  </footer>
+
+
+
+
+ 
+
+
+                    
+                </div>
+                <div class="col-2 mb-2">&nbsp;</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+                                    </div>
+            
+        </div>
+    </div>
+
+    <div class="modal side-panel fade" id="editModal" data-bs-backdrop="false" tabindex="-1"
+        aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm" style="height: 464px !important;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="editModalLabel">Add Product</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body m-0 p-0">
+                    <div class="card mb-0 mt-0">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">Brand:</label>
+                                    <div class="form-group">
+                                        <select class="form-control select2" id="inputVendorName">
+                                            <option value="" selected></option>
+                                            <option value="value1">Avaya</option>
+                                            <option value="value2">Cisco</option>
+                                        </select>
+                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">Product Code:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <label class="form-label">Part Number:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <label class="form-label">Description:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">Category:</label>
+                                    <div class="form-group">
+                                        <select class="form-control select2" id="inputVendorName">
+                                            <option value="" selected></option>
+                                            <option value="value1">Avaya</option>
+                                            <option value="value2">Cisco</option>
+                                        </select>
+                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">Sub Category:</label>
+                                    <div class="form-group">
+                                        <select class="form-control select2" id="inputVendorName">
+                                            <option value="" selected></option>
+                                            <option value="value1">Avaya</option>
+                                            <option value="value2">Cisco</option>
+                                        </select>
+                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">Product Type:</label>
+                                    <div class="form-group">
+                                        <select class="form-control select2" id="inputVendorName">
+                                            <option value="1">General</option>
+                                            <option value="2">Serialized Item</option>
+                                            <option value="3">Services</option>
+                                        </select>
+                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">VAT:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">UOM:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">COO:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">HS Code:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">Weight:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light add-btn ms-2">
+                        <i class="ico icon-outline-bookmark-opened text-success"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal side-panel fade" id="discountModal" data-bs-backdrop="false" tabindex="-1"
+        aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm" style="height: 155px !important; width:170px !important;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="editModalLabel">Add Discount</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body m-0 p-0">
+                    <div class="card mb-0 mt-0">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <label class="form-label">Discount Amount:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light add-btn ms-2">
+                        <i class="ico icon-outline-bookmark-opened text-success"></i> Split Discount
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal side-panel fade" id="freightModal" data-bs-backdrop="false" tabindex="-1"
+        aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm" style="height: 155px !important; width:170px !important;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="editModalLabel">Add Freight</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body m-0 p-0">
+                    <div class="card mb-0 mt-0">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <label class="form-label">Freight Amount:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light add-btn ms-2">
+                        <i class="ico icon-outline-bookmark-opened text-success"></i> Split Freight
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal side-panel fade" id="customModal" data-bs-backdrop="false" tabindex="-1"
+        aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm" style="height: 155px !important; width:170px !important;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="editModalLabel">Add Custom</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body m-0 p-0">
+                    <div class="card mb-0 mt-0">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <label class="form-label">Custom Charges:</label>
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" id="inputPONumber" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light add-btn ms-2">
+                        <i class="ico icon-outline-bookmark-opened text-success"></i> Split Custom
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <script>
+        $(document).ready(function () {
+            function initAccountSelect2(selector) {
+                $(selector).select2({
+                    ajax: {
+                        url: 'http://localhost:8000/autocomplete/get_supp_account_list_ajax',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                search_text: params.term
+                            };
+                        },
+                        processResults: function (data) {
+                            return {
+                                results: data.map(function (item) {
+                                    return {
+                                        id: item.id,
+                                        text: item.account_code + ' - ' + item.account_name
+                                    };
+                                })
+                            };
+                        },
+                        cache: true
+                    },
+                    placeholder: 'Select Account',
+                    minimumInputLength: 2
+                });
+            }
+
+            // Initial init
+            initAccountSelect2('.js-account-select');
+
+            // Re-initialize on focus (if needed for dynamically added fields)
+            $(document).on('focus', '.js-account-select', function () {
+                if (!$(this).hasClass("select2-hidden-accessible")) {
+                    initAccountSelect2(this);
+                }
+            });
+
+            // Open dropdown and focus search box on click
+            $(document).on('click', '.js-account-select', function () {
+                $(this).select2('open');
+            });
+
+            // Focus the search input inside the opened Select2 dropdown
+            $(document).on('select2:open', function () {
+                setTimeout(function () {
+                    const searchInput = document.querySelector('.select2-container--open .select2-search__field');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }, 0);
+            });
+        });
+    </script>
+
+
+    
+    <script>
+        function add_attachment() {
+            $("#loading_bg").css("display", "block");
+
+            if ($('#att_file').val() == "") { $('#att_file').focus(); $("#loading_bg").css("display", "none"); return false; }
+
+            var action = "http://localhost:8000/add-purchase-order-attachment";
+
+            var formData = new FormData();
+            formData.append('_token', 'WOSjYx8aiq3SS2vj69rK8gBoAJEwNJbIwbArzGOi');  // Append CSRF token
+            formData.append('doc_id', 0);
+            formData.append('att_date', $('#att_date').val()); // Append other form data
+            formData.append('att_file', $('#att_file')[0].files[0]);
+            formData.append('doc_name', $('#doc_name').val());
+
+
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    var getSelectedRows = "";
+                    if (dataResult['data'] != null) {
+                        len = dataResult['data'].length;
+                    }
+                    if (len > 0) {
+                        for (var i = 0; i < len; i++) {
+                            getSelectedRows += "<tr>\
+                                                                                    <td>"+ Number(i + 1) + "</td>\
+                                                                                    <td>"+ get_format_date(dataResult['data'][i].doc_date) + "</td>\
+                                                                                    <td><a href='../../"+ dataResult['data'][i].doc_file + "' target='_blank'>" + dataResult['data'][i].doc_name + "</a></td>\
+                                                                                    <td><a onclick='delete_attachment("+ dataResult['data'][i].id + ")' class='btn-sm btn-danger'><i class='fa fa-trash' aria-hidden='true'></i></a></td>\
+                                                                                    </tr>";
+                        }
+                        $('#att_file').val('');
+                        $('#doc_name').val('');
+                        $('#att-table tbody').empty();
+                        $("#att-table tbody").append(getSelectedRows);
+                    }
+                    else {
+                        $('#att-table tbody').empty();
+                    }
+                }
+            });
+            $("#loading_bg").css("display", "none");
+        }
+        function view_attachment() {
+            $("#loading_bg").css("display", "block");
+            $('#att_cust_name').text($('#vendors :selected').text() + " " + $('#doc_number').val());
+
+            var action = "http://localhost:8000/view-purchase-order-attachment";
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: {
+                    _token: 'WOSjYx8aiq3SS2vj69rK8gBoAJEwNJbIwbArzGOi',
+                    doc_id: 0,
+                },
+                cache: false,
+                success: function (dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    var getSelectedRows = "";
+                    if (dataResult['data'] != null) {
+                        len = dataResult['data'].length;
+                    }
+                    if (len > 0) {
+                        for (var i = 0; i < len; i++) {
+                            getSelectedRows += "<tr>\
+                                                                                    <td>"+ Number(i + 1) + "</td>\
+                                                                                    <td>"+ get_format_date(dataResult['data'][i].doc_date) + "</td>\
+                                                                                    <td><a href='../../"+ dataResult['data'][i].doc_file + "' target='_blank'>" + dataResult['data'][i].doc_name + "</a></td>\
+                                                                                    <td><a onclick='delete_attachment("+ dataResult['data'][i].id + ")' class='btn-sm btn-danger'><i class='fa fa-trash' aria-hidden='true'></i></a></td>\
+                                                                                    </tr>";
+                        }
+                        $('#att_file').val('');
+                        $('#doc_name').val('');
+                        $('#att-table tbody').empty();
+                        $("#att-table tbody").append(getSelectedRows);
+                    }
+                    else {
+                        $('#att-table tbody').empty();
+                    }
+                }
+            });
+            $("#loading_bg").css("display", "none");
+        }
+        function delete_attachment(id) {
+            $("#loading_bg").css("display", "block");
+            var action = "http://localhost:8000/delete-purchase-order-attachment";
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: {
+                    _token: 'WOSjYx8aiq3SS2vj69rK8gBoAJEwNJbIwbArzGOi',
+                    id: id,
+                    doc_id: 0,
+                },
+                cache: false,
+                success: function (dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    var getSelectedRows = "";
+                    if (dataResult['data'] != null) {
+                        len = dataResult['data'].length;
+                    }
+                    if (len > 0) {
+                        for (var i = 0; i < len; i++) {
+                            getSelectedRows += "<tr>\
+                                                                                    <td>"+ Number(i + 1) + "</td>\
+                                                                                    <td>"+ get_format_date(dataResult['data'][i].doc_date) + "</td>\
+                                                                                    <td><a href='../../"+ dataResult['data'][i].doc_file + "' target='_blank'>" + dataResult['data'][i].doc_name + "</a></td>\
+                                                                                    <td><a onclick='delete_attachment("+ dataResult['data'][i].id + ")' class='btn-sm btn-danger'><i class='fa fa-trash' aria-hidden='true'></i></a></td>\
+                                                                                    </tr>";
+                        }
+                        $('#att_file').val('');
+                        $('#doc_name').val('');
+                        $('#att-table tbody').empty();
+                        $("#att-table tbody").append(getSelectedRows);
+                    }
+                    else {
+                        $('#att-table tbody').empty();
+                    }
+                }
+            });
+            $("#loading_bg").css("display", "none");
+        }
+    </script>
+
+    
+
+    <script>
+        function srlno_add() {
+            var hdtxt = $("#description_new").val();
+            var srl = $("#serialno").val();
+            $("#srlno_textarea").val(srl);
+            $("#div_serialno_title").html(hdtxt);
+            document.getElementById('add_srlno_popup').click();
+            $("#srlno_textarea").focus();
+        }
+        function srlno_add_item() {
+            var srltxt = $("#srlno_textarea").val();
+            $("#serialno").val(srltxt);
+            document.getElementById('add_srl_cls').click();
+        }
+    </script>
+
+    <script>
+
+        $(document).on("change", "#vendors", function () {
+            var id = $("#vendors").val();
+            get_vendors_detail(id);
+        });
+        function get_vendors_detail(id) {
+            $("#loading_bg").css("display", "block");
+            var action = "http://localhost:8000/get-chartofaccounts-info";
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: {
+                    _token: 'WOSjYx8aiq3SS2vj69rK8gBoAJEwNJbIwbArzGOi',
+                    id: id,
+                },
+                cache: false,
+                success: function (dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    var len = 0;
+                    if (dataResult['data'] != null) {
+                        len = dataResult['data'].length;
+                    }
+                    if (len > 0) {
+                        for (var i = 0; i < len; i++) {
+                            $("#payment_terms").val(dataResult['data'][i].payment_terms);
+                            $("#contact_person_name").val(dataResult['data'][i].contcat_person);
+                            $("#contact_person_email").val(dataResult['data'][i].email);
+                            //$("#shipping_address_2").val(dataResult['data'][i].address2);
+                            $("#contact_person_telephone").val(dataResult['data'][i].contcat_number);
+
+                            $("#supplier_type").val(dataResult['data'][i].supplier_type);
+                            $("#purchase_type").val(dataResult['data'][i].purchase_type);
+
+                            //$("select[id=tax] option:first").text(dataResult['data'][i].vat_percentage +'%');
+                            //$("select[id=tax] option:first").val(dataResult['data'][i].vat_percentage);
+                            $("#tax").val(dataResult['data'][i].vat_percentage);
+
+                            $("#country").val(dataResult['data'][i].vat_country);
+                            $("#state").val(dataResult['data'][i].vat_state);
+                        }
+                    }
+                    else {
+                        $("#payment_terms").val("");
+                        $("#contact_person_name").val("");
+                        $("#contact_person_email").val("");
+                        //$("#shipping_address_2").val("");
+                        $("#contact_person_telephone").val("");
+                        $("#country").val("");
+                        $("#state").val("");
+                    }
+                }
+            });
+            $("#loading_bg").css("display", "none");
+        }
+
+        $(document).on("change", "#shipping_supplier", function () {
+            var id = $("#shipping_supplier").val();
+            get_shipping_supplier_detail2(id);
+        });
+        function get_shipping_supplier_detail2(id) {
+            $("#loading_bg").css("display", "block");
+            var action = "http://localhost:8000/get-chartofaccounts-info";
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: {
+                    _token: 'WOSjYx8aiq3SS2vj69rK8gBoAJEwNJbIwbArzGOi',
+                    id: id,
+                },
+                cache: false,
+                success: function (dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    var len = 0;
+                    if (dataResult['data'] != null) {
+                        len = dataResult['data'].length;
+                    }
+                    if (len > 0) {
+                        for (var i = 0; i < len; i++) {
+                            //$("#shipping_name").val(dataResult['data'][i].customer_salutation+'. '+dataResult['data'][i].first_name+' '+dataResult['data'][i].last_name);
+                            //$("#shipping_name").val(dataResult['data'][i].contcat_person);
+                            $("#shipping_address_1").val(dataResult['data'][i].address + '\n' + dataResult['data'][i].address2);
+                            //$("#shipping_email").val(dataResult['data'][i].email);
+                            //$("#shipping_contact_no").val(dataResult['data'][i].contcat_number);
+                        }
+                    }
+                    else {
+                        //$("#shipping_name").val("");
+                        $("#shipping_address_1").val("");
+                        //$("#shipping_email").val("");
+                        //$("#shipping_contact_no").val("");    
+                    }
+                }
+            });
+            $("#loading_bg").css("display", "none");
+        }
+        function get_shipping_supplier_detail(id) {
+            $("#loading_bg").css("display", "block");
+            var action = "http://localhost:8000/get-chartofaccounts-info";
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: {
+                    _token: 'WOSjYx8aiq3SS2vj69rK8gBoAJEwNJbIwbArzGOi',
+                    id: id,
+                },
+                cache: false,
+                success: function (dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    var len = 0;
+                    if (dataResult['data'] != null) {
+                        len = dataResult['data'].length;
+                    }
+                    if (len > 0) {
+                        for (var i = 0; i < len; i++) {
+                            $("#shipping_name").val(dataResult['data'][i].customer_salutation + '. ' + dataResult['data'][i].first_name + ' ' + dataResult['data'][i].last_name);
+                            //$("#shipping_name").val(dataResult['data'][i].contcat_person);
+                            $("#shipping_address_1").val(dataResult['data'][i].address + '\n' + dataResult['data'][i].address2);
+                            $("#shipping_email").val(dataResult['data'][i].email);
+                            $("#shipping_contact_no").val(dataResult['data'][i].contcat_number);
+                        }
+                    }
+                    else {
+                        $("#shipping_name").val("");
+                        $("#shipping_address_1").val("");
+                        $("#shipping_email").val("");
+                        $("#shipping_contact_no").val("");
+                    }
+                }
+            });
+            $("#loading_bg").css("display", "none");
+        }
+
+
+        function validateAttachForm() {
+            var val1 = $("#shipping_name_add").val();
+            var val2 = $("#contact_name_add").val();
+            var val3 = $("#contact_no_add").val();
+            var val4 = $("#address1_add").val();
+            var val5 = $("#address2_add").val();
+
+            if (val1 === "") {
+                $('.modal_input_validation_1').show();
+                $(".modal_input_validation_1").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_1").addClass("red_alert");
+                return false;
+            }
+            if (val2 === "") {
+                $('.modal_input_validation_2').show();
+                $(".modal_input_validation_2").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_2").addClass("red_alert");
+                return false;
+            }
+            if (val3 === "") {
+                $('.modal_input_validation_3').show();
+                $(".modal_input_validation_3").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_3").addClass("red_alert");
+                return false;
+            }
+            if (val4 === "") {
+                $('.modal_input_validation_4').show();
+                $(".modal_input_validation_4").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_4").addClass("red_alert");
+                return false;
+            }
+            if (val5 === "") {
+                $('.modal_input_validation_5').show();
+                $(".modal_input_validation_5").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_5").addClass("red_alert");
+                return false;
+            }
+            //return true;
+
+            var url = $('#url').val();
+            $.ajax({
+                type: "POST",
+                data: {
+                    shipping_name: val1,
+                    contact_name: val2,
+                    contact_no: val3,
+                    address1: val4,
+                    address2: val5
+                },
+
+                //url: 'http://syscom.company/venus-erp/shipping-store2',
+                //url: 'http://localhost:81/venus-erp/shipping-store2',
+                url: url + '/' + 'shipping-store2',
+                cache: false,
+                success: function (response) {
+                    var response = JSON.parse(response);
+                    var len = 0;
+                    if (response['data'] == "ERROR") {
+                        alert("Error found in something!!");
+                    } else {
+                        if (response['data'] != null) {
+                            len = response['data'].length;
+                        }
+                        if (len > 0) {
+
+                            //$('#shipping_name').find('option').not(':first').remove();
+
+                            for (var i = 0; i < len; i++) {
+                                var id = response['data'][i].id;
+                                var name = response['data'][i].shipping_name;
+                                var option = "<option value='" + id + "'>" + name + "</option>";
+                                //$("#shipping_name").append($(option));
+                                //$('#shipping_name').append(new Option(name, id));
+                                $("#shipping_name").append(option);
+                                $("#vendor").append(option);
+                            }
+
+                            alert('Shipping Added Successfully!!');
+                            $('#btn_close2').click();
+                        }
+                    }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) { }
+            });
+
+            //preventDefault();
+        }
+
+
+        jQuery(document).ready(function () {
+            jQuery('input').keypress(function (event) {
+                var enterOkClass = jQuery(this).attr('class');
+                if (event.which == 13 && enterOkClass != 'enterSubmit') {
+                    event.preventDefault();
+                    return false;
+                }
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+            function initAccountSelect2(selector) {
+                $(selector).select2({
+                    ajax: {
+                        url: 'http://localhost:8000/autocomplete/get_supp_account_list_ajax',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                search_text: params.term
+                            };
+                        },
+                        processResults: function (data) {
+                            return {
+                                results: data.map(function (item) {
+                                    return {
+                                        id: item.id,
+                                        text: item.account_code + ' - ' + item.account_name
+                                    };
+                                })
+                            };
+                        },
+                        cache: true
+                    },
+                    placeholder: 'Select Account',
+                    minimumInputLength: 2
+                });
+            }
+
+            // Initial init
+            initAccountSelect2('.js-account-select');
+
+            // Re-initialize on focus (if needed for dynamically added fields)
+            $(document).on('focus', '.js-account-select', function () {
+                if (!$(this).hasClass("select2-hidden-accessible")) {
+                    initAccountSelect2(this);
+                }
+            });
+
+            // Open dropdown and focus search box on click
+            $(document).on('click', '.js-account-select', function () {
+                $(this).select2('open');
+            });
+
+            // Focus the search input inside the opened Select2 dropdown
+            $(document).on('select2:open', function () {
+                setTimeout(function () {
+                    const searchInput = document.querySelector('.select2-container--open .select2-search__field');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }, 0);
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+
+            function initAccountSelect2(selector) {
+                $(selector).each(function () {
+                    const $select = $(this);
+
+                    // Clean up possible conflicting attributes
+                    $select.removeAttr('id data-select2-id aria-hidden tabindex');
+
+                    // Destroy existing Select2 if already initialized
+                    if ($select.hasClass('select2-hidden-accessible')) {
+                        $select.select2('destroy');
+                    }
+
+                    // Initialize Select2
+                    $select.select2({
+                        width: '100%',
+                        ajax: {
+                            url: 'http://localhost:8000/autocomplete/get_product_list_ajax',
+                            dataType: 'json',
+                            delay: 250,
+                            data: function (params) {
+                                return {
+                                    search_text: params.term
+                                };
+                            },
+                            processResults: function (data) {
+                                return {
+                                    results: data.map(function (item) {
+                                        return {
+                                            id: item.id,
+                                            text: item.part_number,
+                                            description: item.description
+                                        };
+                                    })
+                                };
+                            },
+                            cache: true
+                        },
+                        placeholder: 'Select Product',
+                        minimumInputLength: 2,
+                        dropdownParent: $select.parent()
+                    });
+                });
+            }
+
+            // Initialize all on load
+            initAccountSelect2('.js-product-select');
+
+            // Event: re-init on focus if not initialized
+            $(document).on('focus', '.js-product-select', function () {
+                if (!$(this).hasClass("select2-hidden-accessible")) {
+                    initAccountSelect2(this);
+                }
+            });
+
+            // Event: auto open dropdown on click
+            $(document).on('click', '.js-product-select', function () {
+                $(this).select2('open');
+            });
+
+            // Event: focus the search box when dropdown opens
+            $(document).on('select2:open', function () {
+                setTimeout(function () {
+                    document.querySelector('.select2-container--open .select2-search__field')?.focus();
+                }, 0);
+            });
+
+            // Event: update description field in same row
+            $(document).on('select2:select', '.js-product-select', function (e) {
+                const selectedData = e.params.data;
+                const $row = $(this).closest('tr');
+                $row.find('.description-input').val(selectedData.description || '');
+            });
+
+        });
+    </script>
+
+                
+
+            </section>
+        </main>
+        
+
+
+    </div>
+    
+<!-- Flatpickr CSS DATE -->
+<link rel="stylesheet" href="http://localhost:8000/public/design/assets/css/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!-- Flatpickr CSS DATE -->
+ 
+    <script src="http://localhost:8000/public/design/assets/js/aditional.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="http://localhost:8000/public/design/assets/js/_main.js" type="text/javascript"></script>
+    <script src="http://localhost:8000/public/design/assets/js/purchase-order.js" type="text/javascript"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('.js-example-basic-single').select2();
+        });
+    </script>
+ 
+</body>
+</html>
+

@@ -1,0 +1,154 @@
+@extends('backEnd.master')
+@section('mainContent')
+<?php
+
+$modules = [];
+$module_links = [];
+$permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+
+foreach ($permissions as $permission) {@$module_links[] = @$permission->module_link_id;
+    @$modules[] = @$permission->moduleLink->module_id;}
+
+$modules = array_unique(@$modules);
+
+$generalSetting = App\SmGeneralSettings::where('id', 1)->first();
+$currency_symbol = @$generalSetting->currency_symbol;
+?>
+<section class="sms-breadcrumb mb-40 white-box">
+    <div class="container-fluid">
+        <div class="row justify-content-between">
+            <h1>@lang('lang.profit')</h1>
+            <div class="bc-pages">
+                <a href="{{url('dashboard')}}">@lang('lang.dashboard')</a>
+                <a href="#">@lang('lang.accounts')</a>
+                <a href="#">@lang('lang.profit')</a>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="admin-visitor-area">
+    <div class="container-fluid p-0">
+
+        @if(in_array(43, @$module_links) || Auth::user()->role_id == 1)
+            <div class="row">
+                <div class="col-lg-4 col-md-6">
+                    <div class="main-title">
+                        <h3 class="mb-30">@lang('lang.select_criteria') </h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-12">
+                    @if(session()->has('message-success') != "")
+                        @if(session()->has('message-success'))
+                        <div class="alert alert-success">
+                            {{ session()->get('message-success') }}
+                        </div>
+                        @endif
+                    @endif
+                    <div class="white-box">
+                        {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'route' => 'search_profit_by_date', 'method' => 'POST', 'enctype' => 'multipart/form-data', 'id' => 'search_student']) }}
+                            <div class="row">
+                                <input type="hidden" name="url" id="url" value="{{URL::to('/')}}">
+                                <div class="col-lg-6 mt-30-md mt_30_tab">
+                                    <div class="no-gutters input-right-icon">
+                                        <div class="col">
+                                            <div class="input-effect">
+                                                <input class="primary-input date form-control{{ $errors->has('date_from') ? ' is-invalid' : '' }}" id="startDate" type="text"
+                                                     name="date_from" value="{{isset($date_from)? date('m/d/Y', strtotime($date_from)): date('m/d/Y')}}" readonly>
+                                                    <label>@lang('lang.date_from')</label>
+                                                    <span class="focus-border"></span>
+                                                @if ($errors->has('date_from'))
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $errors->first('date_from') }}</strong>
+                                                </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <button class="" type="button">
+                                                <i class="ti-calendar" id="start-date-icon"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 mt-30-md mt_30_tab">
+                                    <div class="no-gutters input-right-icon">
+                                        <div class="col">
+                                            <div class="input-effect">
+                                                <input class="primary-input date form-control{{ $errors->has('date_to') ? ' is-invalid' : '' }}" id="startDate" type="text"
+                                                     name="date_to" value="{{isset($date_to)? date('m/d/Y', strtotime(@$date_to)) : date('m/d/Y')}}" readonly>
+                                                    <label>@lang('lang.date_to')</label>
+                                                    <span class="focus-border"></span>
+                                                @if ($errors->has('date_to'))
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $errors->first('date_to') }}</strong>
+                                                </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <button class="" type="button">
+                                                <i class="ti-calendar" id="start-date-icon"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-12 mt-20 text-right">
+                                    <button type="submit" class="primary-btn small fix-gr-bg">
+                                        <span class="ti-search pr-2"></span>
+                                        @lang('lang.search')
+                                    </button>
+                                </div>
+                            </div>
+                        {{ Form::close() }}
+                    </div>
+                </div>
+            </div>
+
+            @endif
+
+
+
+            <div class="row mt-40">
+                <div class="col-lg-12">
+                    <div class="row">
+                        <div class="col-lg-6 no-gutters">
+                            <div class="main-title">
+                                <h3 class="mb-0">@lang('lang.profit')</h3>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <table id="table_id" class="display school-table" cellspacing="0" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th>@lang('lang.time')</th>
+                                        <th>@lang('lang.income')({{@$currency_symbol}})</th>
+                                        <th>@lang('lang.expense')({{@$currency_symbol}})</th>
+                                        <th>@lang('lang.profit')({{@$currency_symbol}})</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    <tr>
+                                        <td>{{isset($date_from)? date('jS M, Y', strtotime(@$date_from)).' - '.date('jS M, Y', strtotime(@$date_to)): "All"}}</td>
+                                        <td>{{@App\SysHelper::com_curr_format(@$total_income, 2)}}</td>
+                                        <td>{{@App\SysHelper::com_curr_format(@$total_expense, 2)}}</td>
+                                        <td>{{@App\SysHelper::com_curr_format(@$total_income - @$total_expense, 2)}}</td>
+                                    </tr>
+
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+</section>
+
+
+@endsection

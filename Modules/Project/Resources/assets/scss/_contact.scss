@@ -1,0 +1,134 @@
+.contact_form{
+    background: #fff;
+    margin-top: 100px;
+    padding: 50px;
+    margin-left: 150px;
+    @media #{$mobile_device} {
+        margin-left: 0px;
+        padding: 30px 15px;
+        margin-top: 30px;
+    }
+    @media #{$tablet_device} {
+        margin-left: 0px;
+        margin-top: 30px;
+    }
+    @media #{$mid_device} {
+        margin-left: 0px;
+        margin-top: 30px;
+    }
+    @media #{$large_device} {
+        padding: 30px 20px;
+    }
+    .heading_title{
+        color: #151B26;
+        font-weight: 500;
+        font-size: 22px;
+        margin-bottom: 48px;
+    }
+    form{
+        .input_field{
+            input{
+                height: 50px;
+                width: 100%;
+                @include border-radius(4px);
+                padding-left: 15px;
+                border: none;
+                border: 1px solid #BBC1C9;
+                margin-bottom: 25px;
+                &::placeholder{
+                    color: #92A2B7;
+                    font-size: 14px;
+                    font-weight: 400;
+                }
+                &:focus{
+                    outline: none;
+                }
+            }
+            textarea{
+                height: 144px;
+                width: 100%;
+                @include border-radius(4px);
+                padding: 15px;
+                border: none;
+                border: 1px solid #BBC1C9;
+                margin-bottom: 25px; 
+                &::placeholder{
+                    color: #92A2B7;
+                    font-size: 14px;
+                    font-weight: 400;
+                }
+                &:focus{
+                    outline: none;
+                }
+            }
+        }
+        .block_btn{
+            width: 100%;
+        }
+    }
+    .contact_details{
+        border: 4px solid rgba(187, 193, 201, .2);
+        @include border-radius(5px);
+        padding: 40px 36px;
+        @media #{$mobile_device} {
+            margin-top: 30px;
+            padding: 30px 20px;
+        }
+        @media #{$tablet_device} {
+            margin-top: 30px;
+        }
+        @media #{$mid_device} {
+            margin-top: 30px;
+        }
+        @media #{$large_device} {
+            margin-top: 0;
+            padding: 18px 18px;
+        }
+        h3{
+            color: #1F1F1F;
+            font-weight: 500;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+        .block_btn_round{
+            width: 100%;
+        }
+        .tecnical_support{
+            margin-top: 42px;
+            margin-bottom: 37px;
+            h4{
+                font-size: 18px;
+                font-weight: 400;
+                margin-bottom: 16px;
+            }
+            p{
+                font-size: 16px;
+                color: #647891;
+                @media #{$large_device} {
+                    font-size: 14px;
+                }
+                margin-bottom: 0;
+                a{
+                    &:hover{
+                        color: #1F1F1F;
+                    }
+                }
+            }
+        }
+        .address{
+            font-size: 18px;
+            font-weight: 400;
+            color: #151B26;
+            margin-bottom: 10px;
+        }
+        .addres_text{
+            font-size: 16px;
+            color: #647891;
+            margin-bottom: 0;
+            font-weight: 400;
+            @media #{$large_device} {
+                font-size: 14px;
+            }
+        }
+    }
+}

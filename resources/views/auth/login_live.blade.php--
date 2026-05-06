@@ -1,0 +1,158 @@
+<?php
+$h1= "Welcome back, Please login";
+$h2= "to your account";
+$h3= "Welcome To Login";
+$h4= "Forgot Password";
+$rm= "Remember me";
+if (!Schema::hasTable('users')) { return redirect('install'); }
+
+$setting = App\SmGeneralSettings::find(1);
+if(!empty($setting->copyright_text)){ $c = $setting->copyright_text; }else{ $c = 'Copyright © 2019 All rights reserved'; }
+if(!empty($setting->logo)) { $logo = $setting->logo; } else{ $logo = 'public/backEnd/img/logo-dark.png'; }
+if(!empty($setting->favicon)) { $favicon = $setting->favicon; } else{ $favicon = 'public/backEnd/img/favicon.png'; }
+$login_background = App\SmBackgroundSetting::where([['is_default',1],['title','Login Background']]); 
+?>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="A fully featured admin theme which can be used to build CRM, CMS, etc.">
+    <link rel="icon" href="{{asset($favicon)}}" type="image/png"/>
+	<title>{{ __('Login') }} | {{$setting->site_title}}</title> 
+	<link rel="stylesheet" href="{{asset('public/')}}/login/css/bootstrap.css"> 
+	<link rel="stylesheet" href="{{asset('public/')}}/login/css/style.css">
+	<link rel="stylesheet" href="{{asset('public/')}}/login/css/login.css">
+	
+</head>
+
+
+<body class="login-resistration-area" style="background: #343a40;">
+	<!-- main-login-area-start -->
+	<div class="main-login-area login-res-v2">
+		<div class="container">
+			<div class="row">
+				<div class="col-lg-8 offset-lg-2 col-xl-7 offset-xl-5">
+					<div class="main-content">
+						<div class="logo_img">							
+							<a href="{{url('/')}}">
+								<img src="{{asset($logo)}}" alt="Logo Image" class="img img-responsive">
+							</a>
+						</div> 
+
+							<h3 class="sho_web d-none d-md-block text-light">{{$h1}} <br> {{$h2}}</h3>
+							<h3 class="sho_mb d-sm-block d-md-none text-light">{{$h3}}</h3>  
+							
+
+							@if(Illuminate\Support\Facades\Config::get('app.app_sync'))
+							<div class="d-block">
+							@else
+							<div class="d-none">
+							@endif 
+
+							<?php /*
+								<form action="{{ route('login') }}" name="login" method="POST" id="infix_form" class="customer-input buttonCSS" >
+									@php $s= DB::table('users')->where('role_id', 1)->first(); $email=@$s->email; @endphp
+									@csrf
+									<input name="email" type="hidden"  value="{{isset($email)? $email:''}}"> 
+									<input name="password" type="hidden"  value="123456"> 
+									<button type="submit" id="btnsubmit" class="login-res-btn super_admin_btn">{{ __('Super Admin')}}</button>  
+								</form>
+								
+								<form action="{{ route('login') }}" name="login" method="POST" id="infix_form1" class="customer-input buttonCSS" >
+									@php $s= DB::table('users')->where('role_id', 3)->first(); $email=@$s->email; @endphp
+									@csrf
+									<input name="email" type="hidden"  value="{{isset($email)? $email:''}}"> 
+									<input name="password" type="hidden"  value="123456"> 
+									<button type="submit" id="btnsubmit1" class="login-res-btn super_admin_btn" >{{ __('Staff')}}</button>  
+								</form>
+								*/ ?>
+								
+							 </div>
+ 
+                            <form action="{{ route('login') }}" name="login" method="POST" id="infix_form2" class="customer-input" >
+                                @csrf
+								@if(session()->has('message-success') != "")
+				                    @if(session()->has('message-success'))
+				                        <p class="text-success">{{session()->get('message-success')}}</p>
+				                    @endif
+				                @endif
+				                @if(session()->has('message-danger') != "")
+				                    @if(session()->has('message-danger'))
+				                        <p class="text-danger">{{session()->get('message-danger')}}</p>
+				                    @endif
+				                @endif  
+								<input name="email" type="email" placeholder="Enter email address" class="{{ $errors->has('email') ? ' is-invalid' : '' }} p-2" value=""> 
+	                            @if ($errors->has('email'))
+	                                <span class="invalid-feedback d-block email_input" role="alert" >
+	                                    <strong>{{ $errors->first('email') }}</strong>
+	                                </span>
+	                            @endif
+								<input name="password" type="password" placeholder="Password" class="{{ $errors->has('password') ? ' is-invalid' : '' }} p-2" value=""> 	
+	                            @if ($errors->has('password'))
+	                                <span class="invalid-feedback d-block email_input" role="alert" >
+	                                    <strong>{{ $errors->first('password') }}</strong>
+	                                </span>
+	                            @endif
+								<div class="forgot-pass">
+									<div class="check-remamber-field" >
+										<div class="round">
+											<input type="checkbox" id="checkbox" />
+											<label for="checkbox"></label>
+										</div>
+										<label class="remember-me text-light"  for="checkbox">
+											{{$rm}}
+										</label>
+									</div>
+									<span><a class="text-light" href="{{ url('recovery/passord') }}">{{$h4}}?</a></span>
+								</div>
+								<button type="submit" id="btnsubmit2" class="login-res-btn">@lang('lang.login')</button> 
+							</form>
+					</div>
+				</div>
+			</div>
+		</div> 
+	</div> 
+</body>
+
+<script src="{{asset('public/backEnd/')}}/vendors/js/jquery-3.2.1.min.js"></script>
+<script>
+   // submit btn protect
+   $(document).ready(function () {
+
+$('#btnsubmit').on('click',function()
+{
+  $(this).html('Please wait ...')
+	.attr('disabled','disabled');
+  $('#infix_form').submit();
+});
+
+
+});
+   // submit btn protect
+   $(document).ready(function () {
+
+$('#btnsubmit1').on('click',function()
+{
+  $(this).html('Please wait ...')
+	.attr('disabled','disabled');
+  $('#infix_form1').submit();
+});
+
+
+});
+   // submit btn protect
+   $(document).ready(function () {
+
+$('#btnsubmit2').on('click',function()
+{
+  $(this).html('Please wait ...')
+	.attr('disabled','disabled');
+  $('#infix_form2').submit();
+});
+
+
+});
+
+</script>
+</html>

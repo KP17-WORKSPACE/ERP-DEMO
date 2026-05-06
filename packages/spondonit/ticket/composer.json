@@ -1,0 +1,14 @@
+{
+    "name": "spondonit/ticket",
+    "description": "this is our ticket system",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rashed Zaman",
+            "email": "spn6@spondonit.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}

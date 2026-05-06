@@ -1,0 +1,193 @@
+.note_area{
+    padding: 30px;
+    position: relative;
+    @media #{$mobile_device}{
+        padding: 15px;
+    }
+    // top: 30px;
+    .note_sidebar{
+        background: #fff;
+        padding: 30px;
+        height: 100vh;
+        @media #{$mobile_device} {
+            height: auto;
+            margin-bottom: 20px;
+        }
+        @media #{$tablet_device} {
+            height: auto;
+            margin-bottom: 20px;
+        }
+        @media #{$mid_device} {
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .note_heading{
+            h4{
+                font-size: 13px;
+                text-transform: uppercase;
+                font-weight: 500;
+                margin-bottom: 28px;
+            }
+        }
+        form{
+            input,textarea{
+                width: 100%;
+                height: 45px;
+                font-size: 13px;
+                border: 1px solid #DDE0E4;
+                @include border-radius(4px);
+                padding: 13px 15px;
+                margin-bottom: 15px;
+                &::placeholder{
+                    color: #92A2B7;
+                    font-size: 13px;
+                    font-weight: 400;
+                }
+                &:focus{
+                    outline: none;
+                }
+            }
+            textarea{
+                height: 112px;
+            }
+            .gj-datepicker-md [role="right-icon"] {
+                position: absolute;
+                right: 0px;
+                top: 0px;
+                font-size: 16px;
+                color: #919191;
+                margin-right: 15px;
+                top: 13px;
+            }
+        }
+        .chose_color{
+            margin-top: 5px;
+            margin-bottom: 50px;
+            @media #{$mobile_device} {
+                margin-bottom: 25px;
+            }
+            h4{
+                font-size: 14px;
+                font-weight: 400;
+                color: #151B26;
+                margin-bottom: 8px;
+            }
+        }
+        button{
+            width: 100%;
+            text-align: center;
+            font-weight: 500;
+            font-size: 14px;
+            text-transform: capitalize;
+            text-align: center;
+            display: block !important;
+            padding: 11px 15px;
+        }
+    }
+    .main_note_wrap{
+        .havent_note_yet{
+            padding: 20px 30px;
+            background: #fff;
+            p{
+                margin-bottom: 0;
+                font-size: 14px;
+                color: #92A2B7;
+            }
+        }
+        .single_note{
+            padding: 25px 28px;
+            margin-bottom: 30px;
+            &.red{
+                background: #FF7882;
+            }
+            &.green{
+                background: #7FD8AA;
+            }
+            &.blue{
+                background: #5DABFC;
+            }
+            &.gray{
+                background: #92A2B7;
+            }
+            h3{
+                font-size: 20px;
+                color: #fff;
+                font-weight: 500;
+            }
+            p{
+                font-size: 14px;
+                color: #fff;
+                font-weight: 400;
+                margin-top: 13px;
+                margin-bottom: 13px;
+            }
+            .date{
+                span{
+                    color:#fff;
+                    font-size: 12px; 
+                }
+            }
+            .rename_delete{
+                cursor: pointer;
+                i{
+                    color: #fff;
+                }
+                top: -8px;
+                right: -8px;
+                height: 24px;
+                position: relative;
+                .rename_generate{
+                    width: 130px;
+                    background: #fff;
+                    position: absolute;
+                    border: 1px solid #EAECEF;
+                    border-radius: 4px;
+                    right: 0;
+                    top: 25px;
+                    opacity: 0;
+                    visibility: hidden;
+                    @include transition(.3s);
+                    @include box-shadow(0 3px 6px 0 rgba(0, 0, 0, 0.08));                        
+                    ul{
+                        li{
+                            display: block;
+                            a{
+                                font-size: 13px;
+                                color: #92A2B7;
+                                font-weight: 400;
+                                // line-height: 40px;
+                                padding-left: 20px;
+                                // 
+                                padding: 12px 0 3px 20px;
+                                display: block;
+                                &:hover{
+                                    color: #151B26;
+                                }
+                            }
+                            &:last-child a{
+                                padding: 8px 0 9px 20px;
+                            }
+                        }
+                    }
+                }
+                &:hover .rename_generate{
+                    top: 20px;
+                    opacity: 1;
+                    visibility: visible;
+                }
+            }
+        }
+        
+    }
+    
+}
+.gj-picker .fa.fa-chevron-left {
+    position: relative !important;
+    padding-left: 30px !important;
+}
+#datepicker2::placeholder,#datepicker::placeholder{
+    color: #92A2B7;
+    font-size: 13px;
+    font-weight: 400;
+    font-family: $font1;
+}

@@ -1,0 +1,359 @@
+<html>
+<head>
+  {{-- <style>
+    @page { margin: 100px 0px;}
+    body{font-family: Verdana, sans-serif; font-size:15px; color:#2b2a6c;}
+    th, td {padding: 10px 0px;}
+    .tdd{border:dashed 1px #2b2a6c; border-width:0 0 1px 0;}
+    b{font-size:18px;}
+
+    header { position: fixed; top: -90px; left: 0px; right: 0px; margin:0px; padding:0px; height:18px;}
+    footer { position: fixed; bottom: 0px; left: 0px; right: 0px; margin:0px; padding:0px; height:18px;}
+    main{margin:20px 50px;}
+    p { page-break-after: always; }
+    p:last-child { page-break-after: never;}
+  </style> --}}
+
+  <style>
+
+    @import url(http://fonts.googleapis.com/earlyaccess/droidarabickufi.css);
+    .droid {
+      font-family: 'Droid Arabic Kufi', serif;
+    }
+    
+    @page { margin: 150px 20px 20px 20px; }
+    /*header { position: fixed; left: 20px; top: -50px; right: 20px; height: 80px; background-color: white; text-align: center; border-bottom:solid 0px #808080; color:#555555;  }*/
+    
+    footer { position: fixed; left: 0px; bottom: 0px; right: 0px; height: 100px; background-color: white;  background-image: url('{!! asset("public/backEnd/img/".$company->pdf_watermark."") !!}');}
+    footer .page:after { content: counter(page, upper-roman); }
+
+    body{font-family: Verdana, sans-serif; font-size:12px; color:#555555; background-image: url('{!! asset("public/backEnd/img/".$company->pdf_watermark."") !!}');}
+
+    th, td {padding: 5px 5px;}
+    .tdd{border:dashed 1px #9e9e9e; border-width:0 0 1px 0;}
+    b{font-size:14px;}
+    main{margin:0px 0px 100px 0px;}
+    .m1 table { border: 0px solid #9e9e9e; }
+    .m1 td { border: 1px solid #9e9e9e; }
+    .tmc ol {padding: 0px; margin: 0px;}
+    .bottom_b {font-size:11px; }
+    .page-break { page-break-after: always; }
+    .m-0{margin: 0px;}
+    .p-0{padding: 0px;}
+    .item-head-row {background: #2c2b6d; color: #ffffff; }
+    .item-row {border-bottom: solid 1px #2c2b6d;}
+</style>
+
+</head>
+<body>
+
+  <style>
+    .pagenum:before {
+         content: counter(page);
+     }
+ </style>
+
+  <?php /*
+    <header>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+            <td align="left"><img  src="{{asset(@$company->company_logo)}}" width="200px"/></td>
+            <td align="right"><b style="font-size: 30px; font-weight: 400;">Sales Invoice</b></td>
+        </tr>
+    </table>
+    </header>
+    <footer>
+      {{-- <img  src="{!! asset('admin_assets/dist/img/pdf-footer.jpg') !!}" width="100%"> --}}
+    </footer>
+     */ ?>
+     <footer>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="border: none; line-height: 20px;" align="left" valign="top"><b class="bottom_b">Received By:</b><br >
+            <b class="bottom_b">Name:</b><br >
+            <b class="bottom_b">Phone:</b><br >
+            <b class="bottom_b">Signature and stamp:</b>
+          </td>
+          <td style="border: none; line-height: 20px;" align="right" valign="top"><b class="bottom_b" style="font-size: 10px;">For {!! str_replace('SYSCOM DISTRIBUTIONS LLC BRANCH ABU DHABI 1','SYSCOM DISTRIBUTIONS LLC<br />BRANCH ABU DHABI 1',$company->company_name) !!}</b>
+            <br />{{@$si->createdby->full_name}}<br />
+            Page No <span style="" class="pagenum"></span> of {{@$si->doc_number}}
+          </td>
+        </tr>
+      </table>
+
+    </footer>
+  <main class="m2" style="margin-top:-130px; ">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+      <tr>
+          {{--  <td align="left"><img  src="{!! asset($company->company_logo) !!}" width="200px"/></td>  --}}
+          <td></td>
+          <td align="right" style="width: 195px;"><b style="font-size: 30px; font-weight: 400;">TAX INVOICE</b><br />
+          <div style="text-align: center; padding-top: 10px;">TRN No: {{ $company->vat_number }}</div></td>
+      </tr>
+  </table>
+  <br /><br /><br /><br /><br /><br />
+
+    {{--  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td width="55%" valign="top" style="line-height: 18px;">
+            <b>{{@$company->company_name}}</b>
+            <div>{!! nl2br($company->company_address) !!}</div>
+            Phone: {{@$company->telephone}}<br />
+            Email: {{@$company->email}}<br />
+            TRN No: {{@$company->vat_number}}
+          </td>
+          <td valign="top" style="line-height: 18px;">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td class="m-0 p-0" align="right">Invoice No:</td>
+                    <td class="m-0 p-0" align="right">{{@$si->doc_number}}</td>
+                  </tr>
+                  <tr>
+                    <td class="m-0 p-0" align="right">Date:</td>
+                    <td class="m-0 p-0" align="right">{{date('d/m/Y', strtotime(@$si->doc_date))}}</td>
+                  </tr>
+                  <tr>
+                    <td class="m-0 p-0" align="right">Ref No:</td>
+                    <td class="m-0 p-0" align="right">{{@$si->lpo_number}}</td>
+                  </tr>
+                  <tr>
+                    <td class="m-0 p-0" align="right">Ref Date:</td>
+                    <td class="m-0 p-0" align="right">{{date('d/m/Y', strtotime(@$si->lpo_date))}}</td>
+                  </tr>
+                  <tr>
+                    <td class="m-0 p-0" align="right">Payment Terms:</td>
+                    <td class="m-0 p-0" align="right">{{ $si->paymentterms->title }} {{ $si->payment_terms2 }}</td>
+                  </tr>
+            </table>
+          </td>
+        </tr>
+    </table>  --}}
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td width="55%" valign="top" style="line-height: 18px; padding-left: 0px;">Bill To,<br />
+                <b style="font-size: 90%;">{{@$si->accountname->account_name}}</b><br>
+                {{@$contact_name}}<br />
+                {{@$address}}<br>
+                {{--  {{@$address2}}, {{@$city}}<br>  --}}
+                {{@$state}}, {{@$country}}<br>
+                T: {{@$tel}}, M: {{@$mob}}<br/>
+                {{--  E: {{@$email}}<br/>  --}}
+                @if($cust_trn_no!="") TRN No: {{@$cust_trn_no}} @endif
+          </td>
+          <td valign="top" style="line-height: 18px;">Ship To,<br />
+            <b style="font-size: 90%;">{{ $ship_company_name }}</b><br>  {{-- {{@$si->accountname->account_name}} --}}
+            {{@$ship_contact_name}}<br />
+            {{@$ship_address1}}<br>
+            {{--  {{@$ship_address2}}, {{@$delivery_city}}, PO Box: {{@$delivery_zip_code}}<br>  --}}
+            {{@$delivery_state}}, {{@$delivery_country}}<br>
+            T: {{@$ship_tel}}, M: {{@$ship_mob}}<br/>
+            {{--  E: {{@$ship_email}}<br/>  --}}
+            @if($shipp_trn_no!="") TRN No: {{@$shipp_trn_no}} @endif
+          </td>
+        </tr>
+    </table>
+
+    <br />
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" class="" style="text-align: left; padding-left: 0px;">
+      <tr>
+        <td width="20%" style="line-height: 12px; font-weight:bold;">Invoice No</td>
+        <td width="20%" style="line-height: 12px; font-weight:bold;">Date</td>
+        <td width="20%" style="line-height: 12px; font-weight:bold;">Ref No</td>
+        <td width="20%" style="line-height: 12px; font-weight:bold;">Ref Date</td>
+        <td width="20%" style="line-height: 12px; font-weight:bold;">Payment Terms</td>
+      </tr>
+      <tr>
+        <td style="line-height: 12px;">{{@$si->doc_number}}</td>
+        <td style="line-height: 12px;">{{date('d/m/Y', strtotime(@$si->doc_date))}}</td>
+        <td style="line-height: 12px;">{{@$si->lpo_number}}</td>
+        <td style="line-height: 12px;">{{date('d/m/Y', strtotime(@$si->lpo_date))}}</td>
+        <td style="line-height: 12px;">{{ $si->paymentterms->title }} {{ $si->payment_terms2 }}</td>
+      </tr>
+    </table>
+    <br />
+    
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr class="item-head-row">
+          <td style="width: 20px; text-align: center;">No</td>
+          <td>Part No</td>
+          <td style="width: 20px; text-align: center;">Qty</td>
+          <td style="width: 70px; text-align: right;">Rate</td>
+          <td style="width: 70px; text-align: right;">Value</td>
+          <td style="width: 30px; text-align: right;">VAT%</td>
+          <td style="width: 80px; text-align: right;">VAT Amount</td>
+          <td style="width: 80px; text-align: right;">Amount</td>
+        </tr>
+    </table>
+        <?php
+            $i=1;
+            $sub_total=0;
+            $discount=0; $deal_discount=0; $deal_discount_vat=0; $deal_discount_vat_amount=0; $deal_discount_amount=0;
+            $taxable_amt=0;
+            $customs_charges=0;
+            $vat_amount=0;
+            $total_amount=0;
+        ?>
+        @if(count($si_item)>0)
+        @foreach ($si_item as $item)
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+            <td class="item-row" style="width: 20px;">{{$i}} <?php $i++;?></td>
+            <td class="item-row" >
+              <span style="font-weight:bold;">{{ $item->productname->part_number }}</span><br />
+              <span style="font-size:10px;">{!! nl2br($item->description) !!}</span></td>
+            <td class="item-row" style="width: 20px; text-align: center;">{{ $item->qty }}</td>
+            <td class="item-row" style="width: 70px; text-align: right;">{{ @App\SysHelper::com_curr_format($item->unitprice,2,'.',',') }}</td>
+            <td class="item-row" style="width: 70px; text-align: right;">{{ @App\SysHelper::com_curr_format($item->unitprice*$item->qty,2,'.',',') }}</td>
+            <td class="item-row" style="width: 30px; text-align: right;">{{ @App\SysHelper::com_curr_format($item->tax,2,'.',',') }}</td>
+            <td class="item-row" style="width: 80px; text-align: right;">{{ @App\SysHelper::com_curr_format($item->vatamount,2,'.',',') }}</td>
+            <td class="item-row" style="width: 80px; text-align: right;">{{ @App\SysHelper::com_curr_format($item->taxableamount+$item->vatamount,2,'.',',') }}</td>
+            <?php
+            
+            $sub_total += $item->unitprice*$item->qty;
+            $discount += $item->discount;
+            $taxable_amt += $item->taxableamount;
+            $customs_charges += $item->customcharges;
+            $vat_amount += $item->vatamount;
+            $total_amount += $item->taxableamount + $item->vatamount;
+
+            ?>
+
+
+        </tr>
+        </table>
+        @endforeach
+
+        <?php
+        
+        $deal_discount += $si->deal_discount;
+        $deal_discount_vat=$si_item->max('tax');
+        $deal_discount_vat_amount= $deal_discount * $deal_discount_vat/100;
+        $deal_discount_amount= $deal_discount + $deal_discount_vat_amount;
+        ?>
+        @endif
+
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td valign="top">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              <tr><td>
+                {{ $si->currency_name->code }}  <?php echo ucwords(@App\SysHelper::convertAmountToWords(@App\SysHelper::com_curr_format($total_amount-$deal_discount_amount, 2, '.', ''),$si->currency_name->r_code,$si->currency_name->p_code));?>
+              </td>
+              </tr>
+            </table>
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              <tr>
+                  <td>
+                    <b style="font-size: 12px;">Terms & Conditions</b>
+                    <ol style="padding: 10px 0px 0px 15px; margin: 0px; font-size: 9px;">
+      
+      <li>The ownership of goods will remain with us until full payment is received.</li>
+      <li>Open box items are non-returnable, and all sales of such items are final.</li>
+      <li>Items without serial numbers are not covered under the warranty.</li>
+      <li>Damage caused by power fluctuations is not covered under the warranty.</li>
+      <li>To make a warranty claim, please contact the relevant vendor&#39;s service center.</li>
+      <li>Bank details:- Bank Name: {{@$company->bank_name}}, Account Number: {{@$company->account_number}}</li>
+                  </ol>          
+                </td>
+                </tr>
+            </table>
+          </td>
+          <td valign="top" width="250px"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>              
+              <td style="width: 110px; text-align: left; font-weight: bold; border-bottom: solid 1px #2c2b6d;">Sub Total {{ $si->currency_name->code }}</td>
+              <td style="width: 80px; text-align: right; font-weight: bold; border-bottom: solid 1px #2c2b6d;">{{ @App\SysHelper::com_curr_format($sub_total, 2, '.', ',') }}</td>
+            </tr>
+          </table>
+          @if(($discount+$deal_discount) > 0)
+          <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="width: 110px; text-align: left; font-weight: bold; border-bottom: solid 1px #2c2b6d;">Discount {{ $si->currency_name->code }}</td>
+              <td style="width: 80px; text-align: right; font-weight: bold; border-bottom: solid 1px #2c2b6d;">{{ @App\SysHelper::com_curr_format($discount+$deal_discount, 2, '.', ',') }}</td>
+            </tr>
+          </table>
+          @endif
+          <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="width: 110px; text-align: left; font-weight: bold; border-bottom: solid 1px #2c2b6d;">Taxable Amt. {{ $si->currency_name->code }}</td>
+              <td style="width: 80px; text-align: right; font-weight: bold; border-bottom: solid 1px #2c2b6d;">{{ @App\SysHelper::com_curr_format($taxable_amt-$deal_discount, 2, '.', ',') }}</td>
+            </tr>
+          </table>
+          <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="width: 110px; text-align: left; font-weight: bold; border-bottom: solid 1px #2c2b6d;">VAT Amount {{ $si->currency_name->code }}</td>
+              <td style="width: 80px; text-align: right; font-weight: bold; border-bottom: solid 1px #2c2b6d;">{{ @App\SysHelper::com_curr_format($vat_amount-$deal_discount_vat_amount, 2, '.', ',') }}</td>
+            </tr>
+          </table>
+          <table width="100%" border="0" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="width: 110px; text-align: left; font-weight: bold; border-bottom: solid 1px #2c2b6d;">Total Amount {{ $si->currency_name->code }}</td>
+              <td style="width: 80px; text-align: right; font-weight: bold; border-bottom: solid 1px #2c2b6d;">{{ @App\SysHelper::com_curr_format($total_amount-$deal_discount_amount, 2, '.', ',') }}</td>
+            </tr>
+          </table></td>
+        </tr>
+        </table>
+        
+
+        {{--  
+<div>
+        
+      <br ><br ><br >
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="border: none; width:200px;" align="left" valign="top"><b class="bottom_b">Received By:</b><br ><br ></td>
+          <td rowspan="4" style="border: none; width:200px;" align="center" valign="bottom"></td>
+          <td rowspan="4" style="border: none; width:200px;" align="right" valign="bottom"><b class="bottom_b" style="font-size: 10px;">For {!! str_replace('SYSCOM DISTRIBUTIONS LLC BRANCH ABU DHABI 1','SYSCOM DISTRIBUTIONS LLC<br />BRANCH ABU DHABI 1',$company->company_name) !!}</b>{{@$si->createdby->full_name}}</td>
+        </tr>
+        <tr>
+          <td style="border: none;" align="left" valign="top"><b class="bottom_b">Name:</b><br ><br ></td>
+        </tr>
+        <tr>
+          <td style="border: none;" align="left" valign="top"><b class="bottom_b">Phone:</b><br ><br ></td>
+        </tr>
+        <tr>
+          <td style="border: none;" align="left" valign="top"><b class="bottom_b">Signature and stamp:</b></td>
+        </tr>
+      </table>
+</div>
+--}}
+
+
+  </main>
+</body>
+
+
+<?php
+function getIndianCurrency(float $number, string $r1, string $r2)
+{
+    $decimal = round($number - ($no = floor($number)), 2) * 100;
+    $hundred = null;
+    $digits_length = strlen($no);
+    $i = 0;
+    $str = array();
+    $words = array(0 => '', 1 => 'One', 2 => 'Two',
+        3 => 'Three', 4 => 'Four', 5 => 'Five', 6 => 'Six',
+        7 => 'Seven', 8 => 'Eight', 9 => 'Nine',
+        10 => 'Ten', 11 => 'Eleven', 12 => 'Twelve',
+        13 => 'Thirteen', 14 => 'Fourteen', 15 => 'Fifteen',
+        16 => 'Sixteen', 17 => 'Seventeen', 18 => 'Eighteen',
+        19 => 'Nineteen', 20 => 'Twenty', 30 => 'Thirty',
+        40 => 'Forty', 50 => 'Fifty', 60 => 'Sixty',
+        70 => 'Seventy', 80 => 'Eighty', 90 => 'Ninety');
+    $digits = array('', 'Hundred','Thousand','', 'Crore');
+    while( $i < $digits_length ) {
+        $divider = ($i == 2) ? 10 : 100;
+        $number = floor($no % $divider);
+        $no = floor($no / $divider);
+        $i += $divider == 10 ? 1 : 2;
+        if ($number) {
+            $plural = (($counter = count($str)) && $number > 9) ? 's' : null;
+            $hundred = ($counter == 1 && $str[0]) ? ' and ' : null;
+            $str [] = ($number < 21) ? $words[$number].' '. $digits[$counter]. $plural.' '.$hundred:$words[floor($number / 10) * 10].' '.$words[$number % 10]. ' '.$digits[$counter].$plural.' '.$hundred;
+        } else $str[] = null;
+    }
+    $Rupees = implode('', array_reverse($str));
+    $paise = ($decimal > 0) ? "." . ($words[$decimal / 10] . " " . $words[$decimal % 10]) . " " .$r2 : '';
+    return ($Rupees ? $Rupees . $r1 : ' ') . $paise;
+}
+?>
+</html>

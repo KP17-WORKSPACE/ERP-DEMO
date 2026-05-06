@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KP Systems - Digital Systems for Government & Enterprise</title>
+    <meta name="description" content="KP Systems delivers scalable, secure, and compliant technology solutions for government organizations, enterprises, and institutions across India.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #2F87B6;
+            --secondary-orange: #EF7336;
+            --accent-red: #9D3227;
+            --dark-navy: #1B3664;
+            --white: #ffffff;
+            --light-grey: #f8f9fa;
+            --text-dark: #1a1a1a;
+            --text-medium: #4a4a4a;
+            --text-light: #6a6a6a;
+            --border-grey: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text-dark);
+            line-height: 1.6;
+            background: var(--white);
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-grey);
+            z-index: 1000;
+        }
+
+        nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark-navy);
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-medium);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-blue);
+        }
+
+        .cta-button {
+            padding: 0.75rem 1.75rem;
+            background: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cta-button:hover {
+            background: var(--dark-navy);
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 8rem 3rem 6rem;
+            background: linear-gradient(135deg, var(--light-grey) 0%, var(--white) 100%);
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--dark-navy);
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            letter-spacing: -1px;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-medium);
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            line-height: 1.7;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            padding: 1rem 2.5rem;
+            background: var(--primary-blue);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background: var(--dark-navy);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            padding: 1rem 2.5rem;
+            background: var(--white);
+            color: var(--primary-blue);
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 1rem;
+            border: 2px solid var(--primary-blue);
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-blue);
+            color: var(--white);
+        }
+
+        /* Sections */
+        section {
+            padding: 6rem 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark-navy);
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .section-description {
+            font-size: 1.1rem;
+            color: var(--text-medium);
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        /* About Section */
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .about-text h2 {
+            font-size: 2.5rem;
+            color: var(--dark-navy);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+
+        .about-text p {
+            font-size: 1.1rem;
+            color: var(--text-medium);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .about-features {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-navy));
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .feature-text h3 {
+            font-size: 1.1rem;
+            color: var(--dark-navy);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .feature-text p {
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        /* Solutions Grid */
+        .solutions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .solution-card {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-grey);
+            transition: all 0.3s;
+        }
+
+        .solution-card:hover {
+            border-color: var(--primary-blue);
+            box-shadow: 0 10px 40px rgba(47, 135, 182, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .solution-card h3 {
+            font-size: 1.5rem;
+            color: var(--dark-navy);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .solution-card p {
+            font-size: 1rem;
+            color: var(--text-medium);
+            line-height: 1.7;
+        }
+
+        /* Government Section */
+        .government-section {
+            background: linear-gradient(135deg, var(--dark-navy) 0%, #2a4a7c 100%);
+            color: var(--white);
+            border-radius: 12px;
+            padding: 5rem 4rem;
+            margin: 4rem 0;
+        }
+
+        .government-section .section-label {
+            color: var(--secondary-orange);
+        }
+
+        .government-section .section-title {
+            color: var(--white);
+        }
+
+        .government-section .section-description {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .government-capabilities {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        .capability-item {
+            text-align: center;
+        }
+
+        .capability-item h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .capability-item p {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.6;
+        }
+
+        /* Why KP Section */
+        .why-kp-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3rem;
+        }
+
+        .why-item {
+            text-align: center;
+        }
+
+        .why-number {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-navy));
+            color: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 1.5rem;
+        }
+
+        .why-item h3 {
+            font-size: 1.3rem;
+            color: var(--dark-navy);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .why-item p {
+            font-size: 1rem;
+            color: var(--text-medium);
+            line-height: 1.7;
+        }
+
+        /* Engagement Section */
+        .engagement-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .engagement-card {
+            background: var(--light-grey);
+            padding: 2.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .engagement-card h3 {
+            font-size: 1.3rem;
+            color: var(--dark-navy);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .engagement-card p {
+            font-size: 0.95rem;
+            color: var(--text-medium);
+            line-height: 1.7;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            background: var(--light-grey);
+            padding: 6rem 3rem;
+            text-align: center;
+        }
+
+        .contact-content {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .contact-content h2 {
+            font-size: 2.5rem;
+            color: var(--dark-navy);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+
+        .contact-content p {
+            font-size: 1.1rem;
+            color: var(--text-medium);
+            margin-bottom: 2.5rem;
+            line-height: 1.8;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark-navy);
+            color: var(--white);
+            padding: 4rem 3rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .footer-description {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .footer-bottom {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .solutions-grid,
+            .government-capabilities,
+            .why-kp-grid,
+            .engagement-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .about-content {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            nav {
+                padding: 1.5rem 2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            section {
+                padding: 4rem 1.5rem;
+            }
+
+            .hero {
+                padding: 6rem 1.5rem 4rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .government-section {
+                padding: 3rem 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">KP SYSTEMS</div>
+            <ul class="nav-links">
+                <li><a href="#about">About</a></li>
+                <li><a href="#solutions">Solutions</a></li>
+                <li><a href="#government">Government</a></li>
+                <li><a href="#why">Why KP</a></li>
+                <li><a href="#engagement">Engagement</a></li>
+            </ul>
+            <button class="cta-button" onclick="document.getElementById('contact').scrollIntoView({behavior: 'smooth'})">Contact Us</button>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Building Digital Systems for Institutions, Enterprises, and Government</h1>
+            <p>KP Systems delivers scalable, secure, and compliant technology solutions designed for long-term operational excellence across India.</p>
+            <div class="hero-cta">
+                <a href="#contact" class="btn-primary">Discuss Your Requirement</a>
+                <a href="#about" class="btn-secondary">Partner With KP Systems</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="about">
+        <div class="about-content">
+            <div class="about-text">
+                <h2>A Trusted Technology Partner</h2>
+                <p>KP Systems operates as a solution partner for organizations that require structured, process-driven execution. We understand institutional workflows, compliance frameworks, and the operational discipline necessary for government and enterprise projects.</p>
+                <p>Our approach is rooted in reliability, clear communication, and accountability. We build systems that serve organizations for years, not months.</p>
+            </div>
+            <div class="about-features">
+                <div class="feature-item">
+                    <div class="feature-icon">01</div>
+                    <div class="feature-text">
+                        <h3>Structured Execution</h3>
+                        <p>Process-driven project delivery with clear milestones, documentation, and reporting throughout the lifecycle.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">02</div>
+                    <div class="feature-text">
+                        <h3>Enterprise & Government Ready</h3>
+                        <p>Experience with compliance requirements, tender processes, and institutional procurement standards.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">03</div>
+                    <div class="feature-text">
+                        <h3>Long-Term Partnership</h3>
+                        <p>Ongoing support, maintenance, and enhancement capabilities designed for sustained operational success.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="solutions">
+        <div class="section-header">
+            <div class="section-label">What We Deliver</div>
+            <h2 class="section-title">Technology Solutions at Scale</h2>
+            <p class="section-description">We design and deploy systems that enable operational efficiency, data integrity, and secure access across distributed teams and stakeholders.</p>
+        </div>
+        <div class="solutions-grid">
+            <div class="solution-card">
+                <h3>Digital Platforms & Systems</h3>
+                <p>Custom-built platforms for organizational workflows, citizen services, internal operations, and stakeholder coordination. Designed for security, scalability, and accessibility.</p>
+            </div>
+            <div class="solution-card">
+                <h3>Enterprise & Mobile Solutions</h3>
+                <p>Integrated applications for field operations, decision support, reporting dashboards, and real-time coordination across web and mobile environments.</p>
+            </div>
+            <div class="solution-card">
+                <h3>Automation & Process Digitization</h3>
+                <p>Workflow automation, document management, approval systems, and digitization of manual processes to reduce friction and improve transparency.</p>
+            </div>
+            <div class="solution-card">
+                <h3>Secure & Scalable Architecture</h3>
+                <p>Infrastructure planning, cloud deployment, data protection, role-based access control, and compliance-aligned system architecture.</p>
+            </div>
+        </div>
+    </section>
+
+    <div style="max-width: 1400px; margin: 0 auto; padding: 0 3rem;">
+        <div class="government-section" id="government">
+            <div class="section-header">
+                <div class="section-label">Government & Public Sector</div>
+                <h2 class="section-title">GeM & Institutional Procurement Capability</h2>
+                <p class="section-description">KP Systems has established experience in executing government IT projects through GeM and institutional procurement processes. We understand documentation requirements, compliance standards, and the execution discipline necessary for public sector engagements.</p>
+            </div>
+            <div class="government-capabilities">
+                <div class="capability-item">
+                    <h4>GeM Tender Experience</h4>
+                    <p>Active participation in Government e-Marketplace tenders with a track record of compliant proposal submission and project delivery.</p>
+                </div>
+                <div class="capability-item">
+                    <h4>Structured Execution Lifecycle</h4>
+                    <p>Clear project plans, milestone-based reporting, quality assurance protocols, and timely delivery aligned with government requirements.</p>
+                </div>
+                <div class="capability-item">
+                    <h4>Compliance-Ready Documentation</h4>
+                    <p>Comprehensive technical documentation, security certifications, and audit-ready project records throughout the engagement.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section id="why">
+        <div class="section-header">
+            <div class="section-label">Why KP Systems</div>
+            <h2 class="section-title">Built on Principles That Matter</h2>
+        </div>
+        <div class="why-kp-grid">
+            <div class="why-item">
+                <div class="why-number">1</div>
+                <h3>Reliability</h3>
+                <p>Consistent execution, on-time delivery, and predictable outcomes. Organizations depend on systems that work without surprises.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-number">2</div>
+                <h3>Process Discipline</h3>
+                <p>Documented workflows, version control, change management, and structured communication at every stage of engagement.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-number">3</div>
+                <h3>Security-First Mindset</h3>
+                <p>Data protection, secure authentication, role-based access, and compliance with applicable standards from day one.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-number">4</div>
+                <h3>Scalability</h3>
+                <p>Systems designed to grow with organizational needs. Architecture that supports increasing users, data, and functionality over time.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-number">5</div>
+                <h3>Long-Term Partnership</h3>
+                <p>We remain engaged beyond deployment. Maintenance, enhancements, and support are integral to our engagement model.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-number">6</div>
+                <h3>Clear Accountability</h3>
+                <p>Direct communication, transparent progress tracking, and ownership of outcomes throughout the project lifecycle.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="engagement">
+        <div class="section-header">
+            <div class="section-label">Engagement Model</div>
+            <h2 class="section-title">How We Work With Organizations</h2>
+        </div>
+        <div class="engagement-grid">
+            <div class="engagement-card">
+                <h3>Project-Based Execution</h3>
+                <p>Defined scope, timeline, and deliverables. Suitable for system development, platform deployment, or specific digital transformation initiatives.</p>
+            </div>
+            <div class="engagement-card">
+                <h3>Long-Term Technology Partnership</h3>
+                <p>Ongoing collaboration for continuous enhancement, operational support, and evolving technology needs.</p>
+            </div>
+            <div class="engagement-card">
+                <h3>Government & Institutional Contracts</h3>
+                <p>GeM tenders, institutional procurement, and public sector projects with full compliance and structured execution protocols.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact-section" id="contact">
+        <div class="contact-content">
+            <h2>Let's Discuss Your Requirement</h2>
+            <p>Tell us about your technology objectives. Our team will evaluate your needs and respond with a structured approach that aligns with your organizational goals.</p>
+            <a href="mailto:contact@kpsystems.in" class="btn-primary">Initiate Conversation</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">KP SYSTEMS</div>
+            <p class="footer-description">A technology solutions and digital transformation company serving government organizations, enterprises, and institutions across India.</p>
+            <div class="footer-bottom">
+                <p>&copy; 2024 KP Systems. Operating across India with a commitment to reliability, compliance, and operational excellence.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

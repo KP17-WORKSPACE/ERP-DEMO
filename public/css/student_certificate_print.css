@@ -1,0 +1,38 @@
+.tdWidth{
+	width: 33.33%;
+}
+.bgImage{
+	height:auto; 
+	background-repeat:no-repeat;
+	background-image: url({{asset($certificate->file)}});
+  
+}
+table{
+	margin-top: 160px;
+	text-align: center; 
+}
+tr{ 
+}
+td{
+	padding: 25px !important;
+}
+.DivBody{    
+	height: 680px !important; 
+  
+}
+.tdBody{
+	text-align: justify !important;				
+	height: 140px;
+	padding-top: 0px;
+	padding-bottom: 0px;
+	padding-left: 65px;
+	padding-right: 65px;
+
+}
+img{
+	position: absolute;
+}
+table{
+	position: relative;
+	top:100;			
+}

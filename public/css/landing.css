@@ -1,0 +1,14 @@
+.custome-button {
+    padding: 5px 10px !important;
+    border: 1px solid #c738d8 !important;
+    border-radius: 20px !important;
+    width: 60%;
+    margin: 0 auto;
+    font-size: 16px !important;
+    background-image: linear-gradient(to left, #7c32ff 0%, #c738d8 50%, #7c32ff 100%);
+    color: white !important;
+}
+
+img {
+    max-width: 50% !important;
+}

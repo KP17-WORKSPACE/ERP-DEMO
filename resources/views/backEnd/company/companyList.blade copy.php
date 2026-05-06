@@ -1,0 +1,85 @@
+@extends('backEnd.newmasterpage')
+@section('mainContent')
+
+@php
+    $module_links = [];
+    $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+@endphp
+
+<?php try { ?>
+<div class="container-fluid">
+    <div class="d-sm-flex justify-content-between">
+        <div class="mb-3">
+            <h2 class="page-heading m-0">Company</h2>
+            <span class="page-label">Home - Company</span>
+        </div>
+        <div>
+            <a href="{{ url('company-add') }}" type="button" class="btn btn-info"><i class="fa fa-plus"></i> Company</a>
+        </div>
+    </div>
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        @if (session()->has('message-success-delete') != '' || session()->get('message-danger-delete') != '')
+                            <tr>
+                                <td colspan="6">
+                                    @if (session()->has('message-success-delete'))
+                                        <div class="alert alert-success">
+                                            {{ session()->get('message-success-delete') }}
+                                        </div>
+                                    @elseif(session()->has('message-danger-delete'))
+                                        <div class="alert alert-danger">
+                                            {{ session()->get('message-danger-delete') }}
+                                        </div>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endif
+                        <tr>
+                            <th></th>
+                            <th> @lang('lang.company') @lang('lang.name')</th>
+                            <th> @lang('Country')</th>
+                            <th> @lang('Contact')</th>
+                            <th> @lang('lang.action')</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (isset($company))
+                            @foreach ($company as $value)
+                                <tr>
+
+                                    <td>@if(@$value->company_logo != '')
+                                        <img src="{{ @$value->company_logo }}" height="30">@endif
+                                    </td>
+                                    <td><b>
+                                        {{ @$value->company_name }}</b>
+                                    </td>
+                                    <td>
+                                        {{ @$value->country->name }}
+                                    </td>
+                                    <td>{{ @$value->email }}</td>
+                                    <td>
+                                                @if (in_array(163, @$module_links) || Auth::user()->role_id == 1)
+                                                        <a class="btn-sm btn-info" href="{{ url('company/' . @$value->id . '/edit') }}"><i class="fa fa-edit" aria-hidden="true"></i></a>
+                                                @endif
+                                                @if (in_array(164, @$module_links) || Auth::user()->role_id == 1)
+                                                        <a class="btn-sm btn-danger" data-toggle="modal"   href="{{ url('delete-company/' . @$value->id) }}" onclick="return confirm('Are you sure?')"><i class="fa fa-trash" aria-hidden="true"></i></a>
+                                                @endif
+                                    </td>
+                                </tr>
+
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>    
+
+</div>
+
+<?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
+@endsection

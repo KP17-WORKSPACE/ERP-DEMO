@@ -1,0 +1,62 @@
+/**************** service_part css start ****************/
+.video_section{
+    .video_section_img{
+        position: relative;
+        z-index: 1;
+        .video-play-button{
+            height: 80px;
+            width: 80px;
+            display: inline-block;
+            background-color: rgba($color: $white_color, $alpha: .2);
+            position: absolute;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            top: 39%;
+            text-align: center;
+            line-height: 84px;
+            font-size: 36px;
+            border-radius: 50%;
+            padding-left: 5px;
+            z-index: 2;
+            @media #{$tab}{
+                top: 30%;
+            }
+            @media #{$medium_device}{
+                top: 37%;
+            }
+            span{
+                color: $white_color;
+            }
+        }
+    }
+    .video_section_text{
+        margin-top: 43px;
+        @media #{$tab}{
+            padding-left: 0px;
+            margin-top: 25px;
+        }
+        @media #{$medium_device}{
+            padding-left: 0px;
+        }
+        h2{
+            position: relative;
+            font-size: 32px;
+            @media #{$tab}{
+                font-size: 25px;
+            }
+            @media #{$medium_device}{
+                font-size: 30px;
+            }
+        }
+        p{
+            margin-top: 21px;
+            @media #{$tab}{
+                margin-top: 5px;
+            }
+            @media #{$medium_device}{
+                margin-top: 15px;
+            }
+        }
+    }
+}

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KP Systems — Enterprise & Government IT Solutions</title>
+    <meta name="description" content="KP Systems provides secure, scalable, and compliant technology systems for government and enterprise organizations in India.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#1e293b">
+    <style>
+        :root{
+            --bg: #f8fafc;
+            --card:#ffffff;
+            --muted:#64748b;
+            --text:#1e293b;
+            --accent:#0f172a; /* dark navy */
+            --accent-2:#f59e0b; /* amber */
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 8px;
+        }
+        *{box-sizing:border-box}
+        body{font-family:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial; margin:0;color:var(--text);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+        a{color:inherit}
+        header{position:sticky;top:0;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);z-index:50;box-shadow:var(--shadow)}
+        .container{max-width:1200px;margin:0 auto;padding:0 2rem}
+        nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 0}
+        .brand{display:flex;align-items:center;gap:.75rem;font-weight:700;color:var(--accent);font-size:1.25rem}
+        .nav-links{display:flex;gap:2rem;align-items:center}
+        .nav-links a{padding:0.75rem 1rem;border-radius:6px;color:var(--muted);text-decoration:none;font-weight:500;font-size:1rem;transition:background-color 0.2s, color 0.2s}
+        .nav-links a:hover{background-color:rgba(15,23,42,0.05);color:var(--accent)}
+        .cta{padding:0.75rem 1.5rem;border-radius:8px;background:linear-gradient(135deg,var(--accent),#334155);color:#fff;border:none;font-weight:600;cursor:pointer;font-size:1rem;transition:transform 0.2s, box-shadow 0.2s}
+        .cta:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(15,23,42,0.2)}
+        .hero{padding:5rem 0 4rem;background:linear-gradient(135deg, #f1f5f9 0%, #ffffff 100%)}
+        .hero-grid{display:grid;grid-template-columns:1fr 400px;gap:3rem;align-items:center}
+        .hero h1{font-size:3rem;font-weight:700;color:var(--accent);line-height:1.1;margin:0 0 1rem}
+        .hero p{margin:0 0 2rem;color:var(--muted);font-size:1.25rem;line-height:1.6}
+        .hero .hero-ctas{display:flex;gap:1rem}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#475569);color:#fff;padding:1rem 2rem;border-radius:8px;font-weight:600;text-decoration:none;font-size:1.1rem;transition:transform 0.2s, box-shadow 0.2s}
+        .btn-primary:hover{transform:translateY(-3px);box-shadow:0 15px 35px rgba(15,23,42,0.2)}
+        .btn-outline{padding:1rem 2rem;border-radius:8px;border:2px solid var(--accent);color:var(--accent);background:transparent;text-decoration:none;font-weight:600;font-size:1.1rem;transition:background-color 0.2s, color 0.2s}
+        .btn-outline:hover{background-color:var(--accent);color:#fff}
+        .hero-card{background:var(--card);border:1px solid var(--border);padding:2rem;border-radius:12px;box-shadow:var(--shadow)}
+
+        /* sections */
+        section{padding:4rem 0}
+        .section-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:2rem}
+        .section-title{font-size:2rem;font-weight:700;margin:0;color:var(--accent)}
+        .section-sub{color:var(--muted);font-size:1rem;font-weight:500;text-transform:uppercase;letter-spacing:0.05em}
+
+        /* What We Do */
+        .cap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+        .cap{background:var(--card);padding:2rem;border-radius:12px;border:1px solid var(--border);display:flex;gap:1.5rem;align-items:flex-start;transition:transform 0.2s, box-shadow 0.2s}
+        .cap:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+        .cap .icon{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#475569);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.25rem}
+        .cap h4{margin:0;font-size:1.25rem;color:var(--accent)}
+        .cap p{margin:0;color:var(--muted);font-size:1rem;line-height:1.6}
+
+        /* Why KP */
+        .why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem}
+        .why{background:var(--card);border-radius:12px;padding:2rem;border:1px solid var(--border);text-align:center;transition:transform 0.2s, box-shadow 0.2s}
+        .why:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+        .why .ic{font-size:2rem;margin-bottom:1rem;color:var(--accent)}
+        .why h4{margin:0 0 0.5rem;color:var(--accent);font-size:1.25rem}
+        .why p{margin:0;color:var(--muted);font-size:1rem;line-height:1.6}
+
+        /* Solutions */
+        .solution-list{display:grid;grid-template-columns:repeat(2,1fr);gap:2rem}
+        .solution{background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid var(--border);padding:2rem;border-radius:12px;transition:transform 0.2s, box-shadow 0.2s}
+        .solution:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+
+        /* Services */
+        .services{background:linear-gradient(180deg,rgba(15,23,42,0.02),transparent);padding:3rem;border-radius:12px;border:1px solid var(--border)}
+        .service-cats{display:grid;grid-template-columns:repeat(2,1fr);gap:2rem}
+        .scard{background:var(--card);padding:2rem;border-radius:12px;border:1px solid var(--border);transition:transform 0.2s, box-shadow 0.2s}
+        .scard:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+        .scard h4{margin:0 0 1rem;color:var(--accent);font-size:1.25rem}
+        .scard ul{margin:1rem 0 0;padding-left:1.2rem;color:var(--muted);font-size:1rem}
+
+        /* GeM */
+        .gem{background:linear-gradient(90deg,#fef3c7,transparent);padding:2rem;border-radius:12px;border:1px solid #f5e6bf}
+
+        /* Industries */
+        .industries{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+        .ind{background:var(--card);padding:2rem;border-radius:12px;border:1px solid var(--border);text-align:center;transition:transform 0.2s, box-shadow 0.2s;font-size:1.1rem;font-weight:600;color:var(--accent)}
+        .ind:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+
+        /* CTA strip */
+        .cta-strip{background:linear-gradient(90deg,var(--accent),var(--accent-2));padding:2rem;border-radius:12px;color:#fff;text-align:center}
+        .cta-strip p{margin:0 0 .75rem}
+
+        /* Case studies */
+        .cases{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+        .case-card{background:var(--card);padding:2rem;border-radius:12px;border:1px solid var(--border);transition:transform 0.2s, box-shadow 0.2s}
+        .case-card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+
+        /* Contact */
+        .contact-grid{display:grid;grid-template-columns:1fr 400px;gap:2rem}
+        .form{background:var(--card);padding:2rem;border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow)}
+        label{display:block;font-weight:600;font-size:1rem;margin-bottom:0.5rem;color:var(--accent)}
+        input,textarea{width:100%;padding:0.75rem;border-radius:8px;border:1px solid var(--border);font-size:1rem;font-family:inherit}
+        .small{font-size:0.9rem;color:var(--muted)}
+
+        footer{padding:3rem 0;background:#0f172a;color:#fff;margin-top:4rem}
+        .footer-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:2rem}
+        .fcol h5{margin:0 0 1rem;color:#f59e0b;font-size:1.1rem}
+        .fcol a{display:block;color:#cbd5e1;text-decoration:none;margin-bottom:0.75rem;font-size:1rem;transition:color 0.2s}
+        .fcol a:hover{color:#f59e0b}
+
+        /* small utilities */
+        .muted{color:var(--muted)}
+        .tight{line-height:1.15}
+        .center{display:flex;align-items:center;justify-content:center}
+
+        /* Skip link for keyboard users */
+        .skip-link{position:absolute;left:0;top:-44px;background:#111827;color:#ffffff;padding:.6rem .9rem;border-radius:0 0 6px 0;z-index:999;transition:top .18s ease}
+        .skip-link:focus{top:8px;outline:3px solid rgba(37,99,235,0.25)}
+
+        /* Mobile nav button */
+        .mobile-nav-button{display:none;background:transparent;border:1px solid transparent;padding:.5rem .75rem;border-radius:8px;font-size:1.05rem}
+        .mobile-nav-button:focus{outline:3px solid rgba(37,99,235,0.18)}
+
+        /* Mobile nav panel */
+        .mobile-nav{position:fixed;inset:0 0 auto 0;top:60px;height:calc(100vh - 60px);background:linear-gradient(180deg,#ffffff, #f8fafc);border-top:1px solid var(--border);transform:translateY(-10px);opacity:0;pointer-events:none;transition:transform .22s ease,opacity .22s ease;padding:1rem}
+        .mobile-nav.open{transform:translateY(0);opacity:1;pointer-events:auto}
+        .mobile-nav-inner{display:flex;flex-direction:column;gap:.6rem;max-width:420px}
+        .mobile-nav-inner a{display:block;padding:.9rem 1rem;border-radius:8px;color:var(--text);text-decoration:none;font-weight:700}
+        .mobile-nav-inner a:hover{background:rgba(37,99,235,0.04)}
+        .mobile-nav .mobile-cta{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:.9rem;border-radius:10px;text-align:center}
+
+        /* Focus-visible for keyboard users */
+        :focus{outline: none}
+        :focus-visible{outline:3px solid rgba(37,99,235,0.18);outline-offset:2px}
+
+        /* Improved touch targets and spacing on small screens */
+        button, .btn-primary, .btn-outline, .cap, .why, .ind, .service-cats .scard{min-height:48px}
+
+        /* responsive */
+        @media (max-width:1024px){
+            .hero-grid{grid-template-columns:1fr}
+            .cap-grid{grid-template-columns:repeat(2,1fr)}
+            .why-grid{grid-template-columns:repeat(2,1fr)}
+            .solution-list{grid-template-columns:1fr}
+            .services .service-cats{grid-template-columns:1fr}
+            .industries{grid-template-columns:repeat(2,1fr)}
+            .cases{grid-template-columns:repeat(2,1fr)}
+            .contact-grid{grid-template-columns:1fr}
+            .footer-grid{grid-template-columns:1fr 1fr}
+        }
+
+        @media (max-width:768px){
+            .nav-links{display:none}
+            .mobile-nav-button{display:inline-flex}
+            .container{padding:0 1.5rem}
+            .hero h1{font-size:2.5rem}
+            .hero p{font-size:1.1rem}
+            .hero .hero-ctas{flex-direction:column}
+            .hero .hero-ctas a{width:100%;text-align:center}
+            .hero-card{margin-top:2rem}
+            .cap-grid{grid-template-columns:1fr}
+            .why-grid{grid-template-columns:1fr}
+            .industries{grid-template-columns:1fr}
+            .cases{grid-template-columns:1fr}
+            .mobile-nav-inner{max-width:100%}
+        }
+
+        @media (max-width:480px){
+            .container{padding:0 1rem}
+            .hero h1{font-size:2rem}
+            .hero p{font-size:1rem}
+            .section-title{font-size:1.75rem}
+        }
+    </style>
+</head>
+<body>
+    <a class="skip-link" href="#home">Skip to main content</a>
+<header>
+    <div class="container">
+        <nav>
+            <div class="brand"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="8" fill="url(#gradient)"/><path d="M10 15h20v10H10z" fill="#fff"/><path d="M15 20h10v5H15z" fill="#0f172a"/><defs><linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#0f172a"/><stop offset="100%" style="stop-color:#475569"/></linearGradient></defs></svg>KP Systems</div>
+            <div class="nav-links" id="nav-links">
+                <a href="#home">Home</a>
+                <a href="#services">Services</a>
+                <a href="#solutions">Solutions</a>
+                <a href="#gem">GeM & Government</a>
+                <a href="#industries">Industries</a>
+                <a href="#about">About</a>
+                <a href="#cases">Case Studies</a>
+                <a href="#contact">Contact</a>
+            </div>
+
+            <!-- Mobile nav button -->
+            <button class="mobile-nav-button" aria-label="Open navigation" aria-expanded="false" aria-controls="mobile-nav" id="mobileNavBtn">☰</button>
+
+            <!-- Mobile nav panel (hidden by default) -->
+            <nav id="mobile-nav" class="mobile-nav" aria-hidden="true">
+                <div class="mobile-nav-inner">
+                    <a href="#home">Home</a>
+                    <a href="#services">Services</a>
+                    <a href="#solutions">Solutions</a>
+                    <a href="#gem">GeM & Government</a>
+                    <a href="#industries">Industries</a>
+                    <a href="#about">About</a>
+                    <a href="#cases">Case Studies</a>
+                    <a href="#contact">Contact</a>
+                    <a class="mobile-cta" href="#contact">Request Consultation</a>
+                </div>
+            </nav>
+
+            <div style="display:flex;gap:.75rem;align-items:center">
+                <button class="cta" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Request Consultation</button>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main id="home">
+    <section class="hero container">
+        <div class="hero-grid">
+            <div>
+                <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem"><div style="background:#e0f2fe;padding:.35rem .6rem;border-radius:999px;color:var(--accent);font-weight:700">GeM Ready</div><div class="muted">Serving government & enterprise clients across India</div></div>
+                <h1 class="tight">Enterprise-Grade IT Solutions & Government-Ready Digital Services</h1>
+                <p>Helping businesses and government organizations build secure, scalable, and future-ready technology systems that deliver measurable outcomes.</p>
+                <div class="hero-ctas">
+                    <a class="btn-primary" href="#contact">Talk to an Expert</a>
+                    <a class="btn-outline" href="#solutions">Explore Our Solutions</a>
+                </div>
+                <div style="margin-top:1.35rem;color:var(--muted);font-size:.95rem">Short, clear proof point: 100+ projects delivered • 10+ government engagements • 99% client retention</div>
+            </div>
+            <div class="hero-card">
+                <h4 style="margin:0 0 .5rem">Need help with a tender or public sector RFP?</h4>
+                <p class="muted" style="margin:0 0 .75rem">We help prepare technical proposals, compliance documentation, and delivery plans for GeM and institutional procurement.</p>
+                <div style="display:flex;gap:.5rem">
+                    <a class="btn-outline" href="#gem">GeM Services</a>
+                    <a class="btn-primary" href="#contact">Request Consultation</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-sub">WHAT WE DO</div>
+                <h2 class="section-title">Capabilities — High level</h2>
+            </div>
+            <div class="muted">Focused capabilities with clear outcomes</div>
+        </div>
+        <div class="cap-grid">
+            <a class="cap" href="#services">
+                <div class="icon">DP</div>
+                <div>
+                    <h4>Digital Product Engineering</h4>
+                    <p>Custom platforms, citizen portals, and user-focused applications to deliver measurable outcomes.</p>
+                </div>
+            </a>
+            <a class="cap" href="#services">
+                <div class="icon">ES</div>
+                <div>
+                    <h4>Enterprise Business Systems</h4>
+                    <p>ERP, CRM and integrated systems for process efficiency and operational control.</p>
+                </div>
+            </a>
+            <a class="cap" href="#services">
+                <div class="icon">EC</div>
+                <div>
+                    <h4>E-Commerce & Marketplaces</h4>
+                    <p>Secure, scalable commerce platforms for B2B and B2C operations.</p>
+                </div>
+            </a>
+            <a class="cap" href="#services">
+                <div class="icon">GM</div>
+                <div>
+                    <h4>Government & GeM Solutions</h4>
+                    <p>Tender-ready delivery, compliance documentation, and procurement lifecycle support.</p>
+                </div>
+            </a>
+            <a class="cap" href="#services">
+                <div class="icon">CI</div>
+                <div>
+                    <h4>Cloud & Infrastructure</h4>
+                    <p>Cloud migration, managed services, and resilient architectures for scale and uptime.</p>
+                </div>
+            </a>
+            <a class="cap" href="#services">
+                <div class="icon">SM</div>
+                <div>
+                    <h4>Support & Maintenance</h4>
+                    <p>Operational support, SLA-driven maintenance and long-term partnerships.</p>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-sub">WHY KP SYSTEMS</div>
+                <h2 class="section-title">Trusted for Government & Enterprise</h2>
+            </div>
+            <div class="muted">Process, compliance, security, and accountability</div>
+        </div>
+        <div class="why-grid">
+            <div class="why"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><h4>Process-driven delivery</h4><p>Milestone-based execution, documentation, and traceability.</p></div>
+            <div class="why"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><h4>Compliance-ready systems</h4><p>Documentation and controls aligned to government procurement.</p></div>
+            <div class="why"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><h4>Secure architecture</h4><p>Security-first design, IAM, and data protection from day one.</p></div>
+            <div class="why"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><h4>Long-term support</h4><p>Operational support, upgrades and continuity planning.</p></div>
+        </div>
+    </section>
+
+    <section id="solutions" class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-sub">SOLUTIONS</div>
+                <h2 class="section-title">Outcome-focused solutions</h2>
+            </div>
+            <div class="muted">Business outcomes, not technical jargon</div>
+        </div>
+        <div class="solution-list">
+            <div class="solution"><h4>Launch & Scale Your Digital Presence</h4><p class="muted">Rapid product development and platform scaling to reach users quickly and reliably.</p></div>
+            <div class="solution"><h4>Automate Business Operations</h4><p class="muted">Workflow automation and systems integration to reduce manual effort and increase transparency.</p></div>
+            <div class="solution"><h4>Sell Online with Secure E-Commerce</h4><p class="muted">Secure payments, inventory sync, and scalable storefronts tailored to your market.</p></div>
+            <div class="solution"><h4>Government-Compliant IT Solutions</h4><p class="muted">Tender-ready technical packages, procurement support, and audit-graded delivery.</p></div>
+        </div>
+    </section>
+
+    <section id="gem" class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-sub">GOVERNMENT & GeM</div>
+                <h2 class="section-title">GeM registration, Tender Support & Procurement Delivery</h2>
+            </div>
+            <div class="muted">Clear, audit-ready processes for public sector engagements</div>
+        </div>
+        <div class="gem">
+            <ul style="margin:0;padding-left:1.2rem">
+                <li><strong>GeM Registration Support</strong> — assistance with vendor registration, document compilation and submission.</li>
+                <li><strong>Tender-Ready Documentation</strong> — technical proposals, SRS, compliance matrices and delivery plans.</li>
+                <li><strong>Project Execution</strong> — structured delivery, QA, and audit trails for government contracts.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="industries" class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-sub">INDUSTRIES</div>
+                <h2 class="section-title">Industries We Serve</h2>
+            </div>
+            <div class="muted">Focused experience for sector-specific outcomes</div>
+        </div>
+        <div class="industries">
+            <div class="ind">Government & PSU</div>
+            <div class="ind">Manufacturing</div>
+            <div class="ind">Retail & E-Commerce</div>
+            <div class="ind">Healthcare</div>
+            <div class="ind">Education</div>
+            <div class="ind">SMEs & Startups</div>
+        </div>
+    </section>
+
+    <section id="services" class="container services">
+        <div class="section-head">
+            <div>
+                <div class="section-sub">SERVICES</div>
+                <h2 class="section-title">Service Categories & Representative Services</h2>
+            </div>
+            <div class="muted">Structured, category-driven service pages</div>
+        </div>
+        <div class="service-cats">
+            <div class="scard">
+                <h4>Digital Development</h4>
+                <ul>
+                    <li>Website Development — What it solves, features, who it's for</li>
+                    <li>Web Applications — Scalable, secure web apps</li>
+                    <li>Mobile Apps (Android & iOS)</li>
+                </ul>
+                <div style="margin-top:.6rem"><a class="btn-outline" href="#contact">Talk about a project</a></div>
+            </div>
+            <div class="scard">
+                <h4>Enterprise Systems</h4>
+                <ul>
+                    <li>ERP Solutions — Process automation & reporting</li>
+                    <li>CRM Systems — Sales & stakeholder management</li>
+                    <li>HRMS Solutions — Payroll & employee lifecycle</li>
+                </ul>
+                <div style="margin-top:.6rem"><a class="btn-outline" href="#contact">Discuss Enterprise Needs</a></div>
+            </div>
+            <div class="scard">
+                <h4>Commerce & Platforms</h4>
+                <ul>
+                    <li>E-Commerce Development — Secure storefronts & payments</li>
+                    <li>Custom Marketplaces — Multi-vendor platforms</li>
+                </ul>
+                <div style="margin-top:.6rem"><a class="btn-outline" href="#contact">Request Commerce Plan</a></div>
+            </div>
+            <div class="scard">
+                <h4>Government IT Services</h4>
+                <ul>
+                    <li>GeM Tender IT Support — Documentation & proposals</li>
+                    <li>Government Project Development</li>
+                    <li>Compliance & Documentation Support</li>
+                </ul>
+                <div style="margin-top:.6rem"><a class="btn-outline" href="#contact">GeM Consultation</a></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cases" class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-sub">CASE STUDIES</div>
+                <h2 class="section-title">Selected Projects & Outcomes</h2>
+            </div>
+            <div class="muted">Representative engagements with clear results</div>
+        </div>
+        <div class="cases">
+            <div class="case-card">
+                <h4>Citizen Portal for Urban Services</h4>
+                <p class="muted">Problem: Fragmented service requests; Solution: Centralized portal; Outcome: 45% faster resolution times.</p>
+            </div>
+            <div class="case-card">
+                <h4>Enterprise ERP for Manufacturing</h4>
+                <p class="muted">Problem: Manual processes; Solution: Integrated ERP; Outcome: 30% productivity improvement.</p>
+            </div>
+            <div class="case-card">
+                <h4>GeM Tender Delivery</h4>
+                <p class="muted">Problem: Tender compliance; Solution: Tender-ready documentation & delivery; Outcome: Awarded contract and on-time delivery.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-sub">ABOUT</div>
+                <h2 class="section-title">KP Systems — Company Overview</h2>
+            </div>
+            <div class="muted">Professional, accountable and focused on long-term delivery</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 360px;gap:1rem;align-items:start">
+            <div>
+                <p class="muted">KP Systems provides secure, compliant, and scalable technology solutions for government and enterprise clients across India. Our delivery model emphasises process-driven execution, clear documentation, and long-term operational support.</p>
+                <h4 style="margin-top:1rem">Vision & Mission</h4>
+                <p class="muted">Deliver practical technology systems that improve public services and business operations through disciplined execution and technical quality.</p>
+                <h4 style="margin-top:1rem">Core Values</h4>
+                <ul class="muted" style="padding-left:1.1rem">
+                    <li>Accountability</li>
+                    <li>Security-first</li>
+                    <li>Process discipline</li>
+                </ul>
+            </div>
+            <div class="hero-card">
+                <h4 style="margin:0 0 .5rem">Leadership & Delivery</h4>
+                <p class="muted" style="margin:0 0 .75rem">Experienced delivery leads with background in government programs and enterprise software.</p>
+                <a class="btn-primary" href="#contact">Get in touch</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="container">
+        <div class="section-head">
+            <div>
+                <div class="section-sub">CONTACT</div>
+                <h2 class="section-title">Let's discuss your project or tender</h2>
+            </div>
+            <div class="muted">Short form, quick response, and clear next steps</div>
+        </div>
+        <div class="contact-grid">
+            <div class="form">
+                <form onsubmit="event.preventDefault();alert('Thank you — we\'ll be in touch soon.');this.reset();">
+                    <label for="name">Name</label>
+                    <input id="name" required>
+                    <label for="org">Organization</label>
+                    <input id="org">
+                    <label for="email">Email</label>
+                    <input id="email" type="email" required>
+                    <label for="msg">Brief description</label>
+                    <textarea id="msg" rows="5" required></textarea>
+                    <div style="margin-top:.75rem;display:flex;gap:.5rem"><button class="btn-primary" type="submit">Request Consultation</button><button type="reset" class="btn-outline">Clear</button></div>
+                </form>
+            </div>
+            <div style="background:var(--card);padding:1rem;border-radius:12px;border:1px solid var(--border)">
+                <h4>Contact Details</h4>
+                <p class="muted">Email: <a href="mailto:contact@kpsystems.in">contact@kpsystems.in</a><br>Phone: +91 12345 67890<br>Hours: Mon-Fri 10:00-18:00</p>
+                <p class="muted">We respond to consultation requests within 48 business hours.</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="footer-grid">
+            <div class="fcol">
+                <h5>KP Systems</h5>
+                <p style="color:#e6eef8;margin:0">Reliable, compliant digital solutions for government & enterprise.</p>
+            </div>
+            <div class="fcol">
+                <h5>Quick links</h5>
+                <a href="#services">Services</a>
+                <a href="#solutions">Solutions</a>
+                <a href="#gem">GeM & Government</a>
+            </div>
+            <div class="fcol">
+                <h5>Company</h5>
+                <a href="#about">About</a>
+                <a href="#cases">Case Studies</a>
+            </div>
+            <div class="fcol">
+                <h5>Legal</h5>
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+            </div>
+        </div>
+        <div style="margin-top:1rem;text-align:center;color:#cbd5e1">&copy; 2025 KP Systems — All rights reserved</div>
+    </div>
+</footer>
+
+<script>
+    // Smooth anchor scrolling for internal links
+    document.querySelectorAll('a[href^="#"]').forEach(a=>{
+        a.addEventListener('click',function(e){
+            const href=this.getAttribute('href');
+            if(href.length>1){
+                const el=document.querySelector(href);
+                if(el){ e.preventDefault(); el.scrollIntoView({behavior:'smooth',block:'start'}); }
+            }
+        });
+    });
+
+    // Minimal accessibility: focus outlines on keyboard nav
+    document.addEventListener('keyup',e=>{
+        if(e.key==='Tab') document.documentElement.style.scrollBehavior='smooth';
+    });
+
+    // Mobile nav toggle
+    (function(){
+        const btn = document.getElementById('mobileNavBtn');
+        const panel = document.getElementById('mobile-nav');
+        if(!btn || !panel) return;
+        btn.addEventListener('click', ()=>{
+            const open = panel.classList.toggle('open');
+            panel.setAttribute('aria-hidden', !open);
+            btn.setAttribute('aria-expanded', open);
+            if(open){
+                // focus first link
+                const first = panel.querySelector('a'); if(first) first.focus();
+            } else {
+                btn.focus();
+            }
+        });
+        // Close when clicking a link inside
+        panel.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>{
+            panel.classList.remove('open');
+            panel.setAttribute('aria-hidden', true);
+            btn.setAttribute('aria-expanded', false);
+        }));
+        // Close on Escape
+        document.addEventListener('keydown', e=>{
+            if(e.key==='Escape' && panel.classList.contains('open')){
+                panel.classList.remove('open');
+                panel.setAttribute('aria-hidden', true);
+                btn.setAttribute('aria-expanded', false);
+                btn.focus();
+            }
+        });
+    })();
+</script>
+</body>
+</html>

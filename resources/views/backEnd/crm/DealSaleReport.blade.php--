@@ -1,0 +1,170 @@
+@extends('backEnd.masterpage')
+@section('mainContent')
+
+<?php try { ?>
+<div class="container-fluid">
+    <div class="d-sm-flex justify-content-between">
+        <div class="mb-3">
+            <h2 class="page-heading m-0">Sales Report</h2>
+            <span class="page-label">Home - Sales Report</span>
+        </div>
+        
+    </div>
+    <div >
+                    <div class="card shadow mb-4 p-4">
+                        
+                    {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'crm-deals-sales-report', 'method' => 'POST', 'id' => 'crm-deals-sales-report']) }}
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <label for="" class="form-check-label">Company</label>
+                                <select class="form-control js-example-basic-single" name="company_id" id="company_id">
+                                    <option value="">-Select-</option>
+                                    @foreach ($company as $value)
+                                    <option value="{{ @$value->id }}" @if($ctrl_company ==$value->id) selected @endif>{{ @$value->company_name }} - {{ @$value->city }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label for="" class="form-check-label">Owner</label>
+                                <select class="form-control js-example-basic-single" name="owner_id" id="owner_id">
+                                    <option value="">-Select-</option>
+                                    @foreach ($staff as $value)
+                                    <option value="{{ @$value->user_id }}" @if($ctrl_owner ==$value->user_id) selected @endif>{{ @$value->full_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <label for="" class="form-check-label">From Date</label>
+                                <input class="form-control datepicker" id="date" type="date" autocomplete="off" name="date" value="{{ $ctrl_date }}" required>
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <label for="" class="form-check-label">To Date</label>
+                                <input class="form-control" id="date2" type="date" autocomplete="off" name="date2" value="{{ $ctrl_date2 }}" required>
+                            </div>
+
+                            <div class="col-2 mb-2"><br />
+                                <button type="submit" class="btn btn-primary" id="btnSubmit">Filter</button>
+                            </div>
+                        </div>
+                    {{ Form::close() }}
+                    </div>
+    </div>
+
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
+                                    <thead>
+                                        @if(session()->has('message-success') != "" || session()->get('message-danger') != "")
+                                        <tr>
+                                            <td colspan="7">
+                                                @if(session()->has('message-success'))
+                                                <div class="alert alert-success">
+                                                    {{ session()->get('message-success') }}
+                                                </div>
+                                                @elseif(session()->has('message-danger'))
+                                                <div class="alert alert-danger">
+                                                    {{ session()->get('message-danger') }}
+                                                </div>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                        @endif
+                                        
+                                        <tr>
+                                            <th>@lang('Name')</th>
+                                            <th class="text-right">@lang('Deals')</th>
+                                            <th class="text-right">@lang('Forcast')</th>
+                                            <th class="text-right">@lang('Actual Revenue')</th>
+                                            <th class="text-right">@lang('Revenue')</th>
+                                            <th class="text-right">@lang('Target')</th>
+                                            <th style="width: 250px;" class="">@lang('%')</th>
+                                            <th style="width: 80px;" class="text-right">Detail</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        <?php $deal_value=0; $deal_count=0; $total_sales=0; $top_target=0; ?>
+                                        @if($data!='0')
+                                        @foreach($data as $value)
+                                <tr>
+                                    <td><a class="text-dark">{{@$value["full_name"]}}</a></td>
+
+                                    <td class="text-right">
+                                            {{ @$value["dealcount"] }}
+                                    </td>
+                                    <td class="text-right">{{ @$value["forcast"] }}</td>
+                                    <td class="text-right">
+                                        {{--  @if($value["revenue_actual"] != $value["revenue"] && $value["revenue_actual"] != "0.00")                                          --}}
+                                            {{ @$value["revenue_actual"] }}
+                                        {{--  @endif  --}}
+                                    </td>
+                                    <td class="text-right">
+                                        @if (@$value["revenue"] == "0.00")
+                                            <b>
+                                        @else
+                                            <b class="text-danger font-bold">
+                                        @endif
+                                            {{ @$value["revenue"] }}
+                                            </b>
+                                            <?php $deal_count += @$value["dealcount"]; ?>
+
+                                            <?php  if(@$value["user_id"]!=26) { $deal_value += @$value["revenue"]; } ?>
+                                            
+                                            <?php $total_sales = @$value["revenue"];
+                                                  $top_target = @$value["target"]->target;
+                                            ?>
+                                    </td>
+                                    <td class="text-right">{{ @$value["target"]->target }}</td>
+
+                                    <td>
+                                        <?php
+                                        
+                                        try {
+                                        $tp = round($total_sales / $top_target * 100,0);
+                        $tpcolor="bg-danger";
+                        if($tp<40){$tpcolor="bg-danger";}
+                        if($tp>=40 && $tp<80){$tpcolor="bg-warning";}
+                        if($tp>=80 && $tp<=100){$tpcolor="bg-success";}
+                        if($tp>100){$tpcolor="bg-purple";}
+                        ?>
+                                        <div class="progress">
+                                            <div class="progress-bar {{ $tpcolor }}" style="width:{{ $tp }}%">{{ $tp }}%</div>
+                                        </div>
+
+                                        <?php }catch (\Exception $e) {   } ?>
+
+                                    </td>
+
+                                    
+
+                                    <td class="text-right"><a href="{{url('crm-deals-sales-report-list/'.$value["user_id"].'/'.$ctrl_company.'/'.$ctrl_date.'/'.$ctrl_date2)}}" class="bg-info text-white p-2">View Detail</a></td>
+                                </tr>
+                                  
+                                @endforeach
+                                @endif
+                                    </tbody>
+                                    <tfoot>
+                                        <th></th>
+                                        <th class="text-right">{{ $deal_count }}</th>
+                                        <th></th>
+                                        <th></th>
+                                        <th class="text-right">{{ @App\SysHelper::com_curr_format($deal_value, 2, '.', ',') }}</th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+<?php
+    $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+?>
+
+
+<?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
+
+@endsection

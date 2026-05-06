@@ -1,0 +1,1053 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\ApiBaseMethod;
+use App\SmDesignation;
+use App\SmInspectingDepartment;
+use App\SmItem;
+use Illuminate\Http\Request;
+use App\SmItemStore;
+use App\SmStaff;
+use App\SysAccountGroupSub2;
+use App\SysBrand;
+use App\SysChartofAccounts;
+use App\SysCompany;
+use App\SysCountries;
+use App\SysCrmDeals;
+use App\SysCrmDealTrack;
+use App\SysCrmDealTrackApprovalInvoice;
+use App\SysCrmDealTrackApprovalPurchease;
+use App\SysCrmDealTrackApprovalReceivables;
+use App\SysCrmLeads;
+use App\SysCrmLeadsComments;
+use App\SysCrmQuoteCSItems;
+use App\SysCrmQuoteItems;
+use App\SysCrmSalesTarget;
+use App\SysCrmService;
+use App\SysCrmServiceAssign;
+use App\SysCrmSupport;
+use App\SysCurrencySettings;
+use App\SysCustSuppl;
+use App\SysHelper;
+use App\SysItemOpeningStock;
+use App\SysItemStock;
+use App\SysPaymentTerms;
+use App\SysShipping;
+use App\SysStockIn;
+use App\SysStockInSerialNo;
+use App\SysSupplierType;
+use Brian2694\Toastr\Facades\Toastr;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use PhpParser\Node\Stmt\Return_;
+use Validator;
+
+class SysCrmLeadsController extends Controller
+{
+    public function __construct(){
+        $this->middleware('PM');
+    }
+
+    public function index(Request $request)
+    {
+        return redirect('crm-leads/show');
+        try{
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+            $currency   = SysCurrencySettings::select('id','code')->get();
+            $product = SysHelper::get_product_list($company_id);
+            $vendors = SysHelper::get_customer_list_deal_lead();
+            $brand = SysBrand::select('title')->orderby('title','asc')->get();
+            return view('backEnd.crm.LeadForm', compact('currency', 'vendors','brand','product'));
+        }catch (\Exception $e) {
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function store(Request $request)
+    {
+        $tags = "";
+        if($request->tags!="") { $tags =implode(",",$request->tags); }
+
+        $doc_file = "";
+        // if ($request->file('doc') != "") { 
+        //     $file = $request->file('doc');
+        //     $doc_file = md5(time()) . "." . $file->getclientoriginalextension();
+        //     $file->move('public/uploads/crm_lead_doc/', $doc_file);
+        //     $doc_file = $doc_file;
+        // }
+        if ($request->file('doc') != "") {
+            $files = $request->file('doc');
+            for ($i=0; $i<count($files); $i++) {
+                $file1 = $files[$i];
+                $doc_file = md5(time()) . "_lead_".$i."." . $file1->getclientoriginalextension();
+                $file1->move('public/uploads/crm_lead_doc/', $doc_file);
+                $lpo[]=$doc_file;
+            }
+            $doc_file = implode("|",$lpo);
+        }
+
+        DB::beginTransaction();
+        try {
+            $flag = SysCrmLeads::where([
+                ['date',date('Y-m-d', strtotime($request->date))],
+                ['lead_name',$request->lead_name],
+                ['cust_id',$request->company_name],                
+                ['source',$request->source],
+                ['owner',$request->owner],
+                ['tags',$tags],
+                ['created_by',Auth::user()->id],
+                ['company_id',session('logged_session_data.company_id')]
+                ])->first();
+            if($flag)
+            {
+                Toastr::success('Lead has been added successfully', 'Success');
+                return redirect('crm-leads/show');
+            }
+            else{
+                $ssi = new SysCrmLeads();
+                $ssi->code = SysHelper::get_new_lead_deal_code('sys_crm_leads','code',$request->company);
+                $ssi->date = date('Y-m-d', strtotime($request->date));
+                $ssi->lead_name = $request->lead_name;
+                $ssi->cust_id = $request->company_name;
+                $ssi->cust_name = $request->cust_name;
+                $ssi->cust_no = $request->cust_no;        
+                $ssi->company_name = $request->company_name;
+                $ssi->cust_email = $request->cust_email;
+                $ssi->cust_designation = $request->cust_designation;
+                $ssi->address = $request->address;
+                //$ssi->country = $request->country;
+                $ssi->source = $request->source;
+                $ssi->source_o = $request->source_o;
+                $ssi->owner = $request->owner;
+                $ssi->doc = $doc_file;
+                $ssi->tags = $tags;
+                $ssi->note = $request->note;
+                $ssi->status = $request->status;
+                $ssi->isproject = $request->isproject;
+                $ssi->created_by = Auth::user()->id;
+                $ssi->created_at = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+                //$ssi->company_id = session('logged_session_data.company_id');
+                $ssi->company_id = $request->company;
+                $ssi->save();
+                $ssi->toArray();
+
+                SysHelper::set_user_custsupp($request->owner,$request->company_name);
+
+           $results=0;
+           DB::commit();
+           
+        if ($results==0)
+        {
+
+            if($request->source == "Gitex"){
+                if($request->cust_email != ""){
+                    SysHelper::notificationMailGitexMail($request->cust_name,$request->cust_email,$request->owner);
+                }
+            }
+
+            if($request->owner != Auth::user()->id){
+                $owner = SmStaff::select('first_name','email')->where('user_id',$request->owner)->first();
+                $comp = SysCustSuppl::select('name')->where('id',$request->company_name)->first();
+
+                $body = "<br />";
+                $body .= "A new lead has been assigned to you.";
+                $body .= "<br />Customer Name : " . $request->cust_name;
+                $body .= "<br />Company Name : " . $comp->name;
+                $body .= "<br />";
+                $body .= "<a href='http://erp.venushrms.com/crm-leads/".$ssi->id."/view'> View Lead : ".$ssi->id." </a>";
+                $body .= "<br />";
+                $body .= "<br />";
+                SysHelper::notificationMail($owner->first_name,$body, $owner->email, 'A new lead has been assigned');
+            }
+
+            Toastr::success('Lead has been added successfully', 'Success');
+            return redirect('crm-leads/'.$ssi->id.'/view');
+        } else {
+            Toastr::error('Operation Failed', 'Failed');
+            return redirect()->back();
+        }
+
+        }
+       } catch (\Exception $e) {
+           return $e;
+           DB::rollback();
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back();
+       }       
+    }
+
+    public function storeLeadZapier(Request $request){
+
+          $validator = Validator::make($request->all(), [
+            'name'   => 'required|string|max:255',
+            'email'  => 'nullable|email|max:255',
+            'mobile' => 'nullable|string|max:20',
+            'tags'   => 'nullable|string|max:255',
+            'note'   => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
+        }
+
+
+        // ✅ Store Lead
+        try {
+           DB::beginTransaction();
+
+            $lead = new SysCrmLeads();
+            $lead->date = Carbon::now('+04:00')->format('Y-m-d');
+            $lead->lead_name = $request->name;
+            $lead->cust_email = $request->email;
+            $lead->cust_no = $request->mobile;
+            $lead->note = $request->note;
+            $lead->tags = $request->tags;
+            $lead->source = 'Chat';
+            $lead->status = 1;
+            $lead->created_at = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+            $lead->save();
+            
+            DB::commit();
+
+            return response()->json(['status' => true, 'message' => 'Lead has been added successfully.'], 201);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['status' => false, 'error' => 'Server Error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+
+    
+    
+    // public function showList()
+    // {
+    //     return 2;
+    //     try {
+    //         $leads=session('lead_list_query.leads');
+    //         $vendors=session('lead_list_query.vendors');
+    //         $staff=session('lead_list_query.staff');
+    //         $ctrl_cust_id=session('lead_list_query.ctrl_cust_id');
+    //         $ctrl_status=session('lead_list_query.ctrl_status');
+    //         $ctrl_source=session('lead_list_query.ctrl_source');
+    //         $ctrl_owner=session('lead_list_query.ctrl_owner');
+    //         $ctrl_date=session('lead_list_query.ctrl_date');
+    //         $ctrl_date2=session('lead_list_query.ctrl_date2');
+    //         $ctrl_lead_id=session('lead_list_query.ctrl_lead_id');
+    //         $ctrl_isproject=session('lead_list_query.ctrl_isproject');
+    //         $brand=session('lead_list_query.brand');
+    //         $ctrl_brand=session('lead_list_query.ctrl_brand');
+    //         $filter_by=session('lead_list_query.filter_by');
+            
+    //         return view('backEnd.crm.LeadList', compact('leads','vendors','staff','ctrl_cust_id','ctrl_status','ctrl_source','ctrl_owner','ctrl_date','ctrl_date2','ctrl_lead_id','ctrl_isproject','brand','ctrl_brand','filter_by'));
+        
+    //     } catch (\Throwable $th) {
+    //         return $th;
+    //     }
+    // }
+
+    public function show(Request $request)
+    {
+        $com_id = session('logged_session_data.company_id');
+        //return 1;
+        try {
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+            $currency   = SysCurrencySettings::select('id','code')->get();
+            $company = SysCompany::orderby('sort_id','asc')->get();
+            $product = SysHelper::get_product_list($company_id);
+            $designation = SmDesignation::select('title')->where('active_status',1)->get();
+            $country = SysCountries::select('id','name')->get();
+            $vendors = SysHelper::get_customer_list_deal_lead();
+            
+            $brand      = SysBrand::select('id','title')->orderby('title','asc')->get();
+            //$staff      = SmStaff::select('user_id','full_name')->wherein('company_id',$company_id)->orderby('full_name','asc')->get();
+            $staff = SysHelper::get_sales_persons();
+            
+            if (Auth::user()->role_id == 1 || Auth::user()->role_id == 2) {
+                $sales_person      = SmStaff::select('user_id','full_name')->where('active_status',1)->orderby('full_name','asc')->get();
+            } else{
+                $sales_person      = SmStaff::select('user_id','full_name')->where('user_id',Auth::user()->id)->orderby('full_name','asc')->get();
+            }
+
+            $paymentterms = SysPaymentTerms::where('active_status', '=', '1')->get();
+$ctrl_lead_id='';
+$ctrl_cust_id='';
+$ctrl_status='';
+$ctrl_source='';
+$ctrl_owner='';
+$ctrl_date='';
+$ctrl_date2='';
+$ctrl_isproject='';
+$ctrl_brand='';
+$filter_by='';
+
+
+
+        //if($_POST){
+        if(SysHelper::get_pagination_post($request)){
+            $query = SysCrmLeads::wherein('status',[0,1,2,3]);
+            if ($request->lead_id != "") {
+                $query->where('code', $request->lead_id);
+                $ctrl_lead_id=$request->lead_id;
+            }
+            if ($request->company_id != "") {
+                $query->where('cust_id', $request->company_id);
+                $ctrl_cust_id=$request->company_id;
+            }
+            if ($request->status_id != "") {
+                if($request->status_id==4){ $query->where('status', 0); }
+                else{ $query->where('status', $request->status_id); }                
+                $ctrl_status=$request->status_id;
+            }
+            if ($request->isproject_id != "") {
+                $query->where('isproject', $request->isproject_id);
+                $ctrl_isproject=$request->isproject_id;
+            }
+            if ($request->source_id != "") {
+                $query->where('source', $request->source_id);
+                $ctrl_source=$request->source_id;
+            }
+            if ($request->owner_id != "") {
+                $query->where('owner', $request->owner_id);
+                $ctrl_owner=$request->owner_id;
+            }
+            if ($request->date != "") {
+                $ctrl_date=$request->date;
+                if ($request->date2 != "") {
+                    $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".date('Y-m-d', strtotime($request->date))."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".date('Y-m-d', strtotime($request->date2))."'");
+                    $ctrl_date2=$request->date2;
+                }
+                else{
+                    $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') = '".date('Y-m-d', strtotime($request->date))."'");
+                }
+            }
+            if ($request->brand_id != "") {                
+                $query->where('tags', 'like', '%'.$request->brand_id.'%');
+                $ctrl_brand=$request->brand_id;
+            }
+
+            if($request->sort_id==1){//Today
+                $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                $filter_by=": Today";
+            }
+            if($request->sort_id==2){//This Week
+                $start_date = date('Y-m-d', strtotime('-1 week sunday 00:00:00'));
+                $end_date = date('Y-m-d', strtotime('saturday 23:59:59'));
+                $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$end_date."'");
+                $filter_by=": This Week";
+            }
+            if($request->sort_id==3){//Last Week
+                $start_date = date('Y-m-d', strtotime('-2 week sunday 00:00:00'));
+                $end_date = date('Y-m-d', strtotime('-1 week saturday 23:59:59'));
+                $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$end_date."'");
+                $filter_by=": Last Week";
+            }
+            if($request->sort_id==4){//This Month
+                $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = '".date('Y-m')."'");
+                $filter_by=": This Month";
+            }
+            if($request->sort_id==5){//Last Month
+                $start_date = date('Y-m-d', strtotime('first day of previous month'));
+                $end_date = date('Y-m-d', strtotime('last day of previous month'));
+                $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$end_date."'");
+                $filter_by=": Last Month";
+            }
+            if($request->sort_id==6){//Last 6 Month
+                $start_date = date('Y-m-d', strtotime('first day of this month - 6 months'));
+                $end_date = date('Y-m-d', strtotime('last day of this month'));;
+                $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$end_date."'");
+                $filter_by=": Last 6 Month";
+            }
+            if($request->sort_id==7){//This Year
+                $query->whereRaw("DATE_FORMAT(created_at, '%Y') = '".date('Y')."'");
+                $filter_by=": This Year";
+            }
+            if($request->sort_id==8){//Last Year
+                $query->whereRaw("DATE_FORMAT(created_at, '%Y') = '".date("Y",strtotime("-1 year"))."'");
+                $filter_by=": Last Year";
+            }
+            
+            if($request->sales != ""){
+                $total_lead = DB::table('sys_crm_leads')->where('owner', $request->sales)->wherein('status', [1, 2, 0])->where('company_id', $request->com)->pluck('id');
+                $query->wherein('id',$total_lead);
+                if($request->status != ""){
+                    if($request->status == "new"){
+                        $oneMonthsAgo = Carbon::now()->subMonths(1)->format('Y-m-d');
+                        $query->where('date', '>=', $oneMonthsAgo);
+                    }
+                    if($request->status == "unqualified"){
+                        $query->wherein('status', [3]);
+                    }
+                    if($request->status == "qualified"){
+                        $query->wherein('status', [2, 0]);
+                    }
+                    if($request->status == "quote"){
+                        $query->where('status', 0);
+                    }
+                    if($request->status == "win"){
+                        $converted_deal =  SysCrmLeads::select('deal_id')->where('company_id', $request->com)->where('owner', $request->sales)->where('status', 0)->get();
+                        $total_win = SysCrmDeals::where('stage', 4)->wherein('id', $converted_deal->pluck('deal_id'))->pluck('id');
+                        $query->wherein('deal_id', $total_win);
+                    }
+                    if($request->status == "invoice"){
+                        $converted_deal =  SysCrmLeads::select('deal_id')->where('company_id', $request->com)->where('owner', $request->sales)->where('status', 0)->get();
+                        $total_invoice = SysCrmDealTrackApprovalInvoice::where('status', 1)->wherein('deal_id', $converted_deal->pluck('deal_id'));
+                        $query->wherein('deal_id', $total_invoice);
+                        
+                    }
+                    if($request->status == "closed"){
+                        $converted_deal =  SysCrmLeads::select('deal_id')->where('company_id', $request->com)->where('owner', $request->sales)->where('status', 0)->get();
+                        $total_deal_closed = SysCrmDealTrackApprovalReceivables::where('status', 1)->wherein('deal_id', $converted_deal->pluck('deal_id'));
+                        $query->wherein('deal_id', $total_deal_closed);                        
+                    }
+                }
+            }
+
+            // if(Auth::user()->role_id == 1)
+            // {
+            //     session('logged_session_data.company_id') = $request->main_filter_company;
+            //     if(isset(session('logged_session_data.company_id'))){
+            //         if(session('logged_session_data.company_id')!=0){
+            //         $query->where("company_id",session('logged_session_data.company_id'));}
+            //     }
+            // }
+            if(Auth::user()->role_id != 1 && Auth::user()->role_id != 2)
+
+            {
+                $query->where('owner', Auth::user()->id);
+            }
+            
+            $r = SysHelper::get_data_by_role();
+            $query->wherein('company_id',$r[0]);
+
+            $leads = $query->orderby('updated_at','desc')->paginate(50);
+            
+            $con_lead = SysCrmLeads::where('status',0)->wherein('company_id',$r[0])->pluck('deal_id');  
+            $deal_det = SysCrmDeals::select('sys_crm_deals.id','sys_crm_deals.stage','t.accounts','t.sales','t.purchease','t.invoice','t.delivery','t.receivables')->leftjoin('sys_crm_deal_track as t','t.deal_id','sys_crm_deals.id')->wherein('sys_crm_deals.id',$con_lead)->get();
+        }
+        else{
+            $query = SysCrmLeads::wherein('status',[0,1,2,3]);
+            //$query->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = '".date('Y-m')."'");
+            
+            //This Year
+            $query->whereRaw("DATE_FORMAT(created_at, '%Y') = '".date('Y')."'");
+            $filter_by=": This Year";
+
+            if(Auth::user()->role_id != 1 && Auth::user()->role_id != 2)
+            {
+                $query->where('owner', Auth::user()->id);
+            }
+
+            $r = SysHelper::get_data_by_role();
+            $query->wherein('company_id',$r[0]);
+            // if(Auth::user()->role_id == 1)
+            // {
+            //     if(isset(session('logged_session_data.company_id'))){
+            //         if(session('logged_session_data.company_id')!=0){
+            //         $query->where("company_id",session('logged_session_data.company_id'));}
+            //     }
+            // }
+
+            //$leads = $query->orderby('id','desc')->get();
+            $leads = $query->orderby('updated_at','desc')->paginate(50);
+            $con_lead = SysCrmLeads::where('status',0)->wherein('company_id',$r[0])->pluck('deal_id');            
+            $deal_det = SysCrmDeals::select('sys_crm_deals.id','sys_crm_deals.stage','t.accounts','t.sales','t.purchease','t.invoice','t.delivery','t.receivables')->leftjoin('sys_crm_deal_track as t','t.deal_id','sys_crm_deals.id')->wherein('sys_crm_deals.id',$con_lead)->get();
+        }
+        
+        return view('backEnd.crm.LeadList', compact('leads','vendors','staff','ctrl_cust_id','ctrl_status','ctrl_source','ctrl_owner','ctrl_date','ctrl_date2','ctrl_lead_id','ctrl_isproject','brand','ctrl_brand','filter_by','currency','product','designation','country','company','paymentterms','sales_person','deal_det'));
+
+        /*$form_data = [
+            'leads' => $leads,
+            'vendors' => $vendors,
+            'staff' => $staff,
+            'ctrl_cust_id' => $ctrl_cust_id,
+            'ctrl_status' => $ctrl_status,
+            'ctrl_source' => $ctrl_source,
+            'ctrl_owner' => $ctrl_owner,
+            'ctrl_date' => $ctrl_date,
+            'ctrl_date2' => $ctrl_date2,
+            'ctrl_lead_id' => $ctrl_lead_id,
+            'ctrl_isproject' => $ctrl_isproject,
+            'brand' => $brand,
+            'ctrl_brand' => $ctrl_brand,
+            'filter_by' => $filter_by,
+        ];
+        session()->put('lead_list_query', $form_data);
+        return redirect('crm-leads-showlist');*/
+
+        //return view('backEnd.crm.LeadList', compact('leads','vendors','staff','ctrl_cust_id','ctrl_status','ctrl_source','ctrl_owner','ctrl_date','ctrl_date2','ctrl_lead_id','ctrl_isproject','brand','ctrl_brand','filter_by'));
+
+        //return view('backEnd.crm.LeadList', compact('leads','vendors','staff','ctrl_cust_id','ctrl_status','ctrl_source','ctrl_owner','ctrl_date','ctrl_date2','ctrl_lead_id','ctrl_isproject','brand','ctrl_brand','filter_by'));
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+
+    }
+    
+    public function edit(Request $request, $id)
+    {
+        try{
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+            $currency   = SysCurrencySettings::select('id','code')->get();
+            $product = SysHelper::get_product_list($company_id);
+            $company = SysCompany::orderby('sort_id','asc')->get();
+            
+            /*if(Auth::user()->role_id != 1){
+                 $sales_person = DB::table('sys_cust_suppl_assign')->select('cust_supp_id')->where('user_id',Auth::user()->id)->get();
+                 if(count($sales_person)>0){
+                     foreach($sales_person as $spid){
+                         $sp[]=$spid->cust_supp_id;
+                     }
+                     $vendors_query->wherein('id', $sp);
+                 } else { $vendors_query->where('id', 0); }
+            }*/
+            
+            $edit = SysCrmLeads::where('id',$id)->first();
+            $brand = SysBrand::select('title')->orderby('title','asc')->get();
+            //return view('backEnd.crm.LeadForm', compact('currency', 'vendors','brand','product'));          
+
+            //  $staff_query = SmStaff::select('user_id','full_name');            
+            //  if(Auth::user()->role_id != 1){
+            //      $staff_query->where('id', $edit->owner);
+            //  }
+            //  $staff = $staff_query->get();
+
+             $staff = SysHelper::get_sales_persons();
+
+             //$vendors = SysHelper::get_customer_list_deal_lead_all();
+             $vendors = SysHelper::get_customer_list_deal_lead_no_company_access();
+
+            return view('backEnd.crm.LeadForm', compact('currency', 'vendors','staff','edit','brand','product','company'));
+        }catch (\Exception $e) {
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+    public function view($id)
+    {
+        try{
+            $currency       = SysCurrencySettings::select('id','code')->get();
+            $company        = SysCompany::find(session('logged_session_data.company_id'));
+            $staff      = SmStaff::select('user_id','full_name')->get();
+            // $vendors_query = SysCustSuppl::select('id','code','name')->where('catid',1); // 1 customers, 2 suppliers
+            // if(Auth::user()->role_id != 1){
+            //     $vendors_query->where('created_by', Auth::user()->id);
+            // }
+            // $vendors = $vendors_query->get();
+            $leads = SysCrmLeads::where('id',$id)->first();
+            $edit = SysCrmLeads::where('id',$id)->first();
+            
+
+            $comments = SysCrmLeadsComments::where('lead_id',$id)->orderBy('id','DESC')->get();
+
+            return view('backEnd.crm.LeadView', compact('currency', 'company','staff','edit','leads','comments'));
+        }catch (\Exception $e) {
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        $tags = "";
+        if($request->tags!="") { $tags =implode(",",$request->tags); }
+        //$doc_file = $request->file_name;
+        // if ($request->file('doc') != "") {
+        //     $file = $request->file('doc');
+        //     $doc_file = md5(time()) . "." . $file->getclientoriginalextension();
+        //     $file->move('public/uploads/crm_lead_doc/', $doc_file);
+        //     $doc_file = $doc_file;
+        // }
+        $doc_file = "";
+        if ($request->file('doc') != "") {
+            $files = $request->file('doc');
+            for ($i=0; $i<count($files); $i++) {
+                $file1 = $files[$i];
+                $doc_file = md5(time()) . "_lead_".$i."." . $file1->getclientoriginalextension();
+                $file1->move('public/uploads/crm_lead_doc/', $doc_file);
+                $lpo[]=$doc_file;
+            }
+            $doc_file = implode("|",$lpo);
+        }
+
+        $ssi = SysCrmLeads::find($id);
+        $ssi->date = date('Y-m-d', strtotime($request->date));
+        $ssi->lead_name = $request->lead_name;
+        $ssi->cust_id = $request->company_name;
+        $ssi->cust_name = $request->cust_name;
+        $ssi->cust_no = $request->cust_no;
+        $ssi->cust_email = $request->cust_email;
+        $ssi->cust_designation = $request->cust_designation;
+        $ssi->address = $request->address;
+        $ssi->country = $request->country;
+        $ssi->source = $request->source;
+        $ssi->source_o = $request->source_o;
+        $ssi->owner = $request->owner;
+        if( $doc_file != "" ){ $ssi->doc = $doc_file; }        
+        //$ssi->doc = $doc_file;
+        $ssi->tags = $tags;
+        $ssi->note = $request->note;
+        $ssi->status = $request->status;
+        $ssi->isproject = $request->isproject;
+        $ssi->updated_by = Auth::user()->id;
+        $ssi->updated_at = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        //$ssi->company_id = $request->company;        
+        $results = $ssi->update();
+
+        if($request->status==3){
+        DB::table('sys_crm_leads_comments')->insert(
+            [
+                'lead_id' => $id,
+                'comments' => '<span class=text-danger>'.$request->lost_comments.'</span>',
+                'status' => 1,
+                'created_by' => Auth::user()->id,
+                'created_at' => Carbon::now('+04:00'),
+            ]
+            );
+        }
+        
+        SysHelper::set_user_custsupp($request->owner,$request->company_name);
+
+        if ($results) {
+            Toastr::success('Lead has been updated successfully', 'Success');
+            return redirect('crm-leads/'.$id.'/view');
+        } else {
+            Toastr::error('Something went wrong, please try again', 'Failed');
+            return redirect()->back();
+        }
+    }
+
+    public function getcustomername(Request $request)
+    {
+        $input = $request->all();
+        
+        try{
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+            // $vendors_query = SysCustSuppl::select('id','code','name')->where('catid',1); // 1 customers, 2 suppliers
+            // if(Auth::user()->role_id != 1){
+            //     $vendors_query->where('created_by', Auth::user()->id);
+            // }
+            // $vendors = $vendors_query->get();
+            //$customers = SysCustSuppl::select('sys_cust_suppl.id','sys_cust_suppl.customer_salutation','sys_cust_suppl.first_name','sys_cust_suppl.last_name','sys_cust_suppl.mobile',//'sys_cust_suppl.email','sys_cust_suppl.address','sys_cust_suppl.address2','sys_cust_suppl.designation','sys_countries.name','sys_states.name as statename','sys_cust_suppl.city',//'sys_cust_suppl.zip_code','sys_cust_suppl.account_type')
+            //->leftjoin('sys_countries','sys_countries.id','sys_cust_suppl.vat_country')
+            //->leftjoin('sys_states','sys_states.id','sys_cust_suppl.vat_state')
+            //->where('sys_cust_suppl.id',$request->id)->where('company_id',session('logged_session_data.company_id'))->get();
+            $customers = DB::table('sys_cust_suppl as cs')->select('cs.id','cs.customer_salutation','cs.first_name','cs.last_name','cs.mobile','cs.email','csa.address','csa.address2','cs.designation','c.name','s.name as statename','csa.city','csa.zip_code','cs.account_type')
+            ->leftjoin('sys_cust_suppl_addressbook as csa','csa.cust_suppl_id','cs.id')
+            ->leftjoin('sys_countries as c','c.id','csa.country')
+            ->leftjoin('sys_states as s','s.id','csa.state')
+            ->where('cs.id',$request->id)
+            //->whereRaw("find_in_set(session('logged_session_data.company_id'),cs.company_access)")
+            ->limit(1)->orderby('csa.id','desc')->get();
+            $bug = 0;
+        }
+        
+        catch(\Exception $e){
+            return $e;
+            $bug = $e->errorInfo[1];
+        }
+        if($bug==0){
+            return json_encode(array('data'=>$customers));
+        }else {
+            $retData='ERROR';
+            return json_encode(array('data'=>$retData));
+        }
+    }
+    public function getcustomername_deal(Request $request)
+    {
+        $input = $request->all();
+        
+        try{
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+            $customers = DB::table('sys_cust_suppl as cs')->select('cs.id','cs.customer_salutation','cs.first_name','cs.last_name','cs.mobile','cs.email','csa.address','csa.address2','cs.designation','c.name','s.name as statename','csa.city','csa.zip_code','cs.account_type')
+            ->leftjoin('sys_cust_suppl_addressbook as csa','csa.cust_suppl_id','cs.id')
+            ->leftjoin('sys_countries as c','c.id','csa.country')
+            ->leftjoin('sys_states as s','s.id','csa.state')
+            ->where('cs.name',$request->name)
+            ->limit(1)->orderby('csa.id','desc')->get();
+            $bug = 0;
+        }
+        
+        catch(\Exception $e){
+            return $e;
+            $bug = $e->errorInfo[1];
+        }
+        if($bug==0){
+            return json_encode(array('data'=>$customers));
+        }else {
+            $retData='ERROR';
+            return json_encode(array('data'=>$retData));
+        }
+    }
+
+    public function crmleadscommentsadd(Request $request)
+    {
+        try {
+            $doc_file = "";
+            if ($request->file('commentsdoc') != "") { 
+                $file = $request->file('commentsdoc');
+                $doc_file = md5(time()) . "." . $file->getclientoriginalextension();
+                $file->move('public/uploads/crm_lead_doc/', $doc_file);
+                $doc_file = $doc_file;
+            }
+            DB::table('sys_crm_leads_comments')->insert(
+                [
+                    'lead_id' => $request->commentsid,
+                    'comments' => $request->comments,
+                    'commentsdoc' => $doc_file,
+                    'status' => 1,
+                    'created_by' => Auth::user()->id,
+                    'created_at' => Carbon::now('+04:00'),
+                ]
+                );
+                
+            SysHelper::lead_updated_at($request->commentsid);
+
+            Toastr::success('Comments has been added successfully', 'Success');
+            return redirect()->back();
+
+        } catch (\Throwable $th) {
+            return $th;
+            Toastr::error('Something went wrong, please try again', 'Failed');
+            return redirect()->back();
+        }
+    }
+    public function crmleadscommentsdelete($id)
+    {
+        try {
+            DB::table('sys_crm_leads_comments')->where('id',$id)->delete();
+            Toastr::success('Comments has been deleted successfully', 'Success');
+            return redirect()->back();
+
+        } catch (\Throwable $th) {
+            return $th;
+            Toastr::error('Something went wrong, please try again', 'Failed');
+            return redirect()->back();
+        }
+    }
+    public function crmleadsupdatestatus(Request $request)
+    {
+        try {
+            DB::table('sys_crm_leads')->where('id',$request->id)
+                    ->update([
+                        'status' => $request->status,
+                    ]);
+
+                    if($request->status==3)
+                    {
+                        DB::table('sys_crm_leads_comments')->insert(
+                            [
+                                'lead_id' => $request->lead_id,
+                                'comments' => '<span class=text-danger>'.$request->comments.'</span>',
+                                'status' => 1,
+                                'created_by' => Auth::user()->id,
+                                'created_at' => Carbon::now('+04:00'),
+                            ]
+                            );
+                    }
+                    
+            SysHelper::lead_updated_at($request->id);
+
+        $bug=0;
+        } catch (\Throwable $th) {
+            return $th;
+        }
+        if($bug==0){
+            $retData = "OK";
+            return json_encode(array('data'=>$retData));
+        }else {
+            $retData='ERROR';
+            return json_encode(array('data'=>$retData));
+        }
+    }
+        
+    public function convert($id)
+    {
+        try{
+            $leads = SysCrmLeads::where('id',$id)->wherenotin('status',[0])->get();
+            $comments = SysCrmLeadsComments::where('lead_id',$id)->orderBy('id','DESC')->get();
+            
+            if(count($leads)>0){
+            DB::beginTransaction();
+            foreach ($leads as $val) {
+                $deal_id = DB::table('sys_crm_deals')->insertGetId([
+                    'code' => SysHelper::get_new_lead_deal_code('sys_crm_deals','code',session('logged_session_data.company_id')),
+                    'date' => $val->date,
+                    'deal_name' => $val->lead_name,
+                    'cust_id' => $val->cust_id,
+                    'cust_name' => $val->cust_name,
+                    'cust_no' => $val->cust_no,
+                    'cust_email' => $val->cust_email,
+                    'company_name' => $val->company_name,
+                    'deal_value' => '0.00',
+                    'source' => $val->source,
+                    'source_o' => $val->source_o,
+                    'tags' => $val->tags,
+                    'stage' => 1,
+                    'owner' => $val->owner,
+                    'doc' => $val->doc,
+                    'note' => $val->note." (Converted from Lead ".$id.") ",
+                    'isproject' => $val->isproject,
+                    'estimated_close_date' => date('Y-m-d'),
+                    'created_by' => Auth::user()->id,
+                    'created_at' => Carbon::now('+04:00')->format('Y-m-d H:i:s'),
+                    'lead_id' => $val->id,                    
+                    'designation' => $val->cust_designation,
+                    'address' => $val->address,
+                    'status' => 1,
+                    'company_id' => session('logged_session_data.company_id'),
+                ]);
+            }
+            foreach ($comments as $val) {
+                DB::table('sys_crm_deals_comments')->insert([
+                    'deal_id' => $deal_id,
+                    'comments' => $val->comments,
+                    'status' => $val->status,
+                    'created_by' => Auth::user()->id,
+                ]);
+            }
+            DB::table('sys_crm_leads')->where('id',$id)
+                    ->update([
+                        'status' => 0,
+                        'deal_id' => $deal_id,
+                        'updated_by' => Auth::user()->id,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+            
+            DB::commit();
+            SysHelper::lead_updated_at($deal_id);
+
+            return redirect('crm-deals/'.$deal_id.'/view');
+        }
+        else{
+            return redirect('crm-deals/show');
+        }
+
+        }catch (\Exception $e) {
+            DB::rollBack();
+            return $e;
+           Toastr::error('Operation Failed', 'Failed');
+           return redirect()->back(); 
+        }
+    }
+
+    public function delete($id)
+    {
+        try {
+            
+            DB::table('sys_crm_leads')->where('id', $id)->delete();
+            DB::table('sys_crm_leads_comments')->where('lead_id', $id)->delete();
+
+            Toastr::success('Lead Deleted Successfully', 'Success');
+            return redirect()->back();
+
+        } catch (\Throwable $th) {
+            Toastr::error('Something went wrong, please try again', 'Failed');
+            return redirect()->back();
+        }
+    }
+
+    public function getleadnametobrand(Request $request){
+        try{
+            $data = SmItem::select('sys_brand.title')
+            ->join('sys_brand','sys_brand.id','sm_items.brand')
+            ->where('sm_items.part_number',$request->id)->get();
+            if(count($data)>0) {
+                return json_encode(array('data'=>$data));
+            } else {
+                $data = 'ERROR';
+                return json_encode(array('data'=>$data));
+            }
+        } catch (\Exception $e) {
+            $data = 'ERROR';
+            return json_encode(array('data'=>$data));
+        }
+    }
+
+    public function destroy($id)
+    {
+        //
+    }
+
+    public function deleteStoreView(Request $request,$id){
+
+        if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+            return ApiBaseMethod::sendResponse($id, null);
+        }
+         return view('backEnd.inventory.deleteItemStoreView', compact('id'));
+    }
+
+    public function deleteStore(Request $request,$id){
+        $result = SmItemStore::destroy($id);
+
+        if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+            if ($result) {
+                return ApiBaseMethod::sendResponse(null, 'Store  has been deleted successfully');
+            } else {
+                return ApiBaseMethod::sendError('Something went wrong, please try again');
+            }
+        } else {
+            if ($result) {
+                return redirect('item-store')->with('message-success-delete', 'Store  has been deleted successfully');
+            } else {
+                return redirect()->back()->with('message-danger-delete', 'Something went wrong, please try again');
+            }
+        }
+    }
+
+    public function dashboardsalesfilter_EXCLUDE(Request $request)
+    {
+        $input = $request->all();
+
+        try {
+            
+        $company_id = $request->company;
+        $date_id = $request->date;
+
+        if($date_id=="d"){
+            $revenue1 = DB::table('sys_crm_deals')->select('sys_crm_deals.id as dealid','deal_value','deal_currency','source','cust_id','deal_percent');
+            if($request->company==1 || $request->company==3){
+                $revenue1->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'")
+                ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.is_partial_invoice',0);
+            }else{
+                $revenue1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+            }
+            $revenue1->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$request->company);
+            
+            $forecast1 = DB::table('sys_crm_deals')->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') = '".date('Y-m-d')."'")->wherein('stage',[3])->where('sys_crm_deals.company_id',$request->company);
+            
+        }
+        if($date_id=="m"){
+            $revenue1 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source','cust_id');
+            if($request->company==1 || $request->company==3){
+                $revenue1->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'")
+                ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.is_partial_invoice',0);
+            }else{
+                $revenue1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'");
+            }
+            $revenue1->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$request->company);
+                
+            $forecast1 = DB::table('sys_crm_deals')->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = '".date('Y-m')."'")->wherein('stage',[3])->where('sys_crm_deals.company_id',$request->company);
+
+        }
+        if($date_id=="y"){
+            $revenue1 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source','cust_id');
+            if($request->company==1 || $request->company==3){
+                $revenue1->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y') = '".date('Y')."'")
+                ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.is_partial_invoice',0);
+            }else{
+                $revenue1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y') = '".date('Y')."'");
+            }
+            $revenue1->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$request->company);
+
+            $forecast1 = DB::table('sys_crm_deals')->whereRaw("DATE_FORMAT(created_at, '%Y') = '".date('Y')."'")->wherein('stage',[3])->where('sys_crm_deals.company_id',$request->company);
+
+        }
+        if($date_id=="q"){
+            $start_date = date('Y-m-d', strtotime('first day of this month - 3 months'));
+            $end_date = date('Y-m-d', strtotime('last day of this month'));
+            
+            $revenue1 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source','cust_id');
+            if($request->company==1 || $request->company==3){
+                $revenue1->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'")
+                ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.is_partial_invoice',0);
+            }else{
+                $revenue1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+            }
+            $revenue1->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$request->company);
+        
+            $forecast1 = DB::table('sys_crm_deals')->whereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(created_at, '%Y-%m-%d') <= '".$end_date."'")->wherein('stage',[3])->where('sys_crm_deals.company_id',$request->company);
+
+        }
+        
+        if(Auth::user()->role_id == 1){ //admin
+            $revenue = $revenue1->get();
+            $forecast = $forecast1->get();
+        }
+        else if(Auth::user()->id==33){ //jacob
+            $teams= array(33,31,59);
+            $revenue = $revenue1->wherein('sys_crm_deals.owner',$teams)->get();
+            $forecast = $forecast1->wherein('sys_crm_deals.owner',$teams)->get();
+        }                    
+        else if(Auth::user()->id==27){//monica
+            //$teams= array(27,30,54,62);
+            $teams= array(27);
+            $revenue = $revenue1->wherein('sys_crm_deals.owner',$teams)->get();
+            $forecast = $forecast1->wherein('sys_crm_deals.owner',$teams)->get();
+        }               
+        else if(Auth::user()->id==44){ //rajiv
+            $teams= array(44,45,34,32);
+            $revenue = $revenue1->wherein('sys_crm_deals.owner',$teams)->get();
+            $forecast = $forecast1->wherein('sys_crm_deals.owner',$teams)->get();
+        }
+        else if(Auth::user()->id==26 || Auth::user()->id==36 || Auth::user()->id==112 || Auth::user()->id==111){//26 Naeem & 36 Arianne
+            $teams= array(26,36,112,111);
+            $revenue = $revenue1->wherein('sys_crm_deals.owner',$teams)->get();
+            $forecast = $forecast1->wherein('sys_crm_deals.owner',$teams)->get();
+        }
+        else{
+            $revenue = $revenue1->where('sys_crm_deals.owner',Auth::user()->id)->get();
+            $forecast = $forecast1->where('sys_crm_deals.owner',Auth::user()->id)->get();
+        }
+
+        $retrevenue=0;
+        $retforecast=0;
+        if(count($revenue)>0){
+            foreach($revenue as $dt){
+                //$retrevenue+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);
+                if(in_array($dt->dealid, [8690,8660])){$retrevenue+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);}
+                else{
+                if($dt->source=="Fulfillment"){$retrevenue+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value*20/100));}
+                else if(in_array($dt->cust_id, [2568,4258,4382,5322,7347,8144,8145,8146,3711,4089,8142])){$retrevenue+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value*20/100));}
+                else if(in_array($dt->cust_id, [8866])){$retrevenue+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value*30/100));}
+                else{$retrevenue+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);} 
+                }
+            }
+        }
+        if(count($forecast)>0){
+            foreach($forecast as $dt){
+                $retforecast+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);
+            }
+        } 
+
+        //$sf = $revenue->where('source','Fulfillment')->sum('deal_value')*20/100;       
+        
+        $ret = [SysHelper::com_curr_format($retrevenue, 2, '.', ','),SysHelper::com_curr_format($retforecast, 2, '.', ',') ];
+        return json_encode(array('data'=>$ret));
+
+       }catch (\Exception $e) {
+           return $e;
+           $retData=$e;
+           return json_encode(array('data'=>$retData));
+          //Toastr::error('Operation Failed', 'Failed');
+          //return redirect()->back(); 
+       }
+    }
+    
+    public function dashboardleadfilter(Request $request)
+    {
+        try {
+            $ret = SysHelper::get_lead_filter($request->date,$request->company);
+            return json_encode(array('data'=>$ret));
+    
+        }catch (\Exception $e) {
+            return $e;
+            $retData=$e;
+            return json_encode(array('data'=>$retData));
+        }
+    }
+}

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus - Purchase Order</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="./assets/css/_main.css" />
+    <link rel="stylesheet" href="./assets/css/_icomoon.css" />
+    <link rel="stylesheet" href="./assets/css/_header.css" />
+    <link rel="stylesheet" href="./assets/css/_navbar.css" />
+    <link rel="stylesheet" href="./assets/css/purchase-order.css" />
+</head>
+<body>
+    <div class="venus-app page-purchase-order">
+        <header class="main-header">
+            <div class="logo"><img src="./assets/images/logo-gray.png" alt="VENUS LOGO" /></div>
+            <div class="right-section">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="dropdown-toggle-text">Syscom</div>
+                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Receipts</a></li>
+                        <li><a class="dropdown-item" href="#">Payments</a></li>
+                        <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-light add-btn"><i class="ico icon-outline-add-circle"></i></button>
+                <button class="btn btn-light notification-unread"><i class="ico icon-outline-bell"></i></button>
+                <div class="profile-dropdown">
+                    <div class="profile-img">
+                        <img src="./assets/images/profile.png" alt="PROFILE">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <div class="dropdown-toggle-text">
+                                <div class="title">Hamid Imran</div>
+                                <div class="role">Admin User</div>
+                            </div>
+                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown-body py-4 px-3">
+                            <div class="profile-content">
+                                <img src="./assets/images/profile_img.png" alt="profile_img" class="profile-image">
+                                <h4 class="profile_name">Saeed Hameed</h4>
+                               <div class="d-flex justify-content-center mb-3"> <h4 class="second-text">Super Admin </h4>
+                                <div class="company-name">SYSCOM</div></div>
+                                <div class="profile-second-section py-3">
+                                    <h4 class="company-details-text mb-3">Company Details</h4>
+                                    <div class="row">
+                                        <div class="col-7">Designation:
+                                            <h6 class="">Senior Accountant</h6>
+                                            staff ID:
+                                            <h6>UID1001</h6>
+                                        </div>
+                                        <div class="col-5">Departments:
+                                            <h6>Accounts</h6>
+                                            Date Of Joining:
+                                            <h6>01/01/1970</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="profile-third-section py-3">
+                                    <h4 class="personal-details-text">Personal Details</h4>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/telephone_Vector.png" class="telephone" alt="telephone_icon">
+                                        <h6>+971  50 123 4567</h6>
+                                    </div>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/envelop_Vector.png" class="email" alt="email_icon">
+                                        <h6>Saeed@syscom.com</h6>
+                                    </div>
+                                </div>
+                                <div class="profile-last-section">
+                                    <div>
+                                        <button class="btn ">
+                                            <i class="ico icon-outline-pen-2"></i>
+                                        </button>
+                                        <p class="button-text">Edit Profile</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Lock Keyhole Minimalistic.png" alt="lock_img">
+                                        </button>
+                                        <p class="button-text">Change Password</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Logout 2.png" alt="logout">
+                                        </button>
+                                        <p class="button-text-logout">Logout</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main>
+            <nav class="main-nav">
+                <div class="toggle-nav"></div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="" class="nav-link">
+                            <i class="ico icon-outline-widget-6"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavCRM">
+                            <i class="ico icon-outline-calculator"></i>
+                            <span class="nav-text">CRM</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavCRM">
+                            <div class="sub-nav-item">
+                                <a href="lead-list.html" class="sub-nav-link">Leads</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="deal-list.html" class="sub-nav-link">Deals</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track Status</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Sales Report</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Brand Sales Report</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavServiceDesk">
+                            <i class="ico icon-outline-checklist-minimalistic"></i>
+                            <span class="nav-text">Service Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavServiceDesk">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Service Desk Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavDatabase">
+                            <i class="ico icon-outline-database"></i>
+                            <span class="nav-text">Database</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavDatabase">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Database Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item active">
+                        <div class="sub-menu-nav" data-subnav="subnavPurchase">
+                            <i class="ico icon-bold-cart-large-4"></i>
+                            <span class="nav-text">Purchase</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavPurchase">
+                            <div class="sub-nav-item">
+                                <a href="supplier-register.html" class="sub-nav-link">Supplier Register</a>
+                            </div>
+                            <div class="sub-nav-item active">
+                                <a href="purchase-order.html" class="sub-nav-link">Purchase Order</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSales">
+                            <i class="ico icon-outline-bag-4"></i>
+                            <span class="nav-text">Sales</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSales">
+                            <div class="sub-nav-item">
+                                <a href="quotations.html" class="sub-nav-link">Quotations</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavInventory">
+                            <i class="ico icon-outline-server"></i>
+                            <span class="nav-text">Inventory</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavInventory">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Inventory Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavReports">
+                            <i class="ico icon-outline-document-text"></i>
+                            <span class="nav-text">Reports</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavReports">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Reports Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSettings">
+                            <i class="ico icon-outline-settings"></i>
+                            <span class="nav-text">Settings</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSettings">
+                            <div class="sub-nav-item">
+                                <a href="company.html" class="sub-nav-link">Company</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="shipping.html" class="sub-nav-link">Shipping</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="role.html" class="sub-nav-link">Role</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <section class="main-content">
+                <aside class="left-nav col-3">
+                    <h4 class="mb-3">Purchase Order</h4>
+                    <div class="search-filter-container mb-4">
+                        <div class="input-group flex-nowrap">
+                            <span class="input-group-text" id="addon-wrapping"><i class="ico icon-outline-magnifer"></i></span>
+                            <input type="text" class="form-control" placeholder="Search" aria-label="Search" aria-describedby="addon-wrapping">
+                        </div>
+                        <button class="btn btn-light">
+                            <i class="ico icon-outline-filter"></i>
+                        </button>
+                    </div>
+                    <div class="left-nav-list">
+                        <ul class="nav flex-column nav-pills" id="companyTabNavs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="purchase-order-1-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-1" type="button" role="tab" aria-controls="purchase-order-1"
+                                    aria-selected="true">
+                                    <div class="row">
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Vendor Name:</label>
+                                            <div class="form-control-plaintext">Stack Link Gen...</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Number:</label>
+                                            <div class="form-control-plaintext">POS-1004</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Date:</label>
+                                            <div class="form-control-plaintext">25-06-2024</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Created By:</label>
+                                            <div class="form-control-plaintext">Saeed Ahmed Shaikh</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="purchase-order-2-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-2" type="button" role="tab" aria-controls="purchase-order-2"
+                                    aria-selected="true">
+                                    <div class="row">
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Vendor Name:</label>
+                                            <div class="form-control-plaintext">StarLink DMCC</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Number:</label>
+                                            <div class="form-control-plaintext">POS-1005</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Date:</label>
+                                            <div class="form-control-plaintext">11-06-2024</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Created By:</label>
+                                            <div class="form-control-plaintext">Irfan</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="purchase-order-3-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-3" type="button" role="tab" aria-controls="purchase-order-3"
+                                    aria-selected="true">
+                                    <div class="row">
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Vendor Name:</label>
+                                            <div class="form-control-plaintext">Logicom Distri...</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Number:</label>
+                                            <div class="form-control-plaintext">POS-1006</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Date:</label>
+                                            <div class="form-control-plaintext">04-06-2024</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Created By:</label>
+                                            <div class="form-control-plaintext">REDINGTON GULF FZE</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="purchase-order-4-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-4" type="button" role="tab" aria-controls="purchase-order-4"
+                                    aria-selected="true">
+                                    <div class="row">
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Vendor Name:</label>
+                                            <div class="form-control-plaintext">Stack Link Gen...</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Number:</label>
+                                            <div class="form-control-plaintext">POS-1007</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Date:</label>
+                                            <div class="form-control-plaintext">25-06-2024</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Created By:</label>
+                                            <div class="form-control-plaintext">Irfan</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="purchase-order-5-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-5" type="button" role="tab" aria-controls="purchase-order-5"
+                                    aria-selected="true">
+                                    <div class="row">
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Vendor Name:</label>
+                                            <div class="form-control-plaintext">REDINGTON...</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Number:</label>
+                                            <div class="form-control-plaintext">POS-1008</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Date:</label>
+                                            <div class="form-control-plaintext">31-05-2024</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Created By:</label>
+                                            <div class="form-control-plaintext">REDINGTON GULF FZE</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="purchase-order-6-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-6" type="button" role="tab" aria-controls="purchase-order-6"
+                                    aria-selected="true">
+                                    <div class="row">
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Vendor Name:</label>
+                                            <div class="form-control-plaintext">Logicom Distrib...</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Number:</label>
+                                            <div class="form-control-plaintext">POS-1009</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">PO Date:</label>
+                                            <div class="form-control-plaintext">25-06-2024</div>
+                                        </div>
+                                        <div class="col-6 mb-2">
+                                            <label class="form-label">Created By:</label>
+                                            <div class="form-control-plaintext">Saeed Ahmed Shaikh</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+                <div class="content-container col-9">
+                    <div class="tab-content display-flex-tabs" id="purchaseOrderTabContent">
+                        <div class="tab-pane fade show active" id="purchase-order-1" role="tabpanel" aria-labelledby="purchase-order-1-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Purchase Details
+                                </h4>
+                                <div class="purchase-order-content-header-right">
+                                    <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#editModal">
+                                        <i class="ico icon-outline-pen-2"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-trash-bin-minimalistic"></i>
+                                        <span>Delete</span>
+                                    </button>
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-download-minimalistic"></i>
+                                        <span>Download</span>
+                                    </button>
+                                    <button class="btn btn-dark">
+                                        <i class="ico icon-outline-add-circle"></i>
+                                        <span>Add Purchase Order</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row gap-rows">
+                                        <div class="col-3">
+                                            <label class="form-label">Vendor Name:</label>
+                                            <div class="form-control-plaintext">Stack Link Gen...</div>
+                                        </div>
+                                        <div class="col-3">
+                                            <label class="form-label">PO Number:</label>
+                                            <div class="form-control-plaintext">POS-1004</div>
+                                        </div>
+                                        <div class="col-3">
+                                            <label class="form-label">PO date:</label>
+                                            <div class="form-control-plaintext">25-06-2024</div>
+                                        </div>
+                                        <div class="col-3">
+                                            <label class="form-label">Currency:</label>
+                                            <div class="form-control-plaintext">AED</div>
+                                        </div>
+                                        <div class="col-3">
+                                            <label class="form-label">Created By:</label>
+                                            <div class="form-control-plaintext">SAEED AHMED SHAIKH</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-wrap mb-3">
+                                <ul class="nav nav-tabs" id="purchaseDetailsTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="extra-fields-tab" data-bs-toggle="tab" data-bs-target="#extra-fields" type="button" role="tab" aria-controls="extra-fields" aria-selected="true">Extra Fields</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="shipping-details-info-tab" data-bs-toggle="tab" data-bs-target="#shipping-details-info" type="button" role="tab" aria-controls="shipping-details-info" aria-selected="false">Shipping Details</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="vat-details-tab" data-bs-toggle="tab" data-bs-target="#vat-details" type="button" role="tab" aria-controls="vat-details" aria-selected="false">VAT Details</button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content mb-3" id="purchaseDetailsTabsContent">
+                                    <div class="tab-pane fade show active" id="extra-fields" role="tabpanel" aria-labelledby="extra-fields-tab">
+                                        <div class="row gap-rows">
+                                            <div class="col-3">
+                                                <label class="form-label">Delivery Date:</label>
+                                                <div class="form-control-plaintext">29-10-2024</div>
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label">Payment Terms:</label>
+                                                <div class="form-control-plaintext">Advance Payment</div>
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label">Customer Reference:</label>
+                                                <div class="form-control-plaintext">Stack Link UK LTD</div>
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label">Salesman Name:</label>
+                                                <div class="form-control-plaintext">Zoyaa Khan</div>
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="form-label">Deal ID:</label>
+                                                <div class="form-control-plaintext">1028</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="shipping-details-info" role="tabpanel" aria-labelledby="shipping-details-info-tab">Shipping Details</div>
+                                    <div class="tab-pane fade" id="vat-details" role="tabpanel" aria-labelledby="vat-details-tab">VAT Details</div>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="head-date sortable"><span class="th-content">Part No</span></th>
+                                            <th scope="col" class="head-date"><span class="th-content">Description</span></th>
+                                            <th scope="col" class="head-date sortable"><span class="th-content">Tax</span></th>
+                                            <th scope="col" class="head-date sortable"><span class="th-content">Qty</span></th>
+                                            <th scope="col" class="head-date sortable"><span class="th-content">Unit Price</span></th>
+                                            <th scope="col" class="head-date sortable"><span class="th-content">Value</span></th>
+                                            <th scope="col" class="head-date sortable"><span class="th-content">Discount</span></th>
+                                            <th scope="col" class="head-date sortable"><span class="th-content">Freight</span></th>
+                                            <th scope="col" class="head-date sortable"><span class="th-content">Custom Charges</span></th>
+                                            <th scope="col" class="head-date sortable"><span class="th-content">Taxable</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td scope="row"><span class="font-weight-600 text-ellipsis">CBS350-24FP-4X-UK</span></td>
+                                            <td><span class="text-ellipsis">CBS350 Managed...</span></td>
+                                            <td><span class="text-ellipsis">0</span></td>
+                                            <td><span class="text-ellipsis">5</span></td>
+                                            <td><span class="text-ellipsis">3,275.09</span></td>
+                                            <td><span class="text-ellipsis">16,375.45</span></td>
+                                            <td><span class="text-ellipsis">0.00</span></td>
+                                            <td><span class="text-ellipsis">3270.09</span></td>
+                                            <td><span class="text-ellipsis">3270.09</span></td>
+                                            <td><span class="text-ellipsis">16,375.45</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="3"><span class="font-weight-600">Total</span></td>
+                                            <td><span class="font-weight-600">10</span></td>
+                                            <td><span class="font-weight-600">9,279.09</span></td>
+                                            <td><span class="font-weight-600">20,375.45</span></td>
+                                            <td><span class="font-weight-600">0.00</span></td>
+                                            <td><span class="font-weight-600">619.80</span></td>
+                                            <td><span class="font-weight-600">619.80</span></td>
+                                            <td><span class="font-weight-600">14,375.45</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show" id="purchase-order-2" role="tabpanel" aria-labelledby="purchase-order-2-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Purchase Details
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="purchase-order-3" role="tabpanel" aria-labelledby="purchase-order-3-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Purchase Details
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show" id="purchase-order-4" role="tabpanel" aria-labelledby="purchase-order-4-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Purchase Details
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="purchase-order-5" role="tabpanel" aria-labelledby="purchase-order-5-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Purchase Details
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="purchase-order-6" role="tabpanel" aria-labelledby="purchase-order-6-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Purchase Details
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <div class="modal side-panel fade" id="editModal" data-bs-backdrop="false" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg"> 
+              	<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title" id="editModalLabel">Edit Purchase Order</h4>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div class="card mb-3 mt-2">
+							<div class="card-body">
+                                <div class="row">
+                                    <div class="col-4 mb-3">
+                                        <div class="form-group">
+                                            <label for="inputVendorName" class="form-label">Vendor Name <span class="text-danger">*</span></label>
+                                            <select class="form-control" id="inputVendorName">
+                                                <option value="" selected></option>
+                                                <option value="value1">value1</option>
+                                                <option value="value2">value2</option>
+                                                <option value="value3">value3</option>
+                                                <option value="value4">value4</option>
+                                            </select>
+                                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 mb-3">
+                                        <div class="form-group">
+                                            <label for="inputPONumber" class="form-label">PO Number<span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                    <div class="col-4 mb-3">
+                                        <div class="form-group">
+                                            <label for="inputPODate" class="form-label">PO Date<span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="inputPODate" />
+                                        </div>
+                                    </div>
+                                    <div class="col-4 mb-3">
+                                        <div class="form-group">
+                                            <label for="inputCurrency" class="form-label">Currency<span class="text-danger">*</span></label>
+                                            <select class="form-control" id="inputCurrency">
+                                                <option value="" selected></option>
+                                                <option value="value1">value1</option>
+                                                <option value="value2">value2</option>
+                                                <option value="value3">value3</option>
+                                                <option value="value4">value4</option>
+                                            </select>
+                                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-4 mb-3">
+                                        <div class="form-group">
+                                            <label for="inputCreatedBy" class="form-label">Created By<span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="inputCreatedBy" />
+                                        </div>
+                                    </div>
+                                </div>
+							</div>
+						</div>
+						<div class="tab-wrap mb-3">
+							<ul class="nav nav-tabs p-0" id="purchaseOrderTabs" role="tablist">
+								<li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="modal-extra-fields-tab" data-bs-toggle="tab" data-bs-target="#modal-extra-fields" type="button" role="tab" aria-controls="modal-extra-fields" aria-selected="true">Extra Fields</button>
+                                </li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="shipping-details-tab" data-bs-toggle="tab" data-bs-target="#shipping-details" type="button" role="tab" aria-controls="shipping-details" aria-selected="false">Shipping Details</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="vat-tab" data-bs-toggle="tab" data-bs-target="#vat" type="button" role="tab" aria-controls="vat" aria-selected="false">VAT Details</button>
+								</li>
+							</ul>
+                            <div class="card mt-3">
+                                <div class="card-body">
+                                    <div class="tab-content" id="purchaseOrderTabsContent">
+                                        <div class="tab-pane p-0 fade show active" id="modal-extra-fields" role="tabpanel" aria-labelledby="modal-extra-fields-tab">
+                                            <div class="row gap-rows">
+                                                <div class="col-4 mb-3">
+                                                    <div class="form-group">
+                                                        <label for="inputDeliveryDate" class="form-label">Delivery Date</label>
+                                                        <input type="text" class="form-control" id="inputDeliveryDate" />
+                                                        <i class="ico icon-outline-calendar-minimalistic dropdown-toggle-ico"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4 mb-3">
+                                                    <div class="form-group">
+                                                        <label for="inputPaymentTerms" class="form-label">Payment Terms<span class="text-danger">*</span></label>
+                                                        <select class="form-control" id="inputPaymentTerms">
+                                                            <option value="" selected></option>
+                                                            <option value="value1">value1</option>
+                                                            <option value="value2">value2</option>
+                                                            <option value="value3">value3</option>
+                                                            <option value="value4">value4</option>
+                                                        </select>
+                                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4 mb-3">
+                                                    <div class="form-group">
+                                                        <label for="inputCustomerReference" class="form-label">Customer Reference<span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" id="inputCustomerReference" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-4 mb-3">
+                                                    <div class="form-group">
+                                                        <label for="inputSalesmanName" class="form-label">Salesman Name<span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" id="inputSalesmanName" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-4 mb-3">
+                                                    <div class="form-group">
+                                                        <label for="inputDealId" class="form-label">Deal ID<span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" id="inputDealId" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane p-0 fade" id="shipping-details" role="tabpanel" aria-labelledby="shipping-details-tab">Shipping Details</div>
+                                        <div class="tab-pane p-0 fade" id="vat" role="tabpanel" aria-labelledby="vat-tab">VAT Details</div>
+                                    </div>
+                                </div>
+                            </div>
+						</div>
+                        <div class="table-container mt-4">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="head-part-no sortable"><span class="th-content">Part No</span></th>
+                                        <th scope="col" class="head-description"><span class="th-content">Description</span></th>
+                                        <th scope="col" class="head-tax sortable"><span class="th-content">Tax</span></th>
+                                        <th scope="col" class="head-quantity sortable"><span class="th-content">Qty</span></th>
+                                        <th scope="col" class="head-unit-price sortable"><span class="th-content">Unit Price</span></th>
+                                        <th scope="col" class="head-value sortable"><span class="th-content">Value</span></th>
+                                        <th scope="col" class="head-discount sortable"><span class="th-content">Discount</span></th>
+                                        <th scope="col" class="head-freight sortable"><span class="th-content">Freight</span></th>
+                                        <th scope="col" class="head-custom-charges sortable"><span class="th-content">Custom Charges</span></th>
+                                        <th scope="col" class="head-taxable sortable"><span class="th-content">Taxable</span></th>
+                                        <th scope="col" class="head-vat sortable"><span class="th-content">VAT</span></th>
+                                        <th scope="col" class="head-total sortable"><span class="th-content">Total</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td scope="row"><span class="font-weight-600 text-ellipsis">CBS350-24FP-4X-UK</span></td>
+                                        <td><span class="text-ellipsis">CBS350 Managed...</span></td>
+                                        <td><span class="text-ellipsis">0</span></td>
+                                        <td><span class="text-ellipsis">5</span></td>
+                                        <td><span class="text-ellipsis">3,275.09</span></td>
+                                        <td><span class="text-ellipsis">16,375.45</span></td>
+                                        <td><span class="text-ellipsis">0.00</span></td>
+                                        <td><span class="text-ellipsis">3270.09</span></td>
+                                        <td><span class="text-ellipsis">3270.09</span></td>
+                                        <td><span class="text-ellipsis">16,375.45</span></td>
+                                        <td><span class="text-ellipsis">0.00</span></td>
+                                        <td><span class="text-ellipsis">16,375.45</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3"><span class="font-weight-600">Total</span></td>
+                                        <td><span class="font-weight-600">10</span></td>
+                                        <td><span class="font-weight-600">9,279.09</span></td>
+                                        <td><span class="font-weight-600">20,375.45</span></td>
+                                        <td><span class="font-weight-600">0.00</span></td>
+                                        <td><span class="font-weight-600">619.80</span></td>
+                                        <td><span class="font-weight-600">619.80</span></td>
+                                        <td><span class="font-weight-600">14,375.45</span></td>
+                                        <td><span class="text-ellipsis">0.00</span></td>
+                                        <td><span class="text-ellipsis">14,375.45</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn cancel-btn" data-bs-dismiss="modal">
+							<span>Cancel</span>
+						</button>
+						<button type="button" class="btn btn-dark add-btn ms-2">
+							<span>Update</span>
+						</button>
+					</div>
+              	</div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="./assets/js/_main.js" type="text/javascript"></script>
+    <script src="./assets/js/purchase-order.js" type="text/javascript"></script>
+</body>
+</html>
+

@@ -1,0 +1,21 @@
+[
+    {
+        "id": 1,
+        "bank_id": 56,
+        "company_top": "285px",
+        "company_left": "425px",
+        "date_top": "220px",
+        "date_left": "836px",
+        "amount_w_top": "316px",
+        "amount_w_left": "326px",
+        "amount_top": "355px",
+        "amount_left": "834px",
+        "font_size": "13px",
+        "status": 1,
+        "created_by": 1,
+        "created_at": "2026-03-26 16:51:09",
+        "updated_by": 1,
+        "updated_at": "2026-03-26 16:51:09",
+        "company_id": 2
+    }
+]

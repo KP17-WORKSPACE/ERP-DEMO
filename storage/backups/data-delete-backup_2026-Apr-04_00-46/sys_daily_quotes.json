@@ -1,0 +1,42 @@
+[
+    {
+        "id": 1,
+        "date": "2024-05-13",
+        "quote": "Challenges are what make life interesting and overcoming them is what makes life meaningful.",
+        "status": 1,
+        "created_by": 1,
+        "created_at": "2024-05-13 21:24:57",
+        "updated_by": null,
+        "updated_at": "2024-05-13 21:24:57"
+    },
+    {
+        "id": 2,
+        "date": "2024-05-23",
+        "quote": "\u201cNo great achiever \u2013 even those who made it seem easy \u2013 ever succeeded without hard work.\u201d",
+        "status": 1,
+        "created_by": 1,
+        "created_at": "2024-05-23 02:25:42",
+        "updated_by": null,
+        "updated_at": "2024-05-23 02:25:42"
+    },
+    {
+        "id": 3,
+        "date": "2024-05-29",
+        "quote": "\u201cHard work beats talent when talent doesn't work hard.\u201d",
+        "status": 1,
+        "created_by": 1,
+        "created_at": "2024-05-29 17:38:34",
+        "updated_by": null,
+        "updated_at": "2024-05-29 17:38:34"
+    },
+    {
+        "id": 4,
+        "date": "2024-06-06",
+        "quote": "\u201cToday is always the most productive day of your week.\u201d",
+        "status": 1,
+        "created_by": 1,
+        "created_at": "2024-06-06 02:29:01",
+        "updated_by": null,
+        "updated_at": "2024-06-06 02:29:01"
+    }
+]

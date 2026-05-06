@@ -1,0 +1,887 @@
+@extends('backEnd.masterpage')
+@section('mainContent')
+    @php
+        $module_links = [];
+        $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+    @endphp
+    <?php try { ?>
+    <div class="container-fluid">
+        <div class="d-sm-flex justify-content-between">
+            <div class="mb-3">
+                <h2 class="page-heading m-0">Goods Receipt Note (GRN)</h2>
+                <span class="page-label">Home - Goods Receipt Note (GRN)</span>
+            </div>
+            <div>
+                <a href="{{ url('goods-receipt-note/create') }}" type="button" class="btn btn-info"><i class="fa fa-plus"></i> New</a>
+                <a href="{{ url('goods-receipt-note') }}" type="button" class="btn btn-info"><i class="fa fa-list"></i> List</a>
+            </div>
+        </div>
+        <div class="card p-4 mb-2">
+
+            {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'goods-receipt-note-store', 'method' => 'POST', 'id' => 'goods-receipt-note-store']) }}
+            <input type="hidden" name="url" id="url" value="{{ URL::to('/') }}">
+            <input type="hidden" name="id" value="{{ isset($edit) ? $edit->id : '' }}">
+
+            <div class="row">
+                <div class="col-lg-4 mb-2">
+                    <label class="txtlbl">@lang('Vendor') <span>*</span></label>
+                    <select class="form-control js-example-basic-single" name="vendors" id="vendors">
+                        <option value=""></option>
+                        @foreach ($vendors as $value)
+                            <option value="{{ @$value->id }}"
+                                {{ isset($edit) ? (!empty($edit->vendor_id) ? (@$edit->vendor_id == @$value->id ? 'selected' : '') : '') : '' }}>
+                                {{ @$value->account_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-8 mb-2">
+                    <div class="row">
+                        <div class="col-lg-4">
+                        <div class="input-effect">
+                            <label class="txtlbl">GRN Number<span>*</span></label>
+                            <input
+                                class="form-control"
+                                type="text" name="doc_number" autocomplete="off" id="doc_number"
+                                value="{{ isset($edit) ? (!empty(@$edit->title) ? @$edit->title : old('doc_number')) : 'GRN-' . sprintf('%03d', @App\SysHelper::get_new_maxid('sys_purchase_grn', 'id')) }}"
+                                readonly>
+                            <span class="focus-border"></span>
+                            @if ($errors->has('doc_number'))
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $errors->first('doc_number') }}</strong>
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                                <div class="input-effect">
+                                    <label class="txtlbl">GRN Date</label>
+                                    @php
+                                        $value = date('Y-m-d');
+                                    @endphp
+                                    <input class="form-control" id="grn_date" type="date" autocomplete="off"
+                                        name="grn_date" value="{{ @$value }}" style="margin-top: 0px">
+                                </div>
+                    </div>
+                    <div class="col-lg-4 mb-2">
+                        <div class="input-effect">
+                            <label class="txtlbl">Currency<span>*</span></label>
+                            <select
+                                class="form-control"
+                                name="currency" id="currency">
+                                {{-- <option data-display="@lang('Currency') *" value="">@lang('Currency') *</option> --}}
+                                @foreach ($currency as $value)
+                                    <option value="{{ @$value->id }}"
+                                        {{ isset($edit) ? (!empty(@$edit->customer_id) ? (@$edit->currency == @$value->id ? 'selected' : '') : '') : '' }}>
+                                        {{ @$value->code }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-2">
+                    <div class="input-effect">
+                        <label class="txtlbl">Pending list</label>
+                        <div id="plist"
+                            style="width: 100%; height: 180px; border: solid 1px #dfe1d7; border-radius: 5px; padding: 5px 5px; overflow-y: scroll;">
+                        </div>
+                        <a data-modal-size="modal-md" data-target="#po_pending_popup_win" id="addPoPending" data-toggle="modal"></a>
+                        <input type="hidden" id="po_id" name="po_id">
+                        <input type="hidden" id="vat_percentage" name="vat_percentage" value="5">
+                    </div>
+                </div>
+                <div class="col-lg-8 mb-2">
+                    <div class="row">
+                        <div class="col-lg-4 mb-0">
+                            <div class="input-effect">
+                                <label class="txtlbl">@lang('LPO Number') <span>*</span></label>
+                                <input
+                                    class="txtbx primary-input form-control {{ $errors->has('lpo_number') ? ' is-invalid' : '' }}"
+                                    type="text" name="lpo_number" autocomplete="off" id="lpo_number"
+                                    value="{{ isset($edit) ? (!empty(@$edit->lpo_number) ? @$edit->lpo_number : old('lpo_number')) : '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-2">
+                            <div class="input-effect">
+                                <label class="txtlbl">@lang('LPO Date') <span>*</span></label>
+                                @php
+                                    $value = date('Y-m-d');
+                                    if (isset($edit) && !empty($edit->date)) {
+                                        @$value = date('Y-m-d', strtotime(@$edit->date));
+                                    } else {
+                                        if (!empty(old('lpo_date'))) {
+                                            @$value = old('lpo_date');
+                                        } else {
+                                            @$value = date('Y-m-d');
+                                        }
+                                    }
+                                @endphp
+                                <input class="form-control" id="lpo_date" type="date" autocomplete="off" name="lpo_date" value="{{ @$value }}" style="margin-top:0px;">
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-2">
+                            <div class="input-effect">
+                                <label class="txtlbl">@lang('Payment Terms')<span>*</span></label>
+                                <select
+                                    class="form-control"
+                                    name="payment_terms" id="payment_terms" onchange="fn_payment_terms()" required>
+                                    <option value=""></option>
+                                    @foreach ($paymentterms as $value)
+                                        <option value="{{ @$value->id }}"
+                                            {{ isset($edit) ? (!empty(@$edit->payment_terms) ? (@$edit->payment_terms == @$value->id ? 'selected' : '') : '') : '' }}>
+                                            {{ @$value->title }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div id="div_payment_terms" style="display: none; padding-top: px;">
+                                <div class="input-effect">
+                                    <label class="txtlbl">@lang('Other Payment Terms')<span>*</span></label>
+                                    <input
+                                        class="txtbx primary-input form-control {{ $errors->has('payment_terms2') ? ' is-invalid' : '' }}"
+                                        type="text" name="payment_terms2" autocomplete="off" id="payment_terms2"
+                                        value="{{ isset($edit) ? (!empty(@$edit->payment_terms2) ? @$edit->payment_terms2 : old('payment_terms2')) : '' }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-2">
+                            <div class="input-effect">
+                                <label class="txtlbl">@lang('Bill Number')<span>*</span></label>
+                                <input
+                                    class="form-control"
+                                    type="text" name="bill_number" autocomplete="off" id="bill_number"
+                                    value="{{ isset($edit) ? (!empty(@$edit->bill_number) ? @$edit->bill_number : old('bill_number')) : '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-2">
+                            <div class="input-effect">
+                                <label class="txtlbl">@lang('Bill Date')</label>
+                                @php
+                                    $value = date('Y-m-d');
+                                    if (isset($edit) && !empty($edit->bill_date)) {
+                                        @$value = date('Y-m-d', strtotime(@$edit->bill_date));
+                                    } else {
+                                        if (!empty(old('bill_date'))) {
+                                            @$value = old('bill_date');
+                                        } else {
+                                            @$value = date('Y-m-d');
+                                        }
+                                    }
+                                @endphp
+                                <input class="form-control" id="bill_date" type="date" autocomplete="off"
+                                    name="bill_date" value="{{ @$value }}" style="margin-top: 0px;">
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-2">
+                            <div class="input-effect">
+                                <label class="txtlbl">@lang('AWB No') <span></span></label>
+                                <input class="txtbx primary-input form-control {{ $errors->has('awbno') ? ' is-invalid' : '' }}"
+                                    type="text" name="awbno" autocomplete="off"
+                                    value="{{ isset($edit) ? (!empty(@$edit->awbno) ? @$edit->awbno : old('awbno')) : old('awbno') }}"
+                                    id="awbno">
+                            </div>
+        
+                        </div>
+                        <div class="col-lg-4 mb-2">
+                            <div class="input-effect">
+                                <label class="txtlbl">@lang('Warehouse') <span></span></label>
+                                <input
+                                    class="form-control"
+                                    type="text" name="warehouse" autocomplete="off"
+                                    value="{{ isset($edit) ? (!empty(@$edit->warehouse) ? @$edit->warehouse : old('warehouse')) : old('warehouse') }}"
+                                    id="warehouse">
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-2">
+                            <div class="input-effect">
+                                <label class="txtlbl">@lang('Reference') <span>*</span></label>
+                                <input
+                                    class="form-control"
+                                    type="text" name="reference" autocomplete="off"
+                                    value="{{ isset($edit) ? (!empty(@$edit->reference) ? @$edit->reference : old('reference')) : old('reference') }}"
+                                    id="reference">
+                                <span class="focus-border"></span>
+                                @if ($errors->has('reference'))
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $errors->first('reference') }}</strong>
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-2">
+                            <div class="input-effect">
+                                <label class="txtlbl">@lang('Created') @lang('By')<span>*</span></label>
+                                
+                                <select
+                                class="form-control" name="createdby" id="createdby" >
+                                <option value=""></option>
+                                @foreach ($staff as $value)
+                                    <option disabled value="{{ @$value->id }}">{{ @$value->full_name }}</option>
+                                @endforeach
+                            </select>
+        
+                                {{--  <input class="form-control"
+                                    type="text" name="createdby" autocomplete="off" id="createdby"
+                                    value="{{ isset($edit) ? (!empty(@$edit->number) ? @$edit->number : old('createdby')) : Auth::user()->full_name }}"
+                                    readonly>  --}}
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                </div>
+
+
+
+                
+
+
+
+
+
+        </div>
+        <div class="equipment comon-status row mt-4 d-block">
+            <table class="table table-bordered table-striped" id="pi-table" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        
+                                                    <th>@lang('#') </th>
+                                                    <th>@lang('Part Number')</th>
+                                                    <th>@lang('PO Qty')</th>
+                                                    <th>@lang('Qty')</th>
+                                                    <th>@lang('Executed Qty')</th>
+                                                    <th>@lang('Balance Qty')</th>
+                                                    <th>@lang('Unitprice')</th>
+                                                    <th>@lang('Value')</th>
+                                                    <th>@lang('Discount')</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                </tbody>
+                <tfoot>
+                    {{-- <tr>
+                              <td></td>
+                              <td></td>
+                              <td></td>
+                              <td class="sstablefoot"></td>
+                              <td class="sstablefoot"><label id="qty_total">0</label></td>
+                              <td class="sstablefoot"><label id="unitprice_total">0.00</label></td>
+                              <td class="sstablefoot"><label id="value_total">0.00</label></td>
+                              <td class="sstablefoot"><label id="discount_total">0.00</label></td>
+                              <td class="sstablefoot"><label id="customcharges_total">0.00</label></td>
+                              <td class="sstablefoot"><label id="taxableamount_total">0.00</label></td>
+                              <td class="sstablefoot"><label id="vatamount_total">0.00</label></td>
+                            </tr> --}}
+                    {{-- <tr>
+            <td></td>
+            <td class="sstablefoot"><label id="qty_total">0</label></td>
+            <td class="sstablefoot"><label id="unitprice_total">0.00</label></td>
+            <td class="sstablefoot"><label id="value_total">0.00</label></td>
+            <td class="sstablefoot"><label id="discount_total">0.00</label></td>
+            <td class="sstablefoot"><label id="taxableamount_total">0.00</label></td>
+            <td class="sstablefoot"><label id="vatamount_total">0.00</label></td>
+        </tr> --}}
+                </tfoot>
+            </table>
+
+            <div style="display: none;">
+                <button type="button" class="primary-btn small fix-gr-bg" id="addRowPO"><span
+                        class="ti-plus pr-2"></span>@lang('lang.item')</button>
+            </div>
+
+
+            <script>
+
+
+
+
+                function fn_payment_terms() {
+                    var val_payment_terms = $('#payment_terms').val();
+                    if (val_payment_terms == 150) {
+                        $('#div_payment_terms').css('display', 'block');
+                    } else {
+                        $('#div_payment_terms').css('display', 'none');
+                    }
+                }
+
+            </script>
+
+
+
+        </div>
+
+        <div class="equipment comon-status row mt-25 d-block" style="display:none !important;">
+            <div class="col-lg-12 text-right">
+                <button type="button" class="primary-btn small fix-gr-bg" id="addRowEquipment">
+                    <span class="ti-plus pr-2"></span>@lang('lang.item')</button>
+            </div>
+        </div>
+
+
+
+
+        <div class="row mt-4">
+            <div class="col-lg-12 text-right">
+                <button type="submit" class="btn btn-primary" id="btnSubmit">
+                    <span class="ti-check"></span>
+                    @if (isset($edit))
+                        @lang('lang.update')
+                    @else
+                        @lang('lang.save')
+                    @endif
+                    @lang('Goods Receipt Note (GRN)')
+
+                </button>
+            </div>
+        </div>
+
+        {{ Form::close() }}
+
+    </div>
+    </div>
+
+    <?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
+
+
+    {{-- popup --}}
+    <form id="po">
+        <div class="modal fade admin-query" id="po_pending_popup_win" data-keyboard="false" data-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 80%;">
+                <div class="modal-content">
+                    <div class="modal-header m-0 p-3">
+                        <h4 class="modal-title">Goods Receipt Note (GRN) Pending List</h4>
+                        <button class="close" data-dismiss="modal" type="button">
+                            ×
+                        </button>
+                    </div>
+                    <div class="modal-body m-0 p-3">
+                        <input type="hidden" id="hd_pending_po_id" />
+                        <div class="container-fluid">
+                            {{-- <div class="row">
+                            <div class="col-lg-4 mb-20">
+                                <div class="input-effect">
+                                    <label class="dynamicslbl">  @lang('Select All') <span>*</span> </label>
+                                    <input class="dynamicstxt primary-input form-control" type="text" id="bi_new_reference" name="bi_new_reference" value="" >
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_1 red_alert"></span>                                    
+                                </div>
+                            </div>
+                            <div class="col-lg-4 mb-20">
+                                <div class="input-effect">
+                                    <label class="dynamicslbl">  @lang('Product Code') <span>*</span> </label>
+                                    <input class="dynamicstxt primary-input form-control" type="text" id="bi_amount_to_adjust" name="bi_amount_to_adjust" value="" >
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_2 red_alert"></span>                                    
+                                </div>
+                            </div>
+                            <div class="col-lg-4 mb-20">
+                                <div class="input-effect">
+                                    <label class="dynamicslbl">  @lang('Contains') <span>*</span> </label>
+                                    <input class="dynamicstxt primary-input form-control" type="text" id="bi_contains" name="bi_contains" value="" >
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_6 red_alert"></span>                                    
+                                </div>
+                            </div>
+                        </div> --}}
+
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="equipment comon-status row mt-40 d-block">
+                                        <table id="table_id" class="display school-table" cellspacing="0"
+                                            width="100%">
+                                            <thead>
+                                                <tr>
+                                                    <th>@lang('#') </th>
+                                                    <th>@lang('Part Number')</th>
+                                                    <th>@lang('PO Qty')</th>
+                                                    <th>@lang('Qty')</th>
+                                                    <th>@lang('Executed Qty')</th>
+                                                    <th>@lang('Balance Qty')</th>
+                                                    <th>@lang('Unitprice')</th>
+                                                    <th>@lang('Value')</th>
+                                                    <th>@lang('Discount')</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="col-lg-12 text-right">
+                                        <button class="btn btn-primary bg-warning" data-dismiss="modal" type="button"
+                                            id="btn_close2">
+                                            @lang('Close')
+                                        </button>
+
+                                        <button class="btn btn-primary bg-success" type="button" id="addPoPendingItems">
+                                            Add Selected
+                                        </button>
+                                        {{-- <input class="primary-btn fix-gr-bg" type="" value="save" onclick="return validateAttachForm()"> --}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    {{-- popup --}}
+    
+    {{-- popup srl --}}
+    <a data-modal-size="modal-md" data-target="#srl_pending_popup_win" id="btnsrlpopup" data-toggle="modal"></a>
+    <form id="srl">
+        <div class="modal fade admin-query" id="srl_pending_popup_win" data-keyboard="false" data-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 50%;">
+                <div class="modal-content">
+                    <div class="modal-header m-0 p-3">
+                        <h4 class="modal-title">Add Serial Number</h4>
+                        <button class="close" data-dismiss="modal" type="button">
+                            ×
+                        </button>
+                    </div>
+                    <div class="modal-body m-0 p-3">
+                        <input type="hidden" id="srl_row" />
+                        <div class="container-fluid">
+                            <div class="row">
+                            <div class="col-lg-4 mb-20">
+                                <div class="input-effect">
+                                    <label class="dynamicslbl">  @lang('Part Number') <span>*</span> </label>
+                                    <input class="dynamicstxt primary-input form-control" type="text" id="srl_part_number" name="srl_part_number" value="" readonly>
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_2 red_alert"></span>                                    
+                                </div>
+                            </div>
+                            <div class="col-lg-2 mb-20">
+                                <div class="input-effect">
+                                    <label class="dynamicslbl">  @lang('Qty') <span>*</span> </label>
+                                    <input class="dynamicstxt primary-input form-control" type="text" id="srl_qty" name="srl_qty" value="" readonly>
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_6 red_alert"></span>                                    
+                                </div>
+                            </div>
+                            <div class="col-lg-4 mb-20">
+                                <div class="input-effect">
+                                    <label class="dynamicslbl">  @lang('Serial No') <span>*</span> </label>
+                                    <input class="dynamicstxt primary-input form-control" type="text" id="srl_number" name="srl_number" value="" >
+                                    <span class="focus-border"></span>
+                                    <span class="modal_input_validation_6 red_alert"></span>                                    
+                                </div>
+                            </div>
+                            <div class="col-lg-2 mb-20">
+                                <div class="input-effect">
+                                    <label class="dynamicslbl"><span></span> </label><br />
+                                    <button class="btn btn-primary bg-primary mt-2" onclick="add_serial_no()" type="button" id="btn_close2"> @lang('Add') </button>
+                                </div>
+                            </div>
+                            
+                            
+
+                            </div>
+                                <br style="clear: both;" />
+                            <div class="row">
+                                <div class="col-lg-12" id="srllist">
+                                    
+                                    <span class="bg-info m-2 p-2">dzxvgfxzvg</span>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="col-lg-12 text-right">
+                                        <button class="btn btn-primary bg-warning" data-dismiss="modal" type="button"
+                                            id="btn_close2">
+                                            @lang('Close')
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    {{-- popup srl --}}
+
+
+    {{-- -------------------------------------------------------- --}}
+
+    <script>
+        function validateAttachForm() {
+            var val1 = $("#shipping_name_add").val();
+            var val2 = $("#contact_name_add").val();
+            var val3 = $("#contact_no_add").val();
+            var val4 = $("#address1_add").val();
+            var val5 = $("#address2_add").val();
+
+            if (val1 === "") {
+                $('.modal_input_validation_1').show();
+                $(".modal_input_validation_1").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_1").addClass("red_alert");
+                return false;
+            }
+            if (val2 === "") {
+                $('.modal_input_validation_2').show();
+                $(".modal_input_validation_2").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_2").addClass("red_alert");
+                return false;
+            }
+            if (val3 === "") {
+                $('.modal_input_validation_3').show();
+                $(".modal_input_validation_3").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_3").addClass("red_alert");
+                return false;
+            }
+            if (val4 === "") {
+                $('.modal_input_validation_4').show();
+                $(".modal_input_validation_4").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_4").addClass("red_alert");
+                return false;
+            }
+            if (val5 === "") {
+                $('.modal_input_validation_5').show();
+                $(".modal_input_validation_5").html("<font style='color:red;'>Must be Fill Up</font>");
+                $("span.modal_input_validation_5").addClass("red_alert");
+                return false;
+            }
+            //return true;
+
+            var url = $('#url').val();
+            $.ajax({
+                type: "POST",
+                data: {
+                    shipping_name: val1,
+                    contact_name: val2,
+                    contact_no: val3,
+                    address1: val4,
+                    address2: val5
+                },
+
+                //url: 'http://syscom.company/venus-erp/shipping-store2',
+                //url: 'http://localhost:81/venus-erp/shipping-store2',
+                url: url + '/' + 'shipping-store2',
+                cache: false,
+                success: function(response) {
+                    var response = JSON.parse(response);
+                    var len = 0;
+                    if (response['data'] == "ERROR") {
+                        alert("Error found in something!!");
+                    } else {
+                        if (response['data'] != null) {
+                            len = response['data'].length;
+                        }
+                        if (len > 0) {
+
+                            //$('#shipping_name').find('option').not(':first').remove();
+
+                            for (var i = 0; i < len; i++) {
+                                var id = response['data'][i].id;
+                                var name = response['data'][i].shipping_name;
+                                var option = "<option value='" + id + "'>" + name + "</option>";
+                                //$("#shipping_name").append($(option));
+                                //$('#shipping_name').append(new Option(name, id));
+                                $("#shipping_name").append(option);
+                                $("#vendor").append(option);
+                            }
+
+                            alert('Shipping Added Successfully!!');
+                            $('#btn_close2').click();
+                        }
+                    }
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {}
+            });
+
+
+            //preventDefault();
+        }
+
+        function cfc_amount_change(id) {
+            var amt = $("#cfc_amount_" + id).val();
+            $("#cfc_cal_amount_" + id).val(amt);
+        }
+
+        function popup_po_pending(id) {
+            $("#loading_bg").css("display", "block");
+            $("#hd_pending_po_id").val(id);
+            $("#po_id").val(id);
+            document.getElementById('addPoPending').click();
+            $("#loading_bg").css("display", "none");
+        }
+
+        function popup_po_srlno(id) {
+            $("#loading_bg").css("display", "block");
+            $("#srl_row").val(id);
+            var part_number = $('#part_number_' + id + '').val();
+            var qty = $('#qty_' + id + '').val();
+            $("#srl_part_number").val(part_number);
+            $("#srl_qty").val(qty);
+            document.getElementById('btnsrlpopup').click();
+            var part_no = $('#part_id_' + id + '').val();
+            var action = "{{ URL::to('goods-receipt-note-get-serialno') }}";
+            $.ajax({
+                url: action,
+                type: "GET",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    part_no: part_no,
+                },
+                cache: false,
+                success: function(dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                        if(dataResult['data'] != null){
+                            len = dataResult['data'].length;
+                        }
+                        if(len > 0){
+                            $("#srllist").empty();
+                            for(var i=0; i<len; i++){
+                                var id = dataResult['data'][i].id;
+                                var srl_no = dataResult['data'][i].srl_no;
+                                var innerHtml = "<span class='bg-info m-1 pt-1 pr-2 pb-1 pl-2'>" + srl_no +"</span>";
+                                $("#srllist").append(innerHtml);
+                            }                        
+                        }
+                        else{
+                            $("#srllist").empty();
+                        }
+                        $("#loading_bg").css("display", "none");
+                }
+            });
+            $("#loading_bg").css("display", "none");
+        }
+        function add_serial_no(){
+            $("#loading_bg").css("display", "block");
+            var id=$("#srl_row").val();
+            var srl_no = $("#srl_number").val();
+            if(srl_no==''){$("#srl_number").focus(); $("#loading_bg").css("display", "none"); return false;}
+            var part_number = $('#part_number_' + id + '').val();
+            var part_no = $('#part_id_' + id + '').val();
+            var po_id = $('#hd_pending_po_id').val();
+            var qty = $('#qty_' + id + '').val();
+            var action = "{{ URL::to('goods-receipt-note-add-serialno') }}";
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    srl_no: srl_no,
+                    part_number: part_number,
+                    part_no: part_no,
+                    po_id: po_id,
+                    qty:qty,
+                },
+                cache: false,
+                success: function(dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    if (dataResult['data'] == "QTYERROR") {
+                        alert("Error. Qty Miss Match found!!");
+                        $("#loading_bg").css("display", "none");
+                        return false;
+                    }
+                        if(dataResult['data'] != null){
+                            len = dataResult['data'].length;
+                        }
+                        if(len > 0){
+                            $("#srllist").empty();
+                            for(var i=0; i<len; i++){
+                                var id = dataResult['data'][i].id;
+                                var srl_no = dataResult['data'][i].srl_no;
+                                var innerHtml = "<span class='bg-info m-1 pt-1 pr-2 pb-1 pl-2'>" + srl_no +"</span>";
+                                $("#srllist").append(innerHtml);
+                            }                        
+                        }
+                        else{
+                            $("#srllist").empty();
+                        }
+                        $("#loading_bg").css("display", "none");
+                }
+            });
+            $("#srl_number").val('');
+        }
+
+
+        function calc_change(id) {
+            //var net_vat = $('#net_vat').val();
+            //var net_vat = $('#vat_percentage').val();
+
+            var qty = $('#qty_' + id + '').val();
+            var unitprice = $('#unitprice_' + id + '').val();
+            var value = $('#value_' + id + '').val();
+            var discount = $('#discount_' + id + '').val();
+            var taxamount = $('#taxamount_' + id + '').val();
+            var vatamount = $('#vatamount_' + id + '').val();
+
+
+            qty = (qty === '') ? '0' : qty;
+            unitprice = (unitprice === '') ? '0' : unitprice;
+            var fin_value = (unitprice * qty);
+            $('#value_' + id + '').val(fin_value.toFixed(@json(session('logged_session_data.decimal_point'))));
+
+
+            value = (value === '') ? '0' : value;
+            discount = (discount === '') ? '0' : discount;
+            var fin_taxableamount = ((unitprice * qty) - Number(discount));
+            $('#taxamount_' + id + '').val(fin_taxableamount.toFixed(@json(session('logged_session_data.decimal_point'))));
+
+            var fin_vatableamount = ((unitprice * qty) - Number(discount)) * ((Number(5)) / 100);
+            $('#vatamount_' + id + '').val(fin_vatableamount.toFixed(@json(session('logged_session_data.decimal_point'))));
+
+            //calc_total();
+        }
+
+        function calc_total() {
+            var numItems = $('.rno').length;
+
+            alert(numItems);
+
+            var countrow = document.getElementById('row-count').value;
+            var t1 = 0,
+                t2 = 0,
+                t3 = 0,
+                t4 = 0,
+                t5 = 0,
+                t6 = 0,
+                t7 = 0;
+            for (var i = 1; i <= countrow; i++) {
+                t1 += Number($('#qty_' + i).val());
+                t2 += Number($('#unitprice_' + i).val());
+                t3 += Number($('#value_' + i).val());
+                t4 += Number($('#discount_' + i).val());
+                t5 += Number($('#taxamount_' + i).val());
+                t6 += Number($('#vatamount_' + i).val());
+            }
+            $('#qty_total').text(t1);
+            $('#unitprice_total').text(t2.toFixed(@json(session('logged_session_data.decimal_point'))));
+            $('#value_total').text(t3.toFixed(@json(session('logged_session_data.decimal_point'))));
+            $('#discount_total').text(t4.toFixed(@json(session('logged_session_data.decimal_point'))));
+            $('#taxableamount_total').text(t5.toFixed(@json(session('logged_session_data.decimal_point'))));
+            $('#vatamount_total').text(t6.toFixed(@json(session('logged_session_data.decimal_point'))));
+        }
+    </script>
+    
+    <script>
+
+        $(document).on("change", "#vendors", function () {
+            var id = $("#vendors").val();
+            get_po_list(id);
+        });
+        function get_po_list(id) {
+            $("#loading_bg").css("display", "block");
+            var action = "{{ URL::to('goods-receipt-note-pending') }}";
+            $.ajax({
+                url: action,
+                type: "POST",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    id: id,
+                },
+                cache: false,
+                success: function(dataResult) {
+                    var dataResult = JSON.parse(dataResult);
+                    var len = 0;
+                    var len = 0;
+                        if(dataResult['data'] != null){
+                            len = dataResult['data'].length;
+                        }
+                        if(len > 0){
+                            for(var i=0; i<len; i++){
+                                    var id = dataResult['data'][i].id;
+                                    var doc_number = dataResult['data'][i].doc_number;
+                                    var option = "<option value='" + id + "'>" + doc_number +
+                                        "</option>";
+                                    var innerHtml =
+                                        "<input type='radio' onclick='popup_po_pending(" + id +
+                                        ")' id='pending_po_" + i +
+                                        "' name='pending_po' value='" + doc_number +
+                                        "'> <label for='pending_po_" + i + "'> " + doc_number +
+                                        "</label><br />";
+
+                                    $("#plist").append(innerHtml);
+                                    
+                      
+                            }                        
+                        }
+                        else{
+                            $("#plist").empty();
+                        }
+                        $("#loading_bg").css("display", "none");
+                }
+            });
+        }
+
+
+
+        function validate_form_submission() {
+            if ($("#vendors").val() == "") {
+                alert("Please Fill Vendors");
+                $("#vendors").focus();
+                return false;
+            }
+            if ($("#payment_terms").val() == "") {
+                alert("Please Fill Payment Terms");
+                $("#payment_terms").focus();
+                return false;
+            }
+            if ($("#awbno").val() == "") {
+                alert("Please Fill AWB No");
+                $("#awbno").focus();
+                return false;
+            }
+            if ($("#supplier_type").val() == "") {
+                alert("Please Fill Supplier Type");
+                $("#supplier_type").focus();
+                return false;
+            }
+            if ($("#purchase_type").val() == "") {
+                alert("Please Fill Purchase Type");
+                $("#purchase_type").focus();
+                return false;
+            }
+            if ($("#part_number_0").val() == "") {
+                alert("Please Fill Part Number");
+                $("#part_number_0").focus();
+                return false;
+            }
+            if ($("#qty_0").val() == "") {
+                alert("Please Fill Qty");
+                $("#qty_0").focus();
+                return false;
+            }
+            if ($("#unitprice_0").val() == "") {
+                alert("Please Fill Unit Price");
+                $("#unitprice_0").focus();
+                return false;
+            }
+            if ($("#value_0").val() == "") {
+                alert("Please Fill Taxable Amount");
+                $("#value_0").focus();
+                return false;
+            }
+            if ($("#taxamount_0").val() == "") {
+                alert("Please Fill Taxable Amount");
+                $("#taxamount_0").focus();
+                return false;
+            }
+        }
+    </script>
+@endsection

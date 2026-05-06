@@ -1,0 +1,246 @@
+.account_profile_setting{
+    padding: 30px;
+    @media #{$mobile_device}{
+        padding: 15px 5px;
+    }
+    .profile_setting_left{
+        background: #fff;
+        height: 100vh;
+        padding: 30px;
+        @media #{$mobile_device} {
+            height: auto;
+            margin-bottom: 30px;
+        }
+        ul{
+            li{
+                margin-bottom: 7px;
+                a{
+                    font-size: 13px;
+                    font-weight: 400;
+                    color: #647891;
+                    &:hover{
+                        color: #4A9DFF;
+                    }
+                }
+            }
+        }
+    }
+    .account_profile_right{
+        background: #fff;
+        height: 100%;
+        padding: 80px;
+        @media #{$mobile_device} {
+            padding: 30px 30px;
+        }
+        @media #{$tablet_device} {
+            padding: 30px 20px;
+        }
+        @media #{$mid_device} {
+            padding: 30px 30px;
+        }
+        @media #{$large_device} {
+            padding: 30px 30px;
+        }
+        .image_upload{
+            text-align: center;
+            .uploded_img{
+                width: 170px;
+                height: 170px;
+                border-radius: 50%;
+                border: 1px dashed #4a9dff;
+                background: #ECF5FF;
+                text-align: center;
+                margin: auto;
+                margin-bottom: 30px;
+                i{
+                    font-size: 45px;
+                    line-height: 170px;
+                    color: #647891;
+                }
+            }
+        }
+        .file_upload_btn{
+            a{
+                position: relative;
+                overflow: hidden;
+                display: inline-block;
+                input{
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    opacity: 0;
+                    cursor: pointer;
+                    bottom: 0;
+                    width: 100%;
+                }
+            }
+        }
+        .profile_form{
+            padding-left: 50px;
+            @media #{$mobile_device}{
+                margin-top: 30px;
+                padding-left: 0;
+            }
+            @media #{$tablet_device}{
+                margin-top: 30px;
+                padding-left: 0;
+            }
+            @media #{$mid_device}{
+                margin-top: 30px;
+                padding-left: 0;
+            }
+            @media #{$large_device}{
+                padding-left: 30px;
+            }
+            h3{
+                font-weight: 500;
+                font-size: 22px;
+                color: #151B26;
+                margin-bottom: 39px;
+            }
+            form{
+                input,textarea{
+                    width: 100%;
+                    height: 50px;
+                    border: 1px solid #BBC1C9;
+                    @include border-radius(4px);
+                    padding: 20px;
+                    margin-bottom: 20px;
+                    &::placeholder{
+                        font-size: 14px;
+                        color: #151b26;
+                        font-weight: 400;
+                    }
+                }
+                textarea{
+                    height: 120px;
+                }
+            }
+        }
+    }
+}
+
+// charge_pass_link_wrap 
+.charge_pass_link_wrap{
+    background: #fff;
+    padding: 80px;
+    height: 100vh;
+    @media #{$mobile_device} {
+        padding: 30px 20px;
+    }
+    @media #{$tablet_device} {
+        padding: 30px 20px;
+    }
+    h3{
+        font-size: 22px;
+        font-weight: 500;
+        color: #151B26;
+        margin-bottom: 50px;
+    }
+    .single_Pass_wrap{
+        background: #EFF7FF;
+        margin-bottom: 20px;
+        padding: 30px;
+        @media #{$mobile_device} {
+            padding: 20px;
+            display: block !important;
+        }
+        @media #{$tablet_device} {
+            padding: 20px;
+            display: block !important;
+        }
+        @media #{$mid_device} {
+            padding: 20px;
+            display: block !important;
+        }
+        @media #{$large_device} {
+            padding: 20px;
+            display: block !important;
+        }
+        h4{
+            font-size: 14px;
+            font-weight: 500;
+            color: #151B26;
+        }
+        p{
+            font-size: 14px;
+            color: #647891;
+            margin-bottom: 0;
+        }
+        .pass_link{
+            a{
+                color: #4A9DFF;
+                font-weight: 500;
+                font-size: 14px;
+            }
+        }
+    }
+    &.minus_padd{
+        @media #{$mid_device} {
+            padding: 20px;
+            height: auto;
+        }
+    }
+    &.minus_padd{
+        @media #{$large_device} {
+            padding: 30px;
+            height: auto;
+        }
+    }
+}
+
+
+.password_change_field{
+    background: #eff7ff;
+    padding: 30px;
+    margin-bottom: 30px;
+    @media #{$mobile_device} {
+        padding: 20px;
+    }
+    h5{
+        font-size: 14px;
+        color: #151b26;
+        font-weight: 500;
+        text-transform: capitalize;
+        margin-bottom: 27px;
+    }
+    form{
+        .input_field{
+            margin-bottom: 25px;
+            .label_name {
+                text-align: right;
+                padding-right: 15px;
+                @media #{$mobile_device} {
+                    text-align: left;
+                }
+                @media #{$tablet_device} {
+                    text-align: left;
+                }
+                label{
+                    font-size: 14px;
+                    color: #647891;
+                    font-weight: 400;
+                }
+            }
+            input{
+               width: 100%;
+               height: 45px;
+               @include border-radius(4px);
+               border: 1px solid #bbc1c9;
+               padding: 20px;
+               background: transparent ;
+               &:focus{
+                   outline: none;
+               }
+            }
+            p{
+                font-size: 12px;
+                color: #647891;
+                font-weight: 400;
+                margin-bottom: 0;
+            }
+        }
+    }
+}

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Multi-Select Dropdown</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="./assets/css/_main.css" />
+    <style>
+        .custom-multiselect {
+            position: relative;
+            width: 300px;
+        }
+        .msc-container .msc-header {
+            cursor: pointer;
+        }
+        .msc-container .msc-header .msc-selected-items {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            cursor: default;
+            pointer-events: none;
+        }
+        .msc-container .msc-header .msc-selected-item,
+        .msc-container .msc-header .msc-selected-dummy {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            background-color: #ccc;
+            padding: 5px 0 5px 5px;
+            line-height: 16px;
+            border-radius: 5px;
+            pointer-events: visible;
+        }
+        .msc-container .msc-header .msc-selected-dummy {
+            min-width: 30px;
+            flex: 1;
+            cursor: pointer;
+            background-color: transparent;
+            min-height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .msc-container .msc-header .msc-selected-dummy:before {
+            width: 4px;
+            height: 4px;
+            transform: rotate(45deg);
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            content: '';
+        }
+        .msc-container .msc-header .msc-selected-item-close {
+            position: relative;
+            cursor: pointer;
+            padding: 0 5px;
+        }
+        .msc-container .msc-header .msc-selected-item-close:after {
+            display: block;
+            content: '+';
+            transform: rotate(45deg);          
+        }
+        .msc-container .msc-dropdown {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 5px;
+            min-width: 100%;
+            left: 0;
+            top: calc(100% + 2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .msc-wrap.show .msc-container .msc-dropdown {
+            display: flex;
+            flex-direction: column;
+        }
+        .msc-container .msc-dropdown .msc-item {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            padding: 0 5px;
+            border-radius: 5px;
+        }
+        .msc-container .msc-dropdown .msc-item:hover {
+            background-color: #ddd;
+        }
+        .msc-container .msc-dropdown .msc-item .msc-item-label {
+            padding: 5px 0;
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="venus-app page-supplier-register">
+        <select class="form-control custom-multiselect" id="inputCompany" multiple>
+            <option value="value1">value1</option>
+            <option value="value2">value2</option>
+            <option value="value3">value3</option>
+            <option value="value4">value4</option>
+        </select>
+    </div>
+    <script>
+        class CustomMultiSelect {
+            constructor(container=null, placeholder="Select", onChange=()=>{}) {
+                this.msc = container;
+                this.placeholder = placeholder;
+                this.selectedItems = [];
+                this.onChange = onChange;
+
+                this.msc && this.initUI();
+            }
+
+            initUI() {
+                this.data = Array.from(this.msc.options).map(option => ({ label: option.textContent, value: option.value })) || [];
+                if(this.data.length) {
+                    this.renderUI();
+                }
+            }
+
+            replaceContainer() {
+                const newDiv = document.createElement("div");
+                newDiv.className = this.msc.className + ' msc-wrap';
+                newDiv.id = this.msc.id + "_wrap";
+
+                const html = `<input type="hidden" class="msc-value" id="${this.msc.id}" />
+                <div class="msc-container">
+                    <div class="msc-header">
+                        <div class="msc-selected-items">
+                            <div class="msc-placeholder">${this.placeholder}</div>
+                            <div class="msc-selected-dummy"></div>
+                        </div>
+                    </div>
+                    <div class="msc-dropdown">
+                        <div class="msc-body">${this.renderMSCBody()}</div>
+                    </div>                    
+                </div>`;
+
+                newDiv.innerHTML = html;
+
+                this.msc.parentNode.replaceChild(newDiv, this.msc);
+                this.msc = newDiv;
+                
+                this.handleCheckboxClick();
+                this.handleDropdownToggle();
+            }
+
+            renderMSCBody() {
+                const html = this.data.map((option, optionIndex) => {
+                    const itemId = `${this.msc.id}_item_${optionIndex+1}`;
+                    return `<div class="msc-item" data-value="${option.value}">
+                        <input id="${itemId}" type="checkbox" class="msc-item-input" data-label="${option.label}" value="${option.value}" />
+                        <label for="${itemId}" class="msc-item-label">${option.label}</label>
+                    </div>`;
+                });
+
+                return html.join('');
+            }
+
+            renderUI() {
+                this.replaceContainer();
+            }
+
+            handleCheckboxClick() {
+                Array.from(this.msc.querySelectorAll('input[type="checkbox"]')).forEach(input => {
+                    input.addEventListener('change', (e) => {
+                        const target = e.target;
+                        const existing = this.selectedItems.find(i => i.value === target.value);
+                        if(existing) {
+                            this.selectedItems = this.selectedItems.filter(i => i.value !== target.value);
+                            target.checked = false;
+                        } else {
+                            this.selectedItems.push({ label: target.dataset.label, value: target.value });
+                            target.checked = true;
+                        }
+                        this.onChange(this.selectedItems);
+                        this.renderSelected();
+                        this.handleDeleteItem();
+                    });
+                });
+            }
+
+            renderSelected() {
+                const selectedContainer = this.msc.querySelector('.msc-selected-items');
+                const mscValue = this.msc.querySelector('.msc-value');
+                const selectedItems = this.selectedItems.map(item => {
+                    return `<div class="msc-selected-item" data-label="${item.label}" data-value="${item.value}">
+                        <div class="msc-selected-item-label">${item.label}</div>
+                        <div class="msc-selected-item-close"></div>
+                    </div>`;
+                });
+                selectedContainer.innerHTML = selectedItems.join('') + '<div class="msc-selected-dummy"></div>';
+                mscValue.value = JSON.stringify(this.selectedItems);
+            }
+
+            handleDropdownToggle() {
+                const header = this.msc.querySelector('.msc-container .msc-header');
+                header.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.msc.classList.toggle('show');
+                });
+            }
+
+            handleDeleteItem() {
+                Array.from(this.msc.querySelectorAll('.msc-selected-item-close')).forEach(close => {
+                    close.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const value = close.parentElement.dataset.value;
+                        const input = this.msc.querySelector(`.msc-item-input[value="${value}"]`);
+                        const changeEvent = new Event('change');
+                        input.dispatchEvent(changeEvent);
+                    });
+                });
+            }
+        }
+
+        new CustomMultiSelect(document.querySelector('#inputCompany'), 'Select', console.log);
+    </script>
+</body>
+</html>

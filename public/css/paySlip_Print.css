@@ -1,0 +1,142 @@
+.business_info_table {
+    width: 100%;
+    padding-top: 100px;
+}
+
+.table_td {
+    width: 70%;
+    vertical-align: top;
+}
+
+.table_image {
+    min-width: 160px;
+    max-width: 160px;
+    height: auto;
+}
+
+.table_image_h3 {
+    color: #415094 !important;
+    font-size: 24px;
+    margin-top: 20px;
+    margin-bottom: 0;
+    padding-right: 26px;
+    line-height: 25px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.table_image_p {
+    font-weight: 300;
+    color: #828bb2 !important;
+}
+
+.table_image_p2 {
+    font-weight: 300;
+    color: #828bb2 !important;
+    margin-top: 15px;
+}
+
+.table_div {
+    width: 70%;
+}
+
+.table_td_invoice {
+    width: 70%;
+    padding: 0px;
+    float: right;
+}
+
+.table_invoice_table {
+    font-family: 'Poppins', sans-serif;
+    text-transform: capitalize;
+    font-size: 18px;
+    padding: 5px 0;
+    padding-right: 50px;
+    line-height: 35px;
+}
+
+.invoice_table {
+    font-size: 12px;
+    width: 100%
+}
+
+.table_tr_30 {
+    width: 30%;
+}
+
+.table_tr_70 {
+    width: 70%;
+    color: #828bb2 !important;
+}
+
+.td_payslip {
+    padding: 35px 0 30px;
+    margin-top: 50px;
+    border-top: 1px solid #ddd;
+}
+
+.payment_date {
+    padding: 35px 0 30px;
+    margin-top: 50px;
+    border-top: 1px solid #ddd;
+    text-align: right;
+}
+
+.table_title {
+    width: 50%
+}
+
+.td_table {
+    width: 50%;
+    padding-right: 5px
+}
+
+.td_earning {
+    font-size: 12px;
+    margin-bottom: 19px;
+    font-weight: bold;
+}
+
+.earning_table {
+    margin-bottom: 40px;
+}
+
+.table_deduction {
+    width: 50%;
+    padding-left: 5px;
+    vertical-align: top;
+}
+
+.table_deduction_h5 {
+    font-size: 12px;
+    margin-bottom: 19px;
+    font-weight: bold;
+}
+
+.gross_earn_td {
+    width: 50%;
+    padding-left: 5px
+}
+
+.in_word_td {
+    width: 40%;
+    padding: 0px;
+    vertical-align: top;
+}
+
+.in_word_p {
+    color: #828bb2 !important;
+}
+
+.bank_info {
+    font-size: 12px;
+    width: 100%
+}
+
+.width_35 {
+    width: 35%;
+}
+
+.width_65_color {
+    width: 65%;
+    color: #828bb2 !important;
+}

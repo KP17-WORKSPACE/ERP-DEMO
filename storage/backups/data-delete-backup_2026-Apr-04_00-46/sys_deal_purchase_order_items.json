@@ -1,0 +1,29 @@
+[
+    {
+        "id": 68,
+        "cart_id": "1_20260313130110",
+        "po_id": null,
+        "quote_item_id": 97,
+        "part_number": 15,
+        "part_number_txt": "15",
+        "description": "03-SSC-5826  \r\nSONICWALL NSA 2800 SECURE UPGRADE APPLIANCE ONLY NO ATTACHED SUBSCRIPTION (EXISTING SONICPROTECT USERS ONLY)",
+        "tax": "5.000",
+        "qty": 1,
+        "deal_qty": 1,
+        "po_qty": 0,
+        "unitprice": "10000.000",
+        "value": "10000.000",
+        "discount": "0.000",
+        "fright": "0.000",
+        "customcharges": "0.000",
+        "taxableamount": "10000.000",
+        "vatamount": "500.000",
+        "status": 1,
+        "created_by": 1,
+        "updated_by": null,
+        "created_at": "2026-03-13 21:13:52",
+        "updated_at": null,
+        "refid": 97,
+        "deal_id": 32
+    }
+]

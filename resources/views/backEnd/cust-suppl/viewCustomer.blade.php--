@@ -1,0 +1,189 @@
+@extends('backEnd.masterpage')
+@section('mainContent')
+
+@php
+$module_links = [];
+$permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+@endphp
+
+    @php
+    function showPicName($data)
+    {
+        $name = explode('/', $data);
+        return $name[4];
+    }
+    function showJoiningLetter($data)
+    {
+        $name = explode('/', $data);
+        return $name[3];
+    }
+    function showResume($data)
+    {
+        $name = explode('/', $data);
+        return $name[3];
+    }
+    function showOtherDocument($data)
+    {
+        $name = explode('/', $data);
+        return $name[3];
+    }
+
+    @endphp
+
+    <?php try { ?>
+        
+<div class="container-fluid">
+    <div class="d-sm-flex justify-content-between">
+        <div class="mb-3">
+            <h2 class="page-heading m-0">Customer Details</h2>
+            <span class="page-label">Home - Customer Details</span>
+        </div>
+        <div>
+            <a href="{{ url('add-customer') }}" type="button" class="btn btn-info"><i class="fa fa-plus"></i> New Customer</a>
+            <a href="{{ url('customers') }}" type="button" class="btn btn-info"><i class="fa fa-list"></i> Customer List</a>
+            <a href="{{ url('customer-edit/' . @$custDetails->id) }}"><button class="btn btn-primary">Edit Profile</button></a>
+        </div>
+    </div>
+
+    <div class="card p-4 mb-3">
+        <div class="d-flex">
+            <div class="profile__img mr-4">
+                @if (file_exists(@$custDetails->staff_photo))
+                            <img src="{{ asset($custDetails->staff_photo) }}" alt="">
+                        @else
+                            <img src="{{ asset('/') }}public/uploads/staff/demo/staff.jpg" alt="">
+                        @endif
+            </div>
+            <div class="text__wrap pt-2">
+                <h4 class="font-weight-bold">
+{{--  1-Green, 2-Orange, 3-Red, 4-Black  --}}
+<span class="badge badge-danger"
+@if(@$custDetails->type==1) style="background: #228c22;" @endif
+@if(@$custDetails->type==2) style="background: #FFA500;" @endif
+@if(@$custDetails->type==3) style="background: #FF0000;" @endif
+@if(@$custDetails->type==4) style="background: #000000;" @endif >
+@if (isset($custDetails)) {{ @$custDetails->name }} @endif
+</span>
+
+                </h4>
+                <p class="mb-1 text-muted">Customer Code : <span
+                        class="f-14 text-dark font-weight-semibold">@if (isset($custDetails)) {{ @$custDetails->code }} @endif</span></p>
+                <p class="mb-1 text-muted">Contact Person : <span
+                        class="badge badge-danger">@if (isset($custDetails)) {{ @$custDetails->contcat_person }} @endif</span></p>
+                <div class="d-sm-flex">
+                    <p class="mb-1 pr-3 text-muted">Contact Number: <span
+                            class="f-14 text-dark font-weight-semibold">@if (isset($custDetails)) {{ @$custDetails->contcat_number }} @endif</span>, </p>
+                    <p class="mb-1 text-muted">Mobile: <span
+                            class="f-14 text-dark font-weight-semibold">@if (isset($custDetails)) {{ @$custDetails->mobile }} @endif</span></p>
+                </div>
+
+                <p class="mb-1 text-muted">Mail : <span
+                        class="f-14 text-dark font-weight-semibold">@if (isset($custDetails)) {{ @$custDetails->email }} @endif</span></p>
+
+                <p class="mb-1 text-muted">Address: <span
+                        class="f-14 text-dark font-weight-semibold">@if (isset($custDetails)) {{ @$custDetails->address }} @endif</span></p>
+                        <p class="mb-1 text-muted">Address 2: <span
+                                class="f-14 text-dark font-weight-semibold">@if (isset($custDetails)) {{ @$custDetails->address2 }} @endif</span></p>
+            </div>
+        </div>
+    </div>
+    <div class="card p-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="head__2 m-0 page-heading">Info</h2>
+
+                </div>
+                <hr>
+                <div class="card-body p-4">
+                    <div class="row mb-3">
+                        <label class="col-lg-4 text-muted">Sales Person</label>
+                        <div class="col-lg-8">
+                            <span class="font-weight-bold text-gray-800">: @foreach ($salespersons as $sp)
+                                <span class="text-info">{{ $sp->full_name }}</span> | 
+                            @endforeach</span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-lg-4 text-muted">Credit Limit</label>
+                        <div class="col-lg-8">
+                            <span class="font-weight-bold text-gray-800">: @if (isset($custDetails)) {{ @$custDetails->credit_limit }} @endif</span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-lg-4 text-muted">Credit Days </label>
+                        <div class="col-lg-8 d-flex align-items-center">
+                            <span class="font-weight-bold text-gray-800 me-2">: @if (isset($custDetails)) {{ @$custDetails->credit_days }} @endif</span>
+                        </div>
+                    </div>
+                    @if (isset($custDetails) && !empty(@$custDetails->payment_terms))
+                    <div class="row mb-3">
+                        <label class="col-lg-4 text-muted">Payment Terms </label>
+                        <div class="col-lg-8 d-flex align-items-center">
+                            <span class="font-weight-bold text-gray-800 me-2">: @if (isset($custDetails)) {{ @$custDetails->paymentterms->title }} @endif</span>
+                        </div>
+                    </div>
+                    @endif
+                    <div class="row mb-3">
+                        <label class="col-lg-4 text-muted">Vat Number</label>
+                        <div class="col-lg-8">
+                            <a href="#" class="font-weight-bold text-gray-800 text-hover-primary">: @if (isset($custDetails)) {{ @$custDetails->vat_number }} @endif</a>
+                        </div>
+                    </div>
+                    @if (isset($custDetails) && !empty(@$custDetails->vat_country))
+                    <div class="row mb-3">
+                        <label class="col-lg-4 text-muted">Vat Country</label>
+                        <div class="col-lg-8">
+                            <span class="font-weight-bold text-gray-800">: @if (isset($custDetails)) {{ @$custDetails->vatcountry->name }} @endif</span>
+                        </div>
+                    </div>
+                    @endif
+                    @if (isset($custDetails) && !empty(@$custDetails->vat_state))
+                    <div class="row mb-3">
+                        <label class="col-lg-4 text-muted">Vat State</label>
+                        <div class="col-lg-8">
+                            <span class="font-weight-bold text-gray-800">: @if (isset($custDetails)) {{ @$custDetails->vatstate->name }} @endif</span>
+                        </div>
+                    </div>
+                    @endif
+                    @if (isset($custDetails) && !empty(@$custDetails->vat_type))
+                    <div class="row mb-3">
+                        <label class="col-lg-4 text-muted">Vat Type</label>
+                        <div class="col-lg-8">
+                            <span class="font-weight-bold text-gray-800">: @if (isset($custDetails)) {{ @$custDetails->vattype->type }} @endif</span>
+                        </div>
+                    </div>
+                    @endif
+                    <div class="row mb-10">
+                        <label class="col-lg-4 text-muted">Vat Persentage</label>
+                        <div class="col-lg-8">
+                            <span class="font-weight-bold text-gray-800">: @if (isset($custDetails)) {{ @$custDetails->vat_percentage }}% @endif</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+    {{--  <section class="sms-breadcrumb mb-20 white-box top-2">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12" style="text-align: right;">
+                    <div class="top-2-text top-2-text-last"><span>{{ $custDetails->salesperson->full_name }}</span><br />Created By</div>
+                    <div class="top-2-text"><b>Sundry Debtors <input type="hidden" value="2" name="sundry_creditors">
+                        </b><br />Customer Type</div>
+                    <div class="top-2-text">
+                        <b>{{ $custDetails->code }}</b><br />Customer
+                        Code</div>
+                </div>
+            </div>
+        </div>
+    </section>  --}}
+
+    <?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
+    
+@endsection

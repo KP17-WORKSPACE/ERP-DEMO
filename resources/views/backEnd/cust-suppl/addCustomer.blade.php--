@@ -1,0 +1,638 @@
+{{ url('') }}"
+{{ url('view-customer', @$editData->id) }}
+
+@extends('backEnd.master')
+@section('mainContent')
+    @php
+    function showPicName($data)
+    {
+        $name = explode('/', $data);
+        return $name[3];
+    }
+    @endphp
+    <link href="{{ asset('public/css/add_customer.css') }}" type="text/css" rel="stylesheet">
+
+    <section class="sms-breadcrumb mb-20 white-box">
+        <div class="container-fluid">
+            <div class="row" style="float: left;">
+                <h1>@lang('Customer')</h1>
+            </div>
+            <div class="row" style="float: right;">
+                <a href="{{ route('user.dashboard') }}" class="top-btn-r-l"><i class="far fa fa-home" aria-hidden="true"></i>
+                    Home</a>
+                <a href="{{ url('add-customer') }}" class="top-btn-r"><i class="far fa fa-plus" aria-hidden="true"></i>
+                    New</a>
+                <a href="{{ url('customers') }}" class="top-btn-r"><i class="far fa fa-file-text" aria-hidden="true"></i>
+                    View</a>
+                <a href="{{ url('customers') }}" class="top-btn-r"><i class="far fa fa-file-text" aria-hidden="true"></i>
+                    List</a>
+                {{-- @if (isset($editData))
+                <a href="{{url('view-supplier',@$editData->id)}}" class="primary-btn small fix-gr-bg">  @lang('lang.view') </a> 
+            @endif --}}
+                <a href="#" class="top-btn-r"><i class="far fa fa-print" aria-hidden="true"></i> Print</a>
+                <a href="#" class="top-btn-r"><i class="far fa fa-pencil-square-o" aria-hidden="true"></i> Edit</a>
+                <a href="#" class="top-btn-r"><i class="far fa fa-floppy-o" aria-hidden="true"></i> Save</a>
+                <a href="#" class="top-btn-r"><i class="far fa fa-trash" aria-hidden="true"></i> Delete</a>
+                <a href="#" class="top-btn-r"><i class="far fa fa-tasks" aria-hidden="true"></i> Process</a>
+                <a href="javascript:location.reload();" class="top-btn-r-nobar"><i class="far fa fa-refresh"
+                        aria-hidden="true"></i> Refresh</a>
+            </div>
+        </div>
+    </section>
+    <hr style="margin-top: 33px;" />
+    <div style="clear: both;"></div>
+
+    <?php
+    try{ ?>
+    <section class="sms-breadcrumb mb-20 white-box top-2">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-4">
+                    {{-- <img src="{{ asset($company->company_logo) }}" height="40px"> --}}
+                </div>
+                <div class="col-8" style="text-align: right;">
+                    <div class="top-2-text top-2-text-last"><span>@if (isset($editData)){{ $editData->salesperson->full_name }} @else {{ Auth::user()->full_name }} @endif</span><br />Owner</div>
+                    <div class="top-2-text"><b>Sundry Debtors <input type="hidden" value="2" name="sundry_creditors">
+                        </b><br />Customer Type</div>
+                    <div class="top-2-text">
+                        <b>@if (isset($editData)){{ $editData->code }} @else {{ 'CUS' . sprintf('%03d', @App\SysHelper::get_new_maxid('sys_cust_suppl', 'id')) }} @endif</b><br />Customer
+                        Code</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="admin-visitor-area">
+        <div class="container-fluid p-0">
+
+            @if (isset($editData))
+                {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'customer-update', 'method' => 'POST', 'enctype' => 'multipart/form-data']) }}
+                <input type="hidden" value="{{ @$editData->id }}" name="cust_id">
+            @else
+                {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'customer-store', 'method' => 'POST', 'enctype' => 'multipart/form-data']) }}
+            @endif
+
+            <input type="hidden" name="url" id="url" value="{{ URL::to('/') }}">
+            <input type="hidden" name="catid" id="catid" value="2">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="white-box">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="boxed-formctrl">
+
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <h5 class="primary-color">@lang('Basic Information'):</h5>
+                                            <div style="display: none;">
+                                                <input type="hidden" name="customer_code"
+                                                    value="{{ 'CUS' . sprintf('%03d', @App\SysHelper::get_new_maxid('sys_cust_suppl', 'id')) }}">
+                                            </div>
+
+                                            <div class="input-effect">
+                                                <label class="txtlbl"> @lang('Customer Name') <span>*</span> </label>
+                                                <input
+                                                    class="primary-input form-control {{ $errors->has('name') ? 'is-invalid' : ' ' }}"
+                                                    type="text" name="customer_name"
+                                                    value="{{ isset($editData) ? @$editData->name : old('name') }}" required>
+                                            </div>
+                                            <div class="input-effect">
+                                                <label class="txtlbl"> @lang('Contcat Person') <span>*</span> </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('contcat_person') ? ' is-invalid' : '' }}"
+                                                    type="text" name="contcat_person"
+                                                    value="{{ isset($editData) ? @$editData->contcat_person : old('contcat_person') }}"
+                                                    required>
+                                            </div>
+                                            <div class="input-effect">
+                                                <label class="txtlbl"> @lang('Contact Number') <span></span> </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('contcat_number') ? ' is-invalid' : '' }}"
+                                                    type="text" name="contcat_number"
+                                                    value="{{ isset($editData) ? @$editData->contcat_number : old('contcat_number') }}" >
+                                            </div>
+                                            <div class="input-effect">
+                                                <label class="txtlbl"> @lang('Mobile Number') <span>*</span> </label>
+                                                <div class="row">
+                                                    <div class="col-lg-4">
+                                                        <select
+                                                            class="niceSelect w-100 bb form-control{{ $errors->has('mobile_code') ? ' is-invalid' : '' }}"
+                                                            name="mobile_code" id="mobile_code">
+                                                            <option data-display="" value="">Code</option>
+                                                            @foreach ($countries as $key => $value)
+                                                                <option value="{{ @$value->phonecode }}"
+                                                                    {{-- @if (isset($editData))
+                                                @if (@$editData->sales_person_name == @$value->id) selected @endif
+                                            @else
+                                                {{ old('salesperson') == @$value->id ? 'selected' : '' }}
+                                            @endif --}}>{{ @$value->iso2 }} -
+                                                                    {{ @$value->phonecode }} </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-lg-8">
+                                                        <input
+                                                            class="primary-input form-control{{ $errors->has('mobile') ? ' is-invalid' : '' }}"
+                                                            type="text" name="mobile"
+                                                            value="{{ isset($editData) ? @$editData->mobile : old('mobile') }}"
+                                                            required>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <div class="input-effect">
+                                                <label class="txtlbl"> @lang('Email') <span>*</span> </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('email') ? ' is-invalid' : '' }}"
+                                                    type="text" name="email"
+                                                    value="{{ isset($editData) ? @$editData->email : old('email') }}"
+                                                    required>
+                                            </div>
+                                            <div class="input-effect">
+                                                <label class="txtlbl"> @lang('Sales Person') <span>*</span> </label>
+                                                <select class="niceSelect w-100 bb form-control{{ $errors->has('sales_person') ? ' is-invalid' : '' }}"
+                                                    name="sales_person[]" id="sales_person" multiple>
+                                                    <option data-display="" value="">Select</option>
+                                                    @foreach ($staffs as $value)
+                                                        <option value="{{ @$value->user_id }}"
+                                                            @if (isset($editData))
+                                                                @foreach ($salespersons as $sp)
+                                                                    @if (@$sp->user_id == @$value->user_id) selected @endif
+                                                                @endforeach
+                                                            @endif>{{ @$value->full_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-6">
+
+                                            <h5 class="primary-color">&nbsp;</h5>
+                                            <div class="input-effect">
+                                                <label class="txtlbl"> @lang('Address') <span>*</span> </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('address') ? ' is-invalid' : '' }}"
+                                                    type="text" name="address"
+                                                    value="{{ isset($editData) ? @$editData->address : old('address') }}"
+                                                    required>
+                                            </div>
+                                            <div class="input-effect">
+                                                <label class="txtlbl"> @lang('Address 2') <span></span> </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('address2') ? ' is-invalid' : '' }}"
+                                                    type="text" name="address2"
+                                                    value="{{ isset($editData) ? @$editData->address2 : old('address2') }}">
+                                            </div>
+                                            {{-- <div class="input-effect">
+                                    <label class="txtlbl">  @lang('Sales Person Name') <span>*</span> </label>
+                                    <select class="niceSelect w-100 bb form-control{{ $errors->has('sales_person_name') ? ' is-invalid' : '' }}"
+                                        name="sales_person_name" id="sales_person_name">
+                                        <option value=""></option>
+                                        @foreach ($staffs as $key => $value)
+                                            <option value="{{ @$value->id }}"
+                                            
+                                            @if (isset($editData))
+                                                @if (@$editData->sales_person_name == @$value->id) selected @endif
+                                            @else
+                                                {{ old('salesperson') == @$value->id ? 'selected' : '' }}
+                                            @endif
+                                            >{{ @$value->full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <span class="focus-border"></span>
+                                    @if ($errors->has('sales_person_name'))
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $errors->first('sales_person_name') }}</strong>
+                                    </span>
+                                    @endif
+                                </div> --}}
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Credit Limit') <span></span> </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('credit_limit') ? ' is-invalid' : '' }}"
+                                                    type="text" name="credit_limit"
+                                                    value="{{ isset($editData) ? @$editData->credit_limit : old('credit_limit') }}">
+                                            </div>
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Credit Days') <span></span> </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('credit_days') ? ' is-invalid' : '' }}"
+                                                    type="text" name="credit_days"
+                                                    value="{{ isset($editData) ? @$editData->credit_days : old('credit_days') }}">
+                                            </div>
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Payment Terms') <span></span> </label>
+                                                <select
+                                                    class="niceSelect w-100 bb form-control{{ $errors->has('payment_terms') ? ' is-invalid' : '' }}"
+                                                    name="payment_terms" id="payment_terms" >
+                                                    <option value=""></option>
+                                                    @foreach ($paymentterms as $key => $value)
+                                                        <option value="{{ @$value->id }}"
+                                                            @if (isset($editData)) @if (@$editData->payment_terms == @$value->id) selected @endif
+                                                        @else
+                                                            {{ old('payment_terms') == @$value->id ? 'selected' : '' }}
+                                                            @endif
+                                                            >{{ @$value->title }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+
+
+
+                                </div>
+                            </div>
+
+
+                            <div class="col-lg-4">
+                                <div class="boxed-formctrl">
+                                    <h5 class="primary-color">@lang('VAT Details'):</h5>
+                                    <div class="input-effect">
+                                        <label class="txtlbl"> @lang('VAT Type') <span></span> </label>
+                                        <select class="txtbx niceSelect w-100 bb form-control" name="vat_type" id="vat_type">
+                                            <option data-display="" value=""></option>
+                                            @foreach ($vattype as $key => $value)
+                                                <option value="{{ @$value->id }}"
+                                                    @if (isset($editData)) @if (@$editData->vat_type == $value->id) selected @endif
+                                                    @endif>{{ @$value->type }} </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="input-effect">
+                                        <label class="txtlbl"> @lang('VAT Country') <span>*</span> </label>
+                                        <select
+                                            class="niceSelect w-100 bb form-control{{ $errors->has('country') ? ' is-invalid' : '' }}" name="country" id="country" required>
+                                            <option data-display="" value=""></option>
+                                            @foreach ($countries as $key => $value)
+                                                <option value="{{ @$value->id }}"
+                                                    
+                                                    <?php try{?>                                                        
+                                                    @if (isset($editData)) @if (@$editData->vat_country == $value->id) selected @endif
+                                                    @endif
+                                                    <?php } catch (\Throwable $th) {} ?>
+
+                                                    >{{ @$value->name }} </option>
+                                            @endforeach
+                                        </select>
+                                        {{-- <input class="primary-input form-control{{ $errors->has('vat_country') ? ' is-invalid' : '' }}" type="text"  name="vat_country" value="{{isset($editData)?@$editData->vat_country:old('vat_country')}}"> --}}
+                                    </div>
+                                    <div class="input-effect">
+                                        <div class="input-effect" id="sectionStateDiv">
+                                            <label class="txtlbl"> @lang('VAT State') <span></span> </label>
+                                            <select class="txtbx niceSelect w-100 bb form-control" name="state" id="state">
+                                                <option data-display="" value=""></option>
+                                                
+                                                <?php try{?>
+                                                @if (isset($editData))
+                                                    <option data-display="{{ $editData->vatstate->name }}"
+                                                        value="{{ $editData->vat_state }}" selected>
+                                                        {{ $editData->vatstate->name }}</option>
+                                                @endif
+                                                <?php } catch (\Throwable $th) {} ?>
+
+                                            </select>
+                                        </div>
+                                        <?php /*<input class="primary-input form-control{{ $errors->has('vat_state') ? ' is-invalid' : '' }}" type="text"  name="vat_state" value="{{isset($editData)?@$editData->vat_state:old('vat_state')}}"> */ ?>
+                                    </div>
+                                    <div class="input-effect">
+                                        <label class="txtlbl"> @lang('VAT %') <span></span> </label>
+                                        <input class="primary-input form-control{{ $errors->has('vat_percentage') ? ' is-invalid' : '' }}"
+                                            type="text" name="vat_percentage" value="{{ isset($editData) ? @$editData->vat_percentage : old('vat_percentage') }}">
+                                    </div>
+                                    <div class="input-effect">
+                                        <label class="txtlbl"> @lang('VAT Number') <span></span> </label>
+                                        <input class="primary-input form-control{{ $errors->has('vat_number') ? ' is-invalid' : '' }}"
+                                            type="text" name="vat_number" value="{{ isset($editData) ? @$editData->vat_number : old('vat_number') }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-10">
+                            <div class="col-lg-12 text-center">
+                                <button class="primary-btn fix-gr-bg" id="btnSubmit">
+                                    <span class="ti-check"></span>
+                                    @if (isset($editData)) @lang('lang.update')
+                                    @else
+                                        @lang('lang.add') @endif @lang('Customer')
+                                </button>
+                            </div>
+                        </div>
+
+
+                        <br /><br />
+
+
+
+                        {{-- Additional Location Details --}}
+                        <div class="row" style="display: none;">
+                            <div class="col-lg-12">
+                                <div class="boxed-formctrl">
+                                    <h5 class="primary-color">@lang('Additional Location'):</h5>
+                                    <div class="row">
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Address')</label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('location_address') ? ' is-invalid' : '' }}"
+                                                    type="text" name="location_address"
+                                                    value="{{ isset($editData) ? @$editData->location_address : old('location_address') }}">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Contact Person') </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('location_contact_person') ? ' is-invalid' : '' }}"
+                                                    type="text" name="location_contact_person"
+                                                    value="{{ isset($editData) ? @$editData->location_contact_person : old('location_contact_person') }}">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Contact Number') </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('location_contact_number') ? ' is-invalid' : '' }}"
+                                                    type="text" name="location_contact_number"
+                                                    value="{{ isset($editData) ? @$editData->location_contact_number : old('location_contact_number') }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row" id="AdditionalLocation"></div>
+
+                                    <div class="row">
+                                        <div class="col-lg-12 text-right"><br />
+                                            <button type="button" class="primary-btn small fix-gr-bg"
+                                                id="addRowAdditionalLocation"><span
+                                                    class="ti-plus pr-2"></span>Add</button>
+
+                                            <button type="button" class="primary-btn small fix-gr-bg"
+                                                id="{{ @$edit->quotation_type == 'equipment' ? 'add' : 'addRowProduct' }}">
+                                                <span class="ti-plus pr-2"></span>
+                                                @lang('Add') @lang('More')
+                                            </button>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{-- Additional Location Details --}}
+
+
+                        {{-- Additional Contact Details --}}
+                        <div class="row" style="display: none;">
+                            <div class="col-lg-12">
+                                <div class="boxed-formctrl">
+                                    <h5 class="primary-color">@lang('Additional Contact Details'):</h5>
+                                    <div class="row">
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Name')</label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('accountant_name') ? ' is-invalid' : '' }}"
+                                                    type="text" name="accountant_name"
+                                                    value="{{ isset($editData) ? @$editData->accountant_name : old('accountant_name') }}">
+
+                                                <span class="focus-border"></span>
+                                                @if ($errors->has('payment_terms'))
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $errors->first('payment_terms') }}</strong>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Email') </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('accountant_email') ? ' is-invalid' : '' }}"
+                                                    type="text" name="accountant_email"
+                                                    value="{{ isset($editData) ? @$editData->accountant_email : old('accountant_email') }}">
+
+                                                <span class="focus-border"></span>
+                                                @if ($errors->has('payment_terms'))
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $errors->first('payment_terms') }}</strong>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Contact Number') </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('accountant_number') ? ' is-invalid' : '' }}"
+                                                    type="text" name="accountant_number"
+                                                    value="{{ isset($editData) ? @$editData->accountant_number : old('accountant_number') }}">
+
+                                                <span class="focus-border"></span>
+                                                @if ($errors->has('payment_terms'))
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $errors->first('payment_terms') }}</strong>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-lg-12 text-right"><br />
+                                            <button type="button" class="primary-btn small fix-gr-bg"
+                                                id="{{ @$edit->quotation_type == 'equipment' ? 'addRowEquipment' : 'addRowProduct' }}">
+                                                <span class="ti-plus pr-2"></span>
+                                                @lang('Add') @lang('More')
+                                            </button>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{-- Additional Contact Details --}}
+
+
+                        {{-- Bank Details --}}
+                        <div class="row" style="display: none;">
+                            <div class="col-lg-12">
+                                <div class="boxed-formctrl">
+                                    <h5 class="primary-color">@lang('Bank Details'):</h5>
+                                    <div class="row">
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Bank Name')</label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('accountant_name') ? ' is-invalid' : '' }}"
+                                                    type="text" name="accountant_name"
+                                                    value="{{ isset($editData) ? @$editData->accountant_name : old('accountant_name') }}">
+
+                                                <span class="focus-border"></span>
+                                                @if ($errors->has('payment_terms'))
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $errors->first('payment_terms') }}</strong>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Branch Name') </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('accountant_email') ? ' is-invalid' : '' }}"
+                                                    type="text" name="accountant_email"
+                                                    value="{{ isset($editData) ? @$editData->accountant_email : old('accountant_email') }}">
+
+                                                <span class="focus-border"></span>
+                                                @if ($errors->has('payment_terms'))
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $errors->first('payment_terms') }}</strong>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Account Number') </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('accountant_number') ? ' is-invalid' : '' }}"
+                                                    type="text" name="accountant_number"
+                                                    value="{{ isset($editData) ? @$editData->accountant_number : old('accountant_number') }}">
+
+                                                <span class="focus-border"></span>
+                                                @if ($errors->has('payment_terms'))
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $errors->first('payment_terms') }}</strong>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-lg-12 text-right"><br />
+                                            <button type="button" class="primary-btn small fix-gr-bg"
+                                                id="{{ @$edit->quotation_type == 'equipment' ? 'addRowEquipment' : 'addRowProduct' }}">
+                                                <span class="ti-plus pr-2"></span>
+                                                @lang('Add') @lang('More')
+                                            </button>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{-- Bank Details --}}
+
+                        {{-- Accountant Details --}}
+                        <div class="row" style="display: none;">
+                            <div class="col-lg-12">
+                                <div class="boxed-formctrl">
+                                    <h5 class="primary-color">@lang('Accountant Details'):</h5>
+                                    <div class="row">
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Accountant Name')</label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('accountant_name') ? ' is-invalid' : '' }}"
+                                                    type="text" name="accountant_name"
+                                                    value="{{ isset($editData) ? @$editData->accountant_name : old('accountant_name') }}">
+
+                                                <span class="focus-border"></span>
+                                                @if ($errors->has('payment_terms'))
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $errors->first('payment_terms') }}</strong>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Accountant Email') </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('accountant_email') ? ' is-invalid' : '' }}"
+                                                    type="text" name="accountant_email"
+                                                    value="{{ isset($editData) ? @$editData->accountant_email : old('accountant_email') }}">
+
+                                                <span class="focus-border"></span>
+                                                @if ($errors->has('payment_terms'))
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $errors->first('payment_terms') }}</strong>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-4">
+                                            <div class="input-effect">
+                                                <label class="txtlbl">@lang('Accountant Contact Number') </label>
+                                                <input
+                                                    class="primary-input form-control{{ $errors->has('accountant_number') ? ' is-invalid' : '' }}"
+                                                    type="text" name="accountant_number"
+                                                    value="{{ isset($editData) ? @$editData->accountant_number : old('accountant_number') }}">
+
+                                                <span class="focus-border"></span>
+                                                @if ($errors->has('payment_terms'))
+                                                    <span class="invalid-feedback" role="alert">
+                                                        <strong>{{ $errors->first('payment_terms') }}</strong>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-lg-12 text-right"><br />
+                                            <button type="button" class="primary-btn small fix-gr-bg"
+                                                id="{{ @$edit->quotation_type == 'equipment' ? 'addRowEquipment' : 'addRowProduct' }}">
+                                                <span class="ti-plus pr-2"></span>
+                                                @lang('Add') @lang('More')
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        {{-- Accountant Details --}}
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{ Form::close() }}
+        </div>
+    </section>
+<?php 
+}catch (\Exception $e) {?>
+        {{ $e }}
+        <?php
+}
+?>
+
+@endsection
+
+@section('script')
+    <script>
+        $(document).ready(function() {
+            $("#btnSubmit").click(function() {
+                setTimeout(function() {
+                    disableButton();
+                }, 0);
+            });
+
+            function disableButton() {
+                //$("#btnSubmit").prop('disabled', true);
+            }
+        });
+    </script>
+@endsection

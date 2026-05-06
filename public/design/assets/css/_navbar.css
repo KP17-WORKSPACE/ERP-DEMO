@@ -1,0 +1,208 @@
+.venus-app main nav.main-nav {
+    width: 50px;
+    position: relative;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+.nav-list {
+    display: block;
+    list-style: none;
+    padding: 14px 0;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.nav-list .nav-item {
+    display: block;
+    max-width: 100%;
+    position: relative;
+    min-height: 34px;
+    width: 100%;
+    flex-direction: column;
+    margin-left: 8px;
+}
+.nav-list .nav-item:not(:last-child) {
+    margin-bottom: 16px;
+}
+.nav-list .nav-item.active > .nav-link,
+.nav-list .nav-item.active > .sub-menu-nav {
+    background-color: var(--color-white);
+}
+.nav-list .nav-item .nav-link,
+.nav-list .nav-item .sub-menu-nav {
+    display: flex;
+    align-items: center;
+    text-decoration: none;    
+    color: var(--color-nav-text);
+    gap: 13px;
+    padding: 5px;
+    width: 100%;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    border-radius: 10px;
+    width: 34px;
+}
+main.show-nav .nav-list .nav-item .nav-link,
+main.show-nav .nav-list .nav-item .sub-menu-nav {
+    width: 185px;
+}
+.nav-list .nav-item .sub-menu-nav:after {
+    display: none;
+}
+.nav-list .nav-item .sub-menu-nav:before {
+    content: '';
+    display: block;
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-top: 1px solid var(--color-nav-text);
+    border-right: 1px solid var(--color-nav-text);
+    transform: rotate(45deg);
+    left: 32px;
+    top: 13px;
+    transition: all 0.2s ease;
+}
+.nav-list .nav-item .nav-link .ico,
+.nav-list .nav-item .sub-menu-nav .ico {
+    font-size: 24px;
+    color: var(--color-nav-icon);
+}
+.nav-list .nav-item.active .nav-link .ico,
+.nav-list .nav-item.active .sub-menu-nav .ico,
+.nav-list .nav-item:hover .nav-link .ico,
+.nav-list .nav-item:hover .sub-menu-nav .ico {
+    color: var(--color-nav-active-icon);
+}
+.nav-list .nav-item .nav-link .nav-text,
+.nav-list .nav-item .sub-menu-nav .nav-text {
+    white-space: nowrap;
+}
+main.show-nav nav.main-nav {
+    width: 200px;
+}
+main.show-nav .nav-list .nav-item .sub-menu-nav:before {
+    top: 14px;
+    left: auto;
+    right: 10px;
+}
+.venus-app main.show-nav .nav-list .nav-item.show-subnav .sub-menu-nav:before {
+    transform: rotate(135deg);
+    top: 9px;
+}
+main.show-nav .nav-list .nav-item .dropdown-menu {
+    position: relative !important;
+    flex: 1;
+    width: 100%;
+    background: transparent;
+    border: none;
+    transform: none !important;
+    margin-bottom: 15px !important;
+}
+main.show-nav .nav-list .nav-item .dropdown-menu .sub-nav-item .sub-nav-link {
+    padding: 8px 15px;
+    display: block;
+    text-decoration: none;
+    color: var(--color-link);
+    background-color: transparent;
+    transition: all 0.2s ease;
+}
+main.show-nav .nav-list .nav-item .dropdown-menu .sub-nav-item .sub-nav-link:hover {
+    background-color: #fff;
+}
+main:not(.show-nav) .nav-list .nav-item .dropdown-menu {
+    flex: 1;
+    background: transparent;
+    border: none;
+    background-color: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 10px;
+}
+main:not(.show-nav) .nav-list .nav-item .dropdown-menu .sub-nav-item .sub-nav-link {
+    padding: 8px 15px;
+    display: block;
+    text-decoration: none;
+    color: var(--color-link);
+    background-color: transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    border-radius: 8px;
+}
+main:not(.show-nav) .nav-list .nav-item .dropdown-menu .sub-nav-item .sub-nav-link:hover {
+    background-color: var(--bg-main);
+}
+
+.venus-app main nav.main-nav .toggle-nav {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--color-white);
+    box-shadow: 0 5px 15px 0 rgba(0,0,0,0.2);
+    position: absolute;
+    right: -15px;
+    top: calc(50% - 15px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+.venus-app main nav.main-nav .toggle-nav:hover {
+    box-shadow: 0 0 0 10px rgba(0,0,0,0.1);
+}
+.venus-app main nav.main-nav .toggle-nav:before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid #333;
+    border-right: 2px solid #333;
+    transform: rotate(45deg);
+    position: absolute;
+    left: 10px;
+    top: 11px;
+    transition: all 0.4s ease;
+}
+.venus-app main.show-nav nav.main-nav .toggle-nav:before {
+    transform: rotate(225deg);
+    left: 14px;
+}
+
+.venus-app .subnav-menu {
+    margin: 0;
+    padding: 10px 15px;
+    background-color: var(--color-white);
+    border-radius: 8px;
+    box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+    position: fixed;
+    left: 65px;
+    min-width: 240px;
+    display: none;
+}
+.venus-app .nav-list .nav-item.show-subnav .subnav-menu {
+    display: block;
+}
+.venus-app main.show-nav .nav-list .nav-item.show-subnav .subnav-menu {
+    margin-top: 10px;
+}
+.venus-app main.show-nav .subnav-menu {
+    position: static;
+    margin-left: 43px;
+    padding: 0;
+    box-shadow: none;
+    background-color: transparent;
+    min-width: 140px;
+    width: 140px;
+}
+.venus-app .subnav-menu .sub-nav-item .sub-nav-link {
+    color: var(--color-nav-text);
+    text-decoration: none;
+    display: block;
+    padding: 5px 0;
+}
+.venus-app .subnav-menu .sub-nav-item.active .sub-nav-link,
+.venus-app .subnav-menu .sub-nav-item .sub-nav-link:hover {
+    font-weight: 700;
+}

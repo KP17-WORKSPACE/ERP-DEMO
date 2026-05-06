@@ -1,0 +1,242 @@
+.boxed_btn {
+	font-size: 14px;
+	font-weight: 500;
+	display: inline-block;
+	@extend %gradient;
+	color: #fff;
+	padding: 14px;
+    border-radius: 4px;
+    text-align: center;
+    background-size: cover;
+    @include transition(.3s);
+    &:hover{
+        color: #fff;
+    }
+}
+.boxed_btn_1{
+    @extend %btn_bg_1;
+    padding: 10px 23px;
+    text-transform: capitalize;
+    text-transform: uppercase;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+    @include border-radius(4px);
+    i{
+        font-size: 13px;
+        color: #fff;
+        font-weight: 700;
+        position: relative;
+        top: 2px;
+    }
+    &:hover{
+        color: #fff;
+    }
+}
+.gray_btn {
+	border: none;
+	color: #4A9DFF;
+	padding: 8px 15px;
+	background: #ECF5FF;
+	display: inline-block;
+    @include flexbox;
+    @include border-radius(4px);
+	font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    i{
+        font-size: 13px;
+        position: relative;
+        top: 3px;
+        padding-left: 8px;
+    }
+}
+.theme_btn {
+	border: none;
+	color: #fff;
+	padding: 8px 15px;
+	background: #4A9DFF;
+	display: inline-block;
+    @include flexbox;
+    @include border-radius(4px);
+	font-size: 13px;
+    font-weight: 400;
+    display: inline-block !important;
+    cursor: pointer;
+    i{
+        font-size: 16px;
+        position: relative;
+        top: 3px;
+        padding-left: 8px;
+    }
+    &:hover{
+        color: #fff;
+    }
+}
+.block_btn{
+    cursor: pointer;
+    padding: 14px;
+    background: #4A9DFF;
+    color: #fff;
+    font-size: 14px;
+    display: block;
+    // width: 100%;
+    text-align: center;
+    display: inline-block;
+    border: none;
+    @include transition(.3s);
+    @include border-radius(4px);
+    &:hover{
+        background: #4A8DFF;
+        color: #fff;
+    }
+}
+.block_btn_round{
+    cursor: pointer;
+    padding: 14px;
+    background: #4A9DFF;
+    @include border-radius(30px);
+    color: #fff;
+    font-size: 14px;
+    display: inline-block;
+    // width: 100%;
+    text-align: center;
+    border: none;
+    @include transition(.3s);
+    &:hover{
+        background: #4A8DFF;
+        color: #fff;
+        @include box-shadow( 0 8px 12px 0 rgba(0, 0, 0, 0.08));
+    }
+}
+
+
+.add_avater {
+	display: inline-block;
+	padding: 7px 24px;
+	background: #4a9dff;
+	font-size: 13px;
+	color: #fff;
+	font-weight: 400;
+    @include border-radius(4px);
+    &:hover{
+        background: #4a9df3;
+        color: #fff;
+    }
+}
+
+.default_btn {
+	display: inline-block;
+	border: none;
+	background: #CCE5FE;
+	border: 1px solid #4a9dff;
+	color: #4a9dff;
+	font-size: 13px;
+	font-weight: 400;
+	border-radius: 4px;
+	padding: 9px 19px;
+    cursor: pointer;
+    @include transition(.3s);
+    &:hover{
+        background: #4a9dff;
+        color: #fff;
+    }
+}
+.color_btn {
+	display: inline-block;
+	border: none;
+	background: #4a9dff;
+	border: 1px solid #4a9dff;
+	color: #fff;
+	font-size: 13px;
+	font-weight: 400;
+	border-radius: 4px;
+	padding: 9px 19px;
+    cursor: pointer;
+    @include transition(.3s);
+    &:hover{
+        background: #CCE5FE;
+        color: #4a9dff;
+    }
+}
+
+
+.status_button {
+	border: none;
+	background: #ddd;
+	font-size: 14px;
+	font-weight: 400;
+	background: #FFC864;
+	border-radius: 4px;
+	padding: 6px 16px;
+	display: inline-block;
+	color: #fff;
+    text-transform: capitalize;
+    cursor: pointer;
+    &.gray{
+        background: #92A2B7;
+    }
+    &.green{
+        background: #7FD8AA;
+    }
+
+}
+
+
+.lite_btn {
+	width: 100%;
+	display: block;
+	border: none;
+	background: rgba(74, 157, 255, 0.10);
+	font-size: 14px;
+	font-weight: 500;
+	color: #4A9DFF;
+    padding: 19px 5px;
+    @include transition(.3s);
+    display: inline-block;
+    cursor: pointer;
+    &:hover{
+        background: rgba(74, 157, 255, 0.20);
+
+    }
+}
+
+
+.light_green_btn {
+	width: 100%;
+	display: block;
+	border: none;
+	background: #7FD8AA;
+	font-size: 14px;
+    font-weight: 500;
+    display: inline-block;    
+	color: #fff;
+    padding: 19px 5px;
+    @include transition(.3s);
+    cursor: pointer;
+    &:hover{
+        background: #7FD8AA;
+
+    }
+}
+
+.action_btn{
+    display: inline-block;
+    border: 1px solid #BBC1C9;
+    padding: 3px 24px;
+    @include transition(.3s);
+    border-radius: 4px;
+    font-size: 12px;
+    color: #647891;
+    font-weight: 400;
+    &:hover{
+        border-color: #C8E1FF;
+        color: #4a9dff;
+    }
+}
+
+
+.mt-15{
+    margin-top: 15px;
+}

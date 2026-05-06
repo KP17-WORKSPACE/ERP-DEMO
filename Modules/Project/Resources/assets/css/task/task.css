@@ -1,0 +1,65 @@
+nav>.nav.nav-tabs {
+
+    border: none;
+    color: #fff;
+    background: #272e38;
+    border-radius: 0;
+
+}
+
+nav>div a.nav-item.nav-link,
+nav>div a.nav-item.nav-link.active {
+    border: none;
+    padding: 18px 25px;
+    color: black;
+    background: #fff;
+    border-radius: 0;
+}
+
+nav>div a.nav-item.nav-link.active {
+    background: #737EAD;
+    color: #fff;
+}
+
+nav>div a.nav-item.nav-link.active:after {
+    content: "";
+    position: relative;
+    bottom: -59px;
+    left: -10%;
+    border: 15px solid transparent;
+    border-top-color: #BF38DD;
+}
+
+.tab-content {
+    background: #fdfdfd;
+    line-height: 25px;
+    border: 1px solid #fff;
+    border-radius: 5px;
+    padding: 30px 25px;
+}
+
+nav>div a.nav-item.nav-link:hover,
+nav>div a.nav-item.nav-link:focus {
+    border: none;
+    background: #737EAD;
+    color: #fff;
+    border-radius: 0;
+    transition: background 0.20s linear;
+}
+.tab-pane .todo_list{
+    margin-top: 0;
+}
+
+.checkbox_check+label {
+    display: inline-block !important;
+}
+
+.todo_list_task {
+    background: #fff;
+    padding: 30px;
+    position: relative;
+}
+
+.task_list_project {
+    padding-bottom: 10px;
+}

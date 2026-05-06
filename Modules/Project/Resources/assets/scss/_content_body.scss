@@ -1,0 +1,21 @@
+.content_body{
+    min-height: 1116px;
+    margin-left: 270px;
+    @extend %content_bg;
+    @include transition(.3s);
+    @media #{$mobile_device} {
+        margin-left: 0;
+    }
+    @media #{$tablet_device} {
+        margin-left: 0;
+    }
+    &.minus_margin {
+        margin-left: 80px;
+        @media #{$mobile_device} {
+            margin-left: 0;
+        }
+        @media #{$tablet_device} {
+            margin-left: 0;
+        }
+    }
+}

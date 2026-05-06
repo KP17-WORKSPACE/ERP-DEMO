@@ -1,0 +1,98 @@
+.card-header, h2{
+    color:whitesmoke !important;
+}
+.requirements table{
+    padding:0px
+}
+
+.requirements td, th, tr{
+    padding: 5px 15px !important;
+    text-align: left !important;
+
+}
+.requirements p{
+    margin-bottom: 0px;
+}
+.environment-setup p{
+    margin:0px !important;
+    padding-left:15px;
+
+}
+p.permission{
+    color:red; 
+    padding-left:25px;
+    font-weight:300;
+    
+}
+
+.welcome-to-infix-h{
+
+    color: whitesmoke;
+}
+
+.welcome-to-infix-p{
+
+    text-align: center;
+}
+
+.verified-code{
+
+    background-color: rebeccapurple;color: whitesmoke;
+
+}
+
+.system-setup-page-h{
+
+   text-align: center;
+
+}
+.system-setup-page{
+
+   background-color: rebeccapurple;color: whitesmoke;
+
+}
+
+.install-page2-h{
+
+  text-align: center;
+
+}
+.install-page2{
+
+   background-color: rebeccapurple;color: whitesmoke;
+
+}
+
+.confirmation-h{
+
+  color: whitesmoke;
+
+}
+
+.confirmation-p{
+
+  padding-left: 15px; font-weight: bold;
+
+
+
+}
+
+
+.check-pur-page-input{
+    background-color: rebeccapurple;
+    color: whitesmoke;
+}
+.check-environment-page-input{
+    background-color: rebeccapurple;
+    color: whitesmoke;
+}
+.environment-h2{
+    color: whitesmoke;
+
+}
+.environment-body-card{
+    padding: 10px;
+}
+.environment-body-card-h4{
+    text-align: center;
+}

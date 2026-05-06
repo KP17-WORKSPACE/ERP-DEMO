@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission 2025 - भावी नगरसेवक</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .navbar-custom {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #c94b4b 100%);
+            padding: 1rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .metro-lines {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-right: 10px;
+        }
+        
+        .metro-line {
+            width: 4px;
+            height: 35px;
+            border-radius: 2px;
+        }
+        
+        .line-red { background-color: #e31e24; }
+        .line-purple { background-color: #8b3a9c; }
+        .line-green { background-color: #00a651; }
+        .line-blue { background-color: #0066b3; }
+        
+        .brand-text h1 {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 0;
+            line-height: 1.2;
+        }
+        
+        .brand-text .hindi-text {
+            color: #e31e24;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .mission-badge {
+            background: linear-gradient(135deg, #8b3a9c, #0066b3);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .mission-number {
+            background: #e31e24;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .prabhag-section {
+            background: #e31e24;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 0 10px;
+        }
+        
+        .goal-text {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .candidate-name {
+            background: white;
+            color: #e31e24;
+            padding: 10px 30px;
+            border-radius: 30px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            display: inline-block;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .center-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .brand-text h1 {
+                font-size: 1.3rem;
+            }
+            .mission-badge {
+                font-size: 0.9rem;
+                padding: 6px 15px;
+            }
+            .goal-text {
+                font-size: 0.9rem;
+            }
+            .candidate-name {
+                font-size: 1rem;
+                padding: 8px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <div class="nav-content">
+                <!-- Left Section: Brand -->
+                <div class="navbar-brand-section">
+                    <div class="metro-lines">
+                        <div class="metro-line line-red"></div>
+                        <div class="metro-line line-purple"></div>
+                        <div class="metro-line line-green"></div>
+                        <div class="metro-line line-blue"></div>
+                    </div>
+                    <div class="brand-text">
+                        <h1>
+                            <span class="hindi-text">भावी</span><br>
+                            <span class="hindi-text">नगरसेवक</span>
+                        </h1>
+                    </div>
+                </div>
+                
+                <!-- Center Section: Mission & Goal -->
+                <div class="center-content">
+                    <div class="mission-badge">
+                        <span>MISSION 2025</span>
+                        <span class="mission-number">02</span>
+                    </div>
+                    
+                    <div class="prabhag-section">
+                        प्रभाग क्रमांक
+                    </div>
+                    
+                    <p class="goal-text mb-0">
+                        जनतेचा विश्वास<br>
+                        विकासाचा ध्येय...!
+                    </p>
+                </div>
+                
+                <!-- Right Section: Candidate Name -->
+                <div class="candidate-name">
+                    कैलास कंचनसिंग ठाकूर
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Demo Content -->
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-center mb-4">Welcome to Mission 2025</h2>
+                <p class="text-center lead">जनतेच्या विश्वासासह विकासाचा प्रवास</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

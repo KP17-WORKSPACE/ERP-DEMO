@@ -1,0 +1,1056 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\ApiBaseMethod;
+use App\SmInspectingDepartment;
+use App\SmItem;
+use Illuminate\Http\Request;
+use App\SmItemStore;
+use App\SmStaff;
+use App\SysBrand;
+use App\SysChartofAccounts;
+use App\SysCompany;
+use App\SysCountries;
+use App\SysCrmDeals;
+use App\SysCrmDealsCollaboration;
+use App\SysCrmDealsComments;
+use App\SysCrmDealTrack;
+use App\SysCrmLeads;
+use App\SysCrmQuoteCSItems;
+use App\SysCrmQuoteItems;
+use App\SysCrmSalesTarget;
+use App\SysCurrencySettings;
+use App\SysCustSuppl;
+use App\SysCustSupplAddressbook;
+use App\SysHelper;
+use App\SysItemOpeningStock;
+use App\SysItemStock;
+use App\SysPaymentTerms;
+use App\SysShipping;
+use App\SysStockIn;
+use App\SysStockInSerialNo;
+use App\SysSupplierType;
+use Brian2694\Toastr\Facades\Toastr;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use PhpParser\Node\Stmt\Return_;
+use Validator;
+
+class SysCrmDealsTrackReportController extends Controller
+{
+    public function __construct(){
+        $this->middleware('PM');
+    }
+
+    public function trackdealreport(Request $request)
+    {
+        try {
+            $staff = SmStaff::select('user_id','full_name')->where('active_status',1)->get();
+            $company = SysCompany::select('id','company_name','city')->orderby('company_name','asc')->get();
+
+            $ctrl_owner='';
+            $ctrl_company=session('logged_session_data.company_id');
+            
+            
+            if($_POST){
+                if ($request->company_id != "") {
+                    $query->where('company_id', $request->company_id);
+                    $ctrl_company=$request->company_id;
+                }
+                if ($request->owner_id != "") {
+                    $query->where('user_id', $request->owner_id);
+                    $ctrl_owner=$request->owner_id;
+                }
+                if ($request->date != "" && $request->filter_by == "") {
+                    $ctrl_date=$request->date;
+                }
+                if ($request->date != "" && $request->filter_by == "") {
+                    $ctrl_date=$request->date;
+                    if ($request->date2 != "") {
+                        $ctrl_date2=$request->date2;
+                    }
+                }
+                if ($request->filter_by == "this_month") {
+                    $ctrl_date=date('Y-m-01');
+                    $ctrl_date2=date("Y-m-t", strtotime($ctrl_date));
+                    $filter_by='this_month';               
+                }
+                if ($request->filter_by == "today") {
+                    $ctrl_date=date('Y-m-d');
+                    $ctrl_date2=date('Y-m-d');
+                    $filter_by='today';
+                }
+                if ($request->filter_by == "this_week") {
+                    $ctrl_date = date('Y-m-d', strtotime('-1 week sunday 00:00:00'));
+                    $ctrl_date2 = date('Y-m-d', strtotime('saturday 23:59:59'));
+                    $filter_by='this_week';
+                }
+                if ($request->filter_by == "last_week") {
+                    $ctrl_date = date('Y-m-d', strtotime('-2 week sunday 00:00:00'));
+                    $ctrl_date2 = date('Y-m-d', strtotime('-1 week saturday 23:59:59'));
+                    $filter_by='last_week';
+                }
+                if ($request->filter_by == "last_month") {
+                    $ctrl_date = date('Y-m-d', strtotime('first day of previous month'));
+                    $ctrl_date2 = date('Y-m-d', strtotime('last day of previous month'));
+                    $filter_by='last_month';
+                }
+                if ($request->filter_by == "this_quarter") {
+                    $q_date = SysHelper::get_quarter(date('m'));
+                    $ctrl_date = $q_date[0];
+                    $ctrl_date2 = $q_date[1];
+                    $filter_by='this_quarter';
+                }
+                if ($request->filter_by == "pre_quarter") {
+                    $q_date = SysHelper::get_pre_quarter(date('m'));
+                    $ctrl_date = $q_date[0];
+                    $ctrl_date2 = $q_date[1];
+                    $filter_by='pre_quarter';
+                }
+                if ($request->filter_by == "this_year") {
+                    $ctrl_date = date('Y-01-01');
+                    $ctrl_date2 = date('Y-12-31');
+                    $filter_by='this_year';
+                }
+                if ($request->filter_by == "last_year") {
+                    $ctrl_date = date("Y-01-01",strtotime("-1 year"));
+                    $ctrl_date2 = date("Y-12-31",strtotime("-1 year"));
+                    $filter_by='last_year';
+                }
+
+                if(Auth::user()->role_id != 1 && Auth::user()->role_id != 9 && Auth::user()->id != 51){
+
+                    if(Auth::user()->id==44){ //rajiv
+                        $teams= array(44,34,32,79);
+                        $query->wherein('user_id', $teams);
+                    }
+                    else if(Auth::user()->id==26){ //Sayed Naeem
+                        $teams= array(26,53,88,25,41,27,62,94,91,36,112);
+                        $query->wherein('user_id', $teams);
+                    }
+                    else if(Auth::user()->id==104){ //Saeed Ansari
+                        $teams= array(38,39,40,50,63,77,104);
+                        $query->wherein('user_id', $teams);
+                    }
+                    else{
+                        $query->where('user_id', Auth::user()->id);
+                    }
+                }
+                $deals = $query->orderby('full_name','asc')->get();
+            }
+            else{
+                $query->where('company_id', $ctrl_company);
+                if(Auth::user()->role_id != 1 && Auth::user()->role_id != 9 &&  Auth::user()->id != 51){
+                    if(Auth::user()->id==44){ //rajiv
+                        $teams= array(44,34,32,79);
+                        $query->wherein('user_id', $teams);
+                    }
+                    else{
+                        $query->where('user_id', Auth::user()->id);
+                    }
+                }
+                $deals = $query->orderby('full_name','asc')->get();
+            }
+            
+            if(count($deals)>0){
+                foreach ($deals as $value) {
+                    if($value->user_id==26 || $value->user_id==36 || $value->user_id==112){
+                        $user=[26,36,112];
+                    }
+                    else{
+                        $user=[$value->user_id];
+                    }
+
+                    $arrayVariable = [
+                        'user_id'  => $value->user_id,
+                        'full_name' => $value->full_name,
+                        
+                        'revenue' => SysHelper::get_total_revenue_all_by_user($user,$ctrl_date,$ctrl_date2,$ctrl_company),
+
+                        'forcast' => SysHelper::get_total_forcast_all_by_user($user,$ctrl_date,$ctrl_date2,$ctrl_company),
+                        'revenue_actual' => SysHelper::get_total_revenue_actual_all_by_user($user,$ctrl_date,$ctrl_date2,$ctrl_company),
+                        'target' => SysCrmSalesTarget::where('user_id',$value->user_id)
+                        ->whereRaw("DATE_FORMAT(target_month, '%Y-%m') >= '".date('Y-m', strtotime($ctrl_date))."' and DATE_FORMAT(target_month, '%Y-%m') <= '".date('Y-m', strtotime($ctrl_date2))."'")->sum('target'),
+                        'dealcount' => SysHelper::get_deal_count_by_user($user,$ctrl_date,$ctrl_date2),
+                    ];
+                    $data[]=$arrayVariable;
+                }
+            }
+            else{
+                $data='0';
+            }
+            $form_data = [
+                'data' => $data,
+                'staff' => $staff,
+                'company' => $company,
+                'ctrl_owner' => $ctrl_owner,
+                'ctrl_company' => $ctrl_company,
+                'ctrl_date' => $ctrl_date,
+                'ctrl_date2' => $ctrl_date2,
+                'filter_by' => $filter_by,
+            ];
+            
+            session()->put('sale_report_list_query', $form_data);
+            return redirect('crm-deals-sales-reports');
+            //return $data;
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public function salesreports()
+    {
+        try {
+            $data = session('sale_report_list_query.data');
+            $staff = session('sale_report_list_query.staff');
+            $company = session('sale_report_list_query.company');
+            $ctrl_owner = session('sale_report_list_query.ctrl_owner');
+            $ctrl_company = session('sale_report_list_query.ctrl_company');
+            $ctrl_date = session('sale_report_list_query.ctrl_date');
+            $ctrl_date2 = session('sale_report_list_query.ctrl_date2');
+            $filter_by = session('sale_report_list_query.filter_by');
+
+            return view('backEnd.crm.DealSaleReport', compact('data','staff','company','ctrl_owner','ctrl_company','ctrl_date','ctrl_date2','filter_by'));
+        
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public function salesreportlist($uid, $cid, $m1, $m2)
+    {
+        if($uid==36 || $uid==26){
+            $user=[36,26];
+        }
+        else{
+            $user=[$uid];
+        }
+        // else if($uid==25 || $uid==41){
+        //     $user=[25,41];
+        // }
+        // else if($uid==44){
+        //     $user=[44,45,34,32,79];
+        // }
+        // else if($uid==104){
+        //     $user=[38,39,40,50,63,77,104];
+        // }
+
+        try {
+            // $collaboration = SysCrmDealsCollaboration::select('deal_id')->where('user_id',Auth::user()->id)->get();
+            // if(count($collaboration)>0){
+            //     foreach($collaboration as $collab)
+            //     {
+            //         $coll[]=$collab->deal_id;
+            //     }
+            // }
+            if(Auth::user()->role_id == 1 || Auth::user()->role_id == 9){
+                $staff = SmStaff::select('user_id','full_name')->wherein('department_id',[2,5])->orderby('full_name','asc')->get();
+                $company = SysCompany::select('id','company_name','city')->orderby('company_name','asc')->get();
+            }else{
+                $staff = SmStaff::select('user_id','full_name')->where('user_id',Auth::user()->id)->get();
+                $company = SysCompany::select('id','company_name','city')->where('id',session('logged_session_data.company_id'))->orderby('company_name','asc')->get();
+            }
+            $ctrl_owner=$uid;
+            $ctrl_company=$cid;
+            $ctrl_date=$m1;
+            $ctrl_date2=$m2;
+
+
+            $data1 = SysCrmDeals::select('sys_crm_deals.*','sys_crm_deals.id as dealid','sys_crm_deal_track.invoice','sys_crm_deal_track.delivery','sys_crm_deal_track.receivables','sys_crm_deal_track_approval_invoice.created_at as inv_date','deal_percent')
+            ->leftjoin('sys_crm_deal_track','sys_crm_deal_track.deal_id','sys_crm_deals.id')
+            ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')->where('stage',4);     
+            if($m1 !="" && $m2 !=""){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".date('Y-m-d', strtotime($m1))."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".date('Y-m-d', strtotime($m2))."'");
+            }
+            if($m1 !="" && $m2 ==""){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d', strtotime($m1))."'");
+            }
+            $data1->where('sys_crm_deals.stage',4)->where('sys_crm_deal_track_approval_invoice.status',1)->wherein('sys_crm_deals.company_id',[1,3,13])->where('sys_crm_deals.is_partial_invoice',0);
+            $data1->wherein('sys_crm_deals.owner',$user);
+            
+            
+            $data2 = SysCrmDeals::select('sys_crm_deals.*');
+            if($m1 !="" && $m2 !=""){
+                $data2->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".date('Y-m-d', strtotime($m1))."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".date('Y-m-d', strtotime($m2))."'");
+            }
+            if($m1 !="" && $m2 ==""){
+                $data2->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d', strtotime($m1))."'");
+            }
+            $data2->where('sys_crm_deals.stage',4)->wherenotin('sys_crm_deals.company_id',[1,3,13]);
+            $data2->wherein('sys_crm_deals.owner',$user);
+
+            $deals1 = $data1->get();
+            $deals2 = $data2->get();
+
+                // if(Auth::user()->role_id != 1 && Auth::user()->role_id != 9){
+                //     $query->where('owner', Auth::user()->id);
+                //     if(count($collaboration)>0){ $query->orwherein('sys_crm_deals.id',$coll); }
+                // }
+            
+            return view('backEnd.crm.DealSaleReportList', compact('deals1','deals2','staff','company','ctrl_owner','ctrl_company','ctrl_date','ctrl_date2'));
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public function gitex2023salesreport()
+    {
+        try {
+            $data = SysCrmLeads::select('owner','full_name', DB::raw('COUNT(*) as lead_count'))
+            ->join('users', 'users.id', '=', 'sys_crm_leads.owner')
+            ->where('source','Gitex 2023')->groupBy('owner')->orderby('full_name','asc')->get();
+
+            $converted = SysCrmDeals::select('owner', DB::raw('COUNT(*) as deal_count'))
+            ->where('source','Gitex 2023')->groupBy('owner')->get();
+
+            $won = SysCrmDeals::select('owner', DB::raw('COUNT(*) as won_count'))
+            ->where('source','Gitex 2023')->where('stage',4)->groupBy('owner')->get();
+            
+            $dealvalue = SysCrmDeals::select('owner', DB::raw('sum(deal_value) as deal_value'))
+            ->where('source','Gitex 2023')->where('stage',4)->groupBy('owner')->get();
+
+            $invoiced = SysCrmDeals::select('owner', DB::raw('COUNT(*) as invoice_count'))
+            ->join('users', 'users.id', '=', 'sys_crm_deals.owner')
+            ->join('sys_crm_deal_track', 'sys_crm_deal_track.deal_id', '=', 'sys_crm_deals.id')
+            ->where('sys_crm_deal_track.invoice',1)
+            ->where('source','Gitex 2023')->where('stage',4)->groupBy('owner')->get();
+
+            return view('backEnd.crm.DealSaleReportGitex2023', compact('data','converted','won','dealvalue','invoiced'));
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public function gitex2023salesreportlist($uid, $sid)
+    {
+        try{
+        $deals = SysCrmDeals::select('id','deal_name','estimated_close_date','stage','deal_currency','company_id','deal_value','created_at','cust_id','owner')
+        ->where('source','Gitex 2023')->where('owner',$uid)->get();
+
+            return view('backEnd.crm.DealListGitex2023', compact('deals'));
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public function forecastreport(Request $request)
+    {
+        try {
+            if(Auth::user()->role_id == 1 || Auth::user()->role_id == 9){
+                $staff = SmStaff::select('user_id','full_name')->wherein('department_id',[2,5])->orderby('full_name','asc')->get();
+                $company = SysCompany::select('id','company_name','city')->orderby('company_name','asc')->get();
+            }else{
+                if(Auth::user()->id==44){ //rajiv
+                    $teams= array(44,45,34,32,79);
+                    $staff = SmStaff::select('user_id','full_name')->wherein('user_id',$teams)->get();
+                }
+                else if(Auth::user()->id==26){ //Sayed Naeem
+                    $teams= array(26,53,88,25,41,27,62,94,91,36,112);
+                    $staff = SmStaff::select('user_id','full_name')->wherein('user_id',$teams)->get();
+                }
+                else{
+                    $staff = SmStaff::select('user_id','full_name')->where('user_id',Auth::user()->id)->get();
+                }
+                $company = SysCompany::select('id','company_name','city')->where('id',session('logged_session_data.company_id'))->orderby('company_name','asc')->get();
+            }
+            $ctrl_owner='';
+            $ctrl_company=session('logged_session_data.company_id');
+            $ctrl_date=date('Y-m-01');
+            $ctrl_date2=date("Y-m-t", strtotime($ctrl_date));
+
+            $query = SmStaff::select('user_id','full_name')->where('active_status',1);
+            $query->wherenotin('user_id', [48,82,49,71,28,55,56,35,80,75,30,61,3,72,37,78,4,60,73,22,51,31,23,1,59,89,76,24,102,100,21]);
+            
+            if($_POST){
+                if ($request->company_id != "") {
+                    $query->where('company_id', $request->company_id);
+                    $ctrl_company=$request->company_id;
+                }
+                if ($request->owner_id != "") {
+                    $query->where('user_id', $request->owner_id);
+                    $ctrl_owner=$request->owner_id;
+                }
+                if ($request->date != "") {
+
+                }
+                if ($request->date != "") {
+                    $ctrl_date=$request->date;
+                    if ($request->date2 != "") {
+                        $ctrl_date2=$request->date2;
+                    }
+                }
+                if(Auth::user()->role_id != 1 && Auth::user()->role_id != 9){
+                    if(Auth::user()->id==44){ //rajiv
+                        $teams= array(44,34,32,79);
+                        $query->wherein('user_id', $teams);
+                    }
+                    else{
+                        $query->where('user_id', Auth::user()->id);
+                    }
+                }
+                $deal = $query->orderby('full_name','asc')->get();
+            }
+            else{
+                $query->where('company_id', $ctrl_company);
+                if(Auth::user()->role_id != 1 && Auth::user()->role_id != 9){
+                    if(Auth::user()->id==44){ //rajiv
+                        $teams= array(44,34,32,79);
+                        $query->wherein('user_id', $teams);
+                    }
+                    else{
+                        $query->where('user_id', Auth::user()->id);
+                    }
+                }
+                $deal = $query->orderby('full_name','asc')->get();
+            }
+
+
+            if(count($deal)>0){
+                foreach ($deal as $value) {
+                    if($value->user_id==26 || $value->user_id==36 || $value->user_id==112){
+                        $user=[26,36,112];
+                    }
+                    else{
+                        $user=[$value->user_id];
+                    }
+
+                    $arrayVariable = [
+                        'user_id'  => $value->user_id,
+                        'full_name' => $value->full_name,
+                        'forcast' => SysHelper::get_total_forcast_all_by_user($user,$ctrl_date,$ctrl_date2,$ctrl_company),
+                    ];
+                    $data[]=$arrayVariable;
+                }
+            }
+            else{
+                $data='0';
+            }
+            $form_data = [
+                'data' => $data,
+                'staff' => $staff,
+                'company' => $company,
+                'ctrl_owner' => $ctrl_owner,
+                'ctrl_company' => $ctrl_company,
+                'ctrl_date' => $ctrl_date,
+                'ctrl_date2' => $ctrl_date2,
+            ];
+            session()->put('forecast_report_list_query', $form_data);
+            return redirect('crm-deals-forecast-reports');
+            //return $data;
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public function forecastreports()
+    {
+        try {
+            $data = session('forecast_report_list_query.data');
+            $staff = session('forecast_report_list_query.staff');
+            $company = session('forecast_report_list_query.company');
+            $ctrl_owner = session('forecast_report_list_query.ctrl_owner');
+            $ctrl_company = session('forecast_report_list_query.ctrl_company');
+            $ctrl_date = session('forecast_report_list_query.ctrl_date');
+            $ctrl_date2 = session('forecast_report_list_query.ctrl_date2');
+            return view('backEnd.crm.DealForecastReport', compact('data','staff','company','ctrl_owner','ctrl_company','ctrl_date','ctrl_date2'));
+        
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public function forecastreportlist($uid, $cid, $m1, $m2)
+    {
+        try {
+            // $collaboration = SysCrmDealsCollaboration::select('deal_id')->where('user_id',Auth::user()->id)->get();
+            // if(count($collaboration)>0){
+            //     foreach($collaboration as $collab)
+            //     {
+            //         $coll[]=$collab->deal_id;
+            //     }
+            // }
+            if(Auth::user()->role_id == 1 || Auth::user()->role_id == 9){
+                $staff = SmStaff::select('user_id','full_name')->wherein('department_id',[2,5])->orderby('full_name','asc')->get();
+                $company = SysCompany::select('id','company_name','city')->orderby('company_name','asc')->get();
+            }else{
+                $staff = SmStaff::select('user_id','full_name')->where('user_id',Auth::user()->id)->get();
+                $company = SysCompany::select('id','company_name','city')->where('id',session('logged_session_data.company_id'))->orderby('company_name','asc')->get();
+            }
+            $ctrl_owner=$uid;
+            $ctrl_company=$cid;
+            $ctrl_date=$m1;
+            $ctrl_date2=$m2;
+            $query = SysCrmDeals::wherein('stage',[1,2,3])
+            ->where('sys_crm_deals.company_id',$cid)
+            ->whereNotIn('sys_crm_deals.id',function($query){
+                $query->select('deal_id')->from('sys_crm_deal_track_approval_invoice')->where('status',1);
+             });
+            
+             if($uid==26 || $uid==36 || $uid==112)
+             {
+                $query->wherein('owner', [26,36,112]);
+             }
+             else{
+                    $query->where('owner', $uid);
+             }
+
+                    $ctrl_owner=$uid;
+
+                if ($m1 != "") {
+                    $ctrl_date=$m1;
+                    if ($m2 != "") {
+                        $query->whereRaw("DATE_FORMAT(estimated_close_date, '%Y-%m-%d') >= '".date('Y-m-d', strtotime($m1))."' and DATE_FORMAT(estimated_close_date, '%Y-%m-%d') <= '".date('Y-m-d', strtotime($m2))."'");
+                        $ctrl_date2=$m2;
+                    }
+                    else{
+                        $query->whereRaw("DATE_FORMAT(estimated_close_date, '%Y-%m-%d') = '".date('Y-m-d', strtotime($m1))."'");
+                    }
+                }
+
+                // if(Auth::user()->role_id != 1 && Auth::user()->role_id != 9){
+                //     $query->where('owner', Auth::user()->id);
+                //     if(count($collaboration)>0){ $query->orwherein('sys_crm_deals.id',$coll); }
+                // }
+                $deals = $query->orderby('id','desc')->get();
+                
+            return view('backEnd.crm.DealForecastReportList', compact('deals','staff','company','ctrl_owner','ctrl_company','ctrl_date','ctrl_date2'));
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public function leadconvertionreport(Request $request)
+    {
+        try {
+            $ctrl_date=date('Y-m');
+            if($_POST){
+                if ($request->date != "") {
+                    $ctrl_date=$request->date;
+                    $query = SysCrmLeads::select('created_by');
+                    $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m') >= '".date('Y-m', strtotime($ctrl_date))."'");
+                }
+            }
+            else{
+                $query = SysCrmLeads::select('created_by');
+                $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m') >= '".date('Y-m', strtotime($ctrl_date))."'");
+            }
+            
+            $data = $query->distinct()->get();
+
+            //return $data;
+            /*if(count($leads)>0){
+                foreach ($leads as $value) {
+                    $arrayVariable = [
+                        'user_id'  => $value->user_id,
+                        'full_name' => $value->full_name,
+                        'forcast' => SysHelper::get_total_forcast_all_by_user($value->user_id,$ctrl_date,$ctrl_date2),
+                    ];
+                    $data[]=$arrayVariable;
+                }
+            }
+            else{
+                $data='0';
+            }*/
+            
+            return view('backEnd.crm.LeadConvertionReport', compact('data','ctrl_date'));
+            //return $data;
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    
+
+    
+    public function dealpageservicefilterlist($id,$date,$company)
+    {
+        try {
+            $ctrl_date=date('Y-m-01');
+            $ctrl_date2=date('Y-m-d');
+            $type="service";
+
+            if($company==1 || $company==3 || $company==13){
+                $data1 = SysCrmDeals::select('deal_name','deal_value','qty','price','discount','deal_currency','source','cust_id','sys_crm_quote_items.deal_id','estimated_close_date','owner')
+                ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                ->leftjoin('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+                ->wherein('sys_crm_quote_items.product_id',[1417,1427,4714,8408,8490,8493,8729,8806,9319,10247,8544,9726,9728,9780,10294])
+                ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.is_partial_invoice',0)
+                ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.company_id',$company);
+                }
+                else{
+                $data1 = SysCrmDeals::select('deal_name','deal_value','qty','price','discount','deal_currency','source','cust_id','sys_crm_quote_items.deal_id','estimated_close_date','owner')
+                ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+                ->wherein('sys_crm_quote_items.product_id',[1417,1427,4714,8408,8490,8493,8729,8806,9319,10247,8544,9726,9728,9780,10294])
+                ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$company);
+                }
+        
+                $data2 = SysCrmDeals::select('deal_name','deal_value','qty','price','discount','deal_currency','source','cust_id','sys_crm_quote_items.deal_id','estimated_close_date','owner')
+                ->leftjoin('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+                ->wherein('sys_crm_quote_items.product_id',[1417,1427,4714,8408,8490,8493,8729,8806,9319,10247,8544,9726,9728,9780,10294])
+                ->where('sys_crm_deals.company_id',$company)->wherein('stage',[1,2,3])
+                ->whereNotIn('sys_crm_deals.id',function($query){
+                    $query->select('deal_id')->from('sys_crm_deal_track_approval_invoice')->where('status',1);
+                 });
+        
+                if($date=="d"){
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                }
+                if($date=="m"){
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m') = '".date('Y-m')."'");
+                }
+                if($date=="y"){
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y') = '".date('Y')."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y') = '".date('Y')."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y') = '".date('Y')."'");
+                }
+                if($date=="q"){
+                    $quarter = SysHelper::get_quarter(date('m'));
+                    $start_date = $quarter[0];
+                    $end_date = $quarter[1];
+                    
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') <= '".$end_date."'");
+                }
+                if($date=="pm"){
+                    $c_date = Carbon::createFromFormat('Y-m', date('Y-m'))->subMonth();  
+                    $pm_date = $c_date->format('Y-m');
+        
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".$pm_date."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".$pm_date."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m') = '".$pm_date."'");
+                }
+                if($date=="pq"){
+                    $quarter = SysHelper::get_pre_quarter(date('m'));
+                    $start_date = $quarter[0];
+                    $end_date = $quarter[1];
+                    
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') <= '".$end_date."'");
+                }
+                
+                if(Auth::user()->role_id == 1 || Auth::user()->id==33){ //admin
+                    // $data1->where('sys_crm_deals.company_id',1);
+                    // $data2->where('sys_crm_deals.company_id',1);
+                }
+                else{
+                    if(Auth::user()->id==26 || Auth::user()->id==36 || Auth::user()->id==112){//26 Naeem & 36 Arianne
+                        $teams= array(26,36,112);
+                        $data1->wherein('sys_crm_deals.owner',$teams);
+                        $data2->wherein('sys_crm_deals.owner',$teams);
+                    }
+                    else{
+                        $data1->where('sys_crm_deals.owner',Auth::user()->id);
+                        $data2->where('sys_crm_deals.owner',Auth::user()->id);
+                    }
+                }
+                
+
+
+            if($id=="service_revenue"){
+                $data = $data1->get();
+                return view('backEnd.crm.DealServiceReport', compact('data','id','type'));
+            }
+            if($id=="service_forcast"){   
+                $data = $data2->get();
+                return view('backEnd.crm.DealServiceReport', compact('data','id','type'));
+            }
+
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public function dealpageamcfilterlist($id,$date,$company)
+    {
+        try {
+            $ctrl_date=date('Y-m-01');
+            $ctrl_date2=date('Y-m-d');
+            $type="amc";
+
+            if($company==1 || $company==3 || $company==13){
+                $data1 = SysCrmDeals::select('deal_name','deal_value','qty','price','discount','deal_currency','source','cust_id','sys_crm_quote_items.deal_id','estimated_close_date','owner')
+                ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+                ->wherein('sys_crm_quote_items.product_id',[9976,10465,10497])
+                ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.is_partial_invoice',0)
+                ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.company_id',$company);
+                }
+                else{
+                $data1 = SysCrmDeals::select('deal_name','deal_value','qty','price','discount','deal_currency','source','cust_id','sys_crm_quote_items.deal_id','estimated_close_date','owner')
+                ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+                ->wherein('sys_crm_quote_items.product_id',[9976,10465,10497])
+                ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$company);
+                }
+        
+                $data2 = SysCrmDeals::select('deal_name','deal_value','qty','price','discount','deal_currency','source','cust_id','sys_crm_quote_items.deal_id','estimated_close_date','owner')
+                ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+                ->wherein('sys_crm_quote_items.product_id',[9976,10465,10497])
+                ->where('sys_crm_deals.company_id',$company)
+                ->wherein('stage',[1,2,3])
+                ->whereNotIn('sys_crm_deals.id',function($query){
+                    $query->select('deal_id')->from('sys_crm_deal_track_approval_invoice')->where('status',1);
+                 });
+                
+                if($date=="d"){
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                }
+                if($date=="m"){
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m') = '".date('Y-m')."'");
+                }
+                if($date=="y"){
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y') = '".date('Y')."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y') = '".date('Y')."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y') = '".date('Y')."'");
+                }
+                if($date=="q"){
+                    $quarter = SysHelper::get_quarter(date('m'));
+                    $start_date = $quarter[0];
+                    $end_date = $quarter[1];
+                    
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') <= '".$end_date."'");
+                }
+                if($date=="pm"){
+                    $c_date = Carbon::createFromFormat('Y-m', date('Y-m'))->subMonth();  
+                    $pm_date = $c_date->format('Y-m');
+        
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".$pm_date."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".$pm_date."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m') = '".$pm_date."'");
+                }
+                if($date=="pq"){
+                    $quarter = SysHelper::get_pre_quarter(date('m'));
+                    $start_date = $quarter[0];
+                    $end_date = $quarter[1];
+                    
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') <= '".$end_date."'");
+                }
+                
+                if(Auth::user()->role_id == 1 || Auth::user()->id==33){ //admin
+                    // $data1->where('sys_crm_deals.company_id',1);
+                    // $data2->where('sys_crm_deals.company_id',1);
+                }
+                else{
+                    if(Auth::user()->id==26 || Auth::user()->id==36 || Auth::user()->id==112){//26 Naeem & 36 Arianne
+                        $teams= array(26,36,112);
+                        $data1->wherein('sys_crm_deals.owner',$teams);
+                        $data2->wherein('sys_crm_deals.owner',$teams);
+                    }
+                    else{
+                        $data1->where('sys_crm_deals.owner',Auth::user()->id);
+                        $data2->where('sys_crm_deals.owner',Auth::user()->id);
+                    }
+                }
+                
+
+
+            if($id=="amc_revenue"){
+                $data = $data1->get();
+                return view('backEnd.crm.DealServiceReport', compact('data','id','type'));
+            }
+            if($id=="amc_forcast"){   
+                $data = $data2->get();
+                return view('backEnd.crm.DealServiceReport', compact('data','id','type'));
+            }
+
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public function dealpageprojectfilterlist($id,$date,$company)
+    {
+        try {
+            $ctrl_date=date('Y-m-01');
+            $ctrl_date2=date('Y-m-d');
+            $type="project";
+            
+                if($company==1 || $company==3 || $company==13){
+                    $data1 = SysCrmDeals::select('deal_value','deal_currency','source','cust_id','sys_crm_deals.id','deal_name','estimated_close_date','owner')
+                    ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')        
+                    ->where('sys_crm_deals.isproject',1)
+                    ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.is_partial_invoice',0)
+                    ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.company_id',$company);
+                    }
+                    else{
+                    $data1 = SysCrmDeals::select('deal_value','deal_currency','source','cust_id','sys_crm_deals.id','deal_name','estimated_close_date','owner')
+                    ->where('sys_crm_deals.isproject',1)        
+                    ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$company);
+                    }
+            
+                    $data2 = SysCrmDeals::select('deal_value','deal_currency','source','cust_id','sys_crm_deals.id','deal_name','estimated_close_date','owner')
+                    ->where('sys_crm_deals.isproject',1)        
+                    ->where('sys_crm_deals.company_id',$company)
+                    ->wherein('stage',[1,2,3])
+                    ->whereNotIn('sys_crm_deals.id',function($query){
+                        $query->select('deal_id')->from('sys_crm_deal_track_approval_invoice')->where('status',1);
+                     });
+                    
+                    if($date=="d"){
+                        if($company==1 || $company==3 || $company==13){
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                        }else{
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                        }
+                        $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                    }
+                    if($date=="m"){
+                        if($company==1 || $company==3 || $company==13){
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'");
+                        }else{
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'");
+                        }
+                        $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m') = '".date('Y-m')."'");
+                    }
+                    if($date=="y"){
+                        if($company==1 || $company==3 || $company==13){
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y') = '".date('Y')."'");
+                        }else{
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y') = '".date('Y')."'");
+                        }
+                        $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y') = '".date('Y')."'");
+                    }
+                    if($date=="q"){
+                        $quarter = SysHelper::get_quarter(date('m'));
+                        $start_date = $quarter[0];
+                        $end_date = $quarter[1];
+                        
+                        if($company==1 || $company==3 || $company==13){
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+                        }else{
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+                        }
+                        $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') <= '".$end_date."'");
+                    }
+                    if($date=="pm"){
+                        $c_date = Carbon::createFromFormat('Y-m', date('Y-m'))->subMonth();  
+                        $pm_date = $c_date->format('Y-m');
+            
+                        if($company==1 || $company==3 || $company==13){
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".$pm_date."'");
+                        }else{
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".$pm_date."'");
+                        }
+                        $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m') = '".$pm_date."'");
+                    }
+                    if($date=="pq"){
+                        $quarter = SysHelper::get_pre_quarter(date('m'));
+                        $start_date = $quarter[0];
+                        $end_date = $quarter[1];
+                        
+                        if($company==1 || $company==3 || $company==13){
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+                        }else{
+                            $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+                        }
+                        $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') <= '".$end_date."'");
+                    }
+                
+                if(Auth::user()->role_id == 1 || Auth::user()->id==33){ //admin
+                    // $data1->where('sys_crm_deals.company_id',1);
+                    // $data2->where('sys_crm_deals.company_id',1);
+                }
+                else{
+                    if(Auth::user()->id==26 || Auth::user()->id==36 || Auth::user()->id==112){//26 Naeem & 36 Arianne
+                        $teams= array(26,36,112);
+                        $data1->wherein('sys_crm_deals.owner',$teams);
+                        $data2->wherein('sys_crm_deals.owner',$teams);
+                    }
+                    else{
+                        $data1->where('sys_crm_deals.owner',Auth::user()->id);
+                        $data2->where('sys_crm_deals.owner',Auth::user()->id);
+                    }
+                }
+                
+
+
+            if($id=="project_revenue"){
+                $data = $data1->get();
+                return view('backEnd.crm.DealProjectReport', compact('data','id','type'));
+            }
+            if($id=="project_forcast"){   
+                $data = $data2->get();
+                return view('backEnd.crm.DealProjectReport', compact('data','id','type'));
+            }
+
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    
+    //from admin
+    public function dealpagesalesperformancefilterlist($id,$date,$company)
+    {
+        try {
+            $ctrl_date=date('Y-m-01');
+            $ctrl_date2=date('Y-m-d');
+            $type="salesperformance";
+
+            if($company==1 || $company==3 || $company==13){
+                $data1 = SysCrmDeals::select('sys_crm_deals.id as dealid','deal_value','deal_currency','source','cust_id','sys_crm_deals.id','deal_name','estimated_close_date','owner','deal_percent')
+                ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.is_partial_invoice',0)
+                ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.company_id',$company);
+                }
+                else{
+                $data1 = SysCrmDeals::select('sys_crm_deals.id as dealid','deal_value','deal_currency','source','cust_id','sys_crm_deals.id','deal_name','estimated_close_date','owner','deal_percent')
+                ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$company);
+                }
+        
+                $data2 = SysCrmDeals::select('deal_value','deal_currency','source','cust_id','sys_crm_deals.id','deal_name','estimated_close_date','owner')
+                ->where('sys_crm_deals.company_id',$company)
+                ->wherein('stage',[1,2,3])
+                ->whereNotIn('id',function($query){
+                    $query->select('deal_id')->from('sys_crm_deal_track_approval_invoice')->where('status',1);
+                 });
+                
+                if($date=="d"){
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+                }
+                if($date=="m"){
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m') = '".date('Y-m')."'");
+                }
+                if($date=="y"){
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y') = '".date('Y')."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y') = '".date('Y')."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y') = '".date('Y')."'");
+                }
+                if($date=="q"){
+                    $quarter = SysHelper::get_quarter(date('m'));
+                    $start_date = $quarter[0];
+                    $end_date = $quarter[1];
+                    
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') <= '".$end_date."'");
+                }
+                if($date=="pm"){
+                    $c_date = Carbon::createFromFormat('Y-m', date('Y-m'))->subMonth();  
+                    $pm_date = $c_date->format('Y-m');
+        
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".$pm_date."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".$pm_date."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m') = '".$pm_date."'");
+                }
+                if($date=="pq"){
+                    $quarter = SysHelper::get_pre_quarter(date('m'));
+                    $start_date = $quarter[0];
+                    $end_date = $quarter[1];
+                    
+                    if($company==1 || $company==3 || $company==13){
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+                    }else{
+                        $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+                    }
+                    $data2->whereRaw("DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.estimated_close_date, '%Y-%m-%d') <= '".$end_date."'");
+                }
+                
+                if(Auth::user()->role_id == 1 || Auth::user()->id==33){ //admin
+                    // $data1->where('sys_crm_deals.company_id',1);
+                    // $data2->where('sys_crm_deals.company_id',1);
+                }
+                else{
+                    if(Auth::user()->id==26 || Auth::user()->id==36 || Auth::user()->id==112){//26 Naeem & 36 Arianne
+                        $teams= array(26,36,112);
+                        $data1->wherein('sys_crm_deals.owner',$teams);
+                        $data2->wherein('sys_crm_deals.owner',$teams);
+                    }
+                    else if(Auth::user()->id==44 ){//44 rajiv
+                        $teams= array(44,34,32,79);
+                        $data1->wherein('sys_crm_deals.owner',$teams);
+                        $data2->wherein('sys_crm_deals.owner',$teams);
+                    }
+                    else{
+                        $data1->where('sys_crm_deals.owner',Auth::user()->id);
+                        $data2->where('sys_crm_deals.owner',Auth::user()->id);
+                    }
+                }
+                
+
+
+            if($id=="revenue"){
+                $data = $data1->get();
+                return view('backEnd.crm.DealSalesPerformanceReport', compact('data','id','type'));
+            }
+            if($id=="forcast"){   
+                $data = $data2->get();
+                return view('backEnd.crm.DealSalesPerformanceReport', compact('data','id','type'));
+            }
+
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    
+}

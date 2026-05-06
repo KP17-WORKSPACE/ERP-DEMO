@@ -1,0 +1,20 @@
+[
+    {
+        "id": 3,
+        "company_id": 1,
+        "doc_number": "CB-1001",
+        "bank_id": 80,
+        "no_of_cheques": 100,
+        "start_no": 1,
+        "end_no": 100,
+        "attachment": "chequebooks\/ghJRmkDjR6hAGdMMwk0u5YqUqQ8an1gDAtDiMktW.pdf",
+        "remarks": "test",
+        "created_by": 1,
+        "updated_by": null,
+        "deleted_by": null,
+        "created_at": "2026-04-09 18:46:41",
+        "updated_at": "2026-04-09 18:46:41",
+        "deleted_at": null,
+        "cheque_id": null
+    }
+]

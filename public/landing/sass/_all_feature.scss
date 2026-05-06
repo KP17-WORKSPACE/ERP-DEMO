@@ -1,0 +1,100 @@
+/**************** all feature css start ****************/
+.all_feature{
+    position: relative;
+    z-index: 1;
+    padding: 100px 0 70px;
+    @media #{$tab}{
+      padding: 70px 0 50px;
+   }
+   @media #{$medium_device}{
+      padding: 80px 0 60px;
+   }
+    .single_feature{
+        text-align: center;
+        background-color: $white_color;
+        padding: 70px 32px 60px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        background-color: $white_color;
+        @include transform_time(0.5s);
+        position: relative;
+        z-index: 1;
+        @media #{$tab}{
+         padding: 35px 15px 32px;
+         margin-bottom: 20px;
+         }
+         @media #{$medium_device}{
+         
+         }
+        &:hover{
+            box-shadow: 0px 20px 30px 0px rgba(247, 52, 61, 0.1);
+            margin-top: -10px;
+        }
+    }
+    .single_feature_text {
+        h2 {
+           font-size: 42px;
+           line-height: 1.222;
+           margin-bottom: 20px;
+  
+           @media #{$small_mobile} {
+              margin-top: 0px;
+              font-size: 25px;
+              margin-bottom: 15px;
+           }
+  
+           @media #{$large_mobile} {
+              margin-top: 0px;
+              font-size: 30px;
+              margin-bottom: 15px;
+           }
+  
+           @media #{$tab_device} {
+              font-size: 30px;
+           }
+  
+           @media #{$medium_device} {
+              margin-top: 0px;
+              font-size: 35px;
+           }
+        }
+  
+        p {
+           line-height: 1.8;
+        }
+     }
+  
+     .single_feature_part {
+        @include transform_time(.6s);
+        .single_feature_icon {
+           @include transform_time(.6s);
+           i{
+              color: $icon_color;
+              font-size: 30px;
+              @include transform_time(.6s);
+              color: $btn_bg;
+           }
+        }
+        h4 {
+           font-weight: 600;
+           font-size: 20px;
+           margin: 42px 0 36px;
+
+           @media #{$tab} {
+            margin: 25px 0 20px;
+           }
+     
+           @media #{$medium_device} {
+            margin: 20px 0 15px;
+           }
+           @media #{$big_screen} {
+            margin: 20px 0 15px;
+           }
+        }
+  
+        p {
+           line-height: 1.8;
+           font-size: 14px;
+        }
+     }
+}

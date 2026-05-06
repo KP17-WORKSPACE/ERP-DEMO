@@ -1,0 +1,2038 @@
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+
+
+class SysHelper extends Model
+{
+
+    public static function is_approval_access(){
+        $userarray=[1,18,60,4];
+        if(in_array(Auth::user()->id, $userarray))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public static function currancy_format_deal($amount,$company_id){
+        if($company_id==6)
+        {
+            return SysHelper::com_curr_format($amount, 3, '.', ',');
+        }
+        return SysHelper::com_curr_format($amount, 2, '.', ',');
+    }
+    public static function currancy_format_deal_no($amount,$company_id){
+        if($company_id==6)
+        {
+            return SysHelper::com_curr_format($amount, 3, '.', '');
+        }
+        return SysHelper::com_curr_format($amount, 2, '.', '');
+    }
+    public static function currancy_format($amount, $currancy){
+        if($currancy==3)
+        {
+            return SysHelper::com_curr_format($amount, 3, '.', ',');
+        }
+        return SysHelper::com_curr_format($amount, 2, '.', ',');
+    }
+    public static function currancy_format_textbox($amount, $currancy){
+        if($currancy==3)
+        {
+            return SysHelper::com_curr_format($amount, 3, '.', '');
+        }
+        return SysHelper::com_curr_format($amount, 2, '.', '');
+    }
+    public static function currancy_format_cart($amount){
+        if(session('form_session_data.currency_id')==3)
+        {
+            return SysHelper::com_curr_format($amount, 3, '.', '');
+        }
+        return SysHelper::com_curr_format($amount, 2, '.', '');
+    }
+
+
+    public static function get_new_maxid($table_name,$col){
+        $results =  DB::table($table_name)->max($col);
+        if($results=="")
+        {
+            return "1001";
+        }
+        else{
+            return $results+1;
+        }
+    }
+
+    public static function get_status_icon($section,$status){
+        
+        if($section=="accounts"){
+            if ($status==1){ return'<span class="border-success rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Accounts Approved"></span>'; }
+            else if ($status==2){ return'<span class="border-danger rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Accounts Rejected"></span>'; }
+            else if ($status==3){ return'<span class="border-warning rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Accounts On Process"></span>'; }
+            else{ return'<span class="border-dark rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Accounts Pending"></span>'; }
+        }
+        if($section=="sales"){
+            if ($status==1){ return'<span class="border-success rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Sales Approved"></span>'; }
+            else if ($status==2){ return'<span class="border-danger rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Sales Rejected"></span>'; }
+            else if ($status==3){ return'<span class="border-warning rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Sales On Process"></span>'; }
+            else{ return'<span class="border-dark rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Sales Pending"></span>'; }
+        }
+        if($section=="purchease"){
+            if ($status==1){ return'<span class="border-success rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Purchase Approved"></span>'; }
+            else if ($status==2){ return'<span class="border-danger rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Purchase Rejected"></span>'; }
+            else if ($status==3){ return'<span class="border-warning rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Purchase On Process"></span>'; }
+            else{ return'<span class="border-dark rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Purchase Pending"></span>'; }
+        }
+        if($section=="invoice"){
+            if ($status==1){ return'<span class="border-success rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Invoice Approved"></span>'; }
+            else if ($status==2){ return'<span class="border-danger rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Invoice Rejected"></span>'; }
+            else if ($status==3){ return'<span class="border-warning rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Invoice On Process"></span>'; }
+            else{ return'<span class="border-dark rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Invoice Pending"></span>'; }
+        }
+        if($section=="delivery"){
+            if ($status==1){ return'<span class="border-success rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Delivery Approved"></span>'; }
+            else if ($status==2){ return'<span class="border-danger rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Delivery Rejected"></span>'; }
+            else if ($status==3){ return'<span class="border-warning rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Delivery On Process"></span>'; }
+            else{ return'<span class="border-dark rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Delivery Pending"></span>'; }
+        }
+        if($section=="receivables"){
+            if ($status==1){ return'<span class="border-success rounded-circle" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Receivables Approved"></span>'; }
+            else if ($status==2){ return'<span class="border-danger rounded-circle" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Receivables Rejected"></span>'; }
+            else if ($status==3){ return'<span class="border-warning rounded-circle" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Receivables On Process"></span>'; }
+            else{ return'<span class="border-dark rounded-circle" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Receivables Pending"></span>'; }
+        }
+        return'<span class="rounded-circle mr-1" style="padding:0px 7px 0px 6px; border-width: 3px; border: 2px solid #e3e6f0;" title="Pending"></span>';
+    }
+    
+    public static function lead_type($id){
+        if($id==1){
+            return '<span class="btn-xs btn-success mt-2 pl-2 pr-2">Project</span>';}
+        else if($id==2){
+            return '<span class="btn-xs btn-info mt-2 pl-2 pr-2">Channel</span>';}
+        else if($id==3){
+            return '<span class="btn-xs btn-primary mt-2 pl-2 pr-2">Corporate</span>';}
+        else{
+            return '';}
+    }
+    public static function lead_type_new($id){
+        if($id==1){
+            return '<span class="bg-primary btn-small text-white">Project</span>';}
+        else if($id==2){
+            return '<span class="bg-primary btn-small text-white">Channel</span>';}
+        else if($id==3){
+            return '<span class="bg-primary btn-small text-white">Corporate</span>';}
+        else{
+            return '';}
+    }
+    public static function deal_type($id){
+        if($id==1){
+            return '<span class="btn-xs btn-success mt-2 pl-2 pr-2">Project</span>';}
+        else if($id==2){
+            return '<span class="btn-xs btn-info mt-2 pl-2 pr-2">Channel</span>';}
+        else if($id==3){
+            return '<span class="btn-xs btn-primary mt-2 pl-2 pr-2">Corporate</span>';}
+        else if($id==4){
+            return '<span class="btn-xs btn-primary mt-2 pl-2 pr-2">Ecommerce</span>';}
+        else{
+            return '';}
+    }
+    public static function deal_type_new($id){
+        if($id==1){
+            return '<span class="bg-primary btn-small text-white">Project</span>';}
+        else if($id==2){
+            return '<span class="bg-primary btn-small text-white">Channel</span>';}
+        else if($id==3){
+            return '<span class="bg-primary btn-small text-white">Corporate</span>';}
+        else if($id==4){
+            return '<span class="bg-primary btn-small text-white">Ecommerce</span>';}
+        else{
+            return '';}
+    }
+
+    public static function set_user_custsupp($user_d,$company_id){
+        $data = DB::table('sys_cust_suppl_assign')->where('cust_supp_id', $company_id)->where('user_id', $user_d)->first();
+        if(!isset($data)){
+            DB::table('sys_cust_suppl_assign')->insert(
+                [
+                    'cust_supp_id' => $company_id,
+                    'user_id' => $user_d,
+                    'type' => 1, //1 customers, 2 suppliers
+                ]);
+        }
+    }
+    public static function get_deal_status_log($accounts,$sales,$purchease,$invoice,$delivery,$receivables){
+        if($receivables==1){
+            return '<span class="text-xs text-success">Payment Received</span>';}
+        else if($receivables==2){
+            return '<span class="text-xs text-danger">Rejected</span>';}
+        else if($receivables==3){
+            return '<span class="text-xs text-primary">Payment Pending</span>';}
+        else if($delivery==1){
+            return '<span class="text-xs text-success">Delivery Completed</span>';}
+        else if($delivery==2){
+            return '<span class="text-xs text-danger">Delivery Rejected</span>';}
+        else if($delivery==3){
+            return '<span class="text-xs text-primary">Out For Delivery</span>';}
+        else if($delivery==4){
+            return '<span class="text-xs text-primary">Pending For Delivery</span>';}
+        else if($invoice==1){
+            return '<span class="text-xs text-success">Invoice Approved</span>';}
+        else if($invoice==2){
+            return '<span class="text-xs text-danger">Invoice Disapproved</span>';}
+        else if($invoice==3){
+            return '<span class="text-xs text-primary">Invoice Pending</span>';}
+        else if($purchease==1){
+            return '<span class="text-xs text-success">Purchase Approved</span>';}
+        else if($purchease==2){
+            return '<span class="text-xs text-danger">Purchase Disapproved</span>';}
+        else if($purchease==3){
+            return '<span class="text-xs text-primary">Purchase Pending</span>';}
+        else if($sales==1){
+            return '<span class="text-xs text-success">Sales Approved</span>';}
+        else if($sales==2){
+            return '<span class="text-xs text-danger">Sales Disapproved</span>';}
+        else if($sales==3){
+            return '<span class="text-xs text-primary">Sales Pending</span>';}
+        else if($accounts==1){
+            return '<span class="text-xs text-success">Accounts Approved</span>';}
+        else if($accounts==2){
+            return '<span class="text-xs text-danger">Accounts Disapproved</span>';}
+        else if($accounts==3){
+            return '<span class="text-xs text-primary">Accounts Pending</span>';}
+        else{
+            return '<span class="text-xs text-warning">New</span>';
+        }
+    }
+    public static function get_deal_status_db($deal_id){
+        $value = DB::table('sys_crm_deal_track')->select('accounts','sales','purchease','invoice','delivery','receivables')->where('deal_id',$deal_id)->first();
+        if(isset($value)){
+            if($value->receivables==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Payment Received</span>';}
+            else if($value->receivables==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Rejected</span>';}
+            else if($value->receivables==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Payment Pending</span>';}
+            else if($value->delivery==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Delivery Completed</span>';}
+            else if($value->delivery==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Delivery Rejected</span>';}
+            else if($value->delivery==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Out For Delivery</span>';}
+            else if($value->delivery==4){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Pending For Delivery</span>';}
+            else if($value->invoice==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Invoice Approved</span>';}
+            else if($value->invoice==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Invoice Disapproved</span>';}
+            else if($value->invoice==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Invoice Pending</span>';}
+            else if($value->purchease==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Purchase Approved</span>';}
+            else if($value->purchease==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Purchase Disapproved</span>';}
+            else if($value->purchease==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Purchase Pending</span>';}
+            else if($value->sales==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Sales Approved</span>';}
+            else if($value->sales==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Sales Disapproved</span>';}
+            else if($value->sales==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Sales Pending</span>';}
+            else if($value->accounts==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Accounts Approved</span>';}
+            else if($value->accounts==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Accounts Disapproved</span>';}
+            else if($value->accounts==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Accounts Pending</span>';}
+            else{
+                return '<span class="btn-xs btn-warning text-white pl-1 pr-1">New</span>';
+            }
+        }
+        else{
+            return "New";
+        }
+    }
+    public static function get_deal_status($track, $status){
+        if($track=="receivables"){
+            if($status==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Payment Received</span>';}
+            else if($status==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Rejected</span>';}
+            else if($status==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Payment Pending</span>';}
+            else{
+                return '<span class="btn-xs btn-warning text-white pl-1 pr-1">New</span>';}
+        }
+
+        if($track=="delivery"){
+            if($status==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Delivery Completed</span>';}
+            else if($status==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Delivery Rejected</span>';}
+            else if($status==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Out For Delivery</span>';}
+            else if($status==4){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Pending For Delivery</span>';}
+            else{
+                return '<span class="btn-xs btn-warning text-white pl-1 pr-1">New</span>';}
+        }
+
+        if($track=="invoice"){
+            if($status==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Invoice Approved</span>';}
+            else if($status==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Invoice Disapproved</span>';}
+            else if($status==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Invoice Pending</span>';}
+            else{
+                return '<span class="btn-xs btn-warning text-white pl-1 pr-1">New</span>';}
+        }
+
+        if($track=="purchease"){
+            if($status==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Purchase Approved</span>';}
+            else if($status==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Purchase Disapproved</span>';}
+            else if($status==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Purchase Pending</span>';}
+            else{
+                return '<span class="btn-xs btn-warning text-white pl-1 pr-1">New</span>';}
+        }
+        
+        if($track=="sales"){
+            if($status==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Sales Approved</span>';}
+            else if($status==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Sales Disapproved</span>';}
+            else if($status==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Sales Pending</span>';}
+            else{
+                return '<span class="btn-xs btn-warning text-white pl-1 pr-1">New</span>';}
+        }
+
+        if($track=="accounts"){
+            if($status==1){
+                return '<span class="btn-xs btn-success text-white pl-1 pr-1">Accounts Approved</span>';}
+            else if($status==2){
+                return '<span class="btn-xs btn-danger text-white pl-1 pr-1">Accounts Disapproved</span>';}
+            else if($status==3){
+                return '<span class="btn-xs btn-primary text-white pl-1 pr-1">Accounts Pending</span>';}
+            else{
+                return '<span class="btn-xs btn-warning text-white pl-1 pr-1">New</span>';
+            }
+        }
+        if($track=="new"){
+            return '<span class="btn-xs btn-warning text-white pl-1 pr-1">New</span>';
+        }
+    }
+    public static function deal_edit_disable($deal_id){
+        if(Auth::user()->id == 4 || Auth::user()->id == 1 || Auth::user()->id == 20){
+            return 0;
+        }
+        $data = DB::table('sys_crm_deal_track')->select('accounts','sales','purchease','invoice','delivery','receivables')->where('deal_id',$deal_id)->first();
+        if(isset($data)){
+            if($data->accounts==1 && $data->sales==1 && $data->purchease==1 && $data->invoice==1 && $data->delivery==1 && $data->receivables==1){
+                return 1;
+            }
+            elseif($data->accounts==2 || $data->sales==2 || $data->purchease==2 || $data->invoice==2 || $data->delivery==2 || $data->receivables==2){
+                return 0;   
+            }
+            else{
+                return 1;
+            }
+        }
+        else{
+            return 0;
+        }
+    }
+
+    public static function check_grn($po_id, $part_no){    
+        $po=SysPurchaseOrderItems::where('po_id',$po_id)->where('part_number',$part_no)->sum('qty');
+        $gr=SysPurchaseGRNItems::where('po_id',$po_id)->where('part_no',$part_no)->sum('qty');
+        if($po==$gr){return 0;}
+        else{return abs($po-$gr);}
+    }
+
+    public static function get_total_sales($user_id){
+        // $data = DB::table('sys_crm_deals')->where('stage',4)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = '".date('Y-m')."'")->where('owner',$user_id)->sum('deal_value');
+        // return $data;
+
+        $data = DB::table('sys_crm_deals')->join('sys_crm_deal_track','sys_crm_deal_track.deal_id','sys_crm_deals.id')
+        ->where('sys_crm_deals.stage',4)->whereRaw("DATE_FORMAT(sys_crm_deal_track.created_at, '%Y-%m') = '".date('Y-m')."'")
+        ->where('sys_crm_deals.owner',$user_id)->where('sys_crm_deal_track.invoice',1)->sum('deal_value');
+        return SysHelper::com_curr_format($data, 2, '.', '');
+    }
+    
+    public static function get_total_sales_brand($user_id,$brand){
+        $brand = array_map('intval', explode(',', $brand));
+
+        if($user_id==25 || $user_id==41 ){//25 Imran & 41 Rovina
+            $teams= array(25,41);
+        } else if($user_id==26 || $user_id==36 ){//26 Naeem & 36 Arianne
+            $teams= array(26,36);
+        }
+        else{$teams= array($user_id);}
+        try {
+            if($brand[0]==0){
+                $data = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')->where('sys_crm_deals.is_partial_invoice',0)
+                ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'")
+                ->where('sys_crm_deals.stage',4)->wherein('sys_crm_deals.owner',$teams)->where('sys_crm_deal_track_approval_invoice.status',1)->get();
+
+
+                // $data = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source')->join('sys_crm_deal_track','sys_crm_deal_track.deal_id','sys_crm_deals.id')
+                // ->where('sys_crm_deals.stage',4)->whereRaw("DATE_FORMAT(sys_crm_deal_track.created_at, '%Y-%m') = '".date('Y-m')."'")
+                // ->where('sys_crm_deals.owner',$user_id)->where('sys_crm_deal_track.invoice',1)->get();
+        
+                $retAmount=0;
+                if(count($data)>0){
+                    foreach($data as $dt){
+                        if($dt->source=="Fulfillment"){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value*20/100));}
+                        else{$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);} 
+                    }
+                }
+
+
+                //$sf = $data->where('source','Fulfillment')->sum('deal_value')*20/100;
+                //$sf = $data->where('source','Fulfillment')->sum('deal_value');
+                //$so = $data->where('source','!=','Fulfillment')->sum('deal_value');
+                
+                return SysHelper::com_curr_format($retAmount, 2, '.', '');
+            }
+            else{
+                $ret=0;
+                $data = DB::table('sys_crm_deals')->join('sys_crm_deal_track','sys_crm_deal_track.deal_id','sys_crm_deals.id')
+                ->where('sys_crm_deals.stage',4)->whereRaw("DATE_FORMAT(sys_crm_deal_track.created_at, '%Y-%m') = '".date('Y-m')."'")
+                /*->where('sys_crm_deals.owner',$user_id)*/
+                ->where('sys_crm_deal_track.invoice',1)->get();
+
+                $sf = $data->where('source','Fulfillment');
+                $so = $data->where('source','!=','Fulfillment');
+
+                if(count($sf)>0){
+                    foreach ($sf as $id) {
+                        $dataidf[]=$id->deal_id;
+                    }
+                    $dt=SysCrmQuoteItems::select('qty','price','discount','brand')
+                    ->join('sm_items','sm_items.id','sys_crm_quote_items.product_id')
+                    ->wherein('deal_id',$dataidf)->wherein('brand',$brand)->get();
+                    foreach ($dt as $val) {
+                        $ret += (($val->qty * $val->price) - ($val->qty * $val->discount))*20/100;
+                        //$ret += (($val->qty * $val->price) - ($val->qty * $val->discount));
+                    }
+                }
+                if(count($so)>0){
+                    foreach ($so as $id) {
+                        $dataid[]=$id->deal_id;
+                    }
+                    $dt=SysCrmQuoteItems::select('qty','price','discount','brand')
+                    ->join('sm_items','sm_items.id','sys_crm_quote_items.product_id')
+                    ->wherein('deal_id',$dataid)->wherein('brand',$brand)->get();
+                    foreach ($dt as $val) {
+                        $ret += ($val->qty * $val->price) - ($val->qty * $val->discount);
+                    }
+                }
+                return SysHelper::com_curr_format($ret, 2, '.', '');
+            }
+            
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public static function get_total_sales_brand_name($brand){
+        try {
+            
+            $ret=0;
+            $data = DB::table('sys_crm_deals')
+            ->where('sys_crm_deals.stage',4)->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m') = '".date('Y-m')."'")
+            //->where('sys_crm_deal_track.invoice',1)
+            ->get();
+            if(count($data)>0){
+                foreach ($data as $id) {
+                    $dataid[]=$id->id;
+                }
+                $dt=SysCrmQuoteItems::select('qty','price','discount','brand')
+                ->join('sm_items','sm_items.id','sys_crm_quote_items.product_id')
+                ->wherein('deal_id',$dataid)->where('brand',$brand)->get();
+                foreach ($dt as $val) {
+                    $ret += ($val->qty * $val->price) - ($val->qty * $val->discount);
+                }
+            }
+            return SysHelper::com_curr_format($ret, 2, '.', ',');            
+            
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public static function get_total_sales_brand_name_company($brand,$company){
+        try {
+            
+            $ret=0;
+            $data = DB::table('sys_crm_deals')
+            ->where('sys_crm_deals.stage',4)->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m') = '".date('Y-m')."'")
+            ->where('sys_crm_deals.company_id',$company)
+            ->get();
+            if(count($data)>0){
+                foreach ($data as $id) {
+                    $dataid[]=$id->id;
+                }
+                $dt=SysCrmQuoteItems::select('qty','price','discount','brand')
+                ->join('sm_items','sm_items.id','sys_crm_quote_items.product_id')
+                ->wherein('deal_id',$dataid)->where('brand',$brand)->get();
+                foreach ($dt as $val) {
+                    $ret += ($val->qty * $val->price) - ($val->qty * $val->discount);
+                }
+            }
+            return SysHelper::com_curr_format($ret, 2, '.', ',');            
+            
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }    
+
+    public static function get_total_revenue($user_id){
+
+        $data1 = DB::table('sys_crm_deals')->select('deal_value','source')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+        ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'")
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deal_track_approval_invoice.status',1)
+        ->whereIn('sys_crm_deals.owner',$user_id)
+        ->wherein('sys_crm_deals.company_id',[1,3]);
+        
+        $data2 = DB::table('sys_crm_deals')->select('deal_value','source')
+        ->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'")
+        ->whereIn('sys_crm_deals.owner',$user_id)
+        ->where('sys_crm_deals.stage',4)->wherenotin('sys_crm_deals.company_id',[1,3]);
+
+        
+        $sf = $data1->where('source','Fulfillment')->sum('deal_value')*20/100;
+        $so = $data1->where('source','!=','Fulfillment')->sum('deal_value');
+                
+        $sf += $data2->where('source','Fulfillment')->sum('deal_value')*20/100;
+        $so += $data2->where('source','!=','Fulfillment')->sum('deal_value');
+
+        return SysHelper::com_curr_format($sf+$so, 2, '.', '');
+    }
+    public static function get_total_forcast($user_id){
+        $data = DB::table('sys_crm_deals')->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = '".date('Y-m')."'")->wherein('stage',[3])->wherein('owner', $user_id)->sum('deal_value');
+        return SysHelper::com_curr_format($data, 2, '.', '');
+    }
+
+    public static function get_total_revenue_all(){
+
+        $data1 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source','cust_id')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+        ->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'")
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.is_partial_invoice',0)
+        ->where('sys_crm_deal_track_approval_invoice.status',1)->wherein('sys_crm_deals.company_id',[1,3]);
+        
+        $data2 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source')
+        ->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'")
+        ->where('sys_crm_deals.stage',4)->wherenotin('sys_crm_deals.company_id',[1,3]);
+       
+        
+        if(Auth::user()->role_id == 1){ //admin
+            // $data1->where('sys_crm_deals.company_id',1);
+            // $data2->where('sys_crm_deals.company_id',1);
+        }
+        else if(Auth::user()->id==73){ //saleem
+            $data1->where('sys_crm_deals.company_id',3);
+            $data2->where('sys_crm_deals.company_id',3);
+        }
+        else if(Auth::user()->id==33){ //jacob
+            $teams= array(33,31,59);
+            $data1->wherein('sys_crm_deals.owner',$teams);
+            $data2->wherein('sys_crm_deals.owner',$teams);
+        }                    
+        else if(Auth::user()->id==27){//monica
+            //$teams= array(27,30,54,62);
+            $teams= array(27);
+            $data1->wherein('sys_crm_deals.owner',$teams);
+            $data2->wherein('sys_crm_deals.owner',$teams);
+        }               
+        else if(Auth::user()->id==44){ //rajiv
+            $teams= array(44,45,34,32);
+            $data1->wherein('sys_crm_deals.owner',$teams);
+            $data2->wherein('sys_crm_deals.owner',$teams);
+        }
+        else if(Auth::user()->id==25 || Auth::user()->id==41 ){//25 Imran & 41 Rovina
+            $teams= array(25,41);            
+            $data1->wherein('sys_crm_deals.owner',$teams);
+            $data2->wherein('sys_crm_deals.owner',$teams);
+        } else if(Auth::user()->id==26 || Auth::user()->id==36 ){//26 Naeem & 36 Arianne
+            $teams= array(26,36);
+            $data1->wherein('sys_crm_deals.owner',$teams);
+            $data2->wherein('sys_crm_deals.owner',$teams);
+        }
+        else{
+            $data1->where('sys_crm_deals.owner',Auth::user()->id);
+            $data2->where('sys_crm_deals.owner',Auth::user()->id);
+        }
+        $dataA = $data1->get();
+        $dataB = $data2->get();
+        $retAmount=0;
+        if(count($dataA)>0){
+            foreach($dataA as $dt){
+                if($dt->source=="Fulfillment"){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value*20/100));}
+                else if(in_array($dt->cust_id, [2568,4258,4382,5322,7347,8144,8145,8146,3711,4089,8142])){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value*20/100));}
+                else{$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);}                
+            }
+        }
+        if(count($dataB)>0){
+            foreach($dataB as $dt){
+                if($dt->source=="Fulfillment"){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value*20/100));}
+                else{$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);} 
+            }
+        }       
+
+        //$sf = $data->where('source','Fulfillment')->sum('deal_value')*20/100;
+        //$data = $data1->sum('deal_value')+$data2->sum('deal_value');
+        return SysHelper::com_curr_format($retAmount, 2, '.', ',');
+    }
+    public static function get_total_forcast_all(){
+        $data2 = DB::table('sys_crm_deals')->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = '".date('Y-m')."'")->wherein('stage',[3]);
+        
+        if(Auth::user()->role_id == 1){ //admin
+            $data = $data2->get();
+        }
+        else if(Auth::user()->id==73){ //saleem
+            $data = $data2->where('sys_crm_deals.company_id',3)->get();
+        }
+        else if(Auth::user()->id==33){ //jacob
+            $teams= array(33,31,59);
+            $data = $data2->wherein('sys_crm_deals.owner',$teams)->get();
+        }                    
+        else if(Auth::user()->id==27){//monica
+            $teams= array(27,30,54,62);
+            $data = $data2->wherein('sys_crm_deals.owner',$teams)->get();
+        }
+        else if(Auth::user()->id==44){ //rajiv
+            $teams= array(44,45,34,32);
+            $data = $data2->wherein('sys_crm_deals.owner',$teams)->get();
+        }
+        else{
+            $data = $data2->where('sys_crm_deals.owner',Auth::user()->id)->get();
+        }
+        $retAmount=0;
+        if(count($data)>0){
+            foreach($data as $dt){
+                $retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);
+            }
+        }
+        return SysHelper::com_curr_format($retAmount, 2, '.', ',');
+    }
+
+    public static function get_total_revenue_all_by_user_exe($user_id,$from_month,$to_month){
+        $user=[$user_id];
+        $data1 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source','cust_id','deal_profit')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')->where('sys_crm_deals.is_partial_invoice',0);
+        if($from_month !="" && $to_month !=""){
+            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".date('Y-m-d', strtotime($from_month))."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".date('Y-m-d', strtotime($to_month))."'");
+        }
+        if($from_month !="" && $to_month ==""){
+            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d', strtotime($from_month))."'");
+        }
+        $data1->where('sys_crm_deals.stage',4)->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.company_id',session('logged_session_data.company_id'));
+        $data1->wherein('sys_crm_deals.owner',$user);
+        
+        
+
+        $dataA = $data1->get();
+        $retAmount=0.00;
+        $retProfit=0.00;
+        if(count($dataA)>0){
+            foreach($dataA as $dt){
+                if($dt->source=="Fulfillment"){
+                    $retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value));
+                    $retProfit+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_profit));
+                }
+                else{
+                    $retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);
+                    $retProfit+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_profit);
+                }
+            }
+        }
+        return [$retAmount,$retProfit];
+    }
+
+    public static function get_total_revenue_actual_all_by_user_exe($user_id,$from_month,$to_month){
+
+        if($user_id==26 || $user_id==36){
+            $user=[26,36];
+        }
+        else if($user_id==25 || $user_id==41){
+            $user=[25,41];
+        }
+        else{
+            $user=[$user_id];
+        }
+        $data1 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source','cust_id')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')->where('sys_crm_deals.is_partial_invoice',0);
+        if($from_month !="" && $to_month !=""){
+            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".date('Y-m-d', strtotime($from_month))."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".date('Y-m-d', strtotime($to_month))."'");
+        }
+        if($from_month !="" && $to_month ==""){
+            $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d', strtotime($from_month))."'");
+        }
+        $data1->where('sys_crm_deals.stage',4)->where('sys_crm_deal_track_approval_invoice.status',1)->wherein('sys_crm_deals.company_id',[1,3]);
+        $data1->wherein('sys_crm_deals.owner',$user);
+        
+        
+        $data2 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source','cust_id');
+        if($from_month !="" && $to_month !=""){
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".date('Y-m-d', strtotime($from_month))."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".date('Y-m-d', strtotime($to_month))."'");
+        }
+        if($from_month !="" && $to_month ==""){
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d', strtotime($from_month))."'");
+        }
+        $data2->where('sys_crm_deals.stage',4)->wherenotin('sys_crm_deals.company_id',[1,3]);
+        $data2->wherein('sys_crm_deals.owner',$user);
+
+        $dataA = $data1->get();
+        $dataB = $data2->get();
+        $retAmount=0.00;
+        if(count($dataA)>0){
+            foreach($dataA as $dt){
+                $retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);
+            }
+        }
+        if(count($dataB)>0){
+            foreach($dataB as $dt){
+                $retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);
+            }
+        }
+
+        //$sf = $data->where('source','Fulfillment')->sum('deal_value')*20/100;
+        //$data = $data1->sum('deal_value')+$data2->sum('deal_value');
+        return SysHelper::com_curr_format($retAmount, 2, '.', '');
+    }
+
+    public static function get_total_forcast_all_by_user_exe($user_id,$from_month,$to_month){
+        $data2 = DB::table('sys_crm_deals')->wherein('stage',[3]);
+        
+        $data2->where('sys_crm_deals.owner',$user_id)->get();
+        
+        if($from_month !="" && $to_month !=""){
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') >= '".date('Y-m-d', strtotime($from_month))."' and DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') <= '".date('Y-m-d', strtotime($to_month))."'");
+        }
+        if($from_month !="" && $to_month ==""){
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') = '".date('Y-m-d', strtotime($from_month))."'");
+        }
+        $data = $data2->get();
+
+        $retAmount=0;
+        if(count($data)>0){
+            foreach($data as $dt){
+                $retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);
+            }
+        }
+        return SysHelper::com_curr_format($retAmount, 2, '.', '');
+    }
+
+    public static function get_total_leads_by_user($user_id,$month){
+        $data = SysCrmLeads::where('created_by',$user_id)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') >= '".date('Y-m', strtotime($month))."'")->count();
+        return $data;
+    }
+    public static function get_total_leads_convert_by_user($user_id,$month){
+        $data = SysCrmLeads::where('created_by',$user_id)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') >= '".date('Y-m', strtotime($month))."'")->where('status',0)->count();
+        return $data;
+    }
+    public static function get_total_leads_convert_won_by_user($user_id,$month){
+        $data = SysCrmLeads::select('id')->where('created_by',$user_id)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') >= '".date('Y-m', strtotime($month))."'")->where('status',0)->get();
+        
+        if (count($data)>0) {
+            foreach ($data as $value) {
+                $dt[]=$value->id;
+            }
+            $dt2=SysCrmDeals::wherein('lead_id',$dt)->wherein('stage',[4])->count();
+            return $dt2;
+        }
+        else{return 0;}
+    }
+    public static function get_total_leads_convert_quote_by_user($user_id,$month){
+        $data = SysCrmLeads::select('id')->where('created_by',$user_id)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') >= '".date('Y-m', strtotime($month))."'")->where('status',0)->get();
+        
+        if (count($data)>0) {
+            foreach ($data as $value) {
+                $dt[]=$value->id;
+            }
+            $dt2=SysCrmDeals::wherein('lead_id',$dt)->wherein('stage',[2,3,4])->count();
+            return $dt2;
+        }
+        else{return 0;}
+    }
+    public static function get_total_leads_convert_lost_by_user($user_id,$month){
+        $data = SysCrmLeads::select('id')->where('created_by',$user_id)->whereRaw("DATE_FORMAT(created_at, '%Y-%m') >= '".date('Y-m', strtotime($month))."'")->where('status',0)->get();
+        
+        if (count($data)>0) {
+            foreach ($data as $value) {
+                $dt[]=$value->id;
+            }
+            $dt2=SysCrmDeals::wherein('lead_id',$dt)->wherein('stage',[5])->count();
+            return $dt2;
+        }
+        else{return 0;}
+    }
+
+    public static function get_total_ecommerce_sale()
+    {
+        $start_date = date('Y-m-d', strtotime('first day of this month - 3 months'));
+        $end_date = date('Y-m-d', strtotime('last day of this month'));
+
+        $data1 = DB::table('sys_crm_deals')->select('deal_value','source')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.source','Ecommerce')->where('sys_crm_deals.isproject',4);
+        $dataD = $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'")->sum('deal_value');
+        
+        $data2 = DB::table('sys_crm_deals')->select('deal_value','source')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.source','Ecommerce')->where('sys_crm_deals.isproject',4);
+        $dataM = $data2->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'")->sum('deal_value');
+        
+        $data3 = DB::table('sys_crm_deals')->select('deal_value','source')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.source','Ecommerce')->where('sys_crm_deals.isproject',4);
+        $dataY = $data3->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y') = '".date('Y')."'")->sum('deal_value');
+        
+        $data4 = DB::table('sys_crm_deals')->select('deal_value','source')->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.source','Ecommerce')->where('sys_crm_deals.isproject',4);
+        $dataQ = $data4->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'")->sum('deal_value');
+
+        $ret[0] = SysHelper::com_curr_format($dataD, 2, '.', ',');
+        $ret[1] = SysHelper::com_curr_format($dataM, 2, '.', ',');
+        $ret[2] = SysHelper::com_curr_format($dataY, 2, '.', ',');
+        $ret[3] = SysHelper::com_curr_format($dataQ, 2, '.', ',');
+
+        return $ret;
+
+    }
+    public static function get_total_service_revenue($date, $company){
+
+        if($company==1 || $company==3){
+        $data1 = DB::table('sys_crm_deals')->select('qty','price','discount','deal_currency','source','cust_id','sys_crm_quote_items.deal_id')
+        ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+        ->leftjoin('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+        ->wherein('sys_crm_quote_items.product_id',[1417,1427,4714,8408,8490,8493,8729,8806,9319,10247,8544,9726,9728,9780,10294])
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.is_partial_invoice',0)
+        ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.company_id',$company);
+        }
+        else{
+        $data1 = DB::table('sys_crm_deals')->select('qty','price','discount','deal_currency','source')
+        ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+        ->wherein('sys_crm_quote_items.product_id',[1417,1427,4714,8408,8490,8493,8729,8806,9319,10247,8544,9726,9728,9780,10294])
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$company);
+        }
+
+        $data2 = DB::table('sys_crm_deals')->select('qty','price','discount','deal_currency','source','cust_id')
+        ->leftjoin('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+        ->wherein('sys_crm_quote_items.product_id',[1417,1427,4714,8408,8490,8493,8729,8806,9319,10247,8544,9726,9728,9780,10294])
+        ->where('sys_crm_deals.company_id',$company)->wherein('stage',[3]);
+
+        if($date=="d"){
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+            }
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+        }
+        if($date=="m"){
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'");
+            }
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m') = '".date('Y-m')."'");
+        }
+        if($date=="y"){
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y') = '".date('Y')."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y') = '".date('Y')."'");
+            }
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y') = '".date('Y')."'");
+        }
+        if($date=="q"){                
+            $start_date = date('Y-m-d', strtotime('first day of this month - 3 months'));
+            $end_date = date('Y-m-d', strtotime('last day of this month'));
+            
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+            }
+            $data1->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') <= '".$end_date."'");
+        }
+        
+        if(Auth::user()->role_id == 1 || Auth::user()->id==33){ //admin
+            // $data1->where('sys_crm_deals.company_id',1);
+            // $data2->where('sys_crm_deals.company_id',1);
+        }
+        else{
+            if(Auth::user()->id==27){//monica
+                //$teams= array(27,30,54,62);
+                $teams= array(27);
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }               
+            else if(Auth::user()->id==44){ //rajiv
+                $teams= array(44,45,34,32);
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }
+            else if(Auth::user()->id==25 || Auth::user()->id==41 ){//25 Imran & 41 Rovina
+                $teams= array(25,41);            
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }
+            else if(Auth::user()->id==26 || Auth::user()->id==36 ){//26 Naeem & 36 Arianne
+                $teams= array(26,36);
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }
+            else{
+                $data1->where('sys_crm_deals.owner',Auth::user()->id);
+                $data2->where('sys_crm_deals.owner',Auth::user()->id);
+            }
+        }
+        
+        $dataA = $data1->get();
+        $dataB = $data2->get();
+        $retAmount=0;
+        if(count($dataA)>0){
+            foreach($dataA as $dt){
+                
+                $deal_value= ($dt->qty*$dt->price) - ($dt->qty*$dt->discount);
+                if($dt->source=="Fulfillment"){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($deal_value*20/100));}
+                else if(in_array($dt->cust_id, [2568,4258,4382,5322,7347,8144,8145,8146,3711,4089,8142])){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($deal_value*20/100));}
+                else{$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$deal_value);}                
+            }
+        }
+        $revenue = SysHelper::com_curr_format($retAmount, 2, '.', ',');
+
+        $retAmount2=0;
+        if(count($dataB)>0){
+            foreach($dataB as $dt){
+                $deal_value2= ($dt->qty*$dt->price) - ($dt->qty*$dt->discount);
+                $retAmount2+= SysHelper::get_aed_amount($dt->deal_currency,$deal_value2);
+            }
+        }
+        $forecast = SysHelper::com_curr_format($retAmount2, 2, '.', ',');
+
+        return [$revenue,$forecast];
+    }
+
+    public static function get_total_amc_revenue($date, $company){
+
+        if($company==1 || $company==3){
+        $data1 = DB::table('sys_crm_deals')->select('qty','price','discount','deal_currency','source','cust_id')
+        ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+        ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+        ->wherein('sys_crm_quote_items.product_id',[9976])
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.is_partial_invoice',0)
+        ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.company_id',$company);
+        }
+        else{
+        $data1 = DB::table('sys_crm_deals')->select('qty','price','discount','deal_currency','source')
+        ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+        ->wherein('sys_crm_quote_items.product_id',[9976])
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$company);
+        }
+
+        $data2 = DB::table('sys_crm_deals')->select('qty','price','discount','deal_currency','source','cust_id')
+        ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+        ->wherein('sys_crm_quote_items.product_id',[9976])
+        ->where('sys_crm_deals.company_id',$company)
+        ->wherein('stage',[3]);
+        
+        if($date=="d"){
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+            }
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+        }
+        if($date=="m"){
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'");
+            }
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m') = '".date('Y-m')."'");
+        }
+        if($date=="y"){
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y') = '".date('Y')."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y') = '".date('Y')."'");
+            }
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y') = '".date('Y')."'");
+        }
+        if($date=="q"){                
+            $start_date = date('Y-m-d', strtotime('first day of this month - 3 months'));
+            $end_date = date('Y-m-d', strtotime('last day of this month'));
+            
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+            }
+            $data1->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') <= '".$end_date."'");
+        }
+
+        if(Auth::user()->role_id == 1 || Auth::user()->id==33){ //admin
+            // $data1->where('sys_crm_deals.company_id',1);
+            // $data2->where('sys_crm_deals.company_id',1);
+        }
+        else{
+            if(Auth::user()->id==27){//monica
+                //$teams= array(27,30,54,62);
+                $teams= array(27);
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }               
+            else if(Auth::user()->id==44){ //rajiv
+                $teams= array(44,45,34,32);
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }
+            else if(Auth::user()->id==25 || Auth::user()->id==41 ){//25 Imran & 41 Rovina
+                $teams= array(25,41);            
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }
+            else if(Auth::user()->id==26 || Auth::user()->id==36 ){//26 Naeem & 36 Arianne
+                $teams= array(26,36);
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }
+            else{
+                $data1->where('sys_crm_deals.owner',Auth::user()->id);
+                $data2->where('sys_crm_deals.owner',Auth::user()->id);
+            }
+        }
+        
+        $dataA = $data1->get();
+        $dataB = $data2->get();
+        $retAmount=0;
+        if(count($dataA)>0){
+            foreach($dataA as $dt){
+                
+                $deal_value= ($dt->qty*$dt->price) - ($dt->qty*$dt->discount);
+                if($dt->source=="Fulfillment"){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($deal_value*20/100));}
+                else if(in_array($dt->cust_id, [2568,4258,4382,5322,7347,8144,8145,8146,3711,4089,8142])){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($deal_value*20/100));}
+                else{$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$deal_value);}                
+            }
+        }
+        $revenue = SysHelper::com_curr_format($retAmount, 2, '.', ',');
+
+        $retAmount2=0;
+        if(count($dataB)>0){
+            foreach($dataB as $dt){
+                $deal_value2= ($dt->qty*$dt->price) - ($dt->qty*$dt->discount);
+                $retAmount2+= SysHelper::get_aed_amount($dt->deal_currency,$deal_value2);
+            }
+        }
+        $forecast = SysHelper::com_curr_format($retAmount2, 2, '.', ',');
+
+        return [$revenue,$forecast];
+    }
+
+    public static function get_total_project_revenue($date, $company){
+
+        if($company==1 || $company==3){
+        $data1 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source','cust_id')
+        ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')        
+        ->where('sys_crm_deals.isproject',1)
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.is_partial_invoice',0)
+        ->where('sys_crm_deal_track_approval_invoice.status',1)->where('sys_crm_deals.company_id',$company);
+        }
+        else{
+        $data1 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source')        
+        ->where('sys_crm_deals.isproject',1)        
+        ->where('sys_crm_deals.stage',4)->where('sys_crm_deals.company_id',$company);
+        }
+
+        $data2 = DB::table('sys_crm_deals')->select('deal_value','deal_currency','source','cust_id')        
+        ->where('sys_crm_deals.isproject',1)        
+        ->where('sys_crm_deals.company_id',$company)
+        ->wherein('stage',[3]);
+        
+        if($date=="d"){
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') = '".date('Y-m-d')."'");
+            }
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') = '".date('Y-m-d')."'");
+        }
+        if($date=="m"){
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m') = '".date('Y-m')."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m') = '".date('Y-m')."'");
+            }
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m') = '".date('Y-m')."'");
+        }
+        if($date=="y"){
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y') = '".date('Y')."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y') = '".date('Y')."'");
+            }
+            $data2->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y') = '".date('Y')."'");
+        }
+        if($date=="q"){                
+            $start_date = date('Y-m-d', strtotime('first day of this month - 3 months'));
+            $end_date = date('Y-m-d', strtotime('last day of this month'));
+            
+            if($company==1 || $company==3){
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deal_track_approval_invoice.created_at, '%Y-%m-%d') <= '".$end_date."'");
+            }else{
+                $data1->whereRaw("DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.date, '%Y-%m-%d') <= '".$end_date."'");
+            }
+            $data1->whereRaw("DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') >= '".$start_date."' and DATE_FORMAT(sys_crm_deals.created_at, '%Y-%m-%d') <= '".$end_date."'");
+        }
+
+        if(Auth::user()->role_id == 1 || Auth::user()->id==33){ //admin
+            // $data1->where('sys_crm_deals.company_id',1);
+            // $data2->where('sys_crm_deals.company_id',1);
+        }
+        else{
+            if(Auth::user()->id==27){//monica
+                //$teams= array(27,30,54,62);
+                $teams= array(27);
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }               
+            else if(Auth::user()->id==44){ //rajiv
+                $teams= array(44,45,34,32);
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }
+            else if(Auth::user()->id==25 || Auth::user()->id==41 ){//25 Imran & 41 Rovina
+                $teams= array(25,41);            
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }
+            else if(Auth::user()->id==26 || Auth::user()->id==36 ){//26 Naeem & 36 Arianne
+                $teams= array(26,36);
+                $data1->wherein('sys_crm_deals.owner',$teams);
+                $data2->wherein('sys_crm_deals.owner',$teams);
+            }
+            else{
+                $data1->where('sys_crm_deals.owner',Auth::user()->id);
+                $data2->where('sys_crm_deals.owner',Auth::user()->id);
+            }
+        }
+        
+        $dataA = $data1->get();
+        $dataB = $data2->get();
+        $retAmount=0;
+        if(count($dataA)>0){
+            foreach($dataA as $dt){
+                
+                if($dt->source=="Fulfillment"){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value*20/100));}
+                else if(in_array($dt->cust_id, [2568,4258,4382,5322,7347,8144,8145,8146,3711,4089,8142])){$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,($dt->deal_value*20/100));}
+                else{$retAmount+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);}
+            }
+        }
+        $revenue = SysHelper::com_curr_format($retAmount, 2, '.', ',');
+
+        $retAmount2=0;
+        if(count($dataB)>0){
+            foreach($dataB as $dt){
+                $retAmount2+= SysHelper::get_aed_amount($dt->deal_currency,$dt->deal_value);
+            }
+        }
+        $forecast = SysHelper::com_curr_format($retAmount2, 2, '.', ',');
+
+        return [$revenue,$forecast];
+    }
+
+    public static function set_track($deal_id)
+    {
+        $data = DB::table('sys_crm_quote_items')->where('deal_id',$deal_id)->first();
+        if(isset($data)){
+            if($data->company_id==1 || $data->company_id==9){
+                return 1;
+            }
+            else{
+                return 0;
+            }
+        }
+        else{
+            return 0;
+        }
+    }
+
+    public static function get_vat($currency_id){
+        if($currency_id==1){ return 5; }
+        else if($currency_id==2){ return 5; }
+        else if($currency_id==3){ return 5; }
+        else if($currency_id==4){ return 15; }
+        else if($currency_id==5){ return 5; }
+        else if($currency_id==6){ return 18; }
+        else if($currency_id==7){ return 5; }
+        else if($currency_id==8){ return 5; }
+        else if($currency_id==8){ return 5; }
+        else{ return 5; }
+    }
+    
+    public static function deal_track_status($deal_id)
+    {
+        $data = SysCrmDealTrack::select('accounts','sales','purchease','invoice','delivery','receivables')->where('deal_id',$deal_id)->first();
+        if(isset($data)){
+            if($data->accounts==0 && $data->sales==0 && $data->purchease==0 && $data->invoice==0 && $data->delivery==0 && $data->receivables==0){
+                return "Pending";
+            }else if($data->accounts==1 && $data->sales==1 && $data->purchease==1 && $data->invoice==1 && $data->delivery==1 && $data->receivables==1){
+                return "completed";
+            } else{
+                return "OnProcess";
+            }
+        } else{
+            return "Fulfill";
+        }
+    }
+    public static function gitex_lead_import()
+    {
+        try {
+            
+        $data = DB::table('gitex_leads_irshaad')->where('status',1)->get();
+        foreach($data as $dt)
+        {
+            
+            $cust = SysCustSuppl::select('id','name','vat_country')->Where('name', 'like', '%'.$dt->company_name.'%')->first();
+            if(isset($cust)){
+                $company_id= $cust->id;
+                $cname= $cust->vat_country;
+            }
+            else{
+            $new_customer = new SysCustSuppl();
+            $new_customer->group=2;  // 1 accounts, 2 customers, 3 suppliers
+            $new_customer->catid=1;  // 1 customers, 2 suppliers
+            $new_customer->name = $dt->company_name;
+            $new_customer->code = 'CUS' . sprintf('%03d', SysHelper::get_new_maxid('sys_cust_suppl', 'id'));
+            $new_customer->address = "";
+            $new_customer->address2 = "";
+            $new_customer->contcat_person = $dt->contact_person;
+            $new_customer->contcat_number = "";
+            $new_customer->mobile_code = "";
+            $new_customer->mobile = $dt->contact_number;
+            $new_customer->email = $dt->email;
+            $new_customer->sales_person = $dt->sales_person_id;
+            $new_customer->vat_number = "";
+            
+            $country = SysCountries::select('id','name')->Where('name', 'like', '%'.$dt->country.'%')->first();
+
+            $cname=231;
+            if(isset($country)){
+                $new_customer->vat_country = $country->id;
+                $cname=$country->id;
+            }
+            else{
+                $new_customer->vat_country = 231;
+                $cname=231;
+            }
+
+            $new_customer->vat_state = "";
+            $new_customer->vat_type = "";
+            $new_customer->vat_percentage = "";
+            $new_customer->status=1;
+            $new_customer->created_by = $dt->sales_person_id;
+            $results1 = $new_customer->save();
+            
+            $company_id= $new_customer->id;
+            } 
+
+            $ssi = new SysCrmLeads();
+            $ssi->date = date('Y-m-d');
+            $ssi->lead_name = 'Gitex-'.$dt->company_name;
+            $ssi->cust_id = $company_id;
+            $ssi->cust_name = $dt->contact_person;
+            $ssi->cust_no = $dt->contact_number;        
+            $ssi->company_name = $company_id;
+            $ssi->cust_email = $dt->email;
+            $ssi->cust_designation = $dt->designation;
+            $ssi->address = '';
+            $ssi->country = $cname;
+            $ssi->source = 'Gitex';
+            $ssi->source_o = '';
+            $ssi->owner = $dt->sales_person_id;
+            $ssi->doc = '';            
+            $ssi->tags = '';
+            $ssi->note = $dt->note;
+            $ssi->status = 1;
+            $ssi->created_by = $dt->sales_person_id;
+            $ssi->company_id = session('logged_session_data.company_id');
+            $ssi->save();
+            $ssi->toArray();
+
+            DB::table('gitex_leads_irshaad')->where('id',$dt->id)
+            ->update([
+                'status' => 0,
+            ]);
+            
+            $accounts = new SysChartofAccounts();
+            $accounts->account_code = "";
+            $accounts->account_name = $dt->company_name;
+            $groups = SysAccountGroupSub2::select('group_id','sub_id')->where('id',4)->first();  // 4 Sundry Debtors
+            $accounts->group = $groups->group_id;
+            $accounts->subgroup = $groups->sub_id;
+            $accounts->subgroup2 = 4; // 4 Sundry Debtors
+            $accounts->status = 1;
+            $accounts->created_by = Auth::user()->id;
+            $results = $accounts->save();
+        }
+        return "Success";
+    } catch (\Throwable $th) {
+        return $th;
+    }
+
+    }
+    public static function Erp_Notify_in($user_id, $message, $received_id, $link)
+    {
+        try {            
+            $notify = new SysNotifications();
+            $notify->user_id = $user_id;
+            $notify->date = date('Y-m-d');
+            $notify->message = $message;
+            $notify->received_id = $received_id;
+            $notify->link = $link;
+            $notify->is_read = 0;
+            $notify->active_status = 1;
+            $notify->created_by = Auth::user()->id;
+            $notify->created_at = date('Y-m-d H:i:s');
+            $results = $notify->save();        
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+    public static function Erp_Notify_re_submit($designation_id, $track_id, $deal_id)
+    {
+        try {
+            $user = DB::table('sm_staffs')->select('user_id')->where('designation_id',$designation_id)->get();
+            if(count($user)>0){
+                foreach($user as $u){
+                    SysHelper::Erp_Notify_in($u->user_id,'Deal '.$deal_id.' Resubmited',$u->user_id,'http://erp.venushrms.com/crm-deal-track-approval/'.$track_id.'');
+                }
+            }
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+    public static function Erp_Notify_track_reject($deal_id, $owner_name, $owner_email, $dept, $reason)
+    {
+        try {            
+            $body = "<br />";
+            $body .= "Deal No ".$deal_id." has been Rejected by ".$dept." Department. Please review and Re-Submit.";
+            $body .= "<br />";
+            if($reason != ""){
+                $body .= "Reason : ".$reason;
+                $body .= "<br />";
+            } 
+            $body .= "<a href='http://erp.venushrms.com/crm-deal-track/".$deal_id."/view'> View Detail : ".$deal_id." </a>";
+            $body .= "<br />";
+            $body .= "<br />";
+            SysHelper::notificationMail($owner_name,$body, $owner_email, 'Deal No '.$deal_id.' has been Rejected');
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+    
+    public static function notificationMailGitexMail($name, $email, $sales){
+    if(Auth::user()->id == 4){
+        try {                
+            $body = "Thank you for visiting us at GITEX Global!<br />";
+            $body .= "We hope you had a great time visiting us and experiencing the latest products and solutions from our vendors.<br />";
+
+            if($sales==23){
+            $body .= "For further information and enquiries, you may contact Mr. Shoji.<br /><br />";
+            $body .= "<b>Shoji George Thomas</b><br />";
+            $body .= "Business Development Manager<br />";
+            $body .= "Tel: +971 4 3522433 Ext: 311<br />";
+            $body .= "Mobile: +971 52 735 4623<br />";
+            $body .= "Email: shoji@sysllc.com<br />";
+            }
+            else if($sales==26){
+            $body .= "For further information and enquiries, you may contact Mr. Sayed Naeem.<br /><br />";
+            $body .= "<b>Sayed Naeem</b><br />";
+            $body .= "Business Development Manager <br />";
+            $body .= "Tel: +971 4 3522433 Ext : 324<br />";
+            $body .= "Mobile : +971 52 541 7028<br />";
+            $body .= "Email: naeem@sysllc.com<br />";
+            }
+            else if($sales==22){
+            $body .= "For further information and enquiries, you may contact Mr. Sarath.<br /><br />";
+            $body .= "<b>Sarath R</b><br />";
+            $body .= "Business Development Manager<br />";
+            $body .= "Tel: +971 4 3522433 Ext: 331<br />";
+            $body .= "Mobile: +971 50 459 8916<br />";
+            $body .= "Email: sarath@sysllc.com<br />";
+            }
+            else if($sales==48){
+            $body .= "For further information and enquiries, you may contact Mr. Abdul Raheem.<br /><br />";
+            $body .= "<b>Abdul Raheem</b><br />";
+            $body .= "Tel: +971 4 3522433<br />";
+            $body .= "Mobile: +971 56 408 6464<br />";
+            $body .= "Email: raheem@sysllc.com<br />";
+            }
+            else if($sales==25){
+            $body .= "For further information and enquiries, you may contact Mr. Imran Shaikh.<br /><br />";
+            $body .= "<b>Imran Shaikh</b><br />";
+            $body .= "AVAYA Product Manager<br />";
+            $body .= "Tel: +971 4 3522433 Ext: 346<br />";
+            $body .= "Mobile: +971 56 408 7373<br />";
+            $body .= "Email: imran@sysllc.com<br />";
+            }
+            else if($sales==50){
+            $body .= "For further information and enquiries, you may contact Mr. Faquih Abdul Sattar.<br /><br />";
+            $body .= "<b>Faquih Abdul Sattar</b><br />";
+            $body .= "Account Manager<br />";
+            $body .= "Moons Nature Trading Establishment<br />";
+            $body .= "Tel: +966 13 8642671<br />";
+            $body .= "Mobile: +966 50 3137366<br />";
+            $body .= "Email: abdul@sysllc.com<br />";
+            }
+            else if($sales==38){
+            $body .= "For further information and enquiries, you may contact Mr. Tanzeel Ansari.<br /><br />";
+            $body .= "<b>Tanzeel Ansari</b><br />";
+            $body .= "Business Development Manager - Riyadh<br />";
+            $body .= "Tel: +966 11 210 9668<br />";
+            $body .= "Mobile: +966 55 490 9327<br />";
+            $body .= "Email: tanzeel@supreme.sa<br />";
+            }
+            else if($sales==44){
+            $body .= "For further information and enquiries, you may contact Mr. Rajiv R.<br />";
+            $body .= "Rajiv R<br />";
+            $body .= "Director Cybersecurity EMEA<br />";
+            $body .= "Tel: +971 4 3522433 Ext : 355<br />";
+            $body .= "Mobile : +971 50 480 8952<br />";
+            $body .= "Email: rajiv.r@sysllc.com<br />";
+            $body .= "Web: http://www.sysllc.com/cybersecurity-solutions/<br />";
+            }
+            else if($sales==34){
+            $body .= "For further information and enquiries, you may contact Mr. Stephen F Mendonsa.<br />";
+            $body .= "Stephen F Mendonsa<br />";
+            $body .= "Cyber Security Manager EMEA<br />";
+            $body .= "Tel: +971 4 3522433   Ext : 318<br />";
+            $body .= "Mobile : +971 54 998 2878 / +971 58 883 2633<br />";
+            $body .= "Email: stephen.m@sysllc.com<br />";
+            $body .= "Web: www.sysllc.com/cybersecurity-solutions/<br />";
+            }
+            else if($sales==32){
+            $body .= "For further information and enquiries, you may contact Mr. Irshaad Aklekar.<br />";
+            $body .= "Irshaad Aklekar<br />";
+            $body .= "Business Development Manager-ICT<br />";
+            $body .= "Tel: +971 52 741 8616 Ext : 333<br />";
+            $body .= "Mobile: +971 54 581 6852<br />";
+            $body .= "Email: irshaad@sysllc.com<br />";
+            }            
+            else if($sales==29){
+            $body .= "For further information and enquiries, you may contact Mr. Rahul Puliyasseri.<br />";
+            $body .= "Rahul Puliyasseri<br />";
+            $body .= "Senior Product Specialist<br />";
+            $body .= "Tel: +971 4 874 7373<br />";
+            $body .= "Mob: +971 56 418 0514<br />";
+            $body .= "Email: rahul.p@magnusgulf.com<br />";
+            $body .= "Web: www.magnusgulf.com<br />";
+            }
+            else if($sales==33){
+            $body .= "For further information and enquiries, you may contact Mr. Jacob George.<br />";
+            $body .= "Jacob George<br />";
+            $body .= "Tel: +971 4 352 2433 Ext: 356<br />";
+            $body .= "Mobile : +971 50 480 7852<br />";
+            $body .= "Email: jacob@sysllc.com <br />";
+            $body .= "Web: www.sysllc.com<br />";
+            }
+            else if($sales==27){
+            $body .= "For further information and enquiries, you may contact Ms. Monica.<br />";
+            $body .= "Monica<br />";
+            $body .= "Tel: +971 4 352 2433 Ext: 317<br />";
+            $body .= "Mobile : +971 56 408 7171<br />";
+            $body .= "Email: monica@sysllc.com<br />";
+            $body .= "Web: www.sysllc.com<br />";
+            }
+            else if($sales==46){
+            $body .= "For further information and enquiries, you may contact Mr. Muhammed Junaid.<br />";
+            $body .= "Muhammed Junaid<br />";
+            $body .= "Senior Product Specialist<br />";
+            $body .= "Tel: +971 4 874 7373<br />";
+            $body .= "Mob: +971 56 415 5757<br />";
+            $body .= "Email: junaid@magnusgulf.com<br />";
+            $body .= "Web: www.magnusgulf.com<br />";
+            }
+
+            else {
+                $body .= "For further information and enquiries, you may contact Ms. Amrutha.<br /><br />";
+                $body .= "<b>Amrutha D K</b><br />";
+                $body .= "Marketing Coordinator <br />";
+                $body .= "Tel: +971 4 3522433<br />";
+                $body .= "Mobile: +971 54 309 2141<br />";
+                $body .= "Email: amrutha@sysllc.com<br />";
+            }
+
+            $body .= "Web: www.sysllc.com<br />";
+            $body .= "Kindly <a href='https://www.sysllc.com/wp-content/uploads/2022/09/syscom-company-profile-10-2022.pdf'>download</a> our company profile here";
+            SysHelper::notificationMailGitex($name,$body, $email, 'Thank you for Visiting Syscom at GITEX');
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    }
+
+    public static function notificationMailGitex($name, $body, $to, $sub){
+        $data =  array(
+            'name' => $name,
+            'body' => $body,
+            'email' => $to,
+            'subject' => $sub
+        );
+        try {            
+            Mail::send('emails.mailTempGitex',$data, function ($msg) use ($data){
+                $msg->from('marketing@wesyscom.com', 'Syscom');
+                $msg->to($data['email'])->subject($data['subject']);
+            });
+        } catch (\Throwable $th) {
+            //return $th;
+        }
+    }
+
+    public static function notificationMail($name, $body, $to, $sub){
+        $data =  array(
+            'name' => $name,
+            'body' => $body,
+            'email' => $to,
+            'subject' => $sub
+        );
+        try {            
+            Mail::send('emails.mailTemp',$data, function ($msg) use ($data){
+                $msg->from('marketing@wesyscom.com', 'Syscom');
+                $msg->to($data['email'])->subject($data['subject']);
+            });
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+    }
+
+    function notificationMailCc($name, $body, $to, $cc, $sub){
+        $data =  array(
+            'name' => $name,
+            'body' => $body,
+            'email' => $to,
+            'emailcc' => $cc,
+            'subject' => $sub
+        );
+    
+        Mail::send('emails.mailTemp',$data, function ($msg) use ($data){
+            $msg->from('noreply@venushrms.com', 'Venus HRMS');    
+            $msg->to($data['email'])->cc($data['emailcc'])->subject($data['subject']);
+        });
+    }
+    function notificationMailBcc($name, $body, $to, $bcc, $sub){
+        $data =  array(
+            'name' => $name,
+            'body' => $body,
+            'email' => $to,
+            'emailbcc' => $bcc,
+            'subject' => $sub
+        );
+    
+        Mail::send('emails.mailTemp',$data, function ($msg) use ($data){
+            $msg->from('noreply@venushrms.com', 'Venus HRMS');    
+            $msg->to($data['email'])->bcc($data['emailbcc'])->subject($data['subject']);
+        });
+    }
+    
+    public static function get_stock_total_for_balance_sheet(){
+        try {           
+                $retData = 0;
+                $data = DB::table('sys_item_stock')->select('price_in','qty_out')->get();
+                if(count($data)>0){
+                    foreach ($data as $dt) {
+                        $retData += $dt->price_in * $dt->qty_out;
+                    }
+                }
+                return SysHelper::com_curr_format($retData, 2, '.', '');
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_stock_for_balance_sheet(){
+        try {           
+                $retData ="";
+                $data = DB::table('sys_item_stock')
+                ->join('sm_items','sm_items.id','sys_item_stock.partno')
+                ->select('sys_item_stock.description','sys_item_stock.price_in','sys_item_stock.qty_in','sm_items.part_number')->get();
+                if(count($data)>0){
+                    $retData .= "<tr class='collapse' id='collapsea_sto'><td class='border pl-4'>";
+                    foreach ($data as $dt) {
+                        $retData .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".$dt->part_number." <span class='float-right'>".SysHelper::com_curr_format($dt->price_in * $dt->qty_in, 2, '.', '')."</span><hr class='p-0 m-0' />";
+                    }
+                    $retData .= "</td><td class='border'>&nbsp;</td></tr>";
+                }
+                return $retData;
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    
+    public static function get_customer_total_for_balance_sheet(){
+        try {           
+                $retData = 0;
+                $data = DB::table('sys_item_stock')->select('price_in','qty_in')->get();
+                if(count($data)>0){
+                    foreach ($data as $dt) {
+                        $retData += $dt->price_in * $dt->qty_in;
+                    }
+                }
+                return SysHelper::com_curr_format(0, 2, '.', '');
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_customer_for_balance_sheet(){
+        try {           
+                $retData ="";
+                $data = DB::table('sys_cust_suppl')->select('name')->where('catid',1)->get();
+                if(count($data)>0){
+                    $retData .= "<tr class='collapse' id='collapsea_cust'><td class='border pl-4'>";
+                    foreach ($data as $dt) {
+                        $retData .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".$dt->name." <span class='float-right'>".SysHelper::com_curr_format(0, 2, '.', '')."</span><hr class='p-0 m-0' />";
+                    }
+                    $retData .= "</td><td class='border'>&nbsp;</td></tr>";
+                }
+                return $retData;
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_supplier_total_for_balance_sheet(){
+        try {           
+                $retData = 0;
+                $data = DB::table('sys_item_stock')->select('price_in','qty_in')->get();
+                if(count($data)>0){
+                    foreach ($data as $dt) {
+                        $retData += $dt->price_in * $dt->qty_in;
+                    }
+                }
+                return SysHelper::com_curr_format(0, 2, '.', '');
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_supplier_for_balance_sheet(){
+        try {           
+                $retData ="";
+                $data = DB::table('sys_cust_suppl')->select('name')->where('catid',2)->get();
+                if(count($data)>0){
+                    $retData .= "<tr class='collapse' id='collapsea_supp'><td class='border pl-4'>";
+                    foreach ($data as $dt) {
+                        $retData .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".$dt->name." <span class='float-right'>".SysHelper::com_curr_format(0, 2, '.', '')."</span><hr class='p-0 m-0' />";
+                    }
+                    $retData .= "</td><td class='border'>&nbsp;</td></tr>";
+                }
+                return $retData;
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_cash_in_hand_for_balance_sheet($from_date,$to_date){
+        try {           
+                $retData ="";
+                $data = DB::table('sys_chartofaccounts')->select('id','account_name')->where('subgroup2',15)->get();
+                if(count($data)>0){
+                    $retData .= "<tr class='collapse' id='collapsea_cash_in_hand'><td class='border pl-4'>";
+                    foreach ($data as $dt) {
+                        $retData .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".$dt->account_name." <span class='float-right'>".SysHelper::get_account_balance_by_account_id($dt->id,$from_date,$to_date)."</span><hr class='p-0 m-0' />";
+                    }
+                    $retData .= "</td><td class='border'>&nbsp;</td></tr>";
+                }
+                return $retData;
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    
+    public static function get_cash_at_bank_for_balance_sheet($from_date,$to_date){
+        try {           
+                $retData ="";
+                $data = DB::table('sys_chartofaccounts')->select('id','account_name')->where('subgroup2',16)->get();
+                if(count($data)>0){
+                    $retData .= "<tr class='collapse' id='collapsea_cash_at_bank'><td class='border pl-4'>";
+                    foreach ($data as $dt) {
+                        $retData .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".$dt->account_name." <span class='float-right'>".SysHelper::get_account_balance_by_account_id($dt->id,$from_date,$to_date)."</span><hr class='p-0 m-0' />";
+                    }
+                    $retData .= "</td><td class='border'>&nbsp;</td></tr>";
+                }
+                return $retData;
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_partners_capital_for_balance_sheet($from_date,$to_date){
+        try {           
+                $retData ="";
+                $data = DB::table('sys_chartofaccounts')->select('id','account_name')->where('subgroup2',7)->get();
+                if(count($data)>0){
+                    $retData .= "<tr class='collapse' id='collapsel_partners_capital'><td class='border pl-4'>";
+                    foreach ($data as $dt) {
+                        $retData .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".$dt->account_name." <span class='float-right'>".SysHelper::get_account_balance_by_account_id($dt->id,$from_date,$to_date)."</span><hr class='p-0 m-0' />";
+                    }
+                    $retData .= "</td><td class='border'>&nbsp;</td></tr>";
+                }
+                return $retData;
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_account_name_in_bank_book($doc_number,$account_id)
+    {
+        $account = DB::table('sys_journalvoucher_list')->select('sys_chartofaccounts.account_name')
+            ->join('sys_chartofaccounts','sys_chartofaccounts.id','sys_journalvoucher_list.account_id')
+            ->where('jv_id',$doc_number)->where('account_id','!=',$account_id)->first();
+            return $account->account_name;
+    }
+
+    /*public static function trn_chartof_accounts_transaction($account_id, $transaction_id, $transaction_no, $transaction_date, $transaction_type, $amount_dr, $amount_cr, $narration,$status,$plan=0, $transaction_ref)
+    {
+        $cat = new SysChartofAccountsTransaction();
+        $cat->account_id = $account_id;
+        $cat->transaction_id = $transaction_id;
+        $cat->transaction_no = $transaction_no;
+        $cat->transaction_date = $transaction_date;
+        $cat->transaction_type = $transaction_type;
+        $cat->debit_amount = $amount_dr;
+        $cat->credit_amount = $amount_cr;
+        $cat->remarks = $narration;
+        $cat->status = $status;
+        $cat->plan = $plan;
+        $cat->created_by = Auth::user()->id;
+        $cat->created_at = Carbon::now('+04:00');
+        $cat->company_id = session('logged_session_data.company_id');
+        $cat->transaction_ref = $transaction_ref;
+        $cat->save();
+    }*/
+    public static function get_account_balance_by_account_id($account_id,$from_date,$to_date)
+    {
+        try {
+            $tot=0;
+            $trn = SysChartofAccountsTransaction::where('account_id',$account_id)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '".$to_date."'")->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){                
+                    $tot += $dt->debit_amount;
+                    $tot -= $dt->credit_amount;
+                }
+                return SysHelper::com_curr_format($tot, 2, '.', '');
+            } else{
+                return SysHelper::com_curr_format($tot, 2, '.', '');
+            }        
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public static function get_account_balance_by_group2_id($id,$from_date,$to_date)
+    {
+        try {
+            $tot=0;
+            $account = SysChartofAccounts::where('subgroup2',$id)->get();
+            if(count($account)>0){ foreach($account as $acc){ $account_id[]=$acc->id; } }
+
+            $trn = SysChartofAccountsTransaction::wherein('account_id',$account_id)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '".$to_date."'")->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){                
+                    $tot += $dt->debit_amount;
+                    $tot -= $dt->credit_amount;
+                }
+                return SysHelper::com_curr_format($tot, 2, '.', '');
+            } else{
+                return SysHelper::com_curr_format($tot, 2, '.', '');
+            }
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public static function get_trial_balance_by_group_id($id,$gid,$from_date,$to_date)
+    {   //Assets-1 debit || Liabilities-2 credit || Expenses-3 debit || Incomes-4 credit
+        try {
+            $tot=0;
+            $account = SysChartofAccounts::where('subgroup',$id)->get();
+            if(count($account)>0){ foreach($account as $acc){ $account_id[]=$acc->id; } }
+            $trn = SysChartofAccountsTransaction::wherein('account_id',$account_id)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '".$to_date."'")->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){                
+                    $tot += $dt->debit_amount;
+                    $tot -= $dt->credit_amount;
+                }
+                return SysHelper::com_curr_format($tot, 2, '.', '');
+            } else{
+                return SysHelper::com_curr_format(0, 2, '.', '');
+            }        
+        } catch (\Throwable $th) {
+            //return $th;
+            return SysHelper::com_curr_format(0, 2, '.', '');
+        }
+    }
+    public static function get_trial_balance_opening_by_group_id($id,$gid,$from_date,$to_date)
+    {   //Assets-1 debit || Liabilities-2 credit || Expenses-3 debit || Incomes-4 credit
+        if($from_date==""){return '0.00';}
+        try {
+            $tot=0;
+            $account = SysChartofAccounts::where('subgroup',$id)->get();
+            if(count($account)>0){ foreach($account as $acc){ $account_id[]=$acc->id; } }
+            $trn = SysChartofAccountsTransaction::wherein('account_id',$account_id)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') < '".$from_date."'")->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){                
+                    $tot += $dt->debit_amount;
+                    $tot -= $dt->credit_amount;
+                }
+                return SysHelper::com_curr_format(trim($tot,'-'), 2, '.', '');
+            } else{
+                return SysHelper::com_curr_format(0, 2, '.', '');
+            }        
+        } catch (\Throwable $th) {
+            //return $th;
+            return SysHelper::com_curr_format(0, 2, '.', '');
+        }
+    }
+    
+
+    public static function get_trial_balance_by_group2_id($id,$gid,$from_date,$to_date)
+    {   //Assets-1 debit || Liabilities-2 credit || Expenses-3 debit || Incomes-4 credit
+        try {
+            $tot=0;
+            $account = SysChartofAccounts::where('subgroup2',$id)->get();
+            if(count($account)>0){ foreach($account as $acc){ $account_id[]=$acc->id; } }
+            $trn = SysChartofAccountsTransaction::wherein('account_id',$account_id)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '".$to_date."'")->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){                
+                    $tot += $dt->debit_amount;
+                    $tot -= $dt->credit_amount;
+                }
+                return SysHelper::com_curr_format($tot, 2, '.', '');
+            } else{
+                return SysHelper::com_curr_format(0, 2, '.', '');
+            }        
+        } catch (\Throwable $th) {
+            //return $th;
+            return SysHelper::com_curr_format(0, 2, '.', '');
+        }
+    }
+    public static function get_trial_balance_opening_by_group2_id($id,$gid,$from_date,$to_date)
+    {   //Assets-1 debit || Liabilities-2 credit || Expenses-3 debit || Incomes-4 credit
+        try {
+            $tot=0;
+            $account = SysChartofAccounts::where('subgroup2',$id)->get();
+            if(count($account)>0){ foreach($account as $acc){ $account_id[]=$acc->id; } }
+            $trn = SysChartofAccountsTransaction::wherein('account_id',$account_id)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') < '".$from_date."'")->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){                
+                    $tot += $dt->debit_amount;
+                    $tot -= $dt->credit_amount;
+                }
+                return SysHelper::com_curr_format($tot, 2, '.', '');
+            } else{
+                return SysHelper::com_curr_format(0, 2, '.', '');
+            }        
+        } catch (\Throwable $th) {
+            //return $th;
+            return SysHelper::com_curr_format(0, 2, '.', '');
+        }
+    }
+
+    public static function get_trial_balance_items($gid,$from_date,$to_date)
+    {
+        try {           
+            $retData ="";
+            $data = DB::table('sys_chartofaccounts')->select('id','account_name','group','subgroup2')->where('subgroup2',$gid)->get();
+            if(count($data)>0){
+                foreach ($data as $dt) {
+                    $total=SysHelper::get_account_balance_opening_by_account_id($dt->id,$from_date,$to_date);
+                    if($total[0] != "0.00" || $total[1] != "0.00"){
+                        if($dt->group == 1 || $dt->group == 3){
+                            $sum=$total[0] + $total[1];
+                            $retData .= "<tr class='collapse' id='collapse_sub_".$gid."'><td class='border pl-4'>".$dt->account_name."</td><td class='pr-2 border text-right'>".$total[1]."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$total[0]."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$sum."</td><td class='pr-2 border text-right'>0.00</td></tr>";
+                        }
+                        if($dt->group == 2 || $dt->group == 4){
+                            $sum=$total[0] + $total[1];
+                            $retData .= "<tr class='collapse' id='collapse_sub_".$gid."'><td class='border pl-4'>".$dt->account_name."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$total[1]."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$total[0]."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$sum."</td></tr>";
+                        }
+                    }
+                }
+            }
+            return $retData;
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    public static function get_account_balance_opening_by_account_id($account_id,$from_date,$to_date)
+    {
+        try {
+            $tot=0;
+            $tot_opn=0;
+            $trn = SysChartofAccountsTransaction::where('account_id',$account_id)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '".$to_date."'")->get();
+            $trn_opn = SysChartofAccountsTransaction::where('account_id',$account_id)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') < '".$from_date."'")->get();
+            if(count($trn)>0){
+                foreach($trn as $dt){                
+                    $tot += $dt->debit_amount;
+                    $tot -= $dt->credit_amount;
+                }
+            }
+            if(count($trn_opn)>0){
+                foreach($trn_opn as $dt){                
+                    $tot_opn += $dt->debit_amount;
+                    $tot_opn -= $dt->credit_amount;
+                }
+            }
+            return [SysHelper::com_curr_format($tot, 2, '.', ''),SysHelper::com_curr_format($tot_opn, 2, '.', '')];
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+    
+    public static function get_months_by_date($from_date,$to_date)
+    {
+        $date1 = strtotime($from_date);
+        $date2 = strtotime($to_date);
+        $months = 0;        
+        while (($date1 = strtotime('+1 MONTH', $date1)) <= $date2){
+            $months++;
+        }        
+        return $months;
+    }
+    public static function get_amount_by_month($month,$plan,$amount)
+    {
+        $year=12;
+        if($plan==1){ $year=12; }
+        if($plan==2){ $year=24; }
+        if($plan==3){ $year=36; }
+        if($plan==4){ $year=48; }
+        if($plan==5){ $year=60; }
+        return ($amount/$year)*$month;
+    }
+    public static function get_aed_amount($currency, $amount)
+    {
+        if($currency==1){return $amount;}
+        else if($currency==2){return $amount;}
+        else if($currency==3){return $amount*9.5;}
+        else if($currency==4){return $amount;}
+        else if($currency==5){return $amount*3.68;}
+        else if($currency==6){return $amount*0.045;}
+        else if($currency==7){return $amount*9.75;}
+        else if($currency==8){return $amount*12;}
+        else if($currency==9){return $amount*4.59;}
+        else {return $amount;}
+    }
+    public static function get_currency($currency)
+    {
+        if($currency==1){return "AED";}
+        else if($currency==2){return "QAR";}
+        else if($currency==3){return "OMR";}
+        else if($currency==4){return "SAR";}
+        else if($currency==5){return "USD";}
+        else if($currency==6){return "INR";}
+        else if($currency==7){return "BHD";}
+        else if($currency==8){return "KWD";}
+        else if($currency==9){return "GBP";}
+        else {return "AED";}
+    }
+    public static function password_update(){
+        $updated_at = date('Y-m-d', strtotime('- 1 months'));
+        $updated_on = User::select('updated_at')->where('id',Auth::user()->id)->whereRaw("DATE_FORMAT(updated_at, '%Y-%m-%d') <= '".$updated_at."'")->count();
+        return $updated_on;
+    }
+    function notificationLateLogin($data){
+        $send_at = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        $send_at1 = Carbon::now('+04:00')->format('Y-m-d');
+        
+        foreach($data as $dt)
+        {
+            if($dt->ifLate == 'Yes')
+            {
+                $Query="INSERT INTO mail_history (employee_id, mail_type, STATUS, send_at)
+                        SELECT '".$dt->employee_id."', 'RECTIFICATIONMAIL','1','".$send_at."'
+                        FROM mail_history WHERE (SELECT COUNT(id) FROM  mail_history 
+                        WHERE employee_id='".$dt->employee_id."' AND mail_type='RECTIFICATIONMAIL' 
+                        AND DATE_FORMAT(send_at,'%Y-%m-%d') = '".$send_at1."') = 0";
+                DB::INSERT($Query);
+            }
+        }
+    
+        $employeeList = DB::table('mail_history')
+        ->join('employee','mail_history.employee_id','employee.employee_id')
+        ->select('employee.email','employee.first_name')
+        ->where('mail_history.status','1')
+        ->where('mail_history.mail_type','RECTIFICATIONMAIL')
+        ->whereNotNull('employee.email')->distinct()->get();
+         
+        $body = "Late attendance punching found today, Login and Please rectify your attendance.";
+        $body .= "<br />";
+        $body .= "Date : " . date("d-M-Y", strtotime($send_at1));
+    
+        foreach ($employeeList AS $list)
+        {
+            notificationMail($list->first_name,$body,$list->email, 'Employee Attendance Rectification Warning');
+            //notificationMail($list->first_name,$body,'sajeeshck@gmail.com', 'Employee Attendance Rectification Warning');
+        }
+        DB::table('mail_history')->where('mail_type','RECTIFICATIONMAIL')
+        ->update([
+            'status' => 2,
+        ]);
+    }
+    
+    function notificationNoLogOut(){
+        //$send_at1 = Carbon::now('+04:00')->format('Y-m-d');
+        $send_at1 = Carbon::now('+04:00')->addDays(-1)->format('Y-m-d');
+    
+        $Query="INSERT INTO mail_history (employee_id, mail_type, STATUS, send_at)
+                SELECT employee_id, 'REMOTELOGOUTMAIL',1, '".$send_at1."' FROM(
+                    SELECT employee_id, MAX(in_out_time)in_out_time, MAX(TYPE)TYPE FROM employee_remote_attendance 
+                    WHERE DATE_FORMAT(in_out_time,'%Y-%m-%d')='".$send_at1."'
+                    GROUP BY employee_id
+                    ORDER BY in_out_time DESC)tbl WHERE TYPE=1 
+                    AND (SELECT COUNT(id) FROM  mail_history 
+                        WHERE employee_id=tbl.employee_id AND mail_type='REMOTELOGOUTMAIL' 
+                        AND DATE_FORMAT(send_at,'%Y-%m-%d') = '".$send_at1."') = 0";
+    
+        DB::INSERT($Query);
+    
+        $employeeList = DB::table('mail_history')
+        ->join('employee','mail_history.employee_id','employee.employee_id')
+        ->select('employee.email','employee.first_name')
+        ->where('mail_history.status','1')
+        ->where('mail_history.mail_type','REMOTELOGOUTMAIL')
+        ->whereNotNull('employee.email')->distinct()->get();
+         
+        $body = "Attendance logout not found on last day, Login and Please update your logout time.";
+        $body .= "<br />";
+        $body .= "Date : " . date("d-M-Y", strtotime($send_at1));
+    
+        foreach ($employeeList AS $list)
+        {
+            //notificationMail($list->first_name,$body,'sajeeshck@gmail.com', 'Employee Attendance Logout Warning');
+            notificationMail($list->first_name,$body,$list->email, 'Employee Attendance Logout Warning');
+        }
+        DB::table('mail_history')->where('mail_type','REMOTELOGOUTMAIL')
+        ->update([
+            'status' => 2,
+        ]);
+    }
+
+}
+
+?>

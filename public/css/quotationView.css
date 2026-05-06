@@ -1,0 +1,65 @@
+   table,
+   thead,
+   th,
+   tr,
+   td {
+       color: #415094 !important;
+       -webkit-print-color-adjust: exact;
+   }
+
+   @media print {
+       body {
+           -webkit-print-color-adjust: exact;
+       }
+   }
+
+   .purchaseInvoice {
+       padding: 0px 25px !important;
+   }
+
+   .TotalAmount {
+       background: linear-gradient(90deg, #7c32ff 0%, #c738d8 51%, #7c32ff 100%);
+       padding: 5px 0px;
+       color: white;
+       letter-spacing: 2px;
+       margin-top: 10px;
+   }
+
+   .quotation_view_table {
+       width: 100%;
+   }
+
+   .quotation_view_50 {
+       width: 50%;
+   }
+
+   .quotation_view_60 {
+       width: 50%;
+   }
+
+   .quotation_view_table_tr_td {
+       width: 50%;
+       vertical-align: top;
+   }
+
+   .quotation_view_table_tr_td_h2 {
+       background: #e9ecef !important;
+       padding: 5px;
+   }
+
+   .quotation_view_table_tr_img {
+       min-width: 160px;
+       max-width: 160px;
+       height: auto;
+   }
+
+   .shipment_qorkorder {
+       width: 60%;
+       padding-right: 10%;
+       vertical-align: top;
+   }
+
+   .shipment_qorkorder_td {
+       width: 20%;
+       vertical-align: top;
+   }

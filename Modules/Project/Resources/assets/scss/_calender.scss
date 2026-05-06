@@ -1,0 +1,107 @@
+#calendar {
+    width: 100%;
+    padding: 30px;
+    background: #fff;
+    @media #{$mobile_device}{
+        padding: 15px;
+    }
+    .fc-right h2 {
+        font-size: 13px;
+        display: inline-block;
+        position: relative;
+        // padding: 0 15px;
+        padding: 0 2px;
+        color: #647891;
+    }
+    button {
+        background: transparent;
+        background: transparent;
+        border: none;
+        padding: 0;
+        font-size: 13px;
+        color: #BBC1C9;
+        &:focus{
+            outline: none !important;
+        }
+        span {
+            background: transparent;
+            color: #BBC1C9;
+            padding: 0;
+        }
+        &.fc-button-primary:focus {
+            -webkit-box-shadow: none;
+            box-shadow: none;
+        }
+    }
+
+
+    // fc-view 
+    .fc-view{
+        table{
+            .fc-day-number {
+                padding: 20px !important;
+            }
+            .fc-widget-header{
+                thead{
+                    // background: #000;
+                    tr{
+                       .fc-day-header{
+                        padding: 7px;
+                        border-color: #fff;
+                        font-size: 12px;
+                        color: #647891;
+                        font-weight: 500;
+                        @extend %gradient_2_opacity;
+                       }
+                    }
+                }
+                
+            }
+            tbody{
+                a.fc-day-grid-event {
+                    background: #7FD8AA;
+                    padding: 0 4px;
+                    border: none;
+                    color: #fff !important;
+                    
+                }
+                a.fc-day-grid-event.fc-h-event.fc-event.fc-start.fc-end.fc-draggable.fc-resizable {
+                    background: #FF7882 !important;
+                    font-size: 12px !important;
+
+                }
+                .fc-day-grid-event.fc-h-event.fc-event.fc-start.fc-end.fc-draggable {
+                    background: #4A9DFF !important;
+                    font-size: 12px !important;
+
+                }
+                .fc-day-grid-event.fc-h-event.fc-event.fc-not-start.fc-end.fc-draggable.fc-resizable {
+                    background: #FFC864;
+                    border: none;
+                    color: #fff;
+                    padding: 0;
+                    font-size: 12px !important;
+                    padding: 2px;
+                }
+            }
+            .fc-unthemed th, .fc-unthemed td, .fc-unthemed thead, .fc-unthemed tbody, .fc-unthemed .fc-divider, .fc-unthemed .fc-row, .fc-unthemed .fc-content, .fc-unthemed .fc-popover, .fc-unthemed .fc-list-view, .fc-unthemed .fc-list-heading td {
+                border-color: #ddd;
+                border-left: none !important;
+            }
+        }
+    }
+    .fc-unthemed th, .fc-unthemed td, .fc-unthemed thead, .fc-unthemed tbody, .fc-unthemed .fc-divider, .fc-unthemed .fc-row, .fc-unthemed .fc-content, .fc-unthemed .fc-popover, .fc-unthemed .fc-list-view, .fc-unthemed .fc-list-heading td {
+        border-color: #ddd;
+        border-left: none !important;
+    }
+    .fc-unthemed th {
+        border-color: #DDE0E4;
+    }
+    .fc-unthemed td, .fc-unthemed thead, .fc-unthemed tbody, .fc-unthemed .fc-divider, .fc-unthemed .fc-row, .fc-unthemed .fc-content, .fc-unthemed .fc-popover, .fc-unthemed .fc-list-view, .fc-unthemed .fc-list-heading td{
+        border-color: transparent !important;
+    }
+    .fc-head-container.fc-widget-header {
+        border-color: transparent !important;
+    }
+  }
+

@@ -1,0 +1,131 @@
+.faq_area{
+    margin-top: 100px;
+    margin-left: 150px;
+    @media #{$mobile_device}{
+        margin-top: 30px;
+        margin-left: 0px;
+    }
+    @media #{$tablet_device}{
+        margin-top: 30px;
+        margin-left: 0px;
+    }
+    @media #{$mid_device}{
+        margin-left: 0px;
+    }
+    .nav{
+        margin-bottom: 30px;
+        li{
+            a{
+                background: rgba(74, 157, 255, 0.1);
+                padding: 13px 64px;
+                display: inline-block;
+                font-size: 16px;
+                color: #4a9dff;
+                margin-right: 20px;
+                font-weight: 500;
+                border-radius: 4px;
+                &.active{
+                    background: #4a9dff;
+                    color: #fff;
+                }
+                @media #{$mobile_device}{
+                    margin: 10px 0;
+                    display: block;
+                }
+            }
+        }
+    }
+    .accordion_heading{
+        margin-bottom: 100px;
+        @media #{$mobile_device} {
+            margin-bottom: 30px;
+        }
+        @media #{$tablet_device} {
+            margin-bottom: 30px;
+        }
+        h3{
+            font-size: 42px;
+            font-weight: 400;
+            margin-bottom: 0;
+            @media #{$mobile_device}{
+                font-size: 28px;
+            }
+        }
+    }
+    #accordion,#accordion2{
+       .card{
+        border: 1px solid rgba(187,193,201,.03);
+           h5{
+
+            button{
+                font-size: 20px;
+                font-weight: 400;
+                color: #151B26;
+                @media #{$mobile_device}{
+                    font-size: 13px;
+                }
+                @media #{$tablet_device}{
+                    font-size: 18px;
+                }
+                @media #{$large_device}{
+                    font-size: 18px;
+                }
+                img{
+                    margin-right: 15px;
+                }
+            }
+          
+           }
+           .card-body{
+            padding: 0 75px 40px 76px;
+            font-size: 14px;
+            color: #647891;
+            @media #{$mobile_device} {
+                padding: 0 20px 10px 20px;
+            }
+           }
+       } 
+       .card {
+        position: relative;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        min-width: 0;
+        word-wrap: break-word;
+        background-color: #fff;
+        background-clip: border-box;
+        border-radius: .25rem;
+        background: #fff !important;
+        border: 5px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(187,193,201,.03);
+        .card-header {
+            margin-bottom: 0;
+            background-color: #fff;
+            border-bottom: none;
+            // padding: 14px 0 0 14px;
+            padding: 14px 0 16px 14px;
+            span{
+                @media #{$mobile_device} {
+                    display: none;
+                }
+            }
+        }
+    }
+    }
+    .btn-link.focus, .btn-link:focus {
+        text-decoration: none;
+        border-color: transparent;
+        box-shadow: none;
+    }
+    .btn-link:hover {
+        color: #0056b3;
+        text-decoration: none;
+        background-color: transparent;
+        border-color: transparent;
+    }
+}

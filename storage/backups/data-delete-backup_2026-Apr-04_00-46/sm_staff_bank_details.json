@@ -1,0 +1,30 @@
+[
+    {
+        "id": 2,
+        "staff_id": 159,
+        "bank_name": "12",
+        "bank_branch": "12",
+        "bank_ac_holder": "12",
+        "bank_ac_number": "12",
+        "iban_number": "12",
+        "swift_code": "12",
+        "bank_currency": "7",
+        "att_iban_letter": null,
+        "created_at": "2026-01-14 17:50:30",
+        "updated_at": "2026-01-14 17:50:30"
+    },
+    {
+        "id": 3,
+        "staff_id": 182,
+        "bank_name": "Al Hilal Digital",
+        "bank_branch": "Al Hilal Digital",
+        "bank_ac_holder": "Mohammed Yahya Nadeem Ahmed Shaikh",
+        "bank_ac_number": "012514595001",
+        "iban_number": "AE620530000012514595001",
+        "swift_code": "HLALAEAA",
+        "bank_currency": "1",
+        "att_iban_letter": null,
+        "created_at": "2026-01-14 21:27:02",
+        "updated_at": "2026-01-14 21:27:02"
+    }
+]

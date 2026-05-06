@@ -1,0 +1,6 @@
+part_number,description,qty,unitprice,value,refid,serialno,narration,remarks,currancy,date
+01-SSC-0220,01-SSC-0220,1,100,100,refid 123,"xfg1fg12,87df78,dfg445,dfg2544",narration abcdedf 1,Uoload 001,AED,16/12/2024
+01-SSC-0222,01-SSC-0222,2,120,240,refid 123,"xfg1fg12,87df78,dfg445,dfg2544",narration abcdedf 2,Uoload 001,AED,16/12/2024
+01-SSC-0223,01-SSC-0223,2,50,100,refid 456,"xfg1fg12,87df78,dfg445,dfg2544",narration abcdedf 3,Uoload 001,AED,16/12/2024
+01-SSC-0225,01-SSC-0225,5,10,50,refid 456,"xfg1fg12,87df78,dfg445,dfg2544",narration abcdedf 4,Uoload 001,AED,16/12/2024
+01-SSC-02209,01-SSC-02209,10,20,200,refid 456,"xfg1fg12,87df78,dfg445,dfg2544",narration abcdedf 5,Uoload 001,AED,16/12/2024

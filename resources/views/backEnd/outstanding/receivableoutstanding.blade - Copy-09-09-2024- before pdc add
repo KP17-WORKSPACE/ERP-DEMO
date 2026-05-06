@@ -1,0 +1,747 @@
+@extends('backEnd.masterpage')
+@section('mainContent')
+
+    @php
+    $module_links = [];
+    $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+    @endphp
+
+    <?php try { ?>
+
+        <div class="container-fluid">
+        <div class="d-sm-flex justify-content-between">
+                <div class="mb-3">
+                    <h2 class="page-heading m-0">Receivable Outstanding</h2>
+                    <span class="page-label">Home - Receivable Outstanding</span>
+                </div>
+                <div>
+                    {{--  <a href="{{ url('add-customer') }}" type="button" class="btn btn-info"><i class="fa fa-plus"></i> New Customer</a>
+                    <a href="{{ url('customers') }}" type="button" class="btn btn-info"><i class="fa fa-list"></i> Customer List</a>
+                    <a href="{{ url('customer-edit/' . @$custDetails->id) }}"><button class="btn btn-primary">Edit Profile</button></a>  --}}
+                    <a class="btn btn-primary" data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample"><i class="fa fa-filter"></i> Search</a>
+                </div>
+
+
+            </div>
+            <input type="hidden" id="base_url" value="{{ url('/') }}" />
+
+
+            <div class="collapse" id="collapseExample">
+            
+            <div class="card p-4 mb-2">
+                {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'receivable-outstanding', 'method' => 'POST', 'enctype' => 'multipart/form-data']) }}
+                                    <input type="hidden" name="url" id="url" value="{{URL::to('/')}}">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-20">
+                                            <div class="input-effect">
+                                                <label>@lang('Account')</label>
+                                                <select class="form-control js-example-basic-single" name="account_id[]" id="account_id" multiple>
+                                                    <option data-display="Account *" value="0">@lang('Account Name') *</option>
+                                                    @foreach ($accounts as $val)
+                                                        <option value="{{ @$val->id }}"
+                                                            @if($account_id != 0)
+                                                            @foreach ($account_id as $id)
+                                                                @if ($id == $val->id) selected @endif
+                                                            @endforeach
+                                                            @endif>{{ @$val->account_code }} - {{ @$val->account_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-20">
+                                            <div class="no-gutters input-right-icon">
+                                                <div class="col">
+                                                    <div class="form-check-label">
+                                                        <label>@lang('As of Date')</label>
+                                                        <input class="form-control" id="till_date" type="date" name="till_date" value="{{ @$till_date }}" autocomplete="off">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>                                       
+                    
+                                        <div class="col-md-4 mb-2">
+                                            <label for="" class="form-check-label">Doc No</label>
+                                            <input class="form-control" id="transaction_no" type="text" autocomplete="off" name="transaction_no" >
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <label for="" class="form-check-label">Deal ID</label>
+                                            <input class="form-control" id="deal_id" type="text" autocomplete="off" name="deal_id" >
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <label for="" class="form-check-label">Amount</label>
+                                            <input class="form-control" name="amount" id="amount" />
+                                        </div>
+
+                                        
+                                        <div class="col-md-4 mb-2">
+                                            <label for="" class="form-check-label">Sales Person</label>
+                                            <select class="form-control js-example-basic-single" name="sales_person[]" id="sales_person" multiple>
+                                                <option value="">-Select-</option>
+                                                @foreach ($sales_person_list as $sp)
+                                                    <option value="{{ $sp->user_id }}"> {{ $sp->full_name }} </option>                                                    
+                                                @endforeach
+                                            </select>
+
+                                        </div>
+
+                       
+		           
+                                        <div class="col-md-4 mb-2">
+                                            <label for="" class="form-check-label">Over Due</label>
+                                            <select class="form-control js-example-basic-single" name="overdue" id="overdue">
+                                                <option value="">-Select-</option>
+                                                <option value="0"> >0 </option>
+                                                <option value="30"> 0-30 </option>
+                                                <option value="60"> 31-60</option>
+                                                <option value="90"> 61-90 </option>
+                                                <option value="90+"> >90 </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-2">
+                                            <label for="" class="form-check-label">Ageing</label>
+                                            <select class="form-control js-example-basic-single" name="ageing" id="ageing">
+                                                <option value="">-Select-</option>
+                                                <option value="0">0-30</option>
+                                                <option value="30">31-60</option>
+                                                <option value="60">61-90</option>
+                                                <option value="90+"> >90 </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mt-4" >
+                                            <div class="input-effect">
+                                                <button class="btn btn-primary" ><span class="ti-search"></span>@lang('Filter')</button>
+                                            </div>
+                                        </div>
+                                    </div>
+    
+                                    {{ Form::close() }}
+            </div>
+            </div>
+                                    <script>
+                                        function download_outstanding(id){
+                                            var date = $('#till_date').val();                                                                        
+                                            var url = $("#base_url").val()+"/receivable-outstanding-download/"+id+"/"+date;
+                                            window.location.href = url;
+                                        }
+                                    </script>
+
+                                    
+<script>
+        $(document).ready(function() {
+
+
+           id=''
+            
+
+            $('.btn-badge').click(function() {
+             //   alert('with btn')
+                id = $(this).data('id')
+             //   alert(id)
+                $('#iddetail').val(id)
+               // alert(id)
+                comment=$('#comment').val()
+              //  alert(comment)
+
+              var action = "outstanding_comment";  
+              $.ajax({
+                    url: action,
+                    type: "post",
+                    data: {
+                        _token: '{{ csrf_token() }}',
+
+                        id_deal: id,
+                     //   comment: comment,
+
+                    },
+
+                    success: function(dataResult) {
+                        
+                        var dataResult = JSON.parse(dataResult);
+                     //   dataResult.foreach(ars)
+                    $('#mydiv').empty();
+//                      var vv="<table border='1'><tr><td><h3>Sr.No</h3></td><td><h3>name</h3></td></tr>";
+//                      var i=1;
+//                      dataResult.forEach((re) => {
+//                         vv+="<tr><td>"+i+"</td><td>"+re.comment+"</td></tr>"
+//                         i++;
+
+// });
+//                     vv+="</table>";
+
+
+                    $("#mydiv").append("<div style='width=100%;'>");
+                    var i=1;
+                        dataResult.forEach((re) => {
+                            var txt = re.comment;
+
+                            let customItems = re.comment;
+                            customItems = customItems.split("\n");
+                            for (let i = 0; i < customItems.length; i++) {
+                            customItems[i] = "<br />" + customItems[i] + "\n";
+                            }
+                            customItems = customItems.join("");
+                            $("#mydiv").append("<p class='m-0'>" + customItems + "</p>");
+                            $("#mydiv").append("<p class='text-right m-0'><i>"+re.username+" | On "+new Date(re.created_at).toLocaleDateString('en-US')+" "+new Date(re.created_at).toLocaleTimeString('en-US')+"</i></p><hr class='mt-0'>");
+                            i++;
+                        });
+                    $("#mydiv").append("</div>");
+                                        
+                    $('#comment').val('');
+                       
+
+                    }
+                });
+
+
+ 
+               
+            });
+
+
+            $('#btnSubmit1').click(function() {
+
+            var action = "outstanding_comment_save";
+            comment=$('#comment').val()
+            id_detail=$('#iddetail').val()
+            //id = $(this).data('id')
+           // alert(id+'    '+comment+'   '+id_detail)
+                $.ajax({
+                    url: action,
+                    type: "post",
+                    data: {
+                        _token: '{{ csrf_token() }}',
+
+                        id_deal: id,
+                        comment: comment,
+
+                    },
+
+                    success: function(dataResult) {
+                        
+                        var dataResult = JSON.parse(dataResult);
+                        $('#message').append("<div class='alert alert-success'><i class='fa fa-check'></i> Note successfully added!</div>").delay(3000).fadeOut(300);    
+    //                     setTimeout(function() {
+    //     $("#message").hide('blind', {}, 500)
+    // }, 2000);
+                        view(id)
+                       // alert(dataResult)
+                       
+                       
+
+                    }
+                    ,
+    complete: function () {
+        $('#message').modal('hide');
+    },
+                });
+            });
+
+
+            function view(id){
+
+
+                var action = "outstanding_comment";  
+              $.ajax({
+                    url: action,
+                    type: "post",
+                    data: {
+                        _token: '{{ csrf_token() }}',
+
+                        id_deal: id,
+                     //   comment: comment,
+
+                    },
+
+                    success: function(dataResult) {
+                        
+                        var dataResult = JSON.parse(dataResult);
+                    
+//                      var vv="<table border='1'><tr><td>name</td></tr>";
+//                      dataResult.forEach((re) => {
+//                         vv+="<tr><td>"+re.comment+"</td></tr>"
+                        
+
+// });
+//                     vv+="</table>";
+                    $('#mydiv').empty();
+                    $("#mydiv").append("<div style='width=100%;'>");
+                    var i=1;
+                        dataResult.forEach((re) => {
+                            var txt = re.comment;
+
+                            let customItems = re.comment;
+                            customItems = customItems.split("\n");
+                            for (let i = 0; i < customItems.length; i++) {
+                            customItems[i] = "<br />" + customItems[i] + "\n";
+                            }
+                            customItems = customItems.join("");
+                            $("#mydiv").append("<p class='m-0'>" + customItems + "</p>");
+                            $("#mydiv").append("<p class='text-right m-0'><i>"+re.username+" | On "+new Date(re.created_at).toLocaleDateString('en-US')+" "+new Date(re.created_at).toLocaleTimeString('en-US')+"</i></p><hr class='mt-0'>");
+                            i++;
+                        });
+                    $("#mydiv").append("</div>");
+
+                    $('#comment').val('');
+
+                    }
+                });
+
+            }
+            
+
+
+
+
+            
+        });   
+            
+       
+    </script>
+          
+
+
+            <!-- <a data-id="hello"  class="btn-badge btn btn-info  py-1 px-2" >
+                                    Comment</a> -->
+    
+            <div class="card p-4">
+                  
+            <div class="accordion" id="accordionExample">
+                  @if(count($data_all)>0)
+                  <?php $no=1; $all_total=0; ?>
+                  @foreach($data_all as $data)
+                  <?php
+                  if(count($data)>0){
+
+                    $data_adjestment = @App\SysSalesReturnAdjestment::select('srn_no',DB::raw('sum(paid_amount) as paid_amount'))->wherein('srn_no',$data->pluck("transaction_no"))->groupby('srn_no')->get();
+
+                    $data_receipt = DB::table('sys_receipt as r')->select('ra.bi_doc_no','r.doc_number','ra.bi_amount','r.receipt_through','r.receipt_date','r.cheque_number','r.cheque_bank_name')
+                    ->join('sys_receipt_adjustments as ra','ra.bi_doc_number','r.doc_number')->where('ra.account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->where('r.status',1)->get();
+                    
+                    $data_receipt2 = DB::table('sys_journalvoucher as j')->select('ra.bi_doc_no','j.doc_number','ra.bi_amount','j.doc_date')
+                    ->join('sys_receipt_adjustments as ra','ra.bi_doc_number','j.doc_number')->where('ra.account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->where('j.status',1)->get();
+
+                    $data_receipt3 = DB::table('sys_journalvoucher as j')->select('pa.bi_doc_no','j.doc_number','pa.bi_amount','j.doc_date')
+                    ->join('sys_payment_adjustments as pa','pa.bi_doc_number','j.doc_number')->where('pa.account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->where('j.status',1)->get();
+
+                  ?>
+                
+                  <?php $aname = $accounts->where('id',$data[0]->account_id)->first();                  
+                  $cust_det = @App\SysHelper::get_customer_contact_detail($aname->account_code); ?>
+                  
+                <script>
+                    function set_total(id,at){
+                        $('#sum_'+id).text(at.toFixed(@json(session('logged_session_data.decimal_point'))).replace(/\d(?=(\d{3})+\.)/g, '$&,'));
+                        $('#collapse'+id).css('display','');
+                        $('#account_table'+id).css('display','');
+                    }
+                </script>
+                <table id="account_table{{ $aname->id }}" class="table" style="border: solid 1px #e3e6f0; margin-bottom: -1px !important; display: none;">
+                    <thead>
+                      <tr>
+                          <th class="border text-center" width="100px"><a href="{{url('get-url-customer/'.$aname->account_code)}}" target="_blank">{{ $aname->account_code }}</a></th>
+                          <th class="border text-left">
+                            
+                            
+                            <a class="text-left" type="button" data-toggle="collapse" data-target="#collapse{{ $aname->id }}" aria-expanded="true" aria-controls="collapse{{ $aname->id }}">{{ $aname->account_name }} <span style="font-weight: normal; color: #3d3d3d;">{!! $cust_det !!}</span></a>
+
+
+                          <a data-id="{{@$aname->id}}" id="crmajax" class="btn-badge btn btn-info  py-1 px-2" style="  font-weight: 500;  border: 1px solid transparent;  padding: 0.375rem 0.75rem;  font-size: 10px;  line-height: .7;  border-radius: 2px;cursor: pointer;" data-toggle="modal" data-target="#ModalTrackComment">
+                                    Comments</a>
+                        <a class="text-danger ml-2 float-right" title="Download" onclick="download_outstanding({{ $aname->id }})"><i class="fa fa-download" aria-hidden="true"></i></a>
+                        </th>  
+                          <th class="border text-right" width="100px"><label id="sum_{{ $aname->id }}"></label></th>
+                      </tr>
+                    </thead>
+                </table>
+
+                  <div id="collapse{{ $aname->id }}" class="collapse" data-parent="#accordionExample" style="margin-left: 100px; display: none;">
+                  <table class="table" style="border: solid 1px #e3e6f0; width:auto;">
+                    <thead>
+                        <!-- <tr>
+                        <td colspan="10">&nbsp;</td>
+                        <td colspan="2">
+                        <a data-id="{{@$aname->id}}"      id="crmajax" class="btn-badge btn btn-info  py-1 px-2" style="  font-weight: 500;  border: 1px solid transparent;  padding: 0.375rem 0.75rem;  font-size: 10px;  line-height: .7;  border-radius: 2px;cursor: pointer;" data-toggle="modal" data-target="#ModalTrackComment" title="Click to Fullfill">
+                                    Comments</a>
+                                    
+
+                        </td>
+
+                        </tr> -->
+                      <tr>
+                          <th class="border text-center" width="68px">Doc Date</th>
+                          <th class="border text-center" width="70px">Doc No</th>
+                          <th class="border text-center" width="70px">Deal ID</th>
+                          <th class="border text-center" width="100px">Amount</th>
+                          <th class="border text-center" width="100px">Adjustments</th>
+                          <th class="border text-center" width="100px">Balance</th>
+                          <th class="border text-center" width="100px">Total Balance</th>
+                          <th class="border text-center hidecol_{{ $aname->id }}" width="150px">Receipt Date</th>
+                          <th class="border text-center hidecol_{{ $aname->id }}" width="150px">Doc Number</th>
+                          <th class="border text-center" width="150px">Sales Person</th>
+                          <th class="border text-center" width="150px">Payment Terms</th>
+                          <th class="border text-center" width="150px">Due Date</th>
+                          <th class="border text-center" width="150px">Over Due</th>
+			  <th class="border text-center" width="150px">0-30</th>
+			  <th class="border text-center" width="150px">31-60</th>
+			  <th class="border text-center" width="150px">61-90</th>
+			  <th class="border text-center" width="150px">>90</th>
+                          {{--  <th class="border text-center" width="150px">Cheque Number</th>
+                          <th class="border text-center" width="150px">Bank Name</th>  --}}
+                      </tr>
+                    </thead>
+                    <tbody>
+
+
+
+
+
+                    <?php
+                         $ats=Array();   
+                         $k=0;
+                         foreach ($data as $dt){
+                            $DueData =  App\SysHelper::get_due_date_sales_invoice($dt->transaction_no,$dt->transaction_date); 
+                       
+                           
+
+                            if($overdue != 999999 && $ageing != 99999){    
+                                if($ageing <0 && $DueData[1] <0 ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing >=0 && $ageing <31 && $DueData[1] <0  ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing >30 && $ageing <61 &&  $DueData[1] >=0 && $DueData[1] <31 ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing >=60 && $ageing <=90 &&  $DueData[1] >30 && $DueData[1] <61  ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }  
+                                if($ageing >=90 &&   $DueData[1] >60 && $DueData[1] <90  ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }  
+                                
+                                
+                            }
+
+                            if($overdue != 999999 && $ageing == 99999){    
+                                if(  $DueData[1] < $overdue ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                            }
+
+                            if($ageing != 99999 && $overdue == 999999){
+                             
+                                if($ageing <0 && $DueData[1] <0 ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing >=0 && $ageing <31 && $DueData[1] <0  ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing >=30 && $ageing <61 &&  $DueData[1] >=0 && $DueData[1] <31 ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing >=60 && $ageing <=90 &&  $DueData[1] >30 && $DueData[1] <61  ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }  
+                                if($ageing >=90 &&   $DueData[1] >60 && $DueData[1] <90  ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }  
+                              
+                            }  
+
+                         }
+                         //if(  $ageing != 99999 ||  $overdue != 999999 )
+                         //   $data=$ats;
+                  
+                    ?>
+                        @php
+                            $adjustments = 0;
+                            $b=0;
+                            $grand_debit_amount=0; 
+                        $grand_paid=0;
+                        $grand_balance=0;
+                        $grand_total_balance=0;
+                        $gtot1=0;$gtot2=0;$gtot3=0;$gtot4=0;
+                        @endphp
+                        
+                        @if (count($data)>0)
+                        @php $sum_b=0; @endphp
+                        @foreach ($data as $dt)
+                        @php
+                        $adjustments = 0;
+                        $receipt_date='';
+                        $doc_number='';
+                        $cheque_number='';
+                        $bank_name='';
+                        $bi_amount=0;
+                        $bi_amount2=0;
+                        $bi_amount3=0;
+                        $paid=0;
+                        @endphp
+                        @php
+                            $adjustments = $data_adjestment->where('srn_no',$dt->transaction_no)->max('paid_amount');
+                            $receipt = $data_receipt->where('bi_doc_no',$dt->transaction_no);
+                            if(count($receipt)>0){
+                                foreach($receipt as $p){
+                                $receipt_date .= date('d/m/Y', strtotime($p->receipt_date)).',';
+                                $doc_number .= $p->doc_number.',';
+                                if ($p->cheque_number != ""){
+                                    $cheque_number .= $p->cheque_number.',';
+                                }                                
+                                if ($p->cheque_bank_name != ""){
+                                $bank_name .= $p->cheque_bank_name.',';
+                                }
+                                $bi_amount += $p->bi_amount;
+                                }
+                            }
+                            
+                            $receipt2 = $data_receipt2->where('bi_doc_no',$dt->transaction_no);
+                            if(count($receipt2)>0){
+                                foreach($receipt2 as $p){
+                                $receipt_date .= date('d/m/Y', strtotime($p->doc_date)).',';
+                                $doc_number .= $p->doc_number.',';
+                                
+                                $bi_amount2 += $p->bi_amount;
+                                }
+                            }
+                            
+                            $receipt3 = $data_receipt3->where('bi_doc_no',$dt->transaction_no);
+                            if(count($receipt3)>0){
+                                foreach($receipt3 as $p){
+                                $receipt_date .= date('d/m/Y', strtotime($p->doc_date)).',';
+                                $doc_number .= $p->doc_number.',';
+                                
+                                $bi_amount3 += $p->bi_amount;
+                                }
+                            }
+
+                            $paid += $adjustments+$bi_amount-$bi_amount2+$bi_amount3;
+                            
+                            $deal_id="";
+                            $deal_code="";
+                            $sales_person="";
+                            $deal_track_id=0;
+                            //$deal = @App\SysHelper::get_deal_detail_for_receivable_outstanding($dt->transaction_no);
+                            $deal = @App\SysHelper::get_deal_track_detail_for_receivable_outstanding($dt->transaction_no);
+                            if(isset($deal) && $deal != ""){
+                                $deal_id=$deal->id;
+                                $deal_code=$deal->code;
+                                $sales_person=$deal->full_name;
+                                $deal_track_id=$deal->track_id;
+                            }
+                        @endphp
+
+                        <?php 
+                        if($dt->debit_amount != $paid){
+                        $grand_debit_amount+=$dt->debit_amount;
+                        $grand_paid+=$paid;
+                        $grand_balance+=$dt->debit_amount-abs($paid);
+                        //$grand_total_balance+=$b;
+                        }
+                             ?>  
+                        
+
+
+                        @if($dt->debit_amount != $paid)
+                        <tr>
+                            <td class="border text-center">{{ date('d/m/Y', strtotime($dt->transaction_date)) }}</td>
+                            <td class="border text-center"><a href="{{url('get-url-sales-invoice/'.$dt->transaction_no)}}" target="_blank">{{ $dt->transaction_no }}</a></td>
+                            <td class="border text-center"><a href="{{url('crm-deal-track-approval/'.$deal_track_id)}}" target="_blank">{{ $deal_code }}</a></td>
+                            <td class="border text-center">{{ $dt->debit_amount }}</td>
+                            <td class="border text-center">{{ @App\SysHelper::com_curr_format($paid,2,'.',',') }}</td>
+                            <td class="border text-center">{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }} @php $b += $dt->debit_amount-abs($paid); @endphp</td>
+                            <td class="border text-center">{{ @App\SysHelper::com_curr_format($b,2,'.',',') }}</td>
+
+                            @php $sum_b += $dt->debit_amount-abs($paid); $all_total += $dt->debit_amount-abs($paid); @endphp
+                            <script>
+                                set_total({{ $aname->id }},{{ $sum_b }});
+                            </script>
+
+                            
+                            <td class="border text-center hidecol_{{ $aname->id }}">{{ rtrim($receipt_date, ',') }} </td>
+                            <td class="border text-center hidecol_{{ $aname->id }}">{{ rtrim($doc_number, ',') }}</td>
+                            <td class="border text-center">{{ $sales_person }}</td>
+                            @php $DueData =  @App\SysHelper::get_due_date_sales_invoice($dt->transaction_no,$dt->transaction_date); @endphp
+                            <td class="border text-center">{{ $DueData[2] }}</td>
+                            <td class="border text-center">{{ $DueData[0] }}</td>
+                            <?php 
+                            if($DueData[1] >0){ ?>
+                            <td class="border text-center" style="color:red">{{ $DueData[1] }}</td>
+                            <?php } else { ?>
+
+                            <td class="border text-center">{{ $DueData[1] }}</td>
+                            <?php }  ?>
+                <?php 
+                 if($DueData[3] ==1)	  {
+                    $gtot1+=$dt->debit_amount-abs($paid);
+                 }
+                 if($DueData[3] ==2)	  {
+                    $gtot2+=$dt->debit_amount-abs($paid);
+                 }
+                 if($DueData[3] ==3)	  {
+                    $gtot3+=$dt->debit_amount-abs($paid);
+                 }
+                 if($DueData[3] ==4)	  {
+                    $gtot4+=$dt->debit_amount-abs($paid);
+                 }
+                        
+
+                 ?>
+                            
+
+			     @if($DueData[3] ==1)	                            
+			<td class="border text-center" >{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }}</td>
+			 @else 	
+				                            <td class="border text-center">&nbsp;</td>
+			 @endif
+			   @if($DueData[3] ==2)	                            
+			<td class="border text-center">{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }}</td>
+			 @else 	
+				                            <td class="border text-center">&nbsp;</td>
+			 @endif
+   @if($DueData[3] ==3)	                            
+			<td class="border text-center">{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }}</td>
+			 @else 	
+				                            <td class="border text-center">&nbsp;</td>
+			 @endif		   	
+   @if($DueData[3] ==4)	                            
+			<td class="border text-center">{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }}</td>
+			 @else 	
+				                            <td class="border text-center">&nbsp;</td>
+			 @endif
+
+                            {{--  <td class="border text-center">{{ rtrim($cheque_number, ',') }}</td>
+                            <td class="border text-center">{{ rtrim($bank_name, ',') }}</td>  --}}
+                        </tr>
+                        @endif
+
+                        @endforeach
+                        @endif
+
+                    <tr><td colspan="3"></td>
+                        <td class="border text-center"><b><?php echo   @App\SysHelper::com_curr_format($grand_debit_amount,2,'.',',')    ?> </b></td>
+                        <td class="border text-center"><b><?php echo  @App\SysHelper::com_curr_format($grand_paid,2,'.',',')   ?> </b></td>
+                        <td class="border text-center"><b><?php echo  @App\SysHelper::com_curr_format($grand_balance,2,'.',',')   ?> </b></td>
+                        <td class="border text-center"><b><?php echo  @App\SysHelper::com_curr_format($b,2,'.',',')   ?> </td>
+                        <td class="border text-center hidecol_{{ $aname->id }}" width="150px">&nbsp;</td>
+                        <td class="border text-center hidecol_{{ $aname->id }}" width="150px">&nbsp;</td>
+                        <td class="border text-center" colspan="4">&nbsp </td>
+                       
+                        <td class="border text-center" ><b><?php echo  @App\SysHelper::com_curr_format($gtot1,2,'.',',')   ?></b> </td>
+                        <td class="border text-center" ><b><?php echo  @App\SysHelper::com_curr_format($gtot2,2,'.',',')   ?></b> </td>
+                        <td class="border text-center" ><b><?php echo  @App\SysHelper::com_curr_format($gtot3,2,'.',',')   ?> </b></td>
+                        <td class="border text-center" ><b><?php echo  @App\SysHelper::com_curr_format($gtot4,2,'.',',')   ?> </b></td>
+                    </tr>
+                    @if(count($receipt)==0)
+                    <script>
+                        $('.hidecol_'+{{ $aname->id }}).css('display','none');
+                    </script>
+                    @endif
+                    
+                    <?php $tot = 0; $total=0; $total_dr=0; $total_cr=0; ?>
+    
+                    </tbody>
+                  </table>
+                </div>
+                
+                
+                  
+                  <?php } ?>
+
+                  
+                  @endforeach
+                  <table class="table" style="border: solid 1px #e3e6f0;">
+                    <thead>
+                        <tr>
+                            <th class="border text-center" width="100px"></th>
+                            <th class="border text-right">Total</th>
+                            <th class="border text-right" width="200px">{{ $all_total }}</th>
+                        </tr>
+                    </thead>
+                  </table>
+                  @endif
+                </div>
+
+            </div>
+        </div>
+
+    
+        <?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
+
+        
+@endsection
+
+
+
+
+<div class="modal fade" id="ModalTrackComment" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document" style="min-width:50% !important;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Payment Follow-up Remark</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+
+            {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'outstanding_comment_save','method' => 'POST', 'enctype' => 'multipart/form-data', 'id' => 'crm-amc-track-edit']) }}
+
+            <div class="modal-body">
+
+                <div class="row">                    
+                    <div class="col-lg-12" id="mydiv" style="height: auto; max-height: 300px; overflow-y: scroll;">
+
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div id="message"></div>
+
+                    <div class="col-lg-12 mb-12">
+                        <div class="no-gutters input-right-icon">
+                            <div class="col">
+                                <div class="input-effect">
+                                    <input type="hidden" id="iddetail" name="id_detail">
+                                    <!-- <label class="txtlbl">@lang('Internal Note')<span></span></label> -->
+                                    <textarea   id="comment" name="comment" class="form-control"  cols="10" rows="3" ></textarea>
+                                     <!-- <input class="form-control" width="60" id="comment" type="text" required name="comment"> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-small" type="button" data-dismiss="modal">Cancel</button>
+                <!-- <input type="hidden" id="deal_id" name="deal_id" value="" /> -->
+                <!-- <button type="submit" class="btn btn-info" value="save" name="btnSubmit" id="btnSubmit"><span class="ti-check"></span>@lang('Save')</button> -->
+                <button type="button" class=" btn-small" name="btnSubmit1" id="btnSubmit1">Add Remark</button>
+            </div>
+
+            {{ Form::close() }}
+
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal Deal Track-->
+
+
+
+
+

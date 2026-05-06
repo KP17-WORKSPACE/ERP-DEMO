@@ -1,0 +1,44 @@
+[
+    {
+        "id": 1,
+        "deal_id": null,
+        "quote_id": 1,
+        "selling_exp_account": 32,
+        "credit_account": 24,
+        "amount": "2000.00",
+        "remarks": "",
+        "status": 1,
+        "created_by": 1,
+        "created_at": "2026-02-03 21:27:18",
+        "updated_by": null,
+        "updated_at": "2026-02-03 21:27:18"
+    },
+    {
+        "id": 5,
+        "deal_id": 18,
+        "quote_id": 1,
+        "selling_exp_account": 32,
+        "credit_account": 24,
+        "amount": "250.00",
+        "remarks": "",
+        "status": 1,
+        "created_by": 1,
+        "created_at": "2026-02-04 18:35:14",
+        "updated_by": null,
+        "updated_at": "2026-02-04 18:35:14"
+    },
+    {
+        "id": 6,
+        "deal_id": 17,
+        "quote_id": 1,
+        "selling_exp_account": 32,
+        "credit_account": 24,
+        "amount": "1500.00",
+        "remarks": "MDF",
+        "status": 1,
+        "created_by": 1,
+        "created_at": "2026-02-06 01:42:30",
+        "updated_by": null,
+        "updated_at": "2026-02-06 01:42:30"
+    }
+]

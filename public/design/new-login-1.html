@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venus - Quotations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="./assets/css/_main.css" />
+    <style>
+        .background-radial-gradient {
+            background-color: hsl(218, 41%, 15%);
+            background-image: radial-gradient(650px circle at 0% 0%, hsl(218, 41%, 35%) 15%, hsl(218, 41%, 30%) 35%,
+                    hsl(218, 41%, 20%) 75%, hsl(218, 41%, 19%) 80%, transparent 100%),
+                radial-gradient(1250px circle at 100% 100%, hsl(218, 41%, 45%) 15%, hsl(218, 41%, 30%) 35%, hsl(218, 41%, 20%) 75%,
+                    hsl(218, 41%, 19%) 80%, transparent 100%);
+        }
+
+        #radius-shape-1 {
+            height: 220px;
+            width: 220px;
+            top: -60px;
+            left: -130px;
+            background: radial-gradient(#44006b, #ad1fff);
+            overflow: hidden;
+        }
+
+        #radius-shape-2 {
+            border-radius: 38% 62% 63% 37% / 70% 33% 67% 30%;
+            bottom: -60px;
+            right: -110px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(#44006b, #ad1fff);
+            overflow: hidden;
+        }
+
+        .bg-glass {
+            background-color: hsla(0, 0%, 100%, 0.9) !important;
+            backdrop-filter: saturate(200%) blur(25px);
+        }
+
+        .form-control {
+
+
+            border: none;
+            padding: 12px 20px;
+        }
+
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #0b6c36;
+        }
+
+        .btn-login {
+            background-color: #0b6c36;
+            color: white;
+            border-radius: 20px;
+            padding: 10px 20px;
+            border: none;
+        }
+
+        .btn-login:hover {
+            background-color: #0a5c30;
+            color: white;
+        }
+
+        .signup-link {
+            color: #0b6c36;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .background-radial-gradient {
+    background-color: hsl(145, 41%, 15%);
+    background-image: radial-gradient(650px circle at 0% 0%, hsl(145, 41%, 35%) 15%, hsl(145, 41%, 30%) 35%,
+            hsl(145, 41%, 20%) 75%, hsl(145, 41%, 19%) 80%, transparent 100%),
+        radial-gradient(1250px circle at 100% 100%, hsl(145, 41%, 45%) 15%, hsl(145, 41%, 30%) 35%, hsl(145, 41%, 20%) 75%,
+            hsl(145, 41%, 19%) 80%, transparent 100%);
+}
+
+#radius-shape-1 {
+    height: 220px;
+    width: 220px;
+    top: -60px;
+    left: -130px;
+    background: radial-gradient(#0b6c36, #3fc07f);
+    overflow: hidden;
+}
+
+#radius-shape-2 {
+    border-radius: 38% 62% 63% 37% / 70% 33% 67% 30%;
+    bottom: -60px;
+    right: -110px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(#0b6c36, #3fc07f);
+    overflow: hidden;
+}
+
+.bg-glass {
+    background-color: hsla(120, 20%, 95%, 0.9) !important; /* soft greenish glass */
+    backdrop-filter: saturate(200%) blur(25px);
+}
+
+.form-control {
+    border: none;
+    padding: 12px 20px;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    border-color: #0b6c36;
+}
+
+.btn-login {
+    background-color: #0b6c36;
+    color: white;
+    border-radius: 20px;
+    padding: 10px 20px;
+    border: none;
+}
+
+.btn-login:hover {
+    background-color: #094f27;
+    color: white;
+}
+
+.signup-link {
+    color: #0b6c36;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+    </style>
+</head>
+
+<body>
+    <section class="background-radial-gradient overflow-hidden" style="height: 100vh;">
+        <div class="container px-4 py-5 px-md-5 text-center text-lg-start my-5">
+            <div class="row gx-lg-5 align-items-center mb-5">
+                <div class="col-lg-6 mb-5 mb-lg-0" style="z-index: 10">
+                    <h1 class="my-5 display-5 fw-bold ls-tight" style="color: hsl(218, 81%, 95%)">
+                        Streamline your business<br />
+                        <span style=" color: hsl(145, 70%, 65%);">with our all-in-one ERP</span>
+                    </h1>
+                    <p class="mb-4 opacity-70" style="color: hsl(218, 81%, 85%)">
+                        Manage finance, sales, inventory, HR, and operations effortlessly in one place.
+                    </p>
+
+                </div>
+
+                <div class="col-lg-6 mb-5 mb-lg-0 position-relative">
+                    <div id="radius-shape-1" class="position-absolute rounded-circle shadow"></div>
+                    <div id="radius-shape-2" class="position-absolute shadow"></div>
+
+                    <div class="card bg-glass">
+                        <div class="card-body px-4 py-5 px-md-5">
+                            <h2 class="text-center">Welcome</h2>
+                            <p class="text-muted text-center">Login in to your account to continue</p>
+                            <form>
+                                <div class="mb-3">
+                                    <input type="email" class="form-control" placeholder="Email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <input type="password" autocomplete="current-password" class="form-control"
+                                        placeholder="Password" required>
+                                </div>
+                                <div class="mb-3 text-end">
+                                    <a href="#" class="text-muted text-decoration-none small">Forgot your password?</a>
+                                </div>
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-login w-100">LOG IN</button>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-muted">Don't have an account? <a href="#" class="signup-link">Sign
+                                            Up</a></span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+
+<style>
+    
+         .login-footer {
+         
+            /* border-top: 1px solid #343a40; */
+            width: 100%;
+        }
+
+        .login-footer small {
+            font-size: 0.875rem;
+        }
+
+        
+</style>
+
+
+
+
+
+
+    <footer class="login-footer py-3 px-4">
+        <div class="row align-items-center">
+            <div class="col-md-8 text-center text-md-start mb-2 mb-md-0">
+                <!-- <small>© 2025 Venus, All Rights Reserved</small> -->
+            </div>
+            <div class="col-md-4 d-flex justify-content-center justify-content-md-end">
+                <div class="powered-by d-flex align-items-center gap-2">
+                    <span class="small">Powered By</span>
+                    <img src="https://www.sysllc.com/wp-content/uploads/2018/12/web-main-1.png" alt="Powered by"
+                        style="height: 24px;">
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    </section>
+
+    
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="./assets/js/_main.js" type="text/javascript"></script>
+    <script src="./assets/js/quotations.js" type="text/javascript"></script>
+</body>
+
+</html>

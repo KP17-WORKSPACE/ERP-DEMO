@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="./assets/css/_main.css" />
+    <link rel="stylesheet" href="./assets/css/_icomoon.css" />
+    <link rel="stylesheet" href="./assets/css/_header.css" />
+    <link rel="stylesheet" href="./assets/css/_navbar.css" />
+    <link rel="stylesheet" href="./assets/css/purchase-order.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</head>
+<body>
+    <div class="venus-app page-purchase-order">
+        <header class="main-header">
+            <div class="logo"><img src="./assets/images/logo-white.png" alt="VENUS LOGO" /></div>
+            <div class="right-section">
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="dropdown-toggle-text">Syscom</div>
+                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Receipts</a></li>
+                        <li><a class="dropdown-item" href="#">Payments</a></li>
+                        <li><a class="dropdown-item" href="#">Journal Voucher</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-light add-btn"><i class="ico icon-outline-add-circle"></i></button>
+                <button class="btn btn-light notification-unread"><i class="ico icon-outline-bell"></i></button>
+                <div class="profile-dropdown">
+                    <div class="profile-img">
+                        <img src="./assets/images/profile.png" alt="PROFILE">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <div class="dropdown-toggle-text">
+                                <div class="title">Hamid Imran</div>
+                                <div class="role">Admin User</div>
+                            </div>
+                            <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico text-white"></i>
+                        </button>
+                        <div class="dropdown-menu profile-dropdown-body py-4 px-3">
+                            <div class="profile-content">
+                                <img src="./assets/images/profile_img.png" alt="profile_img" class="profile-image">
+                                <h4 class="profile_name">Saeed Hameed</h4>
+                               <div class="d-flex justify-content-center mb-3"> <h4 class="second-text">Super Admin </h4>
+                                <div class="company-name">SYSCOM</div></div>
+                                <div class="profile-second-section py-3">
+                                    <h4 class="company-details-text mb-3">Company Details</h4>
+                                    <div class="row">
+                                        <div class="col-7">Designation:
+                                            <h6 class="">Senior Accountant</h6>
+                                            staff ID:
+                                            <h6>UID1001</h6>
+                                        </div>
+                                        <div class="col-5">Departments:
+                                            <h6>Accounts</h6>
+                                            Date Of Joining:
+                                            <h6>01/01/1970</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="profile-third-section py-3">
+                                    <h4 class="personal-details-text">Personal Details</h4>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/telephone_Vector.png" class="telephone" alt="telephone_icon">
+                                        <h6>+971  50 123 4567</h6>
+                                    </div>
+                                    <div class="contact-email">
+                                        <img src="./assets/images/envelop_Vector.png" class="email" alt="email_icon">
+                                        <h6>Saeed@syscom.com</h6>
+                                    </div>
+                                </div>
+                                <div class="profile-last-section">
+                                    <div>
+                                        <button class="btn ">
+                                            <i class="ico icon-outline-pen-2"></i>
+                                        </button>
+                                        <p class="button-text">Edit Profile</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Lock Keyhole Minimalistic.png" alt="lock_img">
+                                        </button>
+                                        <p class="button-text">Change Password</p>
+                                    </div>
+                                    <div>
+                                        <button class="btn">
+                                            <img src="./assets/images/Logout 2.png" alt="logout">
+                                        </button>
+                                        <p class="button-text-logout">Logout</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main>
+            <nav class="main-nav">
+                <div class="toggle-nav"></div>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="" class="nav-link">
+                            <!-- <i class="ico icon-outline-widget-6"></i> -->
+                            <img src="assets/images/icons/dashboard.png" height="24px">
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavCRM">
+                            <!-- <i class="ico icon-outline-calculator"></i> -->
+                            <img src="assets/images/icons/accounts.png" height="24px">
+                            <span class="nav-text">Accounts</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavCRM">
+                            <div class="sub-nav-item">
+                                <a href="lead-list.html" class="sub-nav-link">Leads</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="deal-list.html" class="sub-nav-link">Deals</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track Status</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Sales Report</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Brand Sales Report</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavCRM">
+                            <!-- <i class="ico icon-outline-calculator"></i> -->
+                            <img src="assets/images/icons/hrms.png" height="24px">
+                            <span class="nav-text">CRM</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavCRM">
+                            <div class="sub-nav-item">
+                                <a href="lead-list.html" class="sub-nav-link">Leads</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="deal-list.html" class="sub-nav-link">Deals</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Deals Track Status</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Sales Report</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Brand Sales Report</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavServiceDesk">
+                            <!-- <i class="ico icon-outline-headphones-round"></i> -->
+                            <img src="assets/images/icons/service.png" height="24px">
+                            <span class="nav-text">Service Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavServiceDesk">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Service Desk Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavDatabase">
+                            <!-- <i class="ico icon-outline-database"></i> -->
+                            <img src="assets/images/icons/execution-desk.png" height="24px">
+                            <span class="nav-text">Execution Desk</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavDatabase">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Database Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item active">
+                        <div class="sub-menu-nav" data-subnav="subnavPurchase">
+                            <!-- <i class="ico icon-bold-cart-large-4"></i> -->
+                            <img src="assets/images/icons/purchase.png" height="24px">
+                            <span class="nav-text">Purchase</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavPurchase">
+                            <div class="sub-nav-item">
+                                <a href="supplier-register.html" class="sub-nav-link">Supplier Register</a>
+                            </div>
+                            <div class="sub-nav-item active">
+                                <a href="purchase-order.html" class="sub-nav-link">Purchase Order</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSales">
+                            <!-- <i class="ico icon-outline-bag-4"></i> -->
+                            <img src="assets/images/icons/sales.png" height="24px">
+                            <span class="nav-text">Sales</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSales">
+                            <div class="sub-nav-item">
+                                <a href="quotations.html" class="sub-nav-link">Quotations</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavInventory">
+                            <!-- <i class="ico icon-outline-server"></i> -->
+                            <img src="assets/images/icons/inventory.png" height="24px">
+                            <span class="nav-text">Inventory</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavInventory">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Inventory Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavReports">
+                            <!-- <i class="ico icon-outline-document-text"></i> -->
+                            <img src="assets/images/icons/report.png" height="24px">
+                            <span class="nav-text">Reports</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavReports">
+                            <div class="sub-nav-item">
+                                <a href="" class="sub-nav-link">Reports Sub-menu Item 1</a>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <div class="sub-menu-nav" data-subnav="subnavSettings">
+                            <!-- <i class="ico icon-outline-settings"></i> -->
+                            <img src="assets/images/icons/settings.png" height="24px">
+                            <span class="nav-text">Settings</span>
+                        </div>
+                        <div class="subnav-menu" id="subnavSettings">
+                            <div class="sub-nav-item">
+                                <a href="company.html" class="sub-nav-link">Company</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="shipping.html" class="sub-nav-link">Shipping</a>
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="role.html" class="sub-nav-link">Role</a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            <section class="main-content">
+                <aside class="left-nav col-3" id="leftSidebar">
+                    <div class="resizer" id="sidebarResizer"></div>
+                    <h4 class="mb-2">Deal List</h4>
+                    <div class="search-filter-container mb-4">
+                        <div class="input-group flex-nowrap">
+                            <input type="text" class="form-control" placeholder="Document No" aria-label="Search" aria-describedby="addon-wrapping">
+                        </div>
+                        <div class="input-group flex-nowrap d-none aditional_search">
+                            <input type="text" class="form-control" placeholder="Date" aria-label="Search" aria-describedby="addon-wrapping">
+                        </div>
+                        <div class="input-group flex-nowrap d-none aditional_search">
+                            <input type="text" class="form-control" placeholder="Supplier" aria-label="Search" aria-describedby="addon-wrapping">
+                        </div>
+                        <div class="input-group flex-nowrap d-none aditional_search">
+                            <input type="text" class="form-control" placeholder="Customer" aria-label="Search" aria-describedby="addon-wrapping">
+                        </div>
+                        <div class="input-group flex-nowrap d-none aditional_search">
+                            <input type="text" class="form-control" placeholder="Sales Man" aria-label="Search" aria-describedby="addon-wrapping">
+                        </div>
+                        <div class="input-group flex-nowrap d-none aditional_search">
+                            <input type="text" class="form-control" placeholder="Status" aria-label="Search" aria-describedby="addon-wrapping">
+                        </div>
+
+                        <button class="btn btn-light">
+                            <i class="ico icon-outline-magnifer"></i>
+                        </button>
+                        <!-- <button class="btn btn-light" id="list_style_button" onclick="list_style()">
+                            <i class="ico icon-outline-list-down"></i>
+                        </button> -->
+                    </div>
+                    <div class="left-nav-list">
+                        <ul id="short-list" class="nav flex-column nav-pills" id="companyTabNavs" role="tablist">
+                            <li class="nav-item w-100" role="presentation"> 
+                                <button class="nav-link active" id="purchase-order-1-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-1" type="button" role="tab" aria-controls="purchase-order-1"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1001</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">For Support call</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSIT-1098 - BARAKAT VEGETABLES & TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-2-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-2" type="button" role="tab" aria-controls="purchase-order-2"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1002</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Enquiry for Avaya IP phones</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">3,100.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSIT-1098 - OPTIM8 SOLUTIONS LLC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-3-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-3" type="button" role="tab" aria-controls="purchase-order-3"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1003</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Internal Transfer PO Number: POIT-1401</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">100.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSD-1924 - CASH CUSTOMER</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-4-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-4" type="button" role="tab" aria-controls="purchase-order-4"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1004</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">SONICWALL TZ270</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">200.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSIT-1274 - KHANSAHEB FACILITIES MANAGEMENT LLC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-5-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-5" type="button" role="tab" aria-controls="purchase-order-5"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1005</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Cisco Video Conferencing-BAFCO ENERGIES</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,810.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSD-2370 - GARGASH HOSPITAL L.L.C</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-6-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-6" type="button" role="tab" aria-controls="purchase-order-6"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1006</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Cisco Video Conferencing SONICWALL</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,500.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSIT-1014 - RETAIL IS DETAIL LLC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation"> 
+                                <button class="nav-link" id="purchase-order-7-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-7" type="button" role="tab" aria-controls="purchase-order-7"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1007</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Internal Transfer PO Number: POA-1617</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">100,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">BARAKAT VEGETABLES & TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-8-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-8" type="button" role="tab" aria-controls="purchase-order-8"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1008</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Internal Transfer PO Number: POA-1625</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">48,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSD-4655 - ECO BOX COMPUTER TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-9-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-9" type="button" role="tab" aria-controls="purchase-order-9"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1009</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Enquiry for Allied Telesis Switches</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">53,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSS-1999 - AJMAN SPECIALTY GEN TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-10-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-10" type="button" role="tab" aria-controls="purchase-order-10"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1010</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">AT - G4S - DSP LAB tecom</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,55.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSD-4856 - TATTVAM FINANCIAL FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-11-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-11" type="button" role="tab" aria-controls="purchase-order-11"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1011</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">SONICWALL TZ270</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">BARAKAT VEGETABLES & TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-12tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-12" type="button" role="tab" aria-controls="purchase-order-12"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1012</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Enquiry for Allied Telesis Switches</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">210.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSS-1999 - AJMAN SPECIALTY GEN TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-10-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-10" type="button" role="tab" aria-controls="purchase-order-10"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1013</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Enquiry for Allied Telesis Switches</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSS-1999 - AJMAN SPECIALTY GEN TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-11-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-11" type="button" role="tab" aria-controls="purchase-order-11"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1014</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">SONICWALL TZ270</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">BARAKAT VEGETABLES & TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-12tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-12" type="button" role="tab" aria-controls="purchase-order-12"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1015</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">Enquiry for Allied Telesis Switches</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSS-1999 - AJMAN SPECIALTY GEN TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-10-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-10" type="button" role="tab" aria-controls="purchase-order-10"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1016</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">SONICWALL TZ270</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">BARAKAT VEGETABLES & TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-11-tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-11" type="button" role="tab" aria-controls="purchase-order-11"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1017</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">SONICWALL TZ270</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">CUSD-4655 - ECO BOX COMPUTER TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                            <li class="nav-item w-100" role="presentation">
+                                <button class="nav-link" id="purchase-order-12tab" data-bs-toggle="tab"
+                                    data-bs-target="#purchase-order-12" type="button" role="tab" aria-controls="purchase-order-12"
+                                    aria-selected="true">
+                                    <div class="row w-100">
+                                        <div class="col-2">
+                                            <div class="form-control-plaintext">1018</div>
+                                        </div>
+                                        <div class="col-7 pl-2">
+                                            <div class="form-control-plaintext truncate-text">SONICWALL TZ270</div>
+                                        </div>
+                                        <div class="col-3 text-end">
+                                            <div class="form-control-plaintext">2,000.00</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-control-plaintext truncate-text">BARAKAT VEGETABLES & TRADING FZC</label>
+                                        </div>
+                                    </div>
+                                </button>
+                            </li>
+                        </ul>
+                        <table id="long-list" class="table table-hover" style="display: none;">
+                            <thead>
+                            <tr>
+                                <td colspan="11" style="border-bottom:none;">
+                                    <div class="row">
+                                        <div class="col-2">
+                                            <div class="status-card flex-fill">
+                                                <!-- <div class="status-icon">👍</div> -->
+                                                <div class="status-title">Heading Text</div>
+                                                <div class="status-count">0 (0%)</div>
+                                                <div class="details-list">
+                                                    <div><span>Sent to Sales</span><span>0</span></div>
+                                                    <div><span>Prospecting</span><span>0</span></div>
+                                                    <div><span>Quote</span><span>0</span></div>
+                                                    <div><span>Closure</span><span>0</span></div>
+                                                    <div><span>Won</span><span>0</span></div>
+                                                    <div><span>Lost</span><span>0</span></div>
+                                                </div>
+                                                <div class="arrow-toggle">&#9650;</div>
+                                                </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <div class="status-card flex-fill">
+                                                <div class="status-title">Heading Text</div>
+                                                <div class="status-count">0 (0%)</div>
+                                                <div class="details-list">
+                                                    <div><span>Sent to Sales</span><span>0</span></div>
+                                                    <div><span>Prospecting</span><span>0</span></div>
+                                                    <div><span>Quote</span><span>0</span></div>
+                                                    <div><span>Closure</span><span>0</span></div>
+                                                    <div><span>Won</span><span>0</span></div>
+                                                    <div><span>Lost</span><span>0</span></div>
+                                                </div>
+                                                <div class="arrow-toggle">&#9650;</div>
+                                                </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <div class="status-card flex-fill">
+                                                <div class="status-title">Heading Text</div>
+                                                <div class="status-count">0 (0%)</div>
+                                                <div class="details-list">
+                                                    <div><span>Sent to Sales</span><span>0</span></div>
+                                                    <div><span>Prospecting</span><span>0</span></div>
+                                                    <div><span>Quote</span><span>0</span></div>
+                                                    <div><span>Closure</span><span>0</span></div>
+                                                    <div><span>Won</span><span>0</span></div>
+                                                    <div><span>Lost</span><span>0</span></div>
+                                                </div>
+                                                <div class="arrow-toggle">&#9650;</div>
+                                                </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <div class="status-card flex-fill">
+                                                <div class="status-title">Heading Text</div>
+                                                <div class="status-count">0 (0%)</div>
+                                                <div class="details-list">
+                                                    <div><span>Sent to Sales</span><span>0</span></div>
+                                                    <div><span>Prospecting</span><span>0</span></div>
+                                                    <div><span>Quote</span><span>0</span></div>
+                                                    <div><span>Closure</span><span>0</span></div>
+                                                    <div><span>Won</span><span>0</span></div>
+                                                    <div><span>Lost</span><span>0</span></div>
+                                                </div>
+                                                <div class="arrow-toggle">&#9650;</div>
+                                                </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <div class="status-card flex-fill">
+                                                <div class="status-title">Heading Text</div>
+                                                <div class="status-count">0 (0%)</div>
+                                                <div class="details-list">
+                                                    <div><span>Sent to Sales</span><span>0</span></div>
+                                                    <div><span>Prospecting</span><span>0</span></div>
+                                                    <div><span>Quote</span><span>0</span></div>
+                                                    <div><span>Closure</span><span>0</span></div>
+                                                    <div><span>Won</span><span>0</span></div>
+                                                    <div><span>Lost</span><span>0</span></div>
+                                                </div>
+                                                <div class="arrow-toggle">&#9650;</div>
+                                                </div>
+                                        </div>
+                                        <div class="col-2 mb-2">
+                                            <div class="status-card flex-fill">
+                                                <div class="status-title">Heading Text</div>
+                                                <div class="status-count">0 (0%)</div>
+                                                <div class="details-list">
+                                                    <div><span>Sent to Sales</span><span>0</span></div>
+                                                    <div><span>Prospecting</span><span>0</span></div>
+                                                    <div><span>Quote</span><span>0</span></div>
+                                                    <div><span>Closure</span><span>0</span></div>
+                                                    <div><span>Won</span><span>0</span></div>
+                                                    <div><span>Lost</span><span>0</span></div>
+                                                </div>
+                                                <div class="arrow-toggle">&#9650;</div>
+                                                </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </thead>
+
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="head-date sortable"><span class="th-content">Doc No</span></th>
+                                    <th scope="col" class="head-date"><span class="th-content">Description</span></th>
+                                    <th scope="col" class="head-date sortable"><span class="th-content">Tax</span></th>
+                                    <th scope="col" class="head-date sortable"><span class="th-content">Qty</span></th>
+                                    <th scope="col" class="head-date sortable"><span class="th-content">Unit Price</span></th>
+                                    <th scope="col" class="head-date sortable"><span class="th-content">Value</span></th>
+                                    <th scope="col" class="head-date sortable"><span class="th-content">Discount</span></th>
+                                    <th scope="col" class="head-date sortable"><span class="th-content">Freight</span></th>
+                                    <th scope="col" class="head-date sortable"><span class="th-content">Custom Charges</span></th>
+                                    <th scope="col" class="head-date sortable"><span class="th-content">Taxable</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td scope="row"><span class="font-weight-600 text-ellipsis"><a class="text-decoration-none" href="#" onclick="document.getElementById('purchase-order-1-tab')?.click(); document.getElementById('list_style_button')?.click();">POS-1001</a></span></td>
+                                    <td><span class="text-ellipsis">CBS350 Managed...</span></td>
+                                    <td><span class="text-ellipsis">0</span></td>
+                                    <td><span class="text-ellipsis">5</span></td>
+                                    <td><span class="text-ellipsis">3,275.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                    <td><span class="text-ellipsis">0.00</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                </tr>
+                                <tr>
+                                    <td scope="row"><span class="font-weight-600 text-ellipsis"><a class="text-decoration-none" href="#" onclick="document.getElementById('purchase-order-2-tab')?.click(); document.getElementById('list_style_button')?.click();">POS-1002</a></span></td>
+                                    <td><span class="text-ellipsis">CBS350 Managed...</span></td>
+                                    <td><span class="text-ellipsis">0</span></td>
+                                    <td><span class="text-ellipsis">5</span></td>
+                                    <td><span class="text-ellipsis">3,275.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                    <td><span class="text-ellipsis">0.00</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                </tr>
+                                <tr>
+                                    <td scope="row"><span class="font-weight-600 text-ellipsis"><a class="text-decoration-none" href="#" onclick="document.getElementById('purchase-order-3-tab')?.click(); document.getElementById('list_style_button')?.click();">POS-1003</a></span></td>
+                                    <td><span class="text-ellipsis">CBS350 Managed...</span></td>
+                                    <td><span class="text-ellipsis">0</span></td>
+                                    <td><span class="text-ellipsis">5</span></td>
+                                    <td><span class="text-ellipsis">3,275.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                    <td><span class="text-ellipsis">0.00</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                </tr>
+                                <tr>
+                                    <td scope="row"><span class="font-weight-600 text-ellipsis"><a class="text-decoration-none" href="#" onclick="document.getElementById('purchase-order-4-tab')?.click(); document.getElementById('list_style_button')?.click();">POS-1004</a></span></td>
+                                    <td><span class="text-ellipsis">CBS350 Managed...</span></td>
+                                    <td><span class="text-ellipsis">0</span></td>
+                                    <td><span class="text-ellipsis">5</span></td>
+                                    <td><span class="text-ellipsis">3,275.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                    <td><span class="text-ellipsis">0.00</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                </tr>
+                                <tr>
+                                    <td scope="row"><span class="font-weight-600 text-ellipsis"><a class="text-decoration-none" href="#" onclick="document.getElementById('purchase-order-5-tab')?.click(); document.getElementById('list_style_button')?.click();">POS-1005</a></span></td>
+                                    <td><span class="text-ellipsis">CBS350 Managed...</span></td>
+                                    <td><span class="text-ellipsis">0</span></td>
+                                    <td><span class="text-ellipsis">5</span></td>
+                                    <td><span class="text-ellipsis">3,275.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                    <td><span class="text-ellipsis">0.00</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">3270.09</span></td>
+                                    <td><span class="text-ellipsis">16,375.45</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </aside>
+
+                <div class="content-container col-9">
+                    <div class="tab-content display-flex-tabs" id="purchaseOrderTabContent">
+                        <div class="tab-pane fade show active" id="purchase-order-1" role="tabpanel" aria-labelledby="purchase-order-1-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Deal ID : 1001 / Quote No - 1 (BARAKAT VEGETABLES & TRADING FZC)
+                                </h4>
+                                <div class="purchase-order-content-header-right">                                    
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-bookmark-opened text-success"></i> Save
+                                    </button>
+                                    <!-- <button class="btn btn-light">
+                                        <i class="ico icon-outline-pen-2 text-success"></i> edit
+                                    </button>
+                                    <div class="dropdown">
+                                        <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="ico icon-outline-hamburger-menu"></i>
+                                        </button>
+                                        <ul class="dropdown-menu" style="">
+                                            <li><a class="dropdown-item" href="#"><i class="ico icon-outline-trash-bin-minimalistic text-danger"></i> Cancel Deal</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="ico icon-outline-pen-2 text-warning"></i> Add Pre-Sales Request</a></li>
+                                            <li><a class="dropdown-item" href="#"> <i class="ico icon-outline-pen-2 text-warning"></i> Add Collaboration</a></li>
+                                            <li><a class="dropdown-item" href="#"> <i class="ico icon-outline-pen-2 text-warning"></i> End User Details</a></li>
+                                        </ul>
+                                    </div> -->
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="tab-pane fade show active" id="deal-info" role="tabpanel" aria-labelledby="deal-info-tab">
+                                        <div class="row">
+                                            <div class="col-3 mb-2">
+                                                <label class="form-label">Deal Name: For Support call</label>
+                                            </div>
+                                            <div class="col-3 mb-2">
+                                                <label class="form-label">Deal Value: 55,831.30 AED</label>
+                                            </div>
+                                            <div class="col-3 mb-2">
+                                                <label class="form-label">Brand: CISCO NETGEAR</label>
+                                            </div> 
+                                            <div class="col-3 mb-2">
+                                                <!-- <a class="badge btn-light me-2" data-bs-toggle="modal" data-bs-target="#dealcancelModal"><i class="ico icon-outline-trash-bin-minimalistic"></i> Cancel Deal</a> -->
+                                            </div>
+                                            <div class="col-3 mb-2">
+                                                <label class="form-label">Estimated Close Date: 08/23/2024</label>  
+                                            </div>
+                                            <div class="col-3 mb-2">
+                                                <label class="form-label">Profit Amount: 225.90 AED <span class="text-success">0.40%</span></label>
+                                            </div>
+                                            <div class="col-3 mb-2">
+                                                <label class="form-label">Stage: <span class="badge bg-won me-2">Won</span><span class="badge bg-info-light">On Process</span></label>
+                                            </div>
+                                            <div class="col-3 mb-2">
+                                                <!-- <a href="quote.html" class="badge btn-light"><i class="icon icon-outline-document-medicine"></i> Generate Quote</a> -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row gap-rows">
+                                        <div class="col-4">
+                                            <label class="form-label">Company:</label>
+                                            <div class="form-group">
+                                                <select class="form-control select2" id="inputVendorName">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">value1</option>
+                                                    <option value="value2">value2</option>
+                                                    <option value="value3">value3</option>
+                                                    <option value="value4">value4</option>
+                                                </select>
+                                                <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <label class="form-label">Customer Type:</label>
+                                            <div class="form-group">
+                                                <select class="form-control" name="customer_type" id="customer_type" required="">
+                                                    <option value="">-Select-</option>
+                                                    <option value="1" selected="">Reseller</option>
+                                                    <option value="2">Enduser</option>
+                                                    <option value="3">Ecommerce</option>
+                                                </select>
+                                                <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <label class="form-label">Payment Terms:</label>
+                                            <div class="form-group">
+                                                <select class="form-control" name="payment_terms" id="payment_terms" required="">
+                                                    <option value="">-Select-</option>
+                                                    <option value="1">CASH ON DELIVERY</option>
+                                                    <option value="2">CDC ON DELIVERY</option>
+                                                    <option value="3" selected="">ADVANCE PAYMENT</option>
+                                                    <option value="4">PDC ON DELIVERY</option>
+                                                    <option value="6">30 DAYS PDC</option>
+                                                    <option value="7">45 DAYS PDC</option>
+                                                    <option value="8">60 DAYS PDC</option>
+                                                    <option value="9">30 DAYS PDC ON DELIVERY</option>
+                                                    <option value="10">45 DAYS PDC ON DELIVERY</option>
+                                                    <option value="11">40 DAYS PDC ON DELIVERY</option>
+                                                    <option value="12">60 DAYS PDC ON DELIVERY</option>
+                                                    <option value="13">BANK TRANSFER</option>
+                                                    <option value="14">10 DAYS PDC ON DELIVERY</option>
+                                                    <option value="15">NET 30 DAYS</option>
+                                                    <option value="16">NET 60 DAYS</option>
+                                                    <option value="17">NET 90 DAYS</option>
+                                                    <option value="18">HSBC BILL DISCOUNTING</option>
+                                                    <option value="19">CARD PAYMENT</option>
+                                                    <option value="20">50% ADVANCE 50% ON DELIVERY</option>
+                                                    <option value="21">50% ADVANCE 50% BEFORE DELIVERY</option>
+                                                    <option value="22">OTHER</option>
+                                                    <option value="23">15 DAYS PDC ON DELIVERY</option>
+                                                    <option value="24">NET 45 DAYS</option>
+                                                    <option value="25">BANK TRANSFER AFTER DELIVERY</option>
+                                                    <option value="26">50% ADVANCE &amp; 50% NET 30 DAYS</option>
+                                                    <option value="27">50% ADVANCE &amp; 50% 30 DAYS PDC ON DELIVERY</option>
+                                                    <option value="28">NET 15 DAYS</option>
+                                                    <option value="29">10% Adv 90% 30 DAYS PDC</option>
+                                                    <option value="30">7 Days PDC</option>
+                                                    <option value="31">35 DAYS PDC</option>
+                                                    <option value="32">25% Advance &amp; 75% 30 Days PDC</option>
+                                                    <option value="33">75 DAYS PDC ON DELIVERY</option>
+                                                    <option value="34">90 DAYS PDC</option>
+                                                    <option value="35">25% Advance CDC and 75% CDC on Delivery</option>
+                                            </select>
+                                                <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <label class="form-label">Quote Validity:</label>
+                                            <div class="form-group">
+                                            <input type="text" value="2 Weeks" class="form-control"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <label class="form-label">Delivery Time:</label>
+                                            <div class="form-group">
+                                                <input type="text" value="2 Weeks" class="form-control" id="inputPONumber" />
+                                            </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <label class="form-label">Currency:</label>
+                                            <div class="form-group">
+                                                <select class="form-control select2" id="inputVendorName">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">AED</option>
+                                                    <option value="value2">USD</option>
+                                                </select>
+                                                <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-2">
+                                            <label class="form-label">Closing Date:</label>
+                                            <div class="form-group">
+                                                <input type="text" class="form-control date-picker"/>
+                                            </div>
+                                        </div>
+                                        <div class="col-8">
+                                            <label class="form-label">Terms and Condition:</label>
+                                            <div class="form-group">
+                                                <textarea type="text" class="form-control" id="inputPONumber">1. Quote/Order will be subject to approval of payment/credit terms by our finance.
+2. Please mention our Quotation No.in your Purchase Order
+3. In case of non-availability of quote products SYSCOM IT SOLUTIONS LLC reserved the rights to supply a functionally similar or better product.</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-container" style="border: solid 1px #d9d9d9;">
+                                <table class="table table-hover form-item-table" id="myTable">
+                                    <thead>
+                                        <tr>
+                                            <th class="resizable text-center" width="20px" scope="col" >No<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="300px" scope="col" >Part No<div class="resizer"></div></th>
+                                            <th class="resizable text-center" scope="col" >Description<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="40px" >Cost<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="40px" >VAT<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="50px" >Qty<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="100px" scope="col" >Price<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="100px" scope="col" >Value<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="100px" scope="col" >Discount <a class="icon icon-outline-book" data-bs-toggle="modal" data-bs-target="#discountModal"></a><div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="100px" scope="col" >Taxable<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="100px" scope="col" >VAT Amt<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="100px" scope="col" >Total<div class="resizer"></div></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="1" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="2" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="3" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="4" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="5" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="6" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="7" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="8" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="9" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="text" class="form-control" id="inputPONumber" value="10" /></td>
+                                            <td><select class="form-control select2" id="inputVendorName" onchange="checkAddProduct(this)">
+                                                    <option value="" selected></option>
+                                                    <option value="value1">CBS350-24FP-4X-UK</option>
+                                                    <option value="value2">CBS350-24FP</option>
+                                                    <option value="0">Add Product</option>
+                                                </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="3" scope="col" >Total</th>
+                                            <th class="text-end" scope="col" >0.00</th>
+                                            <th class="text-end" scope="col" ></th>
+                                            <th class="text-end" scope="col" >0</th>
+                                            <th class="text-end" scope="col" >0.00</th>
+                                            <th class="text-end" scope="col" >0.00</th>
+                                            <th class="text-end" scope="col" >0.00 <a class="icon icon-outline-book" data-bs-toggle="modal" data-bs-target="#aditionaldiscountModal"></a></th>
+                                            <th class="text-end" scope="col" >0.00</th>
+                                            <th class="text-end" scope="col" >0.00</th>
+                                            <th class="text-end" scope="col" >0.00</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                <div id="contextMenu">
+                                    <button id="addRow">Add Row</button>
+                                    <button id="deleteRow">Delete Row</button>
+                                </div>
+                                <script>
+                                    function checkAddProduct(select) {
+                                        if (select.value === "0") {
+                                            select.value = "";
+                                            const modal = new bootstrap.Modal(document.getElementById('editModal'));
+                                            modal.show();
+                                        }
+                                    }
+                                </script>
+                            </div>
+
+                            <table class="table table-hover form-item-table" id="">
+                                    <thead>
+                                        <tr>
+                                            <th class="resizable text-center" width="300px" scope="col" >Name<div class="resizer"></div></th>
+                                            <th class="resizable text-center" scope="col" >Credit Account<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="200px" >Amount<div class="resizer"></div></th>
+                                            <th class="resizable text-center" width="250px" >Remarks<div class="resizer"></div></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><select class="form-control js-example-basic-single select2-hidden-accessible" name="cfc_name[]" id="cfc_name_1" data-select2-id="select2-data-cfc_name_1" tabindex="-1" aria-hidden="true">
+                                                    <option value="" data-select2-id="select2-data-6-nlps"></option>
+                                                    <option value="9173" data-select2-id="select2-data-32-4rn1">Consultancy Char</option>
+                                                    <option value="9174" data-select2-id="select2-data-33-xl71">Sales Incentive</option>
+                                                    <option value="10403" data-select2-id="select2-data-34-b4ss">Bad Debts</option>
+                                                    <option value="10404" data-select2-id="select2-data-35-wkf7">Bonus</option>
+                                                    <option value="10405" data-select2-id="select2-data-36-d3v3">Brokerage Fee</option>
+                                                    <option value="10406" data-select2-id="select2-data-37-yiy8">Commission Allowed</option>
+                                                    <option value="10407" data-select2-id="select2-data-38-7fs1">Consultancy Charges</option>
+                                                    <option value="10408" data-select2-id="select2-data-39-huox">Courier Charges</option>
+                                                    <option value="10409" data-select2-id="select2-data-40-in5c">Customs on Sales</option>
+                                                    <option value="10410" data-select2-id="select2-data-41-2c69">Delivery Charges</option>
+                                                    <option value="10411" data-select2-id="select2-data-42-cr5a">Discount Allowed</option>
+                                                    <option value="10412" data-select2-id="select2-data-43-qrcm">Free sample</option>
+                                            </select></td>
+                                            <td><select class="form-control js-example-basic-single select2-hidden-accessible" name="cfc_name[]" id="cfc_name_1" data-select2-id="select2-data-cfc_name_1" tabindex="-1" aria-hidden="true">
+                                                    <option value="" data-select2-id="select2-data-6-nlps"></option>
+                                                    <option value="9173" data-select2-id="select2-data-32-4rn1">CUSIT-1134 - ICICI BANK LIMITED</option>
+                                                    <option value="9174" data-select2-id="select2-data-33-xl71">CUSIT-1098 - OPTIM8 SOLUTIONS LLC</option>
+                                                    <option value="10403" data-select2-id="select2-data-34-b4ss">CUSD-1924 - CASH CUSTOMER</option>
+                                            </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                        <tr>
+                                            <td><select class="form-control js-example-basic-single select2-hidden-accessible" name="cfc_name[]" id="cfc_name_1" data-select2-id="select2-data-cfc_name_1" tabindex="-1" aria-hidden="true">
+                                                    <option value="" data-select2-id="select2-data-6-nlps"></option>
+                                                    <option value="9173" data-select2-id="select2-data-32-4rn1">Consultancy Char</option>
+                                                    <option value="9174" data-select2-id="select2-data-33-xl71">Sales Incentive</option>
+                                                    <option value="10403" data-select2-id="select2-data-34-b4ss">Bad Debts</option>
+                                                    <option value="10404" data-select2-id="select2-data-35-wkf7">Bonus</option>
+                                                    <option value="10405" data-select2-id="select2-data-36-d3v3">Brokerage Fee</option>
+                                                    <option value="10406" data-select2-id="select2-data-37-yiy8">Commission Allowed</option>
+                                                    <option value="10407" data-select2-id="select2-data-38-7fs1">Consultancy Charges</option>
+                                                    <option value="10408" data-select2-id="select2-data-39-huox">Courier Charges</option>
+                                                    <option value="10409" data-select2-id="select2-data-40-in5c">Customs on Sales</option>
+                                                    <option value="10410" data-select2-id="select2-data-41-2c69">Delivery Charges</option>
+                                                    <option value="10411" data-select2-id="select2-data-42-cr5a">Discount Allowed</option>
+                                                    <option value="10412" data-select2-id="select2-data-43-qrcm">Free sample</option>
+                                            </select></td>
+                                            <td><select class="form-control js-example-basic-single select2-hidden-accessible" name="cfc_name[]" id="cfc_name_1" data-select2-id="select2-data-cfc_name_1" tabindex="-1" aria-hidden="true">
+                                                    <option value="" data-select2-id="select2-data-6-nlps"></option>
+                                                    <option value="9173" data-select2-id="select2-data-32-4rn1">CUSIT-1134 - ICICI BANK LIMITED</option>
+                                                    <option value="9174" data-select2-id="select2-data-33-xl71">CUSIT-1098 - OPTIM8 SOLUTIONS LLC</option>
+                                                    <option value="10403" data-select2-id="select2-data-34-b4ss">CUSD-1924 - CASH CUSTOMER</option>
+                                            </select></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                            <td><input type="text" class="form-control" id="inputPONumber" /></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            
+
+
+                            
+                        </div>
+                        <div class="tab-pane fade show" id="purchase-order-2" role="tabpanel" aria-labelledby="purchase-order-2-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                </h4>
+                                <div class="purchase-order-content-header-right">
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-pen-2"></i> Edit
+                                    </button>
+                                    <button class="btn btn-dark">
+                                        <i class="ico icon-outline-add-circle"></i> Add
+                                    </button>
+                                    <div class="dropdown">
+                                        <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="ico icon-outline-hamburger-menu"></i>
+                                        </button>
+                                        <ul class="dropdown-menu" style="">
+                                            <li><a class="dropdown-item" href="#"><i class="ico icon-outline-trash-bin-minimalistic"></i> Delete</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="ico icon-outline-download-minimalistic"></i> Download</a></li>
+                                            <li><a class="dropdown-item" href="#"> <i class="ico icon-outline-printer"></i> Print</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row gap-rows">
+                                        <div class="col-12 text-center">
+                                            <img src="assets/images/PID-13839-APTEC-DISTRIBUTION-FZ-LLC.jpg" width="816px" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="purchase-order-3" role="tabpanel" aria-labelledby="purchase-order-3-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                </h4>
+                                <div class="purchase-order-content-header-right">
+                                    <button class="btn btn-light">
+                                        <i class="ico icon-outline-pen-2"></i> Edit
+                                    </button>
+                                    <button class="btn btn-dark">
+                                        <i class="ico icon-outline-add-circle"></i> Add
+                                    </button>
+                                    <div class="dropdown">
+                                        <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="ico icon-outline-hamburger-menu"></i>
+                                        </button>
+                                        <ul class="dropdown-menu" style="">
+                                            <li><a class="dropdown-item" href="#"><i class="ico icon-outline-trash-bin-minimalistic"></i> Delete</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="ico icon-outline-download-minimalistic"></i> Download</a></li>
+                                            <li><a class="dropdown-item" href="#"> <i class="ico icon-outline-printer"></i> Print</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row gap-rows">
+                                        <div class="col-12 text-center">
+                                            <img src="assets/images/PID-13806-SYSCOM-FZE-1.jpg" width="816px" />
+                                            <img src="assets/images/PID-13806-SYSCOM-FZE-2.jpg" width="816px" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show" id="purchase-order-4" role="tabpanel" aria-labelledby="purchase-order-4-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Purchase Details - POS-1004
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="purchase-order-5" role="tabpanel" aria-labelledby="purchase-order-5-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Purchase Details - POS-1005
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade show " id="purchase-order-6" role="tabpanel" aria-labelledby="purchase-order-6-tab">
+                            <div class="purchase-order-content-header">
+                                <h4 class="purchase-order-content-header-left">
+                                    Purchase Details - POS-1006
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div class="modal side-panel fade" id="editModal" data-bs-backdrop="false" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm" style="height: 464px !important;"> 
+              	<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title" id="editModalLabel">Add Product</h4>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body m-0 p-0">
+						<div class="card mb-0 mt-0">
+							<div class="card-body">
+                                <div class="row">
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">Brand:</label>
+                                        <div class="form-group">
+                                        <select class="form-control select2" id="inputVendorName">
+                                            <option value="" selected></option>
+                                            <option value="value1">Avaya</option>
+                                            <option value="value2">Cisco</option>
+                                        </select>
+                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">Product Code:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Part Number:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Description:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">Category:</label>
+                                        <div class="form-group">
+                                        <select class="form-control select2" id="inputVendorName">
+                                            <option value="" selected></option>
+                                            <option value="value1">Avaya</option>
+                                            <option value="value2">Cisco</option>
+                                        </select>
+                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">Sub Category:</label>
+                                        <div class="form-group">
+                                        <select class="form-control select2" id="inputVendorName">
+                                            <option value="" selected></option>
+                                            <option value="value1">Avaya</option>
+                                            <option value="value2">Cisco</option>
+                                        </select>
+                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">Product Type:</label>
+                                        <div class="form-group">
+                                        <select class="form-control select2" id="inputVendorName">
+                                            <option value="1">General</option>
+                                            <option value="2">Serialized Item</option>
+                                            <option value="3">Services</option>
+                                        </select>
+                                        <i class="ico icon-outline-alt-arrow-down dropdown-toggle-ico"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">VAT:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">UOM:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">COO:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">HS Code:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <label class="form-label">Weight:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+
+
+                                </div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-light add-btn ms-2">
+							<i class="ico icon-outline-bookmark-opened text-success"></i> Save
+						</button>
+					</div>
+              	</div>
+            </div>
+        </div>
+        <div class="modal side-panel fade" id="discountModal" data-bs-backdrop="false" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm" style="height: 155px !important; width:170px !important;"> 
+              	<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title" id="editModalLabel">Add Discount</h4>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body m-0 p-0">
+						<div class="card mb-0 mt-0">
+							<div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Discount Amount:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                </div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-light add-btn ms-2">
+							<i class="ico icon-outline-bookmark-opened text-success"></i> Split Discount
+						</button>
+					</div>
+              	</div>
+            </div>
+        </div>
+        <div class="modal side-panel fade" id="aditionaldiscountModal" data-bs-backdrop="false" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm" style="height: 155px !important; width:170px !important;"> 
+              	<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title" id="editModalLabel">Aditional Discount</h4>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body m-0 p-0">
+						<div class="card mb-0 mt-0">
+							<div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 mb-2">
+                                        <label class="form-label">Discount Amount:</label>
+                                        <div class="form-group">
+                                            <input type="text" class="form-control" id="inputPONumber" />
+                                        </div>
+                                    </div>
+                                </div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-light add-btn ms-2">
+							<i class="ico icon-outline-bookmark-opened text-success"></i> Save
+						</button>
+					</div>
+              	</div>
+            </div>
+        </div>
+
+    </div>
+    
+<!-- Flatpickr CSS DATE -->
+<link rel="stylesheet" href="assets/css/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!-- Flatpickr CSS DATE -->
+ 
+    <script src="assets/js/aditional.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="./assets/js/_main.js" type="text/javascript"></script>
+    <script src="./assets/js/purchase-order.js" type="text/javascript"></script>
+
+ 
+</body>
+</html>
+

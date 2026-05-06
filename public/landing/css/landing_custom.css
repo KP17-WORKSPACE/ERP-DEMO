@@ -1,0 +1,58 @@
+.sub_header .header_info a {
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.sub_header .header_social_icon a {
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.fb i,
+.tw i,
+.pin i,
+.lin i {
+	transition: all 0.5s;
+}
+
+.fb:hover i {
+	color: #3b5998 !important;
+}
+
+.tw:hover i {
+	color: #1da1f2 !important;
+}
+
+.pin:hover i {
+	color: #bd081c !important;
+}
+
+.lin:hover i {
+	color: #007bb5 !important;
+}
+
+.banner_part .banner_text h1:after {
+	display: none;
+}
+
+@media (min-width: 1200px) {
+	.banner_part .banner_mockup_img {
+		max-width: 1000px;
+	}
+
+}
+
+@media (max-width: 1200px) {
+	.banner_part .banner_mockup_img {
+		max-width: 70%;
+	}
+}
+
+@media (max-width: 576px) {
+	.banner_part .banner_mockup_img {
+		max-width: 100%;
+	}
+}
+
+.video_image {
+	max-width: 100% !important;
+	border: 2px solid #919bc5;
+}

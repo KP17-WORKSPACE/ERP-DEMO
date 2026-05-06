@@ -1,0 +1,26 @@
+{
+    "name": "spondonit/invoice",
+    "description": "invoice for business erp",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Spondon IT",
+            "email": "spn5@spondonit.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Spondonit\\Invoice\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Spondonit\\Invoice\\InvoiceServiceProvider"
+            ]
+        }
+    }
+}

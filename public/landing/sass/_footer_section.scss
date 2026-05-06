@@ -1,0 +1,111 @@
+/************* footer section start******************/
+.footer_section {
+    text-align: center;
+    margin-top: -40px;
+    @media #{$tab}{
+
+    }
+    @media #{$medium_device}{
+    
+    }
+    .footer_area_text {
+
+        padding: 142px 0 55px;
+        @media #{$tab}{
+            padding: 90px 0 40px;
+        }
+        @media #{$medium_device}{
+            padding: 120px 0 50px;
+        }
+        img {
+            margin-bottom: 39px;
+        }
+        h2{
+            margin-bottom: 18px;
+        }
+        p {
+            padding: 0 66px;
+            @media #{$tab}{
+                padding: 0;
+            }
+            @media #{$medium_device}{
+            
+            }
+        }
+        @media #{$small_mobile}{
+            h2{
+                font-size: 25px;
+            }
+        }
+        @media #{$large_mobile}{
+        
+        }
+        @media #{$tab_device}{
+            h2{
+                font-size: 25px;
+            }
+        }
+        @media #{$medium_device}{
+            h2{
+                font-size: 25px;
+            }
+        }
+        .footer_btn {
+            text-align: left;
+            display: inline-block;
+            border-radius: 50px;
+            padding: 18px 67px 18px 91px;
+            position: relative;
+            margin-top: 44px;
+            @include transform_time(0.8s);
+            background-color: #0d1229;
+            background-size: auto 200%;
+            @media #{$tab}{
+                padding: 18px 30px 18px 80px;
+            }
+            i {
+                height: 60px;
+                width: 60px;
+                text-align: center;
+                line-height: 60px;
+                font-size: 20px;
+                background-color: $btn_bg;
+                display: inline-block;
+                border-radius: 50%;
+                color: #fff;
+                position: absolute;
+                left: 10px;
+                top: 11px;
+                margin-bottom: 0px;
+            }
+
+            p {
+                padding: 0;
+                font-size: 11px;
+                color: $white_color;
+                text-transform: uppercase;
+            }
+
+            h3 {
+                font-size: 18px;
+                font-weight: 500;
+                color: $white_color;
+                margin-bottom: 0;
+            }
+        }
+    }
+    .copyright_text{
+        padding: 20px 0px;
+        img{
+            width: 20px;
+            margin-right: 3px;
+        }
+        p{
+            color: #828bb2;
+        }
+        a{
+            color: $btn_bg;
+            font-size: 15px;
+        }
+    }
+}
