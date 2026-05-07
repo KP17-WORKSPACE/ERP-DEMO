@@ -386,11 +386,11 @@
                                                 <input class="form-control form-control-sm" type="email"
                                                     name="father_email" value="">
                                             </div>
-                                            <div class="col">
+                                            {{-- <div class="col">
                                                 <label class="form-label"> Doc (Govt. ID)</label>
                                                 <input class="form-control form-control-sm" accept=".pdf,image/*"
                                                     type="file" name="father_attachment">
-                                            </div>
+                                            </div> --}}
 
 
 
@@ -421,11 +421,11 @@
                                                 <input class="form-control form-control-sm" type="email"
                                                     name="mother_email" value="">
                                             </div>
-                                            <div class="col">
+                                            {{-- <div class="col">
                                                 <label class="form-label"> Doc (Govt. ID)</label>
                                                 <input class="form-control form-control-sm" accept=".pdf,image/*"
                                                     type="file" name="mother_attachment">
-                                            </div>
+                                            </div> --}}
 
 
 
@@ -1027,7 +1027,7 @@
                                                                         </tr>
 
 
-                                                                        <tr>
+                                                                        {{-- <tr>
                                                                             <td>Offer Letter</td>
                                                                             <td></td>
                                                                             <td></td>
@@ -1042,7 +1042,7 @@
                                                                                     name="docs[joining][offer_letter][remarks]"
                                                                                     placeholder="Signed by employee & HR">
                                                                             </td>
-                                                                        </tr>
+                                                                        </tr> --}}
 
                                                                         <tr>
                                                                             <td>Bank Account Details (IBAN
@@ -1185,7 +1185,7 @@
                                                                             </td>
                                                                         </tr>
 
-                                                                          <tr>
+                                                                          {{-- <tr>
                                                                             <td>Employment Contract (optional)</td>
                                                                             <td></td>
                                                                             <td>
@@ -1206,7 +1206,7 @@
                                                                                     name="docs[joining][emp_contract][remarks]"
                                                                                     placeholder="MOHRE / Free Zone contract">
                                                                             </td>
-                                                                        </tr>
+                                                                        </tr> --}}
 
 
 
