@@ -58,7 +58,7 @@ class SysStockLedgerController extends Controller
             if(count($part_number)>0){
                 foreach($part_number as $part_no){
                         $partnolist[] = $part_no;
-                        $stocklist[] = self::removeDuplicateDocNumber(SysItemStock::select('sys_item_stock.doc_number','sys_item_stock.doc_date','sys_item_stock.refno','sys_item_stock.account_id','sys_item_stock.partno','sys_item_stock.description',DB::raw('SUM(sys_item_stock.qty_in) as qty_in'),'sys_item_stock.price_in',DB::raw('SUM(sys_item_stock.qty_out) as qty_out'),'sys_item_stock.price_out','sys_item_stock.deal_id',DB::raw('max(sys_item_stock.slno) as slno'),DB::raw('max(sys_item_stock.item_id) as item_id'),'sm_items.part_number','grn.ref_company_id as grn_reference','dln.supplier_name as dln_reference','srt.supplier_name as srt_reference','prt.ref_company_id as prt_reference')
+                        $stocklist[] = SysItemStock::select('sys_item_stock.doc_number','sys_item_stock.doc_date','sys_item_stock.refno','sys_item_stock.account_id','sys_item_stock.partno','sys_item_stock.description','sys_item_stock.qty_in','sys_item_stock.price_in','sys_item_stock.qty_out','sys_item_stock.price_out','sys_item_stock.deal_id','sys_item_stock.slno','sys_item_stock.item_id','sm_items.part_number','grn.ref_company_id as grn_reference','dln.supplier_name as dln_reference','srt.supplier_name as srt_reference','prt.ref_company_id as prt_reference')
                         ->join('sm_items','sm_items.id','sys_item_stock.partno')
 
 
@@ -72,16 +72,17 @@ class SysStockLedgerController extends Controller
                         ->whereRaw("DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') <= '".$to_date."'")
                         ->where('sm_items.part_number',$part_no)->where('sys_item_stock.status',1)->where('sm_items.status',1)
                         ->wherein('sys_item_stock.company_id',$company_id)
-                        ->groupBy('sys_item_stock.doc_number','sys_item_stock.partno','sys_item_stock.doc_date','sys_item_stock.refno','account_id','sys_item_stock.partno','sys_item_stock.description','sys_item_stock.price_in','sys_item_stock.price_out','sys_item_stock.deal_id','sm_items.part_number','grn.ref_company_id','dln.supplier_name','srt.supplier_name','prt.ref_company_id')
                         ->orderby('sys_item_stock.doc_date','asc')
-                        ->get());
+                        ->orderby('sys_item_stock.slno','asc')
+                        ->orderby('sys_item_stock.id','asc')
+                        ->get();
 
                     }
                 }
             } else {
                 if($id != ""){
                     $partnolist[] = $id;
-                        $stocklist[] = self::removeDuplicateDocNumber(SysItemStock::select('sys_item_stock.doc_number','sys_item_stock.doc_date','sys_item_stock.refno','sys_item_stock.account_id','sys_item_stock.partno','sys_item_stock.description',DB::raw('SUM(sys_item_stock.qty_in) as qty_in'),'sys_item_stock.price_in',DB::raw('SUM(sys_item_stock.qty_out) as qty_out'),'sys_item_stock.price_out','sys_item_stock.deal_id','sys_item_stock.slno','sys_item_stock.item_id','sm_items.part_number','grn.ref_company_id as grn_reference','dln.supplier_name as dln_reference','srt.supplier_name as srt_reference','prt.ref_company_id as prt_reference')
+                        $stocklist[] = SysItemStock::select('sys_item_stock.doc_number','sys_item_stock.doc_date','sys_item_stock.refno','sys_item_stock.account_id','sys_item_stock.partno','sys_item_stock.description','sys_item_stock.qty_in','sys_item_stock.price_in','sys_item_stock.qty_out','sys_item_stock.price_out','sys_item_stock.deal_id','sys_item_stock.slno','sys_item_stock.item_id','sm_items.part_number','grn.ref_company_id as grn_reference','dln.supplier_name as dln_reference','srt.supplier_name as srt_reference','prt.ref_company_id as prt_reference')
                         ->join('sm_items','sm_items.id','sys_item_stock.partno')
                         
                         ->leftjoin('sys_purchase_grn as grn', DB::raw("grn.doc_number COLLATE utf8mb4_unicode_ci"), DB::raw("sys_item_stock.doc_number COLLATE utf8mb4_unicode_ci"))
@@ -92,9 +93,10 @@ class SysStockLedgerController extends Controller
                         ->whereRaw("DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') >= '".$from_date."' and DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') <= '".$to_date."'")
                         ->where('sm_items.part_number',$id)->where('sys_item_stock.status',1)->where('sm_items.status',1)
                         ->wherein('sys_item_stock.company_id',$company_id)
-                        ->groupBy('sys_item_stock.doc_number','sys_item_stock.partno','sys_item_stock.doc_date','sys_item_stock.refno','account_id','sys_item_stock.partno','sys_item_stock.description','sys_item_stock.price_in','sys_item_stock.price_out','sys_item_stock.deal_id','sys_item_stock.slno','sm_items.part_number','grn.ref_company_id','dln.supplier_name','srt.supplier_name','prt.ref_company_id')
                         ->orderby('sys_item_stock.doc_date','asc')
-                        ->get());
+                        ->orderby('sys_item_stock.slno','asc')
+                        ->orderby('sys_item_stock.id','asc')
+                        ->get();
                         $part_number = [$id];
                 }
                 
@@ -165,6 +167,8 @@ class SysStockLedgerController extends Controller
                         ->where('sm_items.part_number',$part_no)->where('sys_item_stock.status',1)->where('sm_items.status',1)
                         ->wherein('sys_item_stock.company_id',$company_id)
                         ->orderby('sys_item_stock.doc_date','asc')
+                        ->orderby('sys_item_stock.slno','asc')
+                        ->orderby('sys_item_stock.id','asc')
                         ->get();
 
                         
@@ -192,6 +196,8 @@ class SysStockLedgerController extends Controller
                         ->where('sm_items.part_number',$id)->where('sys_item_stock.status',1)->where('sm_items.status',1)
                         ->wherein('sys_item_stock.company_id',$company_id)
                         ->orderby('sys_item_stock.doc_date','asc')
+                        ->orderby('sys_item_stock.slno','asc')
+                        ->orderby('sys_item_stock.id','asc')
                         ->get();
                         $part_number = [$id];
                 }
@@ -214,11 +220,6 @@ class SysStockLedgerController extends Controller
            Toastr::error('Operation Failed', 'Failed');
            return redirect()->back();
         }
-    }
-
-    function removeDuplicateDocNumber($collection)
-    {
-        return $collection->unique('doc_number')->values();
     }
 
     /**
