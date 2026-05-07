@@ -104,6 +104,7 @@ class SysStockLedgerController extends Controller
 
             if (!empty($stocklist)) {
                 $this->appendCfcToIncomingRate($stocklist, $company_id, $from_date, $to_date);
+                $this->normalizeStockLedgerSerialNumbers($stocklist);
             }
 
             //return SysHelper::get_stock_ledger_opening_stock('R4W02A',$opb_date,$company_id);
@@ -206,6 +207,7 @@ class SysStockLedgerController extends Controller
 
             if (!empty($stocklist)) {
                 $this->appendCfcToIncomingRate($stocklist, $company_id, $from_date, $to_date);
+                $this->normalizeStockLedgerSerialNumbers($stocklist);
             }
 
       
@@ -489,6 +491,53 @@ class SysStockLedgerController extends Controller
                 if ($finalRate !== null && $finalRate >= 0) {
                     $row->price_in = $finalRate;
                 }
+            }
+        }
+    }
+
+    /**
+     * Clean and standardize serial numbers for stock ledger rows.
+     */
+    protected function normalizeStockLedgerSerialNumbers(array &$stocklist)
+    {
+        foreach ($stocklist as &$rows) {
+            foreach ($rows as &$row) {
+                $raw = trim((string) ($row->slno ?? ''));
+                if ($raw === '') {
+                    $row->slno = '';
+                    continue;
+                }
+
+                $serials = [];
+                $decoded = null;
+                if (substr($raw, 0, 1) === '[' && substr($raw, -1) === ']') {
+                    $decoded = json_decode($raw, true);
+                }
+
+                if (is_array($decoded)) {
+                    foreach ($decoded as $serial) {
+                        $serial = trim((string) $serial);
+                        if ($serial !== '') {
+                            $serials[] = $serial;
+                        }
+                    }
+                } else {
+                    $raw = str_replace(["\r\n", "\r", "\n", ';', '|'], ',', $raw);
+                    $parts = array_map('trim', explode(',', $raw));
+                    foreach ($parts as $serial) {
+                        if ($serial !== '') {
+                            $serials[] = $serial;
+                        }
+                    }
+                }
+
+                if (empty($serials)) {
+                    $row->slno = '';
+                    continue;
+                }
+
+                $serials = array_values(array_unique($serials));
+                $row->slno = implode(', ', $serials);
             }
         }
     }
