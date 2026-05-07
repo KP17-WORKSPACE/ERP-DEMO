@@ -435,6 +435,13 @@
                                     </tr>
                                     @foreach ($list as $value)
                                     {{-- {{ dd($value) }} --}}
+                                        @php
+                                            $serialText = trim((string) ($value->slno ?? ''));
+                                            $serialItems = $serialText !== '' ? array_values(array_filter(array_map('trim', explode(',', $serialText)))) : [];
+                                            $serialDisplay = implode(', ', $serialItems);
+                                            $serialModalDisplay = implode(' | ', $serialItems);
+                                            $serialModalId = 'exampleModalCenter' . $i . '_' . preg_replace('/[^A-Za-z0-9\-_]/', '_', (string) ($value->doc_number ?? '')) . '_' . ($value->item_id ?? '0');
+                                        @endphp
                                         <tr>
                                             <td>{{ date('d/m/Y', strtotime(@$value->doc_date)) }}</td>
                                             <td>
@@ -654,18 +661,18 @@
                                             <td class="text-center">{{ $bal_qty }}</td>
                                             <td class="text-end">{{ $avg_rate }}</td>
                                             <td class="text-end">
-                                                @if ($value->slno != '')
+                                                @if (!empty($serialItems))
                                                     <a style="padding: 2px 2px; font-size: 12px; line-height: 1.2; white-space: normal;"
                                                         class="btn btn-sm btn-success text-white text-center rounded-0 d-block"
                                                         data-bs-toggle="modal"
-                                                        data-bs-target="#exampleModalCenter{{ $value->doc_number }}">View
+                                                        data-bs-target="#{{ $serialModalId }}">View
                                                         SrlNo</a>
                                                 @endif
                                                 <div class="all_srl_no_{{ $i }}" style="display: none;">
-                                                    {{ str_replace(',', ', ', $value->slno) }}</div>
+                                                    {{ $serialDisplay }}</div>
                                             </td>
 
-                                            <div class="modal fade" id="exampleModalCenter{{ $value->doc_number }}"
+                                            <div class="modal fade" id="{{ $serialModalId }}"
                                                 data-bs-backdrop="false" tabindex="-1" aria-labelledby="editModalLabel"
                                                 aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered" role="document">
@@ -677,7 +684,7 @@
                                                                 data-bs-dismiss="modal" aria-label="Close"></button>
                                                         </div>
                                                         <div class="modal-body" style="line-height: 25px;">
-                                                            {{ str_replace(',', ' | ', $value->slno) }}
+                                                            {{ $serialModalDisplay }}
                                                         </div>
                                                         <div class="modal-footer"><button type="button"
                                                                 class="btn btn-secondary"
