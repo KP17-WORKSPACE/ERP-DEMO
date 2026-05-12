@@ -500,7 +500,7 @@
 
 
                                     @if ($show_all == 1)
-                                        <?php $avg = App\SysHelper::get_stock_ledger_footer_avg_for_register($value->part_number, $to_date); ?>
+                                        <?php $avg = App\SysHelper::get_stock_ledger_footer_avg_for_register($value->partno, $to_date); ?>
                                         <td class="text-end no-toggle">
                                             {{ @App\SysHelper::com_curr_format($avg, 2, '.', ',') }}
                                         </td>
@@ -524,7 +524,7 @@
                                     @else
                                         @if (count($show_brand) > 0)
                                             @if (in_array($value->brandid, $show_brand))
-                                                <?php $avg = App\SysHelper::get_stock_ledger_footer_avg_for_register($value->part_number, $to_date); ?>
+                                                <?php $avg = App\SysHelper::get_stock_ledger_footer_avg_for_register($value->partno, $to_date); ?>
                                                 <td class="text-end no-toggle">
                                                     {{ @App\SysHelper::com_curr_format($avg, 2, '.', ',') }}</td>
                                                 <td class="text-end no-toggle">
