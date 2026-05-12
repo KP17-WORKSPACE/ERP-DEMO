@@ -1180,9 +1180,9 @@ $ret_val = '
     }
 
     /**
-     * Moving-average rate for Stock Register: same row math and CFC/serial handling as Stock Ledger,
-     * applied to all movements with doc_date <= as-of date (matches register balance_qty scope).
-     * Filter by sm_items.id (stock.partno) so it matches the exact item row on the register.
+     * Same moving-average as Stock Ledger footer for a part: opening at (from_date - 1 day),
+     * then lines with doc_date between 1 Jan of the as-of year and to_date (same window as default ledger for that year).
+     * Uses sm_items.id (stock.partno). CFC/serial steps match SysStockLedgerController.
      */
     public static function get_stock_ledger_footer_avg_for_register($partnoId, $toDateRaw, $companyIds = null)
     {
@@ -1210,6 +1210,15 @@ $ret_val = '
                 $toDateYmd = Carbon::parse($toDateRaw)->format('Y-m-d');
             }
 
+            $partNumber = DB::table('sm_items')->where('id', $partnoId)->value('part_number');
+            if ($partNumber === null || trim((string) $partNumber) === '') {
+                return 0.0;
+            }
+            $partNumber = trim((string) $partNumber);
+
+            $fromDate = Carbon::parse($toDateYmd)->copy()->startOfYear()->format('Y-m-d');
+            $opbDate = Carbon::parse($fromDate)->copy()->subDay()->format('Y-m-d');
+
             $parse = function ($v) {
                 if ($v === null || $v === '') {
                     return 0.0;
@@ -1226,11 +1235,15 @@ $ret_val = '
                 return $s === '' ? 0.0 : (float) $s;
             };
 
-            // Cumulative through as-of date (same scope as register SUM(in)-SUM(out) where doc_date <= to_date).
-            $bal_qty = 0.0;
-            $avg_rate_value = 0.0;
-            $running_stock_value = 0.0;
-            $lastDisplayAvg = 0.0;
+            $opb = self::get_stock_ledger_opening_stock($partNumber, $opbDate, $companyIds);
+            if (! is_array($opb) || count($opb) < 2) {
+                return 0.0;
+            }
+
+            $bal_qty = $parse($opb[0]);
+            $avg_rate_value = $parse($opb[1]);
+            $running_stock_value = $bal_qty * $avg_rate_value;
+            $lastDisplayAvg = $avg_rate_value;
 
             $rows = SysItemStock::select('sys_item_stock.doc_number', 'sys_item_stock.doc_date', 'sys_item_stock.refno', 'sys_item_stock.account_id', 'sys_item_stock.partno', 'sys_item_stock.description', 'sys_item_stock.qty_in', 'sys_item_stock.price_in', 'sys_item_stock.qty_out', 'sys_item_stock.price_out', 'sys_item_stock.deal_id', 'sys_item_stock.slno', 'sys_item_stock.item_id', 'sm_items.part_number', 'grn.ref_company_id as grn_reference', 'dln.supplier_name as dln_reference', 'srt.supplier_name as srt_reference', 'prt.ref_company_id as prt_reference')
                 ->join('sm_items', 'sm_items.id', 'sys_item_stock.partno')
@@ -1238,7 +1251,7 @@ $ret_val = '
                 ->leftjoin('sys_delivery_note as dln', DB::raw('dln.doc_number COLLATE utf8mb4_unicode_ci'), DB::raw('sys_item_stock.doc_number COLLATE utf8mb4_unicode_ci'))
                 ->leftjoin('sys_sales_return as srt', DB::raw('srt.doc_number'), DB::raw('sys_item_stock.doc_number'))
                 ->leftjoin('sys_purchase_return as prt', DB::raw('prt.doc_number COLLATE utf8mb4_unicode_ci'), DB::raw('sys_item_stock.doc_number COLLATE utf8mb4_unicode_ci'))
-                ->whereRaw('DATE(sys_item_stock.doc_date) <= ?', [$toDateYmd])
+                ->whereBetween(DB::raw('DATE(sys_item_stock.doc_date)'), [$fromDate, $toDateYmd])
                 ->where('sm_items.id', $partnoId)
                 ->where('sys_item_stock.status', 1)
                 ->where('sm_items.status', 1)
@@ -1253,7 +1266,7 @@ $ret_val = '
             $ledgerController = app()->make(SysStockLedgerController::class);
             $mAppend = new \ReflectionMethod($ledgerController, 'appendCfcToIncomingRate');
             $mAppend->setAccessible(true);
-            $mAppend->invokeArgs($ledgerController, [&$stocklist, $companyIds, '2000-01-01', $toDateYmd]);
+            $mAppend->invokeArgs($ledgerController, [&$stocklist, $companyIds, $fromDate, $toDateYmd]);
             $mNorm = new \ReflectionMethod($ledgerController, 'normalizeStockLedgerSerialNumbers');
             $mNorm->setAccessible(true);
             $mNorm->invokeArgs($ledgerController, [&$stocklist]);
