@@ -1133,48 +1133,110 @@ $ret_val = '
         }
     }
 
+    /**
+     * Moving-average cost as of $to_date for an item (sm_items.id), aligned with Stock Ledger rules:
+     * receipts at price_in; issues at prior avg; purchase return at price_out; sales return at prior avg;
+     * same-date ordering: qty_in rows before qty_out; robust numeric parsing for formatted strings.
+     */
     public static function get_avg_price($part_no, $to_date)
     {
         try {
-            $stocklist = SysItemStock::select('sys_item_stock.doc_number','sys_item_stock.doc_date','sys_item_stock.refno','sys_item_stock.account_id','sys_item_stock.partno','sys_item_stock.description','sys_item_stock.qty_in','sys_item_stock.price_in','sys_item_stock.qty_out','sys_item_stock.price_out','sys_item_stock.deal_id','sys_item_stock.slno','sm_items.part_number')
-                ->join('sm_items','sm_items.id','sys_item_stock.partno')
-                ->whereRaw("DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') <= '".$to_date."'")
-                ->where('sm_items.id',$part_no)->where('sys_item_stock.status',1)
-                ->where('sys_item_stock.company_id',session('logged_session_data.company_id'))
-                ->orderby('sys_item_stock.doc_date','asc')
+            $companyId = session('logged_session_data.company_id');
+            if ($companyId === null || $companyId === '' || empty($part_no)) {
+                return 0.0;
+            }
+
+            $parse = function ($v) {
+                if ($v === null || $v === '') {
+                    return 0.0;
+                }
+                if (is_int($v) || is_float($v)) {
+                    return (float) $v;
+                }
+                if (is_numeric($v)) {
+                    return (float) $v;
+                }
+                $s = str_replace([',', ' '], '', trim((string) $v));
+
+                return $s === '' ? 0.0 : (float) $s;
+            };
+
+            $stocklist = SysItemStock::select(
+                'sys_item_stock.doc_number',
+                'sys_item_stock.doc_date',
+                'sys_item_stock.qty_in',
+                'sys_item_stock.price_in',
+                'sys_item_stock.qty_out',
+                'sys_item_stock.price_out',
+                'sys_item_stock.slno',
+                'sys_item_stock.id',
+                'prt.ref_company_id as prt_reference'
+            )
+                ->join('sm_items', 'sm_items.id', '=', 'sys_item_stock.partno')
+                ->leftJoin('sys_purchase_return as prt', DB::raw('prt.doc_number COLLATE utf8mb4_unicode_ci'), DB::raw('sys_item_stock.doc_number COLLATE utf8mb4_unicode_ci'))
+                ->whereRaw("DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') <= ?", [$to_date])
+                ->where('sm_items.id', $part_no)
+                ->where('sys_item_stock.status', 1)
+                ->where('sm_items.status', 1)
+                ->where('sys_item_stock.company_id', $companyId)
+                ->orderBy('sys_item_stock.doc_date', 'asc')
+                ->orderByRaw('CASE WHEN IFNULL(sys_item_stock.qty_in,0) > 0 THEN 0 ELSE 1 END ASC')
+                ->orderBy('sys_item_stock.slno', 'asc')
+                ->orderBy('sys_item_stock.id', 'asc')
                 ->get();
-            //return $stocklist;
 
-           $price_in_qty_in=0; $qty_in=0; $bal_qty=0; $avg_rate=0;
+            $bal_qty = 0.0;
+            $avg_rate_value = 0.0;
+            $running_stock_value = 0.0;
 
-           if(count($stocklist)>0){
-            
-                foreach($stocklist as $value){
-                    if($bal_qty <= 0){ $qty_in=0; $price_in_qty_in = 0; }                    
-                    if(str_contains($value->doc_number,'SRT')) {
-                        $qty_in += $value->qty_in;
-                        $bal_qty += $value->qty_in;
-                        $bal_qty -= $value->qty_out;
-                    }
-                    elseif(str_contains($value->doc_number,'OPS')) {
-                        $qty_in += $value->qty_in;
-                        $bal_qty += $value->qty_in;
-                        $bal_qty -= $value->qty_out;
-                    } else{
-                        $price_in_qty_in += $value->price_in*$value->qty_in;
-                        $qty_in += $value->qty_in;
-                        $bal_qty += $value->qty_in;
-                        $bal_qty -= $value->qty_out;
-                        if($qty_in !=0){
-                            $avg_rate = $price_in_qty_in/$qty_in;
-                        }                        
-                    }
+            foreach ($stocklist as $value) {
+                $previousAvgRateValue = $avg_rate_value;
+                $docRaw = strtoupper(trim((string) ($value->doc_number ?? '')));
+                $docFirst = trim(explode(',', $docRaw)[0]);
+                $docPrefix2 = substr($docFirst, 0, 2);
+
+                $lineQtyIn = $parse($value->qty_in ?? 0);
+                $lineQtyOut = $parse($value->qty_out ?? 0);
+                $linePriceIn = $parse($value->price_in ?? 0);
+                $linePriceOut = $parse($value->price_out ?? 0);
+
+                $hasPrtRef = isset($value->prt_reference)
+                    && $value->prt_reference !== null
+                    && trim((string) $value->prt_reference) !== '';
+
+                $isSalesReturn = ($docPrefix2 === 'SR') || str_contains($docFirst, 'SRT');
+                $isPurchaseReturn = ($docPrefix2 === 'PR')
+                    || ($hasPrtRef && $lineQtyOut > 0);
+
+                if ($isSalesReturn) {
+                    $running_stock_value += $lineQtyIn * $previousAvgRateValue;
+                    $running_stock_value -= $lineQtyOut * $previousAvgRateValue;
+                } elseif ($isPurchaseReturn) {
+                    $returnCostOut = $linePriceOut > 0 ? $linePriceOut : $previousAvgRateValue;
+                    $running_stock_value += $lineQtyIn * $linePriceIn;
+                    $running_stock_value -= $lineQtyOut * $returnCostOut;
+                } else {
+                    $running_stock_value += $lineQtyIn * $linePriceIn;
+                    $running_stock_value -= $lineQtyOut * $previousAvgRateValue;
+                }
+
+                $bal_qty += $lineQtyIn;
+                $bal_qty -= $lineQtyOut;
+
+                if ($bal_qty > 0) {
+                    $avg_rate_value = $running_stock_value / $bal_qty;
+                } elseif (abs($bal_qty) < 1e-9) {
+                    $avg_rate_value = 0.0;
+                    $running_stock_value = 0.0;
+                } else {
+                    $avg_rate_value = 0.0;
+                    $running_stock_value = 0.0;
                 }
             }
-            return $avg_rate;
-                                    
+
+            return $bal_qty > 0 ? (float) $avg_rate_value : 0.0;
         } catch (\Throwable $th) {
-            return 0;
+            return 0.0;
         }
     }
 
