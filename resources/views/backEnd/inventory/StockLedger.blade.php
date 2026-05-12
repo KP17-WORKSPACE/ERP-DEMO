@@ -425,9 +425,25 @@
                                         $total_value = 0;
                                         $price_in_qty_in = 0;
                                         $qty_in = 0;
-                                        $bal_qty = $opb[0];
+                                        $bal_qty = 0;
                                         $avg_qty = 0;
-                                        $avg_rate_value = (float) ($opb[1] ?? 0);
+                                        $stockLedgerParseAmount = function ($v) {
+                                            if ($v === null || $v === '') {
+                                                return 0.0;
+                                            }
+                                            if (is_int($v) || is_float($v)) {
+                                                return (float) $v;
+                                            }
+                                            if (is_numeric($v)) {
+                                                return (float) $v;
+                                            }
+                                            $s = trim((string) $v);
+                                            $s = str_replace([',', ' '], '', $s);
+
+                                            return $s === '' ? 0.0 : (float) $s;
+                                        };
+                                        $bal_qty = $stockLedgerParseAmount($opb[0] ?? 0);
+                                        $avg_rate_value = $stockLedgerParseAmount($opb[1] ?? 0);
                                         $running_stock_value = (float) $bal_qty * $avg_rate_value;
                                         $avg_rate = @App\SysHelper::com_curr_format($avg_rate_value, 2, '.', ',');
                                     @endphp
@@ -630,21 +646,26 @@
                                                 {{ @App\SysHelper::com_curr_format($value->price_in, 2, '.', ',') }}</td>
 
                                             @php
-                                                // Moving-average stock value: matches GR/PI in at cost, DN/SI out at avg,
-                                                // PR out at return line rate (recalc avg), SR in at prior avg (avg unchanged).
+                                                // Moving-average stock value: GR/PI in at cost; DN/SI out at avg;
+                                                // PR out at return line rate (parsed numeric); SR in at prior avg (unchanged).
                                                 $previousAvgRateValue = $avg_rate_value;
                                                 $docRaw = strtoupper(trim((string) ($value->doc_number ?? '')));
                                                 $docFirst = trim(explode(',', $docRaw)[0]);
                                                 $docPrefix2 = substr($docFirst, 0, 2);
 
-                                                $lineQtyIn = (float) ($value->qty_in ?? 0);
-                                                $lineQtyOut = (float) ($value->qty_out ?? 0);
-                                                $linePriceIn = (float) ($value->price_in ?? 0);
-                                                $linePriceOut = (float) ($value->price_out ?? 0);
+                                                $lineQtyIn = $stockLedgerParseAmount($value->qty_in ?? 0);
+                                                $lineQtyOut = $stockLedgerParseAmount($value->qty_out ?? 0);
+                                                $linePriceIn = $stockLedgerParseAmount($value->price_in ?? 0);
+                                                $linePriceOut = $stockLedgerParseAmount($value->price_out ?? 0);
 
-                                                // SR*, SRD*, SRT* (legacy); PR*, PRD* for purchase return.
-                                                $isSalesReturn = ($docPrefix2 === 'SR') || str_contains($docRaw, 'SRT');
-                                                $isPurchaseReturn = ($docPrefix2 === 'PR');
+                                                $hasPrtRef = isset($value->prt_reference)
+                                                    && $value->prt_reference !== null
+                                                    && trim((string) $value->prt_reference) !== '';
+
+                                                // Use first doc segment only (comma lists); avoid matching SRT on a later segment.
+                                                $isSalesReturn = ($docPrefix2 === 'SR') || str_contains($docFirst, 'SRT');
+                                                $isPurchaseReturn = ($docPrefix2 === 'PR')
+                                                    || ($hasPrtRef && $lineQtyOut > 0);
 
                                                 if ($isSalesReturn) {
                                                     $running_stock_value += $lineQtyIn * $previousAvgRateValue;
