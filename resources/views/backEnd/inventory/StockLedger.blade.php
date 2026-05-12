@@ -630,29 +630,32 @@
                                                 {{ @App\SysHelper::com_curr_format($value->price_in, 2, '.', ',') }}</td>
 
                                             @php
+                                                // Moving-average stock value: matches GR/PI in at cost, DN/SI out at avg,
+                                                // PR out at return line rate (recalc avg), SR in at prior avg (avg unchanged).
                                                 $previousAvgRateValue = $avg_rate_value;
-                                                $docNumber = strtoupper(trim((string) ($value->doc_number ?? '')));
-                                                $docPrefix = substr($docNumber, 0, 2);
+                                                $docRaw = strtoupper(trim((string) ($value->doc_number ?? '')));
+                                                $docFirst = trim(explode(',', $docRaw)[0]);
+                                                $docPrefix2 = substr($docFirst, 0, 2);
+
                                                 $lineQtyIn = (float) ($value->qty_in ?? 0);
                                                 $lineQtyOut = (float) ($value->qty_out ?? 0);
                                                 $linePriceIn = (float) ($value->price_in ?? 0);
                                                 $linePriceOut = (float) ($value->price_out ?? 0);
 
-                                                $isSalesReturn = ($docPrefix === 'SR') || str_contains($docNumber, 'SRT');
-                                                $isPurchaseReturn = ($docPrefix === 'PR');
+                                                // SR*, SRD*, SRT* (legacy); PR*, PRD* for purchase return.
+                                                $isSalesReturn = ($docPrefix2 === 'SR') || str_contains($docRaw, 'SRT');
+                                                $isPurchaseReturn = ($docPrefix2 === 'PR');
 
                                                 if ($isSalesReturn) {
-                                                    // Sales return comes back at current moving average; avg rate remains unchanged.
-                                                    $running_stock_value += $lineQtyIn * $avg_rate_value;
-                                                    $running_stock_value -= $lineQtyOut * $avg_rate_value;
+                                                    $running_stock_value += $lineQtyIn * $previousAvgRateValue;
+                                                    $running_stock_value -= $lineQtyOut * $previousAvgRateValue;
                                                 } elseif ($isPurchaseReturn) {
-                                                    // Purchase return leaves stock at its return rate; avg rate must be recalculated.
+                                                    $returnCostOut = $linePriceOut > 0 ? $linePriceOut : $previousAvgRateValue;
                                                     $running_stock_value += $lineQtyIn * $linePriceIn;
-                                                    $running_stock_value -= $lineQtyOut * ($linePriceOut > 0 ? $linePriceOut : $avg_rate_value);
+                                                    $running_stock_value -= $lineQtyOut * $returnCostOut;
                                                 } else {
-                                                    // Standard moving-average flow.
                                                     $running_stock_value += $lineQtyIn * $linePriceIn;
-                                                    $running_stock_value -= $lineQtyOut * $avg_rate_value;
+                                                    $running_stock_value -= $lineQtyOut * $previousAvgRateValue;
                                                 }
 
                                                 $qty_in += $lineQtyIn;
@@ -663,7 +666,6 @@
                                                     $avg_rate_value = $running_stock_value / $bal_qty;
                                                     $displayAvgRateValue = $avg_rate_value;
                                                 } elseif ($bal_qty == 0.0) {
-                                                    // Show old avg on zero-balance row, reset avg for next transactions.
                                                     $displayAvgRateValue = $previousAvgRateValue;
                                                     $avg_rate_value = 0;
                                                     $running_stock_value = 0;
