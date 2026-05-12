@@ -29,6 +29,19 @@ class SysStockLedgerController extends Controller
     public function __construct(){
         $this->middleware('PM');
     }
+
+    /**
+     * Apply GR/PI landed cost and SI/DN CFC rate adjustments to one part's rows (same as Stock Ledger).
+     * Used by SysHelper stock register avg so rates match the ledger; must not use Reflection (by-ref array).
+     *
+     * @param  \Illuminate\Support\Collection|array<int, object>  $rows
+     */
+    public function applyLedgerCfcRatesToRows(&$rows, $companyIds, $fromDate, $toDate)
+    {
+        $stocklist = [&$rows];
+        $this->appendCfcToIncomingRate($stocklist, $companyIds, $fromDate, $toDate);
+    }
+
     /**
      * Display a listing of the resource.
      *

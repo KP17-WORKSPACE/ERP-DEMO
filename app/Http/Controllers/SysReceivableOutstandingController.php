@@ -405,7 +405,7 @@ class SysReceivableOutstandingController extends Controller
             $data_return_all = DB::table('sys_sales_return as r')->select('ra.siv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date', 'r.customer', 'ra.srn_no')
                 ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
 
-            $opbinvoice = DB::table('sys_chartofaccounts_transaction_Invoice_detail')->get();
+            $opbinvoice = DB::table('sys_chartofaccounts_transaction_invoice_detail')->get();
             if (count($opbinvoice) == 0) {
                 $opbinvoice = [];
             }
@@ -1324,7 +1324,7 @@ class SysReceivableOutstandingController extends Controller
             $data_return_all = DB::table('sys_sales_return as r')->select('ra.siv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date', 'r.customer', 'ra.srn_no')
                 ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
 
-            $opbinvoice = DB::table('sys_chartofaccounts_transaction_Invoice_detail')->get();
+            $opbinvoice = DB::table('sys_chartofaccounts_transaction_invoice_detail')->get();
             if (count($opbinvoice) == 0) {
                 $opbinvoice = [];
             }

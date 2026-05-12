@@ -335,7 +335,7 @@ class SysPayablesOutstandingController extends Controller
                 }
             }
 
-            $opbinvoice = DB::table('sys_chartofaccounts_transaction_Invoice_detail')->get();
+            $opbinvoice = DB::table('sys_chartofaccounts_transaction_invoice_detail')->get();
 
             if (count($opbinvoice) == 0) {
                 $opbinvoice = [];
