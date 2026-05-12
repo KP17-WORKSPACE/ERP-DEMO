@@ -443,6 +443,7 @@
                         @php
                             $count = 1;
                             $total_qty = 0;
+                            $total_price = 0;
                             $total_value = 0;
                             $total_amount = 0;
                         @endphp
@@ -460,188 +461,6 @@
                             $stocklist2 = $stocklist;
                         }
                         ?>
-
-                        @php
-                            // Same moving-average rules as backEnd.inventory.StockLedger (PR/SR/out-at-avg, parsed amounts).
-                            $stockRegisterLedgerAvgByPart = [];
-                            $stockRegisterFooterQtyForWeightedAvg = 0.0;
-
-                            $stockLedgerParseAmount = function ($v) {
-                                if ($v === null || $v === '') {
-                                    return 0.0;
-                                }
-                                if (is_int($v) || is_float($v)) {
-                                    return (float) $v;
-                                }
-                                if (is_numeric($v)) {
-                                    return (float) $v;
-                                }
-                                $s = trim((string) $v);
-                                $s = str_replace([',', ' '], '', $s);
-
-                                return $s === '' ? 0.0 : (float) $s;
-                            };
-
-                            $roleCompanyIds = @\App\SysHelper::get_data_by_role()[0] ?? [];
-                            if (!is_array($roleCompanyIds)) {
-                                $roleCompanyIds = [$roleCompanyIds];
-                            }
-                            $roleCompanyIds = array_values(
-                                array_filter($roleCompanyIds, function ($x) {
-                                    return $x !== null && $x !== '';
-                                }),
-                            );
-
-                            try {
-                                $toYmd = \Carbon\Carbon::parse($to_date)->format('Y-m-d');
-                            } catch (\Throwable $e) {
-                                $toYmd = \Carbon\Carbon::now()->format('Y-m-d');
-                            }
-
-                            $partKeys = collect($stocklist2 ?? [])
-                                ->map(function ($row) {
-                                    return trim((string) ($row->part_number ?? ''));
-                                })
-                                ->filter()
-                                ->unique()
-                                ->values()
-                                ->all();
-
-                            if (!empty($partKeys) && !empty($roleCompanyIds)) {
-                                $movementsByPart = collect();
-                                foreach (array_chunk($partKeys, 250) as $partChunk) {
-                                    $chunkRows = \App\SysItemStock::query()
-                                        ->select([
-                                            'sys_item_stock.doc_number',
-                                            'sys_item_stock.doc_date',
-                                            'sys_item_stock.qty_in',
-                                            'sys_item_stock.price_in',
-                                            'sys_item_stock.qty_out',
-                                            'sys_item_stock.price_out',
-                                            'sys_item_stock.slno',
-                                            'sys_item_stock.id',
-                                            'sm_items.part_number',
-                                            'prt.ref_company_id as prt_reference',
-                                        ])
-                                        ->join('sm_items', 'sm_items.id', '=', 'sys_item_stock.partno')
-                                        ->leftJoin('sys_purchase_return as prt', function ($join) {
-                                            $join->whereRaw(
-                                                'prt.doc_number COLLATE utf8mb4_unicode_ci = sys_item_stock.doc_number COLLATE utf8mb4_unicode_ci',
-                                            );
-                                        })
-                                        ->whereIn('sm_items.part_number', $partChunk)
-                                        ->whereRaw("DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') <= ?", [$toYmd])
-                                        ->where('sys_item_stock.status', 1)
-                                        ->where('sm_items.status', 1)
-                                        ->whereIn('sys_item_stock.company_id', $roleCompanyIds)
-                                        ->orderBy('sm_items.part_number', 'asc')
-                                        ->orderBy('sys_item_stock.doc_date', 'asc')
-                                        ->orderByRaw('CASE WHEN IFNULL(sys_item_stock.qty_in,0) > 0 THEN 0 ELSE 1 END ASC')
-                                        ->orderBy('sys_item_stock.slno', 'asc')
-                                        ->orderBy('sys_item_stock.id', 'asc')
-                                        ->get();
-                                    $movementsByPart = $movementsByPart->merge($chunkRows);
-                                }
-
-                                $movementsByPart = $movementsByPart->groupBy('part_number');
-
-                                foreach ($partKeys as $pn) {
-                                    $rows = $movementsByPart->get($pn, collect());
-                                    if ($rows->isEmpty()) {
-                                        continue;
-                                    }
-
-                                    $rowsAsc = $rows
-                                        ->sort(function ($a, $b) {
-                                            $da = strtotime((string) ($a->doc_date ?? ''));
-                                            $db = strtotime((string) ($b->doc_date ?? ''));
-                                            if ($da !== $db) {
-                                                return $da <=> $db;
-                                            }
-                                            $pa = ((float) ($a->qty_in ?? 0) > 0) ? 0 : 1;
-                                            $pb = ((float) ($b->qty_in ?? 0) > 0) ? 0 : 1;
-                                            if ($pa !== $pb) {
-                                                return $pa <=> $pb;
-                                            }
-                                            $cmp = strcmp((string) ($a->slno ?? ''), (string) ($b->slno ?? ''));
-                                            if ($cmp !== 0) {
-                                                return $cmp;
-                                            }
-
-                                            return ((int) ($a->id ?? 0)) <=> ((int) ($b->id ?? 0));
-                                        })
-                                        ->values();
-
-                                    $minDate = $rowsAsc->first()->doc_date ?? null;
-                                    if ($minDate === null) {
-                                        continue;
-                                    }
-                                    $opbDate = \Carbon\Carbon::parse($minDate)->subDay()->format('Y-m-d');
-                                    $opb = @\App\SysHelper::get_stock_ledger_opening_stock($pn, $opbDate, $roleCompanyIds);
-                                    if (!is_array($opb)) {
-                                        $opb = [0, 0];
-                                    }
-
-                                    $bal_qty = $stockLedgerParseAmount($opb[0] ?? 0);
-                                    $avg_rate_value = $stockLedgerParseAmount($opb[1] ?? 0);
-                                    $running_stock_value = (float) $bal_qty * $avg_rate_value;
-                                    $lastDisplayAvg = 0.0;
-
-                                    foreach ($rowsAsc as $value) {
-                                        $previousAvgRateValue = $avg_rate_value;
-                                        $docRaw = strtoupper(trim((string) ($value->doc_number ?? '')));
-                                        $docFirst = trim(explode(',', $docRaw)[0]);
-                                        $docPrefix2 = substr($docFirst, 0, 2);
-
-                                        $lineQtyIn = $stockLedgerParseAmount($value->qty_in ?? 0);
-                                        $lineQtyOut = $stockLedgerParseAmount($value->qty_out ?? 0);
-                                        $linePriceIn = $stockLedgerParseAmount($value->price_in ?? 0);
-                                        $linePriceOut = $stockLedgerParseAmount($value->price_out ?? 0);
-
-                                        $hasPrtRef =
-                                            isset($value->prt_reference) &&
-                                            $value->prt_reference !== null &&
-                                            trim((string) $value->prt_reference) !== '';
-
-                                        $isSalesReturn = $docPrefix2 === 'SR' || str_contains($docFirst, 'SRT');
-                                        $isPurchaseReturn =
-                                            $docPrefix2 === 'PR' || ($hasPrtRef && $lineQtyOut > 0);
-
-                                        if ($isSalesReturn) {
-                                            $running_stock_value += $lineQtyIn * $previousAvgRateValue;
-                                            $running_stock_value -= $lineQtyOut * $previousAvgRateValue;
-                                        } elseif ($isPurchaseReturn) {
-                                            $returnCostOut = $linePriceOut > 0 ? $linePriceOut : $previousAvgRateValue;
-                                            $running_stock_value += $lineQtyIn * $linePriceIn;
-                                            $running_stock_value -= $lineQtyOut * $returnCostOut;
-                                        } else {
-                                            $running_stock_value += $lineQtyIn * $linePriceIn;
-                                            $running_stock_value -= $lineQtyOut * $previousAvgRateValue;
-                                        }
-
-                                        $bal_qty += $lineQtyIn;
-                                        $bal_qty -= $lineQtyOut;
-
-                                        if ($bal_qty > 0) {
-                                            $avg_rate_value = $running_stock_value / $bal_qty;
-                                            $displayAvgRateValue = $avg_rate_value;
-                                        } elseif ($bal_qty == 0.0) {
-                                            $displayAvgRateValue = $previousAvgRateValue;
-                                            $avg_rate_value = 0.0;
-                                            $running_stock_value = 0.0;
-                                        } else {
-                                            $displayAvgRateValue = $previousAvgRateValue;
-                                            $avg_rate_value = 0.0;
-                                            $running_stock_value = 0.0;
-                                        }
-
-                                        $lastDisplayAvg = $displayAvgRateValue;
-                                    }
-
-                                    $stockRegisterLedgerAvgByPart[$pn] = $lastDisplayAvg;
-                                }
-                            }
-                        @endphp
 
 
                         @foreach ($stocklist2 as $value)
@@ -681,12 +500,7 @@
 
 
                                     @if ($show_all == 1)
-                                        @php
-                                            $pnKey = trim((string) ($value->part_number ?? ''));
-                                            $avg = isset($stockRegisterLedgerAvgByPart[$pnKey])
-                                                ? (float) $stockRegisterLedgerAvgByPart[$pnKey]
-                                                : (float) \App\SysHelper::get_avg_price($value->partno, $to_date);
-                                        @endphp
+                                        <?php $avg = App\SysHelper::get_stock_ledger_footer_avg_for_register($value->part_number, $to_date); ?>
                                         <td class="text-end no-toggle">
                                             {{ @App\SysHelper::com_curr_format($avg, 2, '.', ',') }}
                                         </td>
@@ -702,20 +516,15 @@
 
 
                                         @php
+                                            $total_price += $avg;
                                             if ($balance_qty > 0) {
                                                 $total_amount += $avg * $balance_qty;
-                                                $stockRegisterFooterQtyForWeightedAvg += (float) $balance_qty;
                                             }
                                         @endphp
                                     @else
                                         @if (count($show_brand) > 0)
                                             @if (in_array($value->brandid, $show_brand))
-                                                @php
-                                                    $pnKey = trim((string) ($value->part_number ?? ''));
-                                                    $avg = isset($stockRegisterLedgerAvgByPart[$pnKey])
-                                                        ? (float) $stockRegisterLedgerAvgByPart[$pnKey]
-                                                        : (float) \App\SysHelper::get_avg_price($value->partno, $to_date);
-                                                @endphp
+                                                <?php $avg = App\SysHelper::get_stock_ledger_footer_avg_for_register($value->part_number, $to_date); ?>
                                                 <td class="text-end no-toggle">
                                                     {{ @App\SysHelper::com_curr_format($avg, 2, '.', ',') }}</td>
                                                 <td class="text-end no-toggle">
@@ -728,9 +537,9 @@
                                                     @endif
 
                                                     @php
+                                                        $total_price += $avg;
                                                         if ($balance_qty > 0) {
                                                             $total_amount += $avg * $balance_qty;
-                                                            $stockRegisterFooterQtyForWeightedAvg += (float) $balance_qty;
                                                         }
                                                     @endphp
 
@@ -802,24 +611,12 @@
                             <th></th>
                             <th class="text-end">{{ @App\SysHelper::com_curr_format($total_qty, 2, '.', ',') }}</th>
                             @if ($show_all == 1)
-                                <th class="text-end">
-                                    @if ($stockRegisterFooterQtyForWeightedAvg > 0)
-                                        {{ @App\SysHelper::com_curr_format($total_amount / $stockRegisterFooterQtyForWeightedAvg, 2, '.', ',') }}
-                                    @else
-                                        {{ @App\SysHelper::com_curr_format(0, 2, '.', ',') }}
-                                    @endif
-                                </th>
+                                <th class="text-end"></th>
                                 <th class="text-end">{{ @App\SysHelper::com_curr_format($total_amount, 2, '.', ',') }}
                                 </th>
                             @else
                                 @if (count($show_brand) > 0)
-                                    <th class="text-end">
-                                        @if ($stockRegisterFooterQtyForWeightedAvg > 0)
-                                            {{ @App\SysHelper::com_curr_format($total_amount / $stockRegisterFooterQtyForWeightedAvg, 2, '.', ',') }}
-                                        @else
-                                            {{ @App\SysHelper::com_curr_format(0, 2, '.', ',') }}
-                                        @endif
-                                    </th>
+                                    <th class="text-end"></th>
                                     <th class="text-end">
                                         {{ @App\SysHelper::com_curr_format($total_amount, 2, '.', ',') }}</th>
                                 @endif
