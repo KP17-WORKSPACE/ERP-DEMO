@@ -427,7 +427,9 @@
                                         $qty_in = 0;
                                         $bal_qty = $opb[0];
                                         $avg_qty = 0;
-                                        $avg_rate = 0;
+                                        $avg_rate_value = (float) ($opb[1] ?? 0);
+                                        $running_stock_value = (float) $bal_qty * $avg_rate_value;
+                                        $avg_rate = @App\SysHelper::com_curr_format($avg_rate_value, 2, '.', ',');
                                     @endphp
 
 
@@ -628,33 +630,51 @@
                                                 {{ @App\SysHelper::com_curr_format($value->price_in, 2, '.', ',') }}</td>
 
                                             @php
-                                                if ($bal_qty <= 0) {
-                                                    $qty_in = 0;
-                                                    $price_in_qty_in = 0;
+                                                $previousAvgRateValue = $avg_rate_value;
+                                                $docNumber = strtoupper(trim((string) ($value->doc_number ?? '')));
+                                                $docPrefix = substr($docNumber, 0, 2);
+                                                $lineQtyIn = (float) ($value->qty_in ?? 0);
+                                                $lineQtyOut = (float) ($value->qty_out ?? 0);
+                                                $linePriceIn = (float) ($value->price_in ?? 0);
+                                                $linePriceOut = (float) ($value->price_out ?? 0);
+
+                                                $isSalesReturn = ($docPrefix === 'SR') || str_contains($docNumber, 'SRT');
+                                                $isPurchaseReturn = ($docPrefix === 'PR');
+
+                                                if ($isSalesReturn) {
+                                                    // Sales return comes back at current moving average; avg rate remains unchanged.
+                                                    $running_stock_value += $lineQtyIn * $avg_rate_value;
+                                                    $running_stock_value -= $lineQtyOut * $avg_rate_value;
+                                                } elseif ($isPurchaseReturn) {
+                                                    // Purchase return leaves stock at its return rate; avg rate must be recalculated.
+                                                    $running_stock_value += $lineQtyIn * $linePriceIn;
+                                                    $running_stock_value -= $lineQtyOut * ($linePriceOut > 0 ? $linePriceOut : $avg_rate_value);
+                                                } else {
+                                                    // Standard moving-average flow.
+                                                    $running_stock_value += $lineQtyIn * $linePriceIn;
+                                                    $running_stock_value -= $lineQtyOut * $avg_rate_value;
                                                 }
+
+                                                $qty_in += $lineQtyIn;
+                                                $bal_qty += $lineQtyIn;
+                                                $bal_qty -= $lineQtyOut;
+
+                                                if ($bal_qty > 0) {
+                                                    $avg_rate_value = $running_stock_value / $bal_qty;
+                                                    $displayAvgRateValue = $avg_rate_value;
+                                                } elseif ($bal_qty == 0.0) {
+                                                    // Show old avg on zero-balance row, reset avg for next transactions.
+                                                    $displayAvgRateValue = $previousAvgRateValue;
+                                                    $avg_rate_value = 0;
+                                                    $running_stock_value = 0;
+                                                } else {
+                                                    $displayAvgRateValue = $previousAvgRateValue;
+                                                    $avg_rate_value = 0;
+                                                    $running_stock_value = 0;
+                                                }
+
+                                                $avg_rate = @App\SysHelper::com_curr_format($displayAvgRateValue, 2, '.', ',');
                                             @endphp
-                                            @if (str_contains($value->doc_number, 'SRT'))
-                                                @php
-                                                    $qty_in += $value->qty_in;
-                                                    $bal_qty += $value->qty_in;
-                                                    $bal_qty -= $value->qty_out;
-                                                @endphp
-                                            @else
-                                                @php
-                                                    $price_in_qty_in += $value->price_in * $value->qty_in;
-                                                    $qty_in += $value->qty_in;
-                                                    $bal_qty += $value->qty_in;
-                                                    $bal_qty -= $value->qty_out;
-                                                    if ($qty_in != 0) {
-                                                        $avg_rate = @App\SysHelper::com_curr_format(
-                                                            $price_in_qty_in / $qty_in,
-                                                            2,
-                                                            '.',
-                                                            ','
-                                                        );
-                                                    }
-                                                @endphp
-                                            @endif
                                             <td class="text-center">{{ $value->qty_out }}</td>
                                             <td class="text-end">
                                                 {{ @App\SysHelper::com_curr_format($value->price_out, 2, '.', ',') }}</td>
