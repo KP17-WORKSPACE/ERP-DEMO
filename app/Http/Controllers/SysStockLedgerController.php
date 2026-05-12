@@ -73,6 +73,7 @@ class SysStockLedgerController extends Controller
                         ->where('sm_items.part_number',$part_no)->where('sys_item_stock.status',1)->where('sm_items.status',1)
                         ->wherein('sys_item_stock.company_id',$company_id)
                         ->orderby('sys_item_stock.doc_date','asc')
+                        ->orderByRaw('CASE WHEN IFNULL(sys_item_stock.qty_in,0) > 0 THEN 0 ELSE 1 END ASC')
                         ->orderby('sys_item_stock.slno','asc')
                         ->orderby('sys_item_stock.id','asc')
                         ->get();
@@ -94,6 +95,7 @@ class SysStockLedgerController extends Controller
                         ->where('sm_items.part_number',$id)->where('sys_item_stock.status',1)->where('sm_items.status',1)
                         ->wherein('sys_item_stock.company_id',$company_id)
                         ->orderby('sys_item_stock.doc_date','asc')
+                        ->orderByRaw('CASE WHEN IFNULL(sys_item_stock.qty_in,0) > 0 THEN 0 ELSE 1 END ASC')
                         ->orderby('sys_item_stock.slno','asc')
                         ->orderby('sys_item_stock.id','asc')
                         ->get();
@@ -168,6 +170,7 @@ class SysStockLedgerController extends Controller
                         ->where('sm_items.part_number',$part_no)->where('sys_item_stock.status',1)->where('sm_items.status',1)
                         ->wherein('sys_item_stock.company_id',$company_id)
                         ->orderby('sys_item_stock.doc_date','asc')
+                        ->orderByRaw('CASE WHEN IFNULL(sys_item_stock.qty_in,0) > 0 THEN 0 ELSE 1 END ASC')
                         ->orderby('sys_item_stock.slno','asc')
                         ->orderby('sys_item_stock.id','asc')
                         ->get();
@@ -197,6 +200,7 @@ class SysStockLedgerController extends Controller
                         ->where('sm_items.part_number',$id)->where('sys_item_stock.status',1)->where('sm_items.status',1)
                         ->wherein('sys_item_stock.company_id',$company_id)
                         ->orderby('sys_item_stock.doc_date','asc')
+                        ->orderByRaw('CASE WHEN IFNULL(sys_item_stock.qty_in,0) > 0 THEN 0 ELSE 1 END ASC')
                         ->orderby('sys_item_stock.slno','asc')
                         ->orderby('sys_item_stock.id','asc')
                         ->get();
