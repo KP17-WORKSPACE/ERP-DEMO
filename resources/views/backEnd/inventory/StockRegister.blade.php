@@ -460,6 +460,15 @@
                         } else {
                             $stocklist2 = $stocklist;
                         }
+
+                        // Y-m-d for SysHelper::get_avg_price (same moving-avg rules as Stock Ledger); $to_date from controller is Y-m-d.
+                        try {
+                            $stockRegisterAvgAsOfYmd = !empty($to_date)
+                                ? \Carbon\Carbon::parse($to_date)->format('Y-m-d')
+                                : \Carbon\Carbon::now()->format('Y-m-d');
+                        } catch (\Exception $e) {
+                            $stockRegisterAvgAsOfYmd = \Carbon\Carbon::now()->format('Y-m-d');
+                        }
                         ?>
 
 
@@ -500,7 +509,7 @@
 
 
                                     @if ($show_all == 1)
-                                        <?php $avg = App\SysHelper::get_avg_price($value->partno, $to_date); ?>
+                                        <?php $avg = App\SysHelper::get_avg_price($value->partno, $stockRegisterAvgAsOfYmd); ?>
                                         <td class="text-end no-toggle">
                                             {{ @App\SysHelper::com_curr_format($avg, 2, '.', ',') }}
                                         </td>
@@ -524,7 +533,7 @@
                                     @else
                                         @if (count($show_brand) > 0)
                                             @if (in_array($value->brandid, $show_brand))
-                                                <?php $avg = App\SysHelper::get_avg_price($value->partno, $to_date); ?>
+                                                <?php $avg = App\SysHelper::get_avg_price($value->partno, $stockRegisterAvgAsOfYmd); ?>
                                                 <td class="text-end no-toggle">
                                                     {{ @App\SysHelper::com_curr_format($avg, 2, '.', ',') }}</td>
                                                 <td class="text-end no-toggle">
