@@ -1180,46 +1180,30 @@ $ret_val = '
     }
 
     /**
-     * Same moving-average as Stock Ledger footer for a part: opening at (from_date - 1 day),
-     * then lines with doc_date between 1 Jan of the as-of year and to_date (same window as default ledger for that year).
-     * Uses sm_items.id (stock.partno). CFC/serial steps match SysStockLedgerController.
+     * Same moving-average and period logic as the Stock Ledger screen (index): calendar year of $toDateYmd,
+     * opening balance at year start minus one day, period lines with landed/CFC rates, footer avg rate.
+     * Filters by sm_items.part_number like the ledger URL so the rate matches that screen (not per partno id).
      */
-    public static function get_stock_ledger_footer_avg_for_register($partnoId, $toDateRaw, $companyIds = null)
+    public static function get_stock_register_avg_rate_matching_stock_ledger($partNumber, $toDateYmd)
     {
         try {
-            if ($companyIds === null) {
-                $r = self::get_data_by_role();
-                $companyIds = $r[0];
-            }
-            $partnoId = (int) $partnoId;
-            if ($partnoId <= 0) {
-                return 0.0;
-            }
-
-            $toDateYmd = trim((string) $toDateRaw);
-            if ($toDateYmd === '') {
-                return 0.0;
-            }
-            try {
-                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $toDateYmd)) {
-                    $toDateYmd = Carbon::parse($toDateYmd)->format('Y-m-d');
-                } else {
-                    $toDateYmd = Carbon::createFromFormat('d/m/Y', $toDateYmd)->format('Y-m-d');
-                }
-            } catch (\Throwable $e) {
-                $toDateYmd = Carbon::parse($toDateRaw)->format('Y-m-d');
-            }
-
-            $partNumber = DB::table('sm_items')->where('id', $partnoId)->value('part_number');
-            if ($partNumber === null || trim((string) $partNumber) === '') {
-                return 0.0;
-            }
             $partNumber = trim((string) $partNumber);
+            if ($partNumber === '') {
+                return 0.0;
+            }
+
+            $r = self::get_data_by_role();
+            $company_id = $r[0] ?? [session('logged_session_data.company_id')];
 
             $fromDate = Carbon::parse($toDateYmd)->copy()->startOfYear()->format('Y-m-d');
-            $opbDate = Carbon::parse($fromDate)->copy()->subDay()->format('Y-m-d');
+            $opbDate = Carbon::parse($fromDate)->subDay()->format('Y-m-d');
 
-            $parse = function ($v) {
+            $opbRaw = self::get_stock_ledger_opening_stock($partNumber, $opbDate, $company_id);
+            $opb = is_array($opbRaw) ? $opbRaw : [0, 0];
+            $opbQty = isset($opb[0]) ? $opb[0] : 0;
+            $opbRate = isset($opb[1]) ? $opb[1] : 0;
+
+            $parseAmount = function ($v) {
                 if ($v === null || $v === '') {
                     return 0.0;
                 }
@@ -1235,54 +1219,59 @@ $ret_val = '
                 return $s === '' ? 0.0 : (float) $s;
             };
 
-            $opb = self::get_stock_ledger_opening_stock($partNumber, $opbDate, $companyIds);
-            if (! is_array($opb) || count($opb) < 2) {
-                return 0.0;
-            }
+            $bal_qty = $parseAmount($opbQty);
+            $avg_rate_value = $parseAmount($opbRate);
+            $running_stock_value = (float) $bal_qty * $avg_rate_value;
+            $displayAvgRateValue = $avg_rate_value;
 
-            $bal_qty = $parse($opb[0]);
-            $avg_rate_value = $parse($opb[1]);
-            $running_stock_value = $bal_qty * $avg_rate_value;
-            $lastDisplayAvg = $avg_rate_value;
-
-            $rows = SysItemStock::select('sys_item_stock.doc_number', 'sys_item_stock.doc_date', 'sys_item_stock.refno', 'sys_item_stock.account_id', 'sys_item_stock.partno', 'sys_item_stock.description', 'sys_item_stock.qty_in', 'sys_item_stock.price_in', 'sys_item_stock.qty_out', 'sys_item_stock.price_out', 'sys_item_stock.deal_id', 'sys_item_stock.slno', 'sys_item_stock.item_id', 'sm_items.part_number', 'grn.ref_company_id as grn_reference', 'dln.supplier_name as dln_reference', 'srt.supplier_name as srt_reference', 'prt.ref_company_id as prt_reference')
+            $list = SysItemStock::select(
+                'sys_item_stock.doc_number',
+                'sys_item_stock.doc_date',
+                'sys_item_stock.refno',
+                'sys_item_stock.account_id',
+                'sys_item_stock.partno',
+                'sys_item_stock.description',
+                'sys_item_stock.qty_in',
+                'sys_item_stock.price_in',
+                'sys_item_stock.qty_out',
+                'sys_item_stock.price_out',
+                'sys_item_stock.deal_id',
+                'sys_item_stock.slno',
+                'sys_item_stock.item_id',
+                'sm_items.part_number',
+                'grn.ref_company_id as grn_reference',
+                'dln.supplier_name as dln_reference',
+                'srt.supplier_name as srt_reference',
+                'prt.ref_company_id as prt_reference'
+            )
                 ->join('sm_items', 'sm_items.id', 'sys_item_stock.partno')
                 ->leftjoin('sys_purchase_grn as grn', DB::raw('grn.doc_number COLLATE utf8mb4_unicode_ci'), DB::raw('sys_item_stock.doc_number COLLATE utf8mb4_unicode_ci'))
                 ->leftjoin('sys_delivery_note as dln', DB::raw('dln.doc_number COLLATE utf8mb4_unicode_ci'), DB::raw('sys_item_stock.doc_number COLLATE utf8mb4_unicode_ci'))
                 ->leftjoin('sys_sales_return as srt', DB::raw('srt.doc_number'), DB::raw('sys_item_stock.doc_number'))
                 ->leftjoin('sys_purchase_return as prt', DB::raw('prt.doc_number COLLATE utf8mb4_unicode_ci'), DB::raw('sys_item_stock.doc_number COLLATE utf8mb4_unicode_ci'))
-                ->whereBetween(DB::raw('DATE(sys_item_stock.doc_date)'), [$fromDate, $toDateYmd])
-                ->where('sm_items.id', $partnoId)
+                ->whereRaw("DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') >= '" . $fromDate . "' and DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') <= '" . $toDateYmd . "'")
+                ->where('sm_items.part_number', $partNumber)
                 ->where('sys_item_stock.status', 1)
                 ->where('sm_items.status', 1)
-                ->wherein('sys_item_stock.company_id', $companyIds)
+                ->whereIn('sys_item_stock.company_id', $company_id)
                 ->orderby('sys_item_stock.doc_date', 'asc')
                 ->orderByRaw('CASE WHEN IFNULL(sys_item_stock.qty_in,0) > 0 THEN 0 ELSE 1 END ASC')
                 ->orderby('sys_item_stock.slno', 'asc')
                 ->orderby('sys_item_stock.id', 'asc')
                 ->get();
 
-            $stocklist = [$rows];
-            $ledgerController = app()->make(SysStockLedgerController::class);
-            $mAppend = new \ReflectionMethod($ledgerController, 'appendCfcToIncomingRate');
-            $mAppend->setAccessible(true);
-            $mAppend->invokeArgs($ledgerController, [&$stocklist, $companyIds, $fromDate, $toDateYmd]);
-            $mNorm = new \ReflectionMethod($ledgerController, 'normalizeStockLedgerSerialNumbers');
-            $mNorm->setAccessible(true);
-            $mNorm->invokeArgs($ledgerController, [&$stocklist]);
+            app(SysStockLedgerController::class)->applyLedgerCfcRatesToRows($list, $company_id, $fromDate, $toDateYmd);
 
-            $rows = $stocklist[0];
-
-            foreach ($rows as $value) {
+            foreach ($list as $value) {
                 $previousAvgRateValue = $avg_rate_value;
                 $docRaw = strtoupper(trim((string) ($value->doc_number ?? '')));
                 $docFirst = trim(explode(',', $docRaw)[0]);
                 $docPrefix2 = substr($docFirst, 0, 2);
 
-                $lineQtyIn = $parse($value->qty_in ?? 0);
-                $lineQtyOut = $parse($value->qty_out ?? 0);
-                $linePriceIn = $parse($value->price_in ?? 0);
-                $linePriceOut = $parse($value->price_out ?? 0);
+                $lineQtyIn = $parseAmount($value->qty_in ?? 0);
+                $lineQtyOut = $parseAmount($value->qty_out ?? 0);
+                $linePriceIn = $parseAmount($value->price_in ?? 0);
+                $linePriceOut = $parseAmount($value->price_out ?? 0);
 
                 $hasPrtRef = isset($value->prt_reference)
                     && $value->prt_reference !== null
@@ -1312,19 +1301,17 @@ $ret_val = '
                     $displayAvgRateValue = $avg_rate_value;
                 } elseif ($bal_qty == 0.0) {
                     $displayAvgRateValue = $previousAvgRateValue;
-                    $avg_rate_value = 0.0;
-                    $running_stock_value = 0.0;
+                    $avg_rate_value = 0;
+                    $running_stock_value = 0;
                 } else {
                     $displayAvgRateValue = $previousAvgRateValue;
-                    $avg_rate_value = 0.0;
-                    $running_stock_value = 0.0;
+                    $avg_rate_value = 0;
+                    $running_stock_value = 0;
                 }
-
-                $lastDisplayAvg = $displayAvgRateValue;
             }
 
-            return (float) $lastDisplayAvg;
-        } catch (\Throwable $e) {
+            return (float) $displayAvgRateValue;
+        } catch (\Throwable $th) {
             return 0.0;
         }
     }
