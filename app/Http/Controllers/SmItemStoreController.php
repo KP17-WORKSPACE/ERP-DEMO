@@ -510,7 +510,7 @@ class SmItemStoreController extends Controller
                 ->select(DB::raw('max(item.part_number) as part_number'),DB::raw('max(stock.partno) as partno'),DB::raw('max(item.description) as description')
                 ,DB::raw('max(brand.title) as brand'),DB::raw('max(brand.id) as brandid'),DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as balance_qty')
                 
-                ,DB::raw('(SUM(stock.qty_in) * sum(stock.price_in)) / SUM(stock.qty_in) as avg_price')
+                ,DB::raw('IFNULL(SUM(stock.qty_in * stock.price_in) / NULLIF(SUM(stock.qty_in), 0), 0) as avg_price')
 
                 ,DB::raw('max(cat.category_name) as categoryname'),DB::raw('max(subcat.sub_category_name) as subcategoryname'))
                 ->selectRaw('2 as type')
@@ -700,7 +700,7 @@ class SmItemStoreController extends Controller
                 ->select(DB::raw('max(item.part_number) as part_number'),DB::raw('max(stock.partno) as partno'),DB::raw('max(item.description) as description')
                 ,DB::raw('max(brand.title) as brand'),DB::raw('max(brand.id) as brandid'),DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as balance_qty')
                 
-                ,DB::raw('(SUM(stock.qty_in) * sum(stock.price_in)) / SUM(stock.qty_in) as avg_price')
+                ,DB::raw('IFNULL(SUM(stock.qty_in * stock.price_in) / NULLIF(SUM(stock.qty_in), 0), 0) as avg_price')
 
                 ,DB::raw('max(cat.category_name) as categoryname'),DB::raw('max(subcat.sub_category_name) as subcategoryname'))
                 ->selectRaw('2 as type')
