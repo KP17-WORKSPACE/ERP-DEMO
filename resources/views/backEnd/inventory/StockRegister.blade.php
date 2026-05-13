@@ -641,53 +641,51 @@
 
 
     <script>
-        function group_qty(pid, pname) {
-            $('#lbl_group_qty').text(pname);
+      function group_qty(pid, pname) {
 
+$('#lbl_group_qty').text(pname);
 
+$("#loading_bg").show();
 
-            $("#loading_bg").css("display", "block");
-            var partno = pid;
-            var action = "{{ URL::to('get-stock-register-group-qty') }}";
-            $.ajax({
-                url: action,
-                type: "GET",
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    partno: partno,
-                },
-                cache: false,
-                success: function(dataResult) {
-                    var dataResult = JSON.parse(dataResult);
-                    var len = 0;
-                    var len = 0;
-                    if (dataResult['data'] != null) {
-                        len = dataResult['data'].length;
-                    }
-                    if (len > 0) {
-                        for (var i = 0; i < len; i++) {
-                            var com = dataResult['data'][i].company_id;
-                            var qty = dataResult['data'][i].balance_qty;
-                            var value = formatAmount(dataResult['data'][i].avg_price);
-                            if (dataResult['data'][i].avg_price == 0 || qty == 0) {
-                                var rate = '0.00';
-                            } else {
-                                var rate = Math.abs(formatAmount(dataResult['data'][i].avg_price / qty));
-                            }
-                            $("#qty_" + com).text(qty);
-                            $("#rate_" + com).text(rate);
-                            $("#value_" + com).text(value);
-                        }
-                    } else {
+$.ajax({
+    url: "{{ URL::to('get-stock-register-group-qty') }}",
+    type: "GET",
+    dataType: "json",
 
-                    }
-                    $("#loading_bg").css("display", "none");
-                }
-            });
+    data: {
+        partno: pid
+    },
 
+    success: function(dataResult) {
 
-            $('#ModalGroupQty').modal('show');
+        console.log(dataResult);
+
+        if (dataResult.data.length > 0) {
+
+            for (var i = 0; i < dataResult.data.length; i++) {
+
+                var com = dataResult.data[i].company_id;
+                var qty = dataResult.data[i].balance_qty;
+                var avg_price = dataResult.data[i].avg_price;
+                var total = parseFloat(avg_price) * parseFloat(qty);
+                $("#qty_" + com).html(qty);
+
+                $("#rate_" + com).html(parseFloat(avg_price).toFixed(2));
+
+$("#value_" + com).html(total.toFixed(2));
+            }
         }
+
+        $("#loading_bg").hide();
+
+        var myModal = new bootstrap.Modal(
+            document.getElementById('ModalGroupQty')
+        );
+
+        myModal.show();
+    }
+});
+}
     </script>
 
 
