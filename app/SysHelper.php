@@ -1190,7 +1190,7 @@ $ret_val = '
      *     running WACC, with freight + custom charges added to GR/PI incoming rates,
      *     matching appendCfcToIncomingRate() in the StockLedger controller.
      */
-    public static function get_stock_register_ledger_avg_rate($partNoId, $to_date)
+    public static function get_stock_register_ledger_avg_rate($partNoId, $to_date, $companyId = null)
     {
         try {
             $partNoId = (int) $partNoId;
@@ -1199,11 +1199,22 @@ $ret_val = '
             $fromYmd  = $toCarbon->copy()->startOfYear()->format('Y-m-d');          // Jan 1 of $to_date's year
             $opbDate  = $toCarbon->copy()->startOfYear()->subDay()->format('Y-m-d'); // Dec 31 of prior year
 
-            $r          = self::get_data_by_role();
-            $companyIds = $r[0] ?? [];
-            if (!is_array($companyIds)) {
-                $companyIds = [$companyIds];
+      
+            if ($companyId) {
+                $companyIds = [$companyId];
+            } else {
+            
+                $r = self::get_data_by_role();
+            
+                $companyIds = $r[0] ?? [];
+            
+                if (!is_array($companyIds)) {
+                    $companyIds = [$companyIds];
+                }
             }
+                if (!is_array($companyIds)) {
+                    $companyIds = [$companyIds];
+                }
             $companyIds = array_values(array_filter($companyIds, function ($x) {
                 return $x !== null && $x !== '' && $x !== 0;
             }));
