@@ -655,7 +655,7 @@ class SmItemStoreController extends Controller
             } else {
                 $show_brand = explode(',', $user->brands);
             }
-            $company_list = DB::table('sys_company')->select('id','company_name')->wherenotin('id',[1])->orderby('sort_id','asc')->get();
+            $company_list = DB::table('sys_company')->select('id','company_name')->orderby('sort_id','asc')->get();
             $stockledgerBalances = collect([]);
             return view('backEnd.inventory.StockRegister', compact('stocklist','to_date','stocklist_return','stockledgerBalances','brand','category','sub_category','r_part_number','r_brand','r_category','r_sub_category','r_qty','company_list','show_all','show_brand'));
         }catch (\Exception $e) {
@@ -868,7 +868,7 @@ class SmItemStoreController extends Controller
                 $show_brand = explode(',', $user->brands);
             }
 
-            $company_list = DB::table('sys_company')->select('id', 'company_name')->wherenotin('id', [1])->orderby('sort_id', 'asc')->get();
+            $company_list = DB::table('sys_company')->select('id', 'company_name')->orderby('sort_id', 'asc')->get();
 
             $this->cleanupExpiredReserveStock();
 
@@ -951,7 +951,7 @@ class SmItemStoreController extends Controller
                 ->get()
                 ->keyBy('partno');
 
-            $company_list = DB::table('sys_company')->select('id', 'company_name')->wherenotin('id', [1])->orderby('sort_id', 'asc')->get();
+            $company_list = DB::table('sys_company')->select('id', 'company_name')->orderby('sort_id', 'asc')->get();
 
             if (Auth::user()->role_id == 1 || Auth::user()->role_id == 28 || Auth::user()->role_id == 27) {
                 $show_all = 1;
@@ -981,29 +981,44 @@ class SmItemStoreController extends Controller
     public function get_stock_register_group_qty(Request $request)
     {
         try {
+    
+            $to_date = date('Y-m-d');
+    
             $data = DB::table('sys_item_stock as stock')
                 ->select(
                     DB::raw('max(stock.partno) as partno'),
-                    DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as balance_qty')
-                    ,
-                    DB::raw('IFNULL(SUM(stock.qty_in * stock.price_in) / NULLIF(SUM(stock.qty_in), 0), 0) as avg_price'),
+                    DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as balance_qty'),
                     'stock.company_id'
                 )
-                //->whereRaw("DATE_FORMAT(stock.doc_date, '%Y-%m-%d') <= '" . $to_date . "'")
                 ->where('stock.status', 1)
                 ->where('stock.doc_number', 'not like', 'SRN%')
                 ->where('stock.partno', $request->partno)
-                ->groupby('stock.company_id')
+                ->groupBy('stock.company_id')
                 ->get();
-            if (count($data) > 0) {
-                return json_encode(array('data' => $data));
-            } else {
-                $data = 'ERROR';
-                return json_encode(array('data' => $data));
+    
+            foreach ($data as $row) {
+    
+                $avgRate =
+                    SysHelper::get_stock_register_ledger_avg_rate(
+                        $request->partno,
+                        $to_date,
+                        $row->company_id
+                    );
+    
+                $row->avg_price = $avgRate;
+                $row->value =
+                    (float)$row->balance_qty * (float)$avgRate;
             }
+    
+            return response()->json([
+                'data' => $data
+            ]);
+    
         } catch (\Exception $e) {
-            $data = 'ERROR';
-            return json_encode(array('data' => $data));
+    
+            return response()->json([
+                'data' => []
+            ]);
         }
     }
 
