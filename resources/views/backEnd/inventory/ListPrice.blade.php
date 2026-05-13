@@ -230,7 +230,7 @@
                             <th class="text-end" style="width: 50px;">@lang('Bal Qty')</th>
 
                             @if (Auth::user()->role_id != 5)
-                                <th style="width: 100px;" class="text-end">@lang('Avg Price')</th>
+                                <th style="width: 100px;" class="text-end">@lang('Avg Rate')</th>
                                 <th style="width: 100px;" class="text-end">@lang('Last Purchase Price')</th>
                                 <th style="width: 100px;" class="text-end">@lang('List Price')</th>
                             @endif
@@ -276,21 +276,25 @@
                                 @php
                                     $balance_qty = $value->balance_qty;
                                     $balance_qty += $stocklist_return->where('partno', $value->partno)->sum('qty');
+                                    $ledger_avg_rate = App\SysHelper::get_stock_register_ledger_avg_rate(
+                                        $value->partno,
+                                        $to_date
+                                    );
                                 @endphp
 
                                 <td class="text-end">{{ $balance_qty }}</td>
 
                                 @if (Auth::user()->role_id != 5)
-                                    <td class="text-end">
-                                        {{ @App\SysHelper::com_curr_format($value->avg_price, 2, '.', ',') }}</td>
+                                    <td class="text-end no-toggle">
+                                        {{ @App\SysHelper::com_curr_format($ledger_avg_rate, 2, '.', ',') }}</td>
 
                                     <td class="text-end">
                                         {{ @App\SysHelper::com_curr_format($value->lp_price, 2, '.', ',') }}</td>
                                     <td class="text-end">
 
-                                        @if ($value->avg_price > $value->lp_price)
-                                            {{ @App\SysHelper::com_curr_format(($value->avg_price * 103) / 100, 2, '.', ',') }}
-                                            @php $total_lp += $value->avg_price*103/100; @endphp
+                                        @if ($ledger_avg_rate > $value->lp_price)
+                                            {{ @App\SysHelper::com_curr_format(($ledger_avg_rate * 103) / 100, 2, '.', ',') }}
+                                            @php $total_lp += $ledger_avg_rate * 103 / 100; @endphp
                                         @else
                                             {{ @App\SysHelper::com_curr_format(($value->lp_price * 103) / 100, 2, '.', ',') }}
                                             @php $total_lp += $value->lp_price*103/100; @endphp
@@ -301,7 +305,7 @@
 
                                 @php
                                     $total_qty += $balance_qty;
-                                    $total_price += $value->avg_price;
+                                    $total_price += $ledger_avg_rate;
                                     $total_amount += $value->lp_price;
                                 @endphp
                             </tr>
