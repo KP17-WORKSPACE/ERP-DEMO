@@ -1179,16 +1179,25 @@ $ret_val = '
     }
 
     /**
-     * Compute the running weighted-average cost (WACC) for a part up to $to_date,
-     * applying the same CFC (freight + custom charges) adjustments that the
-     * StockLedger controller's appendCfcToIncomingRate() applies, so that the
-     * avg_rate shown in StockRegister exactly matches the StockLedger footer.
+     * Compute avg_rate for a part to match the StockLedger footer exactly.
+     *
+     * Mirrors the StockLedger's two-phase logic:
+     *   Phase 1 – Opening balance (pre-period, no CFC):
+     *     All transactions up to Dec 31 of the year preceding $to_date are rolled
+     *     up using the same simple-average algorithm used by get_stock_ledger_opening_stock().
+     *   Phase 2 – In-period running WACC (with CFC):
+     *     Transactions from Jan 1 of $to_date's year through $to_date use the full
+     *     running WACC, with freight + custom charges added to GR/PI incoming rates,
+     *     matching appendCfcToIncomingRate() in the StockLedger controller.
      */
     public static function get_stock_register_ledger_avg_rate($partNoId, $to_date)
     {
         try {
             $partNoId = (int) $partNoId;
-            $toYmd    = Carbon::parse($to_date)->format('Y-m-d');
+            $toCarbon = Carbon::parse($to_date);
+            $toYmd    = $toCarbon->format('Y-m-d');
+            $fromYmd  = $toCarbon->copy()->startOfYear()->format('Y-m-d');          // Jan 1 of $to_date's year
+            $opbDate  = $toCarbon->copy()->startOfYear()->subDay()->format('Y-m-d'); // Dec 31 of prior year
 
             $r          = self::get_data_by_role();
             $companyIds = $r[0] ?? [];
@@ -1213,7 +1222,49 @@ $ret_val = '
                 return $s === '' ? 0.0 : (float) $s;
             };
 
-            // ── CFC map: GRN lines (freight + custom charges per unit) ──────────
+            // ── Phase 1: Opening balance (same simple-average as get_stock_ledger_opening_stock) ──
+            $opbList = SysItemStock::select(
+                'sys_item_stock.doc_number',
+                'sys_item_stock.qty_in',
+                'sys_item_stock.price_in',
+                'sys_item_stock.qty_out'
+            )
+                ->join('sm_items', 'sm_items.id', 'sys_item_stock.partno')
+                ->whereRaw("DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') <= ?", [$opbDate])
+                ->where('sm_items.id', $partNoId)
+                ->where('sys_item_stock.status', 1)
+                ->whereIn('sys_item_stock.company_id', $companyIds)
+                ->orderBy('sys_item_stock.doc_date', 'desc')
+                ->get();
+
+            $opbBalQty       = 0.0;
+            $opbQtyIn        = 0.0;
+            $opbPriceInQtyIn = 0.0;
+            $opbAvgRate      = 0.0;
+            foreach ($opbList as $row) {
+                if ($opbBalQty <= 0) { $opbQtyIn = 0.0; $opbPriceInQtyIn = 0.0; }
+                if (str_contains((string) ($row->doc_number ?? ''), 'SRT')) {
+                    $opbQtyIn  += $parseAmount($row->qty_in);
+                    $opbBalQty += $parseAmount($row->qty_in);
+                    $opbBalQty -= $parseAmount($row->qty_out);
+                } else {
+                    $opbPriceInQtyIn += $parseAmount($row->price_in) * $parseAmount($row->qty_in);
+                    $opbQtyIn        += $parseAmount($row->qty_in);
+                    $opbBalQty       += $parseAmount($row->qty_in);
+                    $opbBalQty       -= $parseAmount($row->qty_out);
+                    if ($opbQtyIn != 0) {
+                        $opbAvgRate = $opbPriceInQtyIn / $opbQtyIn;
+                    }
+                }
+            }
+
+            // Seed the running WACC from the opening balance
+            $bal_qty             = (float) $opbBalQty;
+            $avg_rate_value      = (float) $opbAvgRate;
+            $running_stock_value = $bal_qty * $avg_rate_value;
+            $displayAvgRateValue = $avg_rate_value;
+
+            // ── Phase 2: CFC maps for in-period GR / PI lines ───────────────────
             $grnCfcMap = [];
             $grnCfcRows = DB::table('sys_purchase_grn_items as gi')
                 ->join('sys_purchase_grn as grn', 'grn.id', '=', 'gi.grn_id')
@@ -1231,15 +1282,16 @@ $ret_val = '
                 ->where('grn.status', 1)
                 ->groupBy('grn.doc_number', 'gi.id')
                 ->get();
-            foreach ($grnCfcRows as $r) {
-                $qty = (float) ($r->qty ?? 0);
+            foreach ($grnCfcRows as $row) {
+                $qty = (float) ($row->qty ?? 0);
                 if ($qty <= 0) continue;
-                $base   = (float) ($r->line_value ?? 0) - (float) ($r->discount ?? 0);
-                $extras = (float) ($r->fright ?? 0) + (float) ($r->customcharges ?? 0);
-                $grnCfcMap[(string) $r->doc_number . '|' . (int) $r->line_item_id] = ($base + $extras) / $qty;
+                $base   = (float) ($row->line_value ?? 0) - (float) ($row->discount ?? 0);
+                $extras = (float) ($row->fright ?? 0) + (float) ($row->customcharges ?? 0);
+                // Store under both lookup keys (by line-item id and by part id fallback)
+                $grnCfcMap['li:' . (int) $row->line_item_id] = ($base + $extras) / $qty;
+                $grnCfcMap[(string) $row->doc_number . '|li:' . (int) $row->line_item_id] = ($base + $extras) / $qty;
             }
 
-            // ── CFC map: PI lines (freight + custom charges per unit) ────────────
             $piCfcMap = [];
             $piCfcRows = DB::table('sys_purchase_invoice_items as pii')
                 ->join('sys_purchase_invoice as pi', 'pi.id', '=', 'pii.pi_id')
@@ -1257,18 +1309,18 @@ $ret_val = '
                 ->where('pi.status', 1)
                 ->groupBy('pi.doc_number', 'pii.id')
                 ->get();
-            foreach ($piCfcRows as $r) {
-                $qty = (float) ($r->qty ?? 0);
+            foreach ($piCfcRows as $row) {
+                $qty = (float) ($row->qty ?? 0);
                 if ($qty <= 0) continue;
-                $base   = (float) ($r->line_value ?? 0) - (float) ($r->discount ?? 0);
-                $extras = (float) ($r->fright ?? 0) + (float) ($r->customcharges ?? 0);
-                $piCfcMap[(string) $r->doc_number . '|' . (int) $r->line_item_id] = ($base + $extras) / $qty;
+                $base   = (float) ($row->line_value ?? 0) - (float) ($row->discount ?? 0);
+                $extras = (float) ($row->fright ?? 0) + (float) ($row->customcharges ?? 0);
+                $piCfcMap['li:' . (int) $row->line_item_id] = ($base + $extras) / $qty;
+                $piCfcMap[(string) $row->doc_number . '|li:' . (int) $row->line_item_id] = ($base + $extras) / $qty;
             }
 
-            // ── Stock transaction list ───────────────────────────────────────────
+            // ── Phase 2: In-period transactions (Jan 1 → to_date) with WACC + CFC ──
             $list = SysItemStock::select(
                 'sys_item_stock.doc_number',
-                'sys_item_stock.doc_date',
                 'sys_item_stock.item_id',
                 'sys_item_stock.qty_in',
                 'sys_item_stock.price_in',
@@ -1278,6 +1330,7 @@ $ret_val = '
             )
                 ->join('sm_items', 'sm_items.id', 'sys_item_stock.partno')
                 ->leftJoin('sys_purchase_return as prt', DB::raw('prt.doc_number COLLATE utf8mb4_unicode_ci'), DB::raw('sys_item_stock.doc_number COLLATE utf8mb4_unicode_ci'))
+                ->whereRaw("DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') >= ?", [$fromYmd])
                 ->whereRaw("DATE_FORMAT(sys_item_stock.doc_date, '%Y-%m-%d') <= ?", [$toYmd])
                 ->where('sm_items.id', $partNoId)
                 ->where('sys_item_stock.status', 1)
@@ -1289,15 +1342,6 @@ $ret_val = '
                 ->orderBy('sys_item_stock.id', 'asc')
                 ->get();
 
-            if ($list->isEmpty()) {
-                return 0.0;
-            }
-
-            $bal_qty             = 0.0;
-            $avg_rate_value      = 0.0;
-            $running_stock_value = 0.0;
-            $displayAvgRateValue = 0.0;
-
             foreach ($list as $value) {
                 $previousAvgRateValue = $avg_rate_value;
 
@@ -1305,9 +1349,9 @@ $ret_val = '
                 $docFirst   = trim(explode(',', $docRaw)[0]);
                 $docPrefix2 = substr($docFirst, 0, 2);
 
-                $lineQtyIn   = $parseAmount($value->qty_in   ?? 0);
-                $lineQtyOut  = $parseAmount($value->qty_out  ?? 0);
-                $linePriceIn = $parseAmount($value->price_in ?? 0);
+                $lineQtyIn    = $parseAmount($value->qty_in    ?? 0);
+                $lineQtyOut   = $parseAmount($value->qty_out   ?? 0);
+                $linePriceIn  = $parseAmount($value->price_in  ?? 0);
                 $linePriceOut = $parseAmount($value->price_out ?? 0);
 
                 $hasPrtRef = isset($value->prt_reference)
@@ -1317,14 +1361,24 @@ $ret_val = '
                 $isSalesReturn    = ($docPrefix2 === 'SR') || str_contains($docFirst, 'SRT');
                 $isPurchaseReturn = ($docPrefix2 === 'PR') || ($hasPrtRef && $lineQtyOut > 0);
 
-                // Apply CFC-adjusted landed cost for GR / PI incoming lines
+                // Apply CFC landed-cost adjustment for GR / PI incoming lines.
+                // Mirror appendCfcToIncomingRate(): try line-item key first, then doc+li key.
                 if (!$isSalesReturn && !$isPurchaseReturn && $lineQtyIn > 0) {
                     $lineItemId = (int) ($value->item_id ?? 0);
-                    $cfcKey     = $docFirst . '|' . $lineItemId;
-                    if ($docPrefix2 === 'GR' && isset($grnCfcMap[$cfcKey])) {
-                        $linePriceIn = (float) $grnCfcMap[$cfcKey];
-                    } elseif ($docPrefix2 === 'PI' && isset($piCfcMap[$cfcKey])) {
-                        $linePriceIn = (float) $piCfcMap[$cfcKey];
+                    $liKey      = 'li:' . $lineItemId;
+                    $docLiKey   = $docFirst . '|li:' . $lineItemId;
+                    if ($docPrefix2 === 'GR') {
+                        if ($lineItemId > 0 && isset($grnCfcMap[$docLiKey])) {
+                            $linePriceIn = (float) $grnCfcMap[$docLiKey];
+                        } elseif ($lineItemId > 0 && isset($grnCfcMap[$liKey])) {
+                            $linePriceIn = (float) $grnCfcMap[$liKey];
+                        }
+                    } elseif ($docPrefix2 === 'PI') {
+                        if ($lineItemId > 0 && isset($piCfcMap[$docLiKey])) {
+                            $linePriceIn = (float) $piCfcMap[$docLiKey];
+                        } elseif ($lineItemId > 0 && isset($piCfcMap[$liKey])) {
+                            $linePriceIn = (float) $piCfcMap[$liKey];
+                        }
                     }
                 }
 
