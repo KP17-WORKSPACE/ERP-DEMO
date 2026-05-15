@@ -884,6 +884,181 @@ class SmItemStoreController extends Controller
         }
     }
 
+     public function ageingReport(Request $request)
+    {
+
+        try {
+            $brand = SysBrand::select('id','title')->orderby('title','asc')->get();
+            $category = DB::table('sm_item_categories')->select('id','category_name')->orderby('category_name','asc')->get();
+            $sub_category = DB::table('sm_item_subcategories')->select('id','sub_category_name')->orderby('sub_category_name','asc')->get();
+
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+            $to_date = date('Y-m-d');
+            $stocklist = collect([]);
+            $stocklist_return = [];
+            $ctrl_product_type = "";
+
+            $producttype = SysProductType::get();
+
+
+            $r_part_number = "";
+            $r_brand = "";
+            $r_category = "";
+            $r_sub_category = "";
+            $r_qty = "";
+            if ($_POST) {
+                $to_date = $request->to_date;
+
+                if (empty($to_date)) {
+                    $to_date = Carbon::now()->format('Y-m-d'); 
+                } else {
+                    $to_date = Carbon::createFromFormat('d/m/Y', $to_date)->format('Y-m-d');
+                }
+      
+
+                $stocklist_query = DB::table('sys_item_stock as stock')
+                ->select(DB::raw('max(item.part_number) as part_number'),DB::raw('max(stock.partno) as partno'),DB::raw('max(item.description) as description')
+                ,DB::raw('max(brand.title) as brand'),DB::raw('max(brand.id) as brandid'),DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as balance_qty')
+                
+                ,DB::raw('(SUM(stock.qty_in) * sum(stock.price_in)) / SUM(stock.qty_in) as avg_price')
+
+                ,DB::raw('max(cat.category_name) as categoryname'),DB::raw('max(subcat.sub_category_name) as subcategoryname'))
+                ->selectRaw('2 as type')
+                ->join('sm_items as item', 'item.id','stock.partno')
+                ->join('sys_brand as brand','brand.id','item.brand')
+                ->leftjoin('sm_item_categories as cat','cat.id','item.category_name')
+                ->leftjoin('sm_item_subcategories as subcat','subcat.id','item.subcategory_name')
+                ->whereRaw("DATE_FORMAT(stock.doc_date, '%Y-%m-%d') <= '" . $to_date . "'")
+                ->wherein('stock.company_id',$company_id)->where('stock.status',1)->where('item.status',1)
+                //->where('stock.doc_number', 'not like', 'SR%')
+                ->wherein('item.product_type',[1,2]);
+
+                if ($request->part_number != "") {
+
+                    $part_numbers = array_map('trim', explode(',', $request->part_number));
+
+                    $stocklist_query->whereIn('item.part_number', $part_numbers);
+
+                    $r_part_number = $request->part_number;
+             
+                }
+                if ($request->brand != "") {
+                    $stocklist_query->where('item.brand', $request->brand);
+                    $r_brand = $request->brand;
+                }
+                if ($request->category != "") {
+                    $stocklist_query->where('item.category_name', $request->category);
+                    $r_category = $request->category;
+                }
+                if ($request->sub_category != "") {
+                    $stocklist_query->where('item.subcategory_name', $request->sub_category);
+                    $r_sub_category = $request->sub_category;
+                }
+                if ($request->qty != "") {
+                    $r_qty = $request->qty;
+                }
+
+                if ($request->filter_product_type != "") {
+                    $ctrl_product_type = $request->filter_product_type;
+                    $stocklist_query->where('item.product_type', $request->filter_product_type);
+                }
+
+                $stocklist = $stocklist_query->groupby('stock.partno')
+                ->orderBy('part_number', 'asc')
+                ->get(); //->paginate(100);//
+
+
+                $stocklist_return = DB::table('sys_item_stock')->select(DB::raw('max(partno) as partno'),DB::raw('SUM(qty_in) as qty'))
+                ->whereRaw("DATE_FORMAT(doc_date, '%Y-%m-%d') <= '" . $to_date . "'")->wherein('company_id',$company_id)->where('doc_number', 'like', 'SR%')->where('status',1)
+                ->groupby('partno')->get();
+
+                $stockledgerBalancesQuery = DB::table('sys_item_stock as stock')
+                    ->select('stock.partno', DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as ledger_balance'))
+                    ->join('sm_items as item', 'item.id', 'stock.partno')
+                    ->whereRaw("DATE_FORMAT(stock.doc_date, '%Y-%m-%d') <= '" . $to_date . "'")
+                    ->wherein('stock.company_id', $company_id)
+                    ->where('stock.status', 1)
+                    ->where('item.status', 1);
+
+                if ($request->part_number != "") {
+                    $part_numbers = array_map('trim', explode(',', $request->part_number));
+                    $stockledgerBalancesQuery->whereIn('item.part_number', $part_numbers);
+                }
+                if ($request->brand != "") {
+                    $stockledgerBalancesQuery->where('item.brand', $request->brand);
+                }
+                if ($request->category != "") {
+                    $stockledgerBalancesQuery->where('item.category_name', $request->category);
+                }
+                if ($request->sub_category != "") {
+                    $stockledgerBalancesQuery->where('item.subcategory_name', $request->sub_category);
+                }
+                if ($request->filter_product_type != "") {
+                    $stockledgerBalancesQuery->where('item.product_type', $request->filter_product_type);
+                }
+
+                $stockledgerBalances = $stockledgerBalancesQuery->groupBy('stock.partno')->pluck('ledger_balance', 'partno');
+
+                $grnAgeingByPartno = $this->loadGrnAgeingAllocationsMap($company_id, $to_date, $stocklist);
+               
+            } else {
+
+                
+                
+
+                 $stocklist = collect([]);
+
+                $stocklist_return = DB::table('sys_item_stock')
+                    ->select([
+                        DB::raw('partno'),
+                        DB::raw('SUM(qty_in) as qty')
+                    ])
+                    ->whereDate('doc_date', '<=', $to_date)
+                    ->whereIn('company_id', $company_id)
+                    ->where('doc_number', 'like', 'SRN%')
+                    ->where('status', 1)
+                    ->groupBy('partno')
+                    ->get()
+                    ->keyBy('partno');
+
+                $stockledgerBalances = collect([]);
+
+                $grnAgeingByPartno = [];
+            }
+
+            if (Auth::user()->role_id == 1 || Auth::user()->role_id == 28 || Auth::user()->role_id == 27) {
+                $show_all = 1;
+            } else {
+                $show_all = 0;
+            }
+            $user = SmStaff::select('brands')->where('user_id', Auth::user()->id)->first();
+            if ($user->brands == "") {
+                $show_brand = [];
+            } else {
+                $show_brand = explode(',', $user->brands);
+            }
+
+            $company_list = DB::table('sys_company')->select('id', 'company_name')->orderby('sort_id', 'asc')->get();
+
+            $this->cleanupExpiredReserveStock();
+
+           
+
+          
+
+            if (!isset($grnAgeingByPartno)) {
+                $grnAgeingByPartno = [];
+            }
+
+            return view('backEnd.inventory.AgeingReport', compact('stocklist', 'to_date', 'stocklist_return', 'stockledgerBalances', 'brand', 'category', 'sub_category', 'r_part_number', 'r_brand', 'r_category', 'r_sub_category', 'r_qty', 'company_list', 'show_all', 'show_brand', 'ctrl_product_type', 'producttype', 'grnAgeingByPartno'));
+        } catch (\Exception $e) {
+            return $e;
+            Toastr::error('Operation Failed', 'Failed');
+            return redirect()->back();
+        }
+    }
+
     public function stockregister_test(Request $request)
     {
         try {
@@ -2124,6 +2299,320 @@ class SmItemStoreController extends Controller
         }
 
         return response()->json(['deal_id' => $deal, 'item_exists' => false]);
+    }
+
+    /**
+     * Build GRN-based stock ageing: newest GRN receipts first until on-hand qty is covered.
+     * Ageing bucket amounts use allocated qty × stock-register ledger avg rate (same as report Avg Rate).
+     *
+     * @param array $company_id
+     * @param string $to_date Y-m-d
+     * @param \Illuminate\Support\Collection $stocklist
+     * @return array keyed by partno (sm_items.id)
+     */
+    protected function loadGrnAgeingAllocationsMap($company_id, $to_date, $stocklist)
+    {
+        $result = [];
+        if (!$stocklist || $stocklist->isEmpty()) {
+            return $result;
+        }
+
+        $company_id = (array) $company_id;
+        $asOf = Carbon::parse($to_date)->startOfDay();
+        $partnos = $stocklist->pluck('partno')->unique()->filter(function ($p) {
+            return $p !== null && $p !== '';
+        })->values()->all();
+
+        if (empty($partnos)) {
+            return $result;
+        }
+
+        $rows = DB::table('sys_item_stock as s')
+            ->leftJoin('sys_chartofaccounts as v', 'v.id', '=', 's.account_id')
+            ->leftJoin('sys_crm_deals as d', 'd.id', '=', 's.deal_id')
+            ->leftJoin('sm_staffs as sp', 'sp.user_id', '=', 's.sales_person')
+            ->leftJoin('sys_purchase_grn as g', 'g.id', '=', 's.grn_id')
+            ->leftJoin('sys_purchase_grn_items as pit', 'pit.id', '=', 's.item_id')
+            ->whereIn('s.company_id', $company_id)
+            ->where('s.status', 1)
+            ->whereNotNull('s.grn_id')
+            ->where('s.grn_id', '>', 0)
+            ->where('s.qty_in', '>', 0)
+            ->whereIn('s.partno', $partnos)
+            ->whereRaw("DATE_FORMAT(s.doc_date, '%Y-%m-%d') <= ?", [$to_date])
+            ->orderBy('s.partno', 'asc')
+            ->orderBy('s.doc_date', 'desc')
+            ->orderBy('s.id', 'desc')
+            ->select([
+                's.id as stock_row_id',
+                's.partno',
+                's.grn_id',
+                's.item_id as stock_item_id',
+                'pit.id as grn_line_id',
+                'pit.sort_id as grn_line_sort_id',
+                's.doc_number',
+                's.doc_date',
+                's.deal_id',
+                'd.code as deal_code',
+                's.qty_in',
+                's.price_in',
+                'v.account_name as vendor_name',
+                'sp.full_name as sales_person_name',
+                'g.sales_person_name as grn_header_sales_name',
+            ])
+            ->get();
+
+        $grnIds = $rows->pluck('grn_id')->unique()->filter(function ($id) {
+            return (int) $id > 0;
+        })->values()->all();
+
+        $grnDocTotals = [];
+        if (!empty($grnIds)) {
+            $grnDocTotals = DB::table('sys_purchase_grn_items')
+                ->where('status', 1)
+                ->whereIn('grn_id', $grnIds)
+                ->groupBy('grn_id')
+                ->select('grn_id', DB::raw('SUM(IFNULL(taxableamount, 0) + IFNULL(vatamount, 0)) as doc_total'))
+                ->get()
+                ->pluck('doc_total', 'grn_id')
+                ->toArray();
+        }
+
+        $byPartno = [];
+        foreach ($rows as $row) {
+            $byPartno[$row->partno][] = $row;
+        }
+
+        foreach ($stocklist as $item) {
+            $partno = $item->partno;
+            $balanceQty = (float) $item->balance_qty;
+            $lines = isset($byPartno[$partno]) ? $byPartno[$partno] : [];
+            $avgRate = (float) SysHelper::get_stock_register_ledger_avg_rate($partno, $to_date);
+            $result[$partno] = $this->allocateGrnStockLinesToBalance($lines, $balanceQty, $asOf, $avgRate, $grnDocTotals);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array $lines stdClass rows, newest first
+     * @param float $balanceQty
+     * @param Carbon $asOf
+     * @param float $avgRate ledger avg (same basis as stock register column)
+     * @param array $grnDocTotals grn_id => full GRN document total (sum of taxableamount + vatamount on all lines)
+     * @return array
+     */
+    protected function allocateGrnStockLinesToBalance(array $lines, $balanceQty, Carbon $asOf, $avgRate = 0.0, array $grnDocTotals = [])
+    {
+        $buckets = [
+            '1_30' => 0.0,
+            '31_60' => 0.0,
+            '61_90' => 0.0,
+            '91_120' => 0.0,
+            '121_plus' => 0.0,
+        ];
+
+        $outLines = [];
+        $remaining = (float) $balanceQty;
+        $eps = 0.00001;
+
+        if ($remaining <= $eps || empty($lines)) {
+            return [
+                'lines' => [],
+                'buckets' => $buckets,
+                'allocated_qty' => 0.0,
+                'unallocated_qty' => max(0.0, $remaining),
+                'avg_rate' => (float) $avgRate,
+            ];
+        }
+
+        $avgRate = (float) $avgRate;
+        $asOfDay = $asOf->copy()->startOfDay();
+
+        foreach ($lines as $row) {
+            if ($remaining <= $eps) {
+                break;
+            }
+
+            $qtyIn = (float) $row->qty_in;
+            if ($qtyIn <= $eps) {
+                continue;
+            }
+
+            $take = $qtyIn < $remaining ? $qtyIn : $remaining;
+            $priceIn = (float) $row->price_in;
+            $lineGrnTotal = $take * $priceIn;
+            $bucketSliceAmount = $take * $avgRate;
+
+            try {
+                $docDate = Carbon::parse($row->doc_date)->startOfDay();
+            } catch (\Exception $e) {
+                $docDate = $asOfDay->copy();
+            }
+
+            $ageDays = (int) floor(max(0, ($asOfDay->timestamp - $docDate->timestamp) / 86400));
+
+            if ($ageDays <= 30) {
+                $buckets['1_30'] += $bucketSliceAmount;
+                $period = '1-30';
+            } elseif ($ageDays <= 60) {
+                $buckets['31_60'] += $bucketSliceAmount;
+                $period = '31-60';
+            } elseif ($ageDays <= 90) {
+                $buckets['61_90'] += $bucketSliceAmount;
+                $period = '61-90';
+            } elseif ($ageDays <= 120) {
+                $buckets['91_120'] += $bucketSliceAmount;
+                $period = '91-120';
+            } else {
+                $buckets['121_plus'] += $bucketSliceAmount;
+                $period = '121+';
+            }
+
+            $dealId = isset($row->deal_id) ? $row->deal_id : null;
+            $dealCodeRaw = isset($row->deal_code) ? trim((string) $row->deal_code) : '';
+            $dealNumber = $dealCodeRaw !== '' ? $dealCodeRaw : '';
+            $grnId = isset($row->grn_id) ? (int) $row->grn_id : 0;
+            $grnDocTotal = 0.0;
+            if ($grnId > 0) {
+                if (isset($grnDocTotals[$grnId])) {
+                    $grnDocTotal = (float) $grnDocTotals[$grnId];
+                } elseif (isset($grnDocTotals[(string) $grnId])) {
+                    $grnDocTotal = (float) $grnDocTotals[(string) $grnId];
+                }
+            }
+
+            $salesName = trim((string) ($row->sales_person_name ?? ''));
+            if ($salesName === '' && isset($row->grn_header_sales_name)) {
+                $salesName = trim((string) $row->grn_header_sales_name);
+            }
+
+            $docSort = '';
+            try {
+                $docSort = Carbon::parse($row->doc_date)->format('Y-m-d');
+            } catch (\Exception $e) {
+                $docSort = '1970-01-01';
+            }
+
+            $stockRowId = isset($row->stock_row_id) ? (int) $row->stock_row_id : 0;
+            $grnLineSortId = isset($row->grn_line_sort_id) ? (int) $row->grn_line_sort_id : 0;
+            $grnLineId = isset($row->grn_line_id) ? (int) $row->grn_line_id : 0;
+            if ($grnLineId === 0 && isset($row->stock_item_id)) {
+                $grnLineId = (int) $row->stock_item_id;
+            }
+
+            $lineStockRowTotal = $qtyIn * $priceIn;
+
+            $line = [
+                'stock_row_id' => $stockRowId,
+                'doc_sort' => $docSort,
+                'grn_id' => $grnId,
+                'grn_line_sort_id' => $grnLineSortId,
+                'grn_line_id' => $grnLineId,
+                'doc_number' => (string) $row->doc_number,
+                'doc_date' => $row->doc_date,
+                'doc_date_disp' => $this->formatGrnAgeingDateDisp($row->doc_date),
+                'deal_id' => $dealId,
+                'deal_number' => $dealNumber,
+                'qty_in_row' => $qtyIn,
+                'qty_alloc' => $take,
+                'qty_display' => $qtyIn,
+                'price_in' => $priceIn,
+                'line_grn_total' => $lineGrnTotal,
+                'line_stock_row_total' => $lineStockRowTotal,
+                'grn_doc_total' => $grnDocTotal,
+                'vendor_name' => isset($row->vendor_name) ? (string) $row->vendor_name : '',
+                'sales_person_name' => $salesName,
+                'ageing_days' => $ageDays,
+                'ageing_period' => $period,
+            ];
+            $line['popover_html'] = $this->buildGrnAgeingPopoverHtml($line);
+            $line['popover_content_attr'] = htmlspecialchars($line['popover_html'], ENT_QUOTES, 'UTF-8');
+            $outLines[] = $line;
+
+            $remaining -= $take;
+        }
+
+        usort($outLines, function ($a, $b) {
+            $cmp = strcmp((string) ($a['doc_sort'] ?? ''), (string) ($b['doc_sort'] ?? ''));
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            $ga = (int) ($a['grn_id'] ?? 0);
+            $gb = (int) ($b['grn_id'] ?? 0);
+            if ($ga !== $gb) {
+                return $ga <=> $gb;
+            }
+            $sa = (int) ($a['grn_line_sort_id'] ?? 0);
+            $sb = (int) ($b['grn_line_sort_id'] ?? 0);
+            if ($sa !== $sb) {
+                return $sa <=> $sb;
+            }
+            $ia = (int) ($a['grn_line_id'] ?? 0);
+            $ib = (int) ($b['grn_line_id'] ?? 0);
+            if ($ia !== $ib) {
+                return $ia <=> $ib;
+            }
+
+            return ((int) ($a['stock_row_id'] ?? 0)) <=> ((int) ($b['stock_row_id'] ?? 0));
+        });
+
+        $allocatedQty = 0.0;
+        foreach ($outLines as $ol) {
+            $allocatedQty += (float) $ol['qty_alloc'];
+        }
+
+        return [
+            'lines' => $outLines,
+            'buckets' => $buckets,
+            'allocated_qty' => $allocatedQty,
+            'unallocated_qty' => max(0.0, (float) $remaining),
+            'avg_rate' => $avgRate,
+        ];
+    }
+
+    /**
+     * Minimal HTML for Bootstrap popover (this GRN slice only).
+     *
+     * @param array $line
+     * @return string
+     */
+    protected function buildGrnAgeingPopoverHtml(array $line)
+    {
+        $dealNo = ($line['deal_number'] ?? '') !== '' ? (string) $line['deal_number'] : '—';
+        $esc = function ($v) {
+            return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        };
+        $totalAmount = SysHelper::com_curr_format((float) ($line['grn_doc_total'] ?? 0), 2, '.', ',');
+
+        $rows = [
+            ['GRN no.', (string) ($line['doc_number'] ?? '—')],
+            ['Deal no.', $dealNo],
+            ['GRN date', (string) ($line['doc_date_disp'] ?? '—')],
+            ['Vendor', ($line['vendor_name'] ?? '') !== '' ? (string) $line['vendor_name'] : '—'],
+            ['Sales person', ($line['sales_person_name'] ?? '') !== '' ? (string) $line['sales_person_name'] : '—'],
+            ['Total amount', $totalAmount],
+        ];
+        $html = '<div class="small text-start text-nowrap">';
+        foreach ($rows as $r) {
+            $html .= '<div><strong>' . $esc($r[0]) . '</strong> ' . $esc($r[1]) . '</div>';
+        }
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
+     * @param mixed $docDate
+     * @return string
+     */
+    protected function formatGrnAgeingDateDisp($docDate)
+    {
+        try {
+            return Carbon::parse($docDate)->format('d/m/Y');
+        } catch (\Exception $e) {
+            return '';
+        }
     }
 
     public function item_store_import_delete(Request $request, $id)
