@@ -9,6 +9,31 @@
         .ageing-grn-popover .popover-body {
             padding: 0.5rem 0.65rem;
         }
+        .report-type-trigger {
+            color: #212529;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+        .report-type-trigger:hover {
+            color: #499258;
+        }
+        .dropdown-menu .dropend .dropdown-menu {
+            top: 0;
+            left: 100%;
+            margin-top: -1px;
+        }
+        .report-type-dropdown .dropdown-item.active,
+        .report-type-dropdown .dropdown-item.active:hover,
+        .report-type-dropdown .dropdown-item.active:focus {
+            color: #499258 !important;
+            background-color: transparent !important;
+            font-weight: 600;
+        }
+        .ageing-report-basic .ageing-detail-col {
+            display: none !important;
+        }
     </style>
 
 
@@ -35,6 +60,18 @@
     <script>
         $(document).ready(function () {
             $('#filters-long .filter-field').removeClass('d-none');
+            function applyAgeingReportTypeView() {
+                var isBasic = $('#report_type').val() === 'basic';
+                var $table = $('.stockRegisterTable');
+                $table.toggleClass('ageing-report-basic', isBasic);
+                var $footLabel = $table.find('tfoot .ageing-foot-label');
+                if (!$footLabel.data('detailText')) {
+                    $footLabel.data('detailText', $footLabel.text());
+                }
+                $footLabel.text(isBasic ? 'Total' : ($footLabel.data('detailText') || ''));
+            }
+            $('#report_type').on('change', applyAgeingReportTypeView);
+            applyAgeingReportTypeView();
             $('#exportExcelStockRegister').on('click', function () {
                 var companyName = @json(@App\SysCompany::find(session('logged_session_data.company_id') ?? '')->trade_name ?? '');
                 var dateFrom = $('#from_date').length ? $('#from_date').val().trim() : '';
@@ -166,9 +203,8 @@
 
 
         <div class="long-list" id="filters-long">
-            <div class="d-flex align-items-center justify-content-between">
-                <h4 class="mb-0">Ageing Report
-                </h4>
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                @include('backEnd.partials.salesReportTypeMenu')
                 <div class="search-filter-container mb-0">
 
                    
@@ -208,19 +244,9 @@
                     <div class="card-body">
 
                         {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'url' => 'ageing-report-stock', 'method' => 'POST', 'enctype' => 'multipart/form-data']) }}
+                        <input type="hidden" name="run" value="1">
 
                         <div class="row">
-
-                            <div class="col-1 mb-2 ">
-                                <label for="" class="form-label">To Date</label>
-                                @php
-                                    $formattedToDate = @$to_date
-                                        ? \Carbon\Carbon::parse($to_date)->format('d/m/Y')
-                                        : \Carbon\Carbon::now()->format('d/m/Y');
-                                @endphp
-                                <input class="form-control date-picker" id="to_date" type="text" name="to_date"
-                                    value="{{ @$formattedToDate }}" autocomplete="off" required>
-                            </div>
 
                             <div class="col-2-5 mb-2 ">
                                 <label class="form-label">Find Part Number / Product Name / Description</label>
@@ -234,6 +260,19 @@
                                 </div>
 
                             </div>
+
+                            <div class="col-1-5 mb-2 ">
+                                <label for="" class="form-label">To Date</label>
+                                @php
+                                    $formattedToDate = @$to_date
+                                        ? \Carbon\Carbon::parse($to_date)->format('d/m/Y')
+                                        : \Carbon\Carbon::now()->format('d/m/Y');
+                                @endphp
+                                <input class="form-control date-picker" id="to_date" type="text" name="to_date"
+                                    value="{{ @$formattedToDate }}" autocomplete="off" required>
+                            </div>
+
+                           
 
                             <script>
                                 $(document).ready(function() {
@@ -351,6 +390,47 @@
 
 
 
+
+                            <div class="col-2-5 mb-2">
+                                <label class="form-label">Vendor</label>
+                                <select class="form-control js-example-basic-single" name="supplier" id="filter_supplier">
+                                    <option value="">All</option>
+                                    @foreach ($supplier_list ?? [] as $value)
+                                        <option value="{{ $value->id }}" @if (($r_supplier ?? '') == $value->id) selected @endif>{{ $value->account_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-1-5 mb-2">
+                                <label class="form-label">Sales Person</label>
+                                <select class="form-control js-example-basic-single" name="sales_person" id="filter_sales_person">
+                                    <option value="">All</option>
+                                    @foreach ($sales_person_list ?? [] as $value)
+                                        <option value="{{ $value->user_id }}" @if (($r_sales_person ?? '') == $value->user_id) selected @endif>{{ $value->full_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-1-5 mb-2">
+                                <label class="form-label">Ageing Period</label>
+                                <select class="form-control" name="ageing_period" id="ageing_period">
+                                    <option value="">All</option>
+                                    <option value="1_30" @if (($r_ageing_period ?? '') === '1_30') selected @endif>1-30 Days</option>
+                                    <option value="31_60" @if (($r_ageing_period ?? '') === '31_60') selected @endif>31-60 Days</option>
+                                    <option value="61_90" @if (($r_ageing_period ?? '') === '61_90') selected @endif>61-90 Days</option>
+                                    <option value="91_120" @if (($r_ageing_period ?? '') === '91_120') selected @endif>91-120 Days</option>
+                                    <option value="121_plus" @if (($r_ageing_period ?? '') === '121_plus') selected @endif>121 or More Days</option>
+                                </select>
+                            </div>
+
+                            <div class="col-1-5 mb-2">
+                                <label class="form-label">Report Type</label>
+                                <select class="form-control" name="report_type" id="report_type">
+                                    <option value="detail" @if (($r_report_type ?? 'detail') === 'detail') selected @endif>Detail</option>
+                                    <option value="basic" @if (($r_report_type ?? 'detail') === 'basic') selected @endif>Basic</option>
+                                </select>
+                            </div>
+
                             <div class="col-1 filter-field d-none">
                                 <button type="submit" class="btn btn-light mt-4 float-end">
                                     <i class="ico icon-outline-magnifer text-success"></i> Filter
@@ -367,15 +447,16 @@
 
 
             <div class="table-responsive mb-4 mt-4">
-                <table id="long-list" class="table table-hover data-table stockRegisterTable" style="table-layout: fixed;width:100%">
+                @php $isBasicReport = ($r_report_type ?? 'detail') === 'basic'; @endphp
+                <table id="long-list" class="table table-hover data-table stockRegisterTable {{ $isBasicReport ? 'ageing-report-basic' : '' }}" style="table-layout: fixed;width:100%">
 
                     <thead>
                         <tr>
                             <th style="width: 130px;">@lang('Part Number')</th>
-                            <th style="width: 250px">@lang('Description')</th>
-                            <th style="width: 100px;">@lang('Brand')</th>
-                            <th style="width: 100px;">@lang('Category')</th>
-                            <th style="width: 100px;">@lang('Sub Category')</th>
+                            <th class="ageing-detail-col" style="width: 250px">@lang('Description')</th>
+                            <th class="ageing-detail-col" style="width: 100px;">@lang('Brand')</th>
+                            <th class="ageing-detail-col" style="width: 100px;">@lang('Category')</th>
+                            <th class="ageing-detail-col" style="width: 100px;">@lang('Sub Category')</th>
                             <th class="text-end" style="width: 80px;">@lang('Bal Qty')</th>
                             @if ($show_all == 1)
                                 <th style="width: 100px;" class="text-end">@lang('Avg Rate')</th>
@@ -387,20 +468,21 @@
                                 @endif
                             @endif
 
-                            <th style="width: 100px;" class="text-end">@lang('Deal ID')</th>
-                            <th style="width: 100px;" class="text-end">@lang('Last GRN Date')</th>
-                            <th style="width: 100px;" class="text-end">@lang('Last GRN Number')</th>
-                            <th style="width: 100px;" class="text-end">@lang('GRN QTY')</th>
-                            <th style="width: 100px;" class="text-end">@lang('GRN Amount')</th>
-                            <th style="width: 100px;" class="text-end">@lang('Vendor')</th>
-                            <th style="width: 100px;" class="text-end">@lang('Sales Person')</th>
-                            <th style="width: 100px;" class="text-end">@lang('Ageing Days')</th>
-                            <th style="width: 100px;" class="text-end">@lang('Ageing Period')</th>
-                            <th style="width: 100px;" class="text-end">@lang('1-30 Days')</th>
-                            <th style="width: 100px;" class="text-end">@lang('31-60 Days')</th>
-                            <th style="width: 100px;" class="text-end">@lang('61-90 Days')</th>
-                            <th style="width: 100px;" class="text-end">@lang('91-120 Days')</th>
-                            <th style="width: 100px;" class="text-end">@lang('121 or More Days')</th>
+                            <th class="ageing-detail-col text-start" style="width: 100px;">@lang('Deal ID')</th>
+                            <th class="ageing-detail-col text-start" style="width: 100px;">@lang('Last GRN Date')</th>
+                            <th class="ageing-detail-col text-start" style="width: 100px;">@lang('Last GRN Number')</th>
+                            <th class="ageing-detail-col text-start" style="width: 100px;">@lang('GRN QTY')</th>
+                            <th class="ageing-detail-col text-start" style="width: 100px;">@lang('GRN Amount')</th>
+                            <th class="ageing-detail-col text-start" style="width: 100px;">@lang('Vendor')</th>
+                            <th class="ageing-detail-col text-start" style="width: 100px;">@lang('Sales Person')</th>
+                            <th class="ageing-detail-col text-start" style="width: 100px;">@lang('Ageing Days')</th>
+                            <th class="ageing-detail-col text-start" style="width: 100px;">@lang('Ageing Period')</th>
+                            <th style="width: 100px;" class="text-start">@lang('1-30 Days')</th>
+                            <th style="width: 100px;" class="text-start">@lang('31-60 Days')</th>
+                            <th style="width: 100px;" class="text-start">@lang('61-90 Days')</th>
+                            <th style="width: 100px;" class="text-start">@lang('91-120 Days')</th>
+                            <th style="width: 100px;" class="text-start">@lang('121 or More Days')</th>
+                            <th style="width: 100px;" class="text-start">@lang('Finance Cost')</th>
 
                           
                         </tr>
@@ -419,15 +501,23 @@
                             $foot_age_61_90 = 0;
                             $foot_age_91_120 = 0;
                             $foot_age_121 = 0;
+                            $foot_finance_cost = 0;
                             if (!isset($grnAgeingByPartno)) {
                                 $grnAgeingByPartno = [];
                             }
+                            if (!isset($financeCostPercentage)) {
+                                $financeCostPercentage = 0;
+                            }
+                            $isBasicReport = ($r_report_type ?? 'detail') === 'basic';
+                            $rateColCount = ($show_all == 1 || count($show_brand) > 0) ? 2 : 0;
                             $ageingColspanBase =
-                                5 +
                                 1 +
-                                (($show_all == 1 || count($show_brand) > 0) ? 2 : 0) +
-                                9 +
-                                5;
+                                ($isBasicReport ? 0 : 4) +
+                                1 +
+                                $rateColCount +
+                                ($isBasicReport ? 0 : 9) +
+                                5 +
+                                1;
                         @endphp
 
                         <?php
@@ -459,12 +549,12 @@
                                             {{ @$value->part_number }}
                                         @endif
                                     </td>
-                                    <td>
+                                    <td class="ageing-detail-col">
                                         {{ $value->description }}
                                     </td>
-                                    <td>{{ $value->brand }}</td>
-                                    <td>{{ $value->categoryname }}</td>
-                                    <td>{{ $value->subcategoryname }}</td>
+                                    <td class="ageing-detail-col">{{ $value->brand }}</td>
+                                    <td class="ageing-detail-col">{{ $value->categoryname }}</td>
+                                    <td class="ageing-detail-col">{{ $value->subcategoryname }}</td>
 
                                     @php
                                         $balance_qty = $value->balance_qty;
@@ -549,21 +639,22 @@
                                             $foot_age_61_90 += $ga['buckets']['61_90'];
                                             $foot_age_91_120 += $ga['buckets']['91_120'];
                                             $foot_age_121 += $ga['buckets']['121_plus'];
+                                            $foot_finance_cost += (float) ($ga['total_finance_cost'] ?? 0);
                                         }
                                     @endphp
 
                                     @if ($ga && $balance_qty > 0 && !empty($ga['lines']))
-                                        <td class="text-end align-top ageing-grn-cell" style="font-size: 11px;">
+                                        <td class="text-start align-top ageing-grn-cell ageing-detail-col" style="font-size: 11px;">
                                             @foreach ($ga['lines'] as $x)
-                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ ($x['deal_number'] ?? '') !== '' ? e($x['deal_number']) : '—' }}</span>@if (!$loop->last)<span>, </span>@endif
+                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ ($x['deal_number'] ?? '') !== '' ? e($x['deal_number']) : '—' }}</span>@if (!$loop->last)<span> , </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-end align-top ageing-grn-cell" style="font-size: 11px;">
+                                        <td class="text-start align-top ageing-grn-cell ageing-detail-col" style="font-size: 11px;">
                                             @foreach ($ga['lines'] as $x)
-                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ ($x['doc_date_disp'] ?? '') !== '' ? e($x['doc_date_disp']) : '—' }}</span>@if (!$loop->last)<span>, </span>@endif
+                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ ($x['doc_date_disp'] ?? '') !== '' ? e($x['doc_date_disp']) : '—' }}</span>@if (!$loop->last)<span> , </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-end align-top ageing-grn-cell" style="font-size: 11px;">
+                                        <td class="text-start align-top ageing-grn-cell ageing-detail-col" style="font-size: 11px;">
                                             @foreach ($ga['lines'] as $x)
                                                 <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">
                                                     @if ((int) ($x['grn_id'] ?? 0) > 0 && ($x['doc_number'] ?? '') !== '')
@@ -571,54 +662,60 @@
                                                     @else
                                                         {{ ($x['doc_number'] ?? '') !== '' ? e($x['doc_number']) : '—' }}
                                                     @endif
-                                                </span>@if (!$loop->last)<span>, </span>@endif
+                                                </span>@if (!$loop->last)<span> , </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-end align-top ageing-grn-cell" style="font-size: 11px;">
+                                        <td class="text-start align-top ageing-grn-cell ageing-detail-col" style="font-size: 11px;">
                                             @foreach ($ga['lines'] as $x)
-                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ @App\SysHelper::com_curr_format((float) ($x['qty_display'] ?? $x['qty_alloc'] ?? 0), 2, '.', ',') }}</span>@if (!$loop->last)<span>, </span>@endif
+                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ @App\SysHelper::com_curr_format((float) ($x['qty_display'] ?? $x['qty_alloc'] ?? 0), 2, '.', ',') }}</span>@if (!$loop->last)<span> , </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-end align-top ageing-grn-cell" style="font-size: 11px;">
+                                        <td class="text-start align-top ageing-grn-cell ageing-detail-col" style="font-size: 11px;">
                                             @foreach ($ga['lines'] as $x)
-                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ @App\SysHelper::com_curr_format((float) ($x['grn_doc_total'] ?? 0), 2, '.', ',') }}</span>@if (!$loop->last)<span>, </span>@endif
+                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ @App\SysHelper::com_curr_format((float) ($x['grn_doc_total'] ?? 0), 2, '.', ',') }}</span>@if (!$loop->last)<span> , </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-end align-top ageing-grn-cell" style="font-size: 11px;">
+                                        <td class="text-start align-top ageing-grn-cell ageing-detail-col" style="font-size: 11px;">
                                             @foreach ($ga['lines'] as $x)
                                                 <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ ($x['vendor_name'] ?? '') !== '' ? e($x['vendor_name']) : '—' }}</span>@if (!$loop->last)<span>, </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-end align-top ageing-grn-cell" style="font-size: 11px;">
+                                        <td class="text-start align-top ageing-grn-cell ageing-detail-col" style="font-size: 11px;">
                                             @foreach ($ga['lines'] as $x)
-                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ ($x['sales_person_name'] ?? '') !== '' ? e($x['sales_person_name']) : '—' }}</span>@if (!$loop->last)<span>, </span>@endif
+                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ ($x['sales_person_name'] ?? '') !== '' ? e($x['sales_person_name']) : '—' }}</span>@if (!$loop->last)<span> , </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-end align-top ageing-grn-cell" style="font-size: 11px;">
+                                        <td class="text-start align-top ageing-grn-cell ageing-detail-col" style="font-size: 11px;">
                                             @foreach ($ga['lines'] as $x)
-                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ (int) ($x['ageing_days'] ?? 0) }}</span>@if (!$loop->last)<span>, </span>@endif
+                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ (int) ($x['ageing_days'] ?? 0) }}</span>@if (!$loop->last)<span> , </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-end align-top ageing-grn-cell" style="font-size: 11px;">
+                                        <td class="text-start align-top ageing-grn-cell ageing-detail-col" style="font-size: 11px;">
                                             @foreach ($ga['lines'] as $x)
-                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ e($x['ageing_period'] ?? '—') }}</span>@if (!$loop->last)<span>, </span>@endif
+                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ e($x['ageing_period'] ?? '—') }}</span>@if (!$loop->last)<span> , </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-end no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['1_30'], 2, '.', ',') }}</td>
-                                        <td class="text-end no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['31_60'], 2, '.', ',') }}</td>
-                                        <td class="text-end no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['61_90'], 2, '.', ',') }}</td>
-                                        <td class="text-end no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['91_120'], 2, '.', ',') }}</td>
-                                        <td class="text-end no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['121_plus'], 2, '.', ',') }}</td>
+                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['1_30'], 2, '.', ',') }}</td>
+                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['31_60'], 2, '.', ',') }}</td>
+                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['61_90'], 2, '.', ',') }}</td>
+                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['91_120'], 2, '.', ',') }}</td>
+                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['121_plus'], 2, '.', ',') }}</td>
+                                        <td class="text-start align-top ageing-grn-cell no-toggle" style="font-size: 11px;">
+                                            @foreach ($ga['lines'] as $x)
+                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto" data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ @App\SysHelper::com_curr_format((float) ($x['finance_cost'] ?? 0), 2, '.', ',') }}</span>@if (!$loop->last)<span> , </span>@endif
+                                            @endforeach
+                                        </td>
                                     @else
-                                        <td class="text-end ageing-grn-cell">—</td>
-                                        <td class="text-end ageing-grn-cell">—</td>
-                                        <td class="text-end ageing-grn-cell">—</td>
-                                        <td class="text-end ageing-grn-cell">—</td>
-                                        <td class="text-end ageing-grn-cell">—</td>
-                                        <td class="text-end ageing-grn-cell">—</td>
-                                        <td class="text-end ageing-grn-cell">—</td>
-                                        <td class="text-end ageing-grn-cell">—</td>
-                                        <td class="text-end ageing-grn-cell">—</td>
+                                        <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
+                                        <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
+                                        <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
+                                        <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
+                                        <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
+                                        <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
+                                        <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
+                                        <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
+                                        <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
+                                        <td class="text-end no-toggle">—</td>
                                         <td class="text-end no-toggle">—</td>
                                         <td class="text-end no-toggle">—</td>
                                         <td class="text-end no-toggle">—</td>
@@ -640,11 +737,11 @@
                     <?php try{ ?>
                     <tfoot>
                         <tr>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
+                            <th class="text-start ageing-foot-label">{{ $isBasicReport ? 'Total' : '' }}</th>
+                            <th class="ageing-detail-col"></th>
+                            <th class="ageing-detail-col"></th>
+                            <th class="ageing-detail-col"></th>
+                            <th class="ageing-detail-col"></th>
                             <th class="text-end">{{ @App\SysHelper::com_curr_format($total_qty, 2, '.', ',') }}</th>
                             @if ($show_all == 1)
                                 <th class="text-end"></th>
@@ -657,13 +754,13 @@
                                         {{ @App\SysHelper::com_curr_format($total_amount, 2, '.', ',') }}</th>
                                 @endif
                             @endif
-                            <th colspan="9"></th>
+                            <th colspan="9" class="ageing-detail-col"></th>
                             <th class="text-end">{{ @App\SysHelper::com_curr_format($foot_age_1_30, 2, '.', ',') }}</th>
                             <th class="text-end">{{ @App\SysHelper::com_curr_format($foot_age_31_60, 2, '.', ',') }}</th>
                             <th class="text-end">{{ @App\SysHelper::com_curr_format($foot_age_61_90, 2, '.', ',') }}</th>
                             <th class="text-end">{{ @App\SysHelper::com_curr_format($foot_age_91_120, 2, '.', ',') }}</th>
                             <th class="text-end">{{ @App\SysHelper::com_curr_format($foot_age_121, 2, '.', ',') }}</th>
-
+                            <th class="text-end">{{ @App\SysHelper::com_curr_format($foot_finance_cost, 2, '.', ',') }}</th>
                         </tr>
                     </tfoot>
                     <?php }catch (\Exception $e) { } ?>
@@ -1313,5 +1410,6 @@
     });
 })();
 </script>
+@include('backEnd.partials.salesReportTypeMenuScripts')
 @endpush
 @endsection
