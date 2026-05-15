@@ -4191,6 +4191,9 @@ class SysCompanyController extends Controller
             $company->opening_balance_date = SysHelper::normalizeToYmd($request->opening_balance_date);
             $company->decimal_point = $request->currency_digit ?: 2;
 
+            $company->finance_cost_percentage = $request->inventory_finance_value ?: null;
+            $company->receivables_finance_cost_percentage = $request->receivable_finance_cost ?: null;
+
             // Parent Company Logic
             if ($request->company_type === 'parent') {
                 $company->parent_company = $request->parent_company;
@@ -6172,6 +6175,9 @@ class SysCompanyController extends Controller
             $company->other_code = strtoupper($request->other_code) ?: null;
             $company->sales_code = strtoupper($request->sales_code) ?: null;
             $company->opening_balance_date = SysHelper::normalizeToYmd($request->opening_balance_date);
+
+            $company->finance_cost_percentage = $request->inventory_finance_value ?: null;
+            $company->receivables_finance_cost_percentage = $request->receivable_finance_cost ?: null;
 
 
             // Parent company fields

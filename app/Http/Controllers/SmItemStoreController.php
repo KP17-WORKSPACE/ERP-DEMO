@@ -894,6 +894,11 @@ class SmItemStoreController extends Controller
 
             $r = SysHelper::get_data_by_role();
             $company_id = $r[0];
+            $loggedCompanyId = session('logged_session_data.company_id');
+            $financeCostPercentage = 0.0;
+            if ($loggedCompanyId) {
+                $financeCostPercentage = (float) (SysCompany::where('id', $loggedCompanyId)->value('finance_cost_percentage') ?? 0);
+            }
             $to_date = date('Y-m-d');
             $stocklist = collect([]);
             $stocklist_return = [];
@@ -902,106 +907,32 @@ class SmItemStoreController extends Controller
             $producttype = SysProductType::get();
 
 
-            $r_part_number = "";
-            $r_brand = "";
-            $r_category = "";
-            $r_sub_category = "";
-            $r_qty = "";
-            if ($_POST) {
-                $to_date = $request->to_date;
+            $r_part_number = $request->input('part_number', '');
+            $r_brand = $request->input('brand', '');
+            $r_category = $request->input('category', '');
+            $r_sub_category = $request->input('sub_category', '');
+            $r_qty = $request->input('qty', '');
+            $r_sales_person = $request->input('sales_person', '');
+            $r_supplier = $request->input('supplier', '');
+            $r_filter_company = $request->input('filter_company', '');
+            $r_ageing_period = $request->input('ageing_period', '');
+            $r_report_type = $request->input('report_type', 'detail');
+            if (!in_array($r_report_type, ['basic', 'detail'], true)) {
+                $r_report_type = 'detail';
+            }
+            $supplier_list = SysHelper::get_supplier_list($company_id);
+            $sales_person_list = SysHelper::get_sales_persons();
+            $runReport = true;
 
-                if (empty($to_date)) {
-                    $to_date = Carbon::now()->format('Y-m-d'); 
-                } else {
-                    $to_date = Carbon::createFromFormat('d/m/Y', $to_date)->format('Y-m-d');
-                }
-      
-
-                $stocklist_query = DB::table('sys_item_stock as stock')
-                ->select(DB::raw('max(item.part_number) as part_number'),DB::raw('max(stock.partno) as partno'),DB::raw('max(item.description) as description')
-                ,DB::raw('max(brand.title) as brand'),DB::raw('max(brand.id) as brandid'),DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as balance_qty')
-                
-                ,DB::raw('(SUM(stock.qty_in) * sum(stock.price_in)) / SUM(stock.qty_in) as avg_price')
-
-                ,DB::raw('max(cat.category_name) as categoryname'),DB::raw('max(subcat.sub_category_name) as subcategoryname'))
-                ->selectRaw('2 as type')
-                ->join('sm_items as item', 'item.id','stock.partno')
-                ->join('sys_brand as brand','brand.id','item.brand')
-                ->leftjoin('sm_item_categories as cat','cat.id','item.category_name')
-                ->leftjoin('sm_item_subcategories as subcat','subcat.id','item.subcategory_name')
-                ->whereRaw("DATE_FORMAT(stock.doc_date, '%Y-%m-%d') <= '" . $to_date . "'")
-                ->wherein('stock.company_id',$company_id)->where('stock.status',1)->where('item.status',1)
-                //->where('stock.doc_number', 'not like', 'SR%')
-                ->wherein('item.product_type',[1,2]);
-
-                if ($request->part_number != "") {
-
-                    $part_numbers = array_map('trim', explode(',', $request->part_number));
-
-                    $stocklist_query->whereIn('item.part_number', $part_numbers);
-
-                    $r_part_number = $request->part_number;
-             
-                }
-                if ($request->brand != "") {
-                    $stocklist_query->where('item.brand', $request->brand);
-                    $r_brand = $request->brand;
-                }
-                if ($request->category != "") {
-                    $stocklist_query->where('item.category_name', $request->category);
-                    $r_category = $request->category;
-                }
-                if ($request->sub_category != "") {
-                    $stocklist_query->where('item.subcategory_name', $request->sub_category);
-                    $r_sub_category = $request->sub_category;
-                }
-                if ($request->qty != "") {
-                    $r_qty = $request->qty;
-                }
-
-                if ($request->filter_product_type != "") {
-                    $ctrl_product_type = $request->filter_product_type;
-                    $stocklist_query->where('item.product_type', $request->filter_product_type);
-                }
-
-                $stocklist = $stocklist_query->groupby('stock.partno')
-                ->orderBy('part_number', 'asc')
-                ->get(); //->paginate(100);//
-
-
-                $stocklist_return = DB::table('sys_item_stock')->select(DB::raw('max(partno) as partno'),DB::raw('SUM(qty_in) as qty'))
-                ->whereRaw("DATE_FORMAT(doc_date, '%Y-%m-%d') <= '" . $to_date . "'")->wherein('company_id',$company_id)->where('doc_number', 'like', 'SR%')->where('status',1)
-                ->groupby('partno')->get();
-
-                $stockledgerBalancesQuery = DB::table('sys_item_stock as stock')
-                    ->select('stock.partno', DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as ledger_balance'))
-                    ->join('sm_items as item', 'item.id', 'stock.partno')
-                    ->whereRaw("DATE_FORMAT(stock.doc_date, '%Y-%m-%d') <= '" . $to_date . "'")
-                    ->wherein('stock.company_id', $company_id)
-                    ->where('stock.status', 1)
-                    ->where('item.status', 1);
-
-                if ($request->part_number != "") {
-                    $part_numbers = array_map('trim', explode(',', $request->part_number));
-                    $stockledgerBalancesQuery->whereIn('item.part_number', $part_numbers);
-                }
-                if ($request->brand != "") {
-                    $stockledgerBalancesQuery->where('item.brand', $request->brand);
-                }
-                if ($request->category != "") {
-                    $stockledgerBalancesQuery->where('item.category_name', $request->category);
-                }
-                if ($request->sub_category != "") {
-                    $stockledgerBalancesQuery->where('item.subcategory_name', $request->sub_category);
-                }
-                if ($request->filter_product_type != "") {
-                    $stockledgerBalancesQuery->where('item.product_type', $request->filter_product_type);
-                }
-
-                $stockledgerBalances = $stockledgerBalancesQuery->groupBy('stock.partno')->pluck('ledger_balance', 'partno');
-
-                $grnAgeingByPartno = $this->loadGrnAgeingAllocationsMap($company_id, $to_date, $stocklist);
-               
+            if ($runReport) {
+                $to_date = $this->resolveAgeingReportToDate($request);
+                $stocklist = $this->fetchAgeingStocklist($company_id, $to_date, $request, false);
+                $stocklist_return = DB::table('sys_item_stock')->select(DB::raw('max(partno) as partno'), DB::raw('SUM(qty_in) as qty'))
+                    ->whereRaw("DATE_FORMAT(doc_date, '%Y-%m-%d') <= '" . $to_date . "'")->wherein('company_id', $company_id)->where('doc_number', 'like', 'SR%')->where('status', 1)
+                    ->groupby('partno')->get();
+                $stockledgerBalances = $this->fetchAgeingLedgerBalances($company_id, $to_date, $request, false);
+                $grnAgeingByPartno = $this->loadGrnAgeingAllocationsMap($company_id, $to_date, $stocklist, $financeCostPercentage, false);
+                $stocklist = $this->applyAgeingPartLevelLineFilters($stocklist, $grnAgeingByPartno, $request, false);
             } else {
 
                 
@@ -1051,12 +982,479 @@ class SmItemStoreController extends Controller
                 $grnAgeingByPartno = [];
             }
 
-            return view('backEnd.inventory.AgeingReport', compact('stocklist', 'to_date', 'stocklist_return', 'stockledgerBalances', 'brand', 'category', 'sub_category', 'r_part_number', 'r_brand', 'r_category', 'r_sub_category', 'r_qty', 'company_list', 'show_all', 'show_brand', 'ctrl_product_type', 'producttype', 'grnAgeingByPartno'));
+            return view('backEnd.inventory.AgeingReport', compact(
+                'stocklist', 'to_date', 'stocklist_return', 'stockledgerBalances', 'brand', 'category', 'sub_category',
+                'r_part_number', 'r_brand', 'r_category', 'r_sub_category', 'r_qty', 'r_sales_person', 'r_supplier', 'r_filter_company',
+                'r_ageing_period', 'r_report_type', 'supplier_list', 'sales_person_list',
+                'company_list', 'show_all', 'show_brand', 'ctrl_product_type', 'producttype', 'grnAgeingByPartno', 'financeCostPercentage'
+            ));
         } catch (\Exception $e) {
             return $e;
             Toastr::error('Operation Failed', 'Failed');
             return redirect()->back();
         }
+    }
+
+    public function ageingReportBrandWise(Request $request)
+    {
+        return $this->ageingReportWise($request, 'brand');
+    }
+
+    public function ageingReportCategoryWise(Request $request)
+    {
+        return $this->ageingReportWise($request, 'category');
+    }
+
+    public function ageingReportSubCategoryWise(Request $request)
+    {
+        return $this->ageingReportWise($request, 'sub_category');
+    }
+
+    public function ageingReportCompanyWise(Request $request)
+    {
+        return $this->ageingReportWise($request, 'company');
+    }
+
+    public function ageingReportCustomerWise(Request $request)
+    {
+        return $this->ageingReportWise($request, 'customer');
+    }
+
+    public function ageingReportSalesPersonWise(Request $request)
+    {
+        return $this->ageingReportWise($request, 'sales_person');
+    }
+
+    /**
+     * Ageing report aggregated by brand, category, company, customer (vendor), sales person, etc.
+     */
+    public function ageingReportWise(Request $request, $groupBy = 'brand')
+    {
+        try {
+            $groupBy = strtolower((string) $groupBy);
+            $allowed = ['brand', 'category', 'sub_category', 'company', 'customer', 'sales_person'];
+            if (!in_array($groupBy, $allowed, true)) {
+                abort(404);
+            }
+
+            $brand = SysBrand::select('id', 'title')->orderby('title', 'asc')->get();
+            $category = DB::table('sm_item_categories')->select('id', 'category_name')->orderby('category_name', 'asc')->get();
+            $sub_category = DB::table('sm_item_subcategories')->select('id', 'sub_category_name')->orderby('sub_category_name', 'asc')->get();
+
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+            $loggedCompanyId = session('logged_session_data.company_id');
+            $financeCostPercentage = 0.0;
+            if ($loggedCompanyId) {
+                $financeCostPercentage = (float) (SysCompany::where('id', $loggedCompanyId)->value('finance_cost_percentage') ?? 0);
+            }
+
+            $to_date = date('Y-m-d');
+            $stocklist = collect([]);
+            $wiseRows = [];
+            $groupLabel = $this->ageingWiseGroupLabel($groupBy);
+            $runReport = true;
+            $splitByCompany = ($groupBy === 'company');
+
+            if ($runReport) {
+                $to_date = $this->resolveAgeingReportToDate($request);
+                $stocklist = $this->fetchAgeingStocklist($company_id, $to_date, $request, $splitByCompany);
+                $grnAgeingByPartno = $this->loadGrnAgeingAllocationsMap($company_id, $to_date, $stocklist, $financeCostPercentage, $splitByCompany);
+                $companyNames = DB::table('sys_company')->whereIn('id', $company_id)->pluck('company_name', 'id')->toArray();
+                $wiseRows = $this->aggregateAgeingReportRows($stocklist, $grnAgeingByPartno, $groupBy, $to_date, $companyNames);
+                foreach ($wiseRows as $idx => $row) {
+                    $wiseRows[$idx]['drill_url'] = url('ageing-report-stock') . '?' . http_build_query(
+                        $this->ageingWiseDrillDownQuery($groupBy, $row, $to_date)
+                    );
+                }
+            }
+
+            $company_list = DB::table('sys_company')->select('id', 'company_name')->orderby('sort_id', 'asc')->get();
+
+            return view('backEnd.inventory.AgeingReportWise', compact(
+                'wiseRows', 'to_date', 'groupBy', 'groupLabel', 'brand', 'category', 'sub_category', 'company_list', 'financeCostPercentage', 'runReport'
+            ));
+        } catch (\Exception $e) {
+            return $e;
+            Toastr::error('Operation Failed', 'Failed');
+            return redirect()->back();
+        }
+    }
+
+    protected function resolveAgeingReportToDate(Request $request)
+    {
+        $to_date = $request->input('to_date', '');
+        if ($to_date === '' || $to_date === null) {
+            return Carbon::now()->format('Y-m-d');
+        }
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $to_date)) {
+            return $to_date;
+        }
+
+        return Carbon::createFromFormat('d/m/Y', $to_date)->format('Y-m-d');
+    }
+
+    protected function fetchAgeingStocklist(array $company_id, $to_date, Request $request, $splitByCompany = false)
+    {
+        $stocklist_query = DB::table('sys_item_stock as stock')
+            ->select(
+                DB::raw('max(item.part_number) as part_number'),
+                DB::raw('max(stock.partno) as partno'),
+                DB::raw('max(item.description) as description'),
+                DB::raw('max(brand.title) as brand'),
+                DB::raw('max(brand.id) as brandid'),
+                DB::raw('max(item.category_name) as category_id'),
+                DB::raw('max(cat.category_name) as categoryname'),
+                DB::raw('max(item.subcategory_name) as subcategory_id'),
+                DB::raw('max(subcat.sub_category_name) as subcategoryname'),
+                DB::raw('max(stock.company_id) as stock_company_id'),
+                DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as balance_qty'),
+                DB::raw('(SUM(stock.qty_in) * sum(stock.price_in)) / SUM(stock.qty_in) as avg_price')
+            )
+            ->selectRaw('2 as type')
+            ->join('sm_items as item', 'item.id', 'stock.partno')
+            ->join('sys_brand as brand', 'brand.id', 'item.brand')
+            ->leftjoin('sm_item_categories as cat', 'cat.id', 'item.category_name')
+            ->leftjoin('sm_item_subcategories as subcat', 'subcat.id', 'item.subcategory_name')
+            ->whereRaw("DATE_FORMAT(stock.doc_date, '%Y-%m-%d') <= ?", [$to_date])
+            ->wherein('stock.company_id', $company_id)
+            ->where('stock.status', 1)
+            ->where('item.status', 1)
+            ->wherein('item.product_type', [1, 2]);
+
+        $this->applyAgeingStockFilters($stocklist_query, $request);
+
+        if ($splitByCompany) {
+            $stocklist_query->groupby('stock.company_id', 'stock.partno');
+        } else {
+            $stocklist_query->groupby('stock.partno');
+        }
+
+        return $stocklist_query->orderBy('part_number', 'asc')->get();
+    }
+
+    protected function fetchAgeingLedgerBalances(array $company_id, $to_date, Request $request, $splitByCompany = false)
+    {
+        $stockledgerBalancesQuery = DB::table('sys_item_stock as stock')
+            ->select('stock.partno', DB::raw('SUM(stock.qty_in) - SUM(stock.qty_out) as ledger_balance'))
+            ->join('sm_items as item', 'item.id', 'stock.partno')
+            ->whereRaw("DATE_FORMAT(stock.doc_date, '%Y-%m-%d') <= ?", [$to_date])
+            ->wherein('stock.company_id', $company_id)
+            ->where('stock.status', 1)
+            ->where('item.status', 1);
+
+        $this->applyAgeingStockFilters($stockledgerBalancesQuery, $request);
+
+        if ($splitByCompany) {
+            return $stockledgerBalancesQuery->groupBy('stock.partno')->pluck('ledger_balance', 'partno');
+        }
+
+        return $stockledgerBalancesQuery->groupBy('stock.partno')->pluck('ledger_balance', 'partno');
+    }
+
+    protected function applyAgeingStockFilters($query, Request $request)
+    {
+        if ($request->filled('part_number')) {
+            $part_numbers = array_map('trim', explode(',', $request->part_number));
+            $query->whereIn('item.part_number', $part_numbers);
+        }
+        if ($request->filled('brand')) {
+            $query->where('item.brand', $request->brand);
+        }
+        if ($request->filled('category')) {
+            $query->where('item.category_name', $request->category);
+        }
+        if ($request->filled('sub_category')) {
+            $query->where('item.subcategory_name', $request->sub_category);
+        }
+        if ($request->filled('filter_product_type')) {
+            $query->where('item.product_type', $request->filter_product_type);
+        }
+        if ($request->filled('filter_company')) {
+            $query->where('stock.company_id', $request->filter_company);
+        }
+    }
+
+    protected function ageingStockMapKey($item, $splitByCompany = false)
+    {
+        if ($splitByCompany) {
+            return (int) ($item->stock_company_id ?? 0) . '_' . (int) ($item->partno ?? 0);
+        }
+
+        return (string) ($item->partno ?? '');
+    }
+
+    protected function ageingWiseGroupLabel($groupBy)
+    {
+        $labels = [
+            'brand' => 'Brand',
+            'category' => 'Category',
+            'sub_category' => 'Sub Category',
+            'company' => 'Company',
+            'customer' => 'Customer',
+            'sales_person' => 'Sales Person',
+        ];
+
+        return $labels[$groupBy] ?? 'Group';
+    }
+
+    protected function emptyAgeingBuckets()
+    {
+        return [
+            '1_30' => 0.0,
+            '31_60' => 0.0,
+            '61_90' => 0.0,
+            '91_120' => 0.0,
+            '121_plus' => 0.0,
+        ];
+    }
+
+    protected function aggregateAgeingReportRows($stocklist, array $grnAgeingByPartno, $groupBy, $to_date, array $companyNames = [])
+    {
+        $groups = [];
+        $lineBased = in_array($groupBy, ['customer', 'sales_person'], true);
+
+        foreach ($stocklist as $item) {
+            $balanceQty = (float) $item->balance_qty;
+            if ($balanceQty <= 0) {
+                continue;
+            }
+
+            $mapKey = $this->ageingStockMapKey($item, $groupBy === 'company');
+            $ga = $grnAgeingByPartno[$mapKey] ?? ($grnAgeingByPartno[$item->partno] ?? null);
+            $avgRate = $ga ? (float) ($ga['avg_rate'] ?? 0) : (float) SysHelper::get_stock_register_ledger_avg_rate($item->partno, $to_date);
+            if ($avgRate <= 0) {
+                $avgRate = (float) SysHelper::get_stock_register_ledger_avg_rate($item->partno, $to_date);
+            }
+
+            if ($lineBased) {
+                if (!$ga || empty($ga['lines'])) {
+                    continue;
+                }
+                foreach ($ga['lines'] as $line) {
+                    if ($groupBy === 'sales_person') {
+                        $key = (string) ((int) ($line['sales_person_id'] ?? 0));
+                        $label = trim((string) ($line['sales_person_name'] ?? '')) ?: '—';
+                    } else {
+                        $key = (string) ((int) ($line['account_id'] ?? 0));
+                        $label = trim((string) ($line['vendor_name'] ?? '')) ?: '—';
+                    }
+                    $qty = (float) ($line['qty_alloc'] ?? 0);
+                    $slice = (float) ($line['bucket_value'] ?? ($qty * $avgRate));
+                    $fc = (float) ($line['finance_cost'] ?? 0);
+                    $buckets = $this->emptyAgeingBuckets();
+                    $this->addAgeingSliceToBuckets($buckets, $line['bucket_key'] ?? '', $slice);
+                    $this->mergeAgeingGroupRow($groups, $key, $label, $qty, $slice, $buckets, $fc);
+                }
+                continue;
+            }
+
+            list($key, $label) = $this->ageingPartGroupKeyLabel($item, $groupBy, $companyNames);
+            $buckets = $ga ? $ga['buckets'] : $this->emptyAgeingBuckets();
+            $fc = $ga ? (float) ($ga['total_finance_cost'] ?? 0) : 0.0;
+            $amount = $balanceQty * $avgRate;
+            $this->mergeAgeingGroupRow($groups, $key, $label, $balanceQty, $amount, $buckets, $fc);
+        }
+
+        $rows = array_values($groups);
+        usort($rows, function ($a, $b) {
+            return strcasecmp((string) ($a['label'] ?? ''), (string) ($b['label'] ?? ''));
+        });
+
+        return $rows;
+    }
+
+    protected function ageingPartGroupKeyLabel($item, $groupBy, array $companyNames = [])
+    {
+        switch ($groupBy) {
+            case 'brand':
+                return [(string) ($item->brandid ?? 0), (string) ($item->brand ?? '—')];
+            case 'category':
+                return [(string) ($item->category_id ?? 0), (string) ($item->categoryname ?? '—')];
+            case 'sub_category':
+                return [(string) ($item->subcategory_id ?? 0), (string) ($item->subcategoryname ?? '—')];
+            case 'company':
+                $cid = (int) ($item->stock_company_id ?? 0);
+                $name = $companyNames[$cid] ?? ($companyNames[(string) $cid] ?? '—');
+
+                return [(string) $cid, (string) $name];
+            default:
+                return ['0', '—'];
+        }
+    }
+
+    protected function mergeAgeingGroupRow(array &$groups, $key, $label, $qty, $amount, array $buckets, $financeCost)
+    {
+        if (!isset($groups[$key])) {
+            $groups[$key] = [
+                'group_key' => $key,
+                'label' => $label,
+                'balance_qty' => 0.0,
+                'amount' => 0.0,
+                'buckets' => $this->emptyAgeingBuckets(),
+                'finance_cost' => 0.0,
+            ];
+        }
+        $groups[$key]['label'] = $label;
+        $groups[$key]['balance_qty'] += (float) $qty;
+        $groups[$key]['amount'] += (float) $amount;
+        $groups[$key]['finance_cost'] += (float) $financeCost;
+        foreach ($buckets as $bk => $bv) {
+            $groups[$key]['buckets'][$bk] += (float) $bv;
+        }
+    }
+
+    protected function addAgeingSliceToBuckets(array &$buckets, $bucketKey, $value)
+    {
+        if ($bucketKey !== '' && isset($buckets[$bucketKey])) {
+            $buckets[$bucketKey] += (float) $value;
+        }
+    }
+
+    /**
+     * When filtering part-wise report by customer (supplier) or sales person, only include
+     * matching GRN ageing slices — same basis as customer/sales-person wise totals.
+     */
+    protected function applyAgeingPartLevelLineFilters($stocklist, array &$grnAgeingByPartno, Request $request, $splitByCompany = false)
+    {
+        if (!$request->filled('sales_person') && !$request->filled('supplier') && !$request->filled('ageing_period')) {
+            return $stocklist;
+        }
+
+        $salesPersonId = $request->filled('sales_person') ? (int) $request->sales_person : null;
+        $supplierId = $request->filled('supplier') ? (int) $request->supplier : null;
+        $ageingPeriodBucket = $request->filled('ageing_period')
+            ? $this->normalizeAgeingPeriodBucket($request->input('ageing_period'))
+            : null;
+
+        $filtered = collect();
+        foreach ($stocklist as $item) {
+            $mapKey = $this->ageingStockMapKey($item, $splitByCompany);
+            $ga = isset($grnAgeingByPartno[$mapKey]) ? $grnAgeingByPartno[$mapKey] : (isset($grnAgeingByPartno[$item->partno]) ? $grnAgeingByPartno[$item->partno] : null);
+            $sliced = $this->sliceGrnAgeingByLineFilter($ga, $salesPersonId, $supplierId, $ageingPeriodBucket);
+            if (!$sliced) {
+                continue;
+            }
+
+            $item->balance_qty = $sliced['allocated_qty'];
+            $grnAgeingByPartno[$mapKey] = $sliced;
+            if ((string) $mapKey !== (string) $item->partno) {
+                $grnAgeingByPartno[$item->partno] = $sliced;
+            }
+
+            $filtered->push($item);
+        }
+
+        return $filtered->values();
+    }
+
+    /**
+     * Keep only GRN lines for the selected customer/sales person; recompute buckets and totals.
+     *
+     * @param array|null $ga
+     * @param int|null $salesPersonId
+     * @param int|null $supplierId
+     * @return array|null
+     */
+    protected function normalizeAgeingPeriodBucket($value)
+    {
+        $key = strtolower(trim((string) $value));
+        $map = [
+            '1-30' => '1_30',
+            '1_30' => '1_30',
+            '31-60' => '31_60',
+            '31_60' => '31_60',
+            '61-90' => '61_90',
+            '61_90' => '61_90',
+            '91-120' => '91_120',
+            '91_120' => '91_120',
+            '121+' => '121_plus',
+            '121_plus' => '121_plus',
+            '121 or more' => '121_plus',
+        ];
+
+        return isset($map[$key]) ? $map[$key] : null;
+    }
+
+    protected function sliceGrnAgeingByLineFilter($ga, $salesPersonId = null, $supplierId = null, $ageingPeriodBucket = null)
+    {
+        if (!$ga || empty($ga['lines'])) {
+            return null;
+        }
+
+        $lines = [];
+        foreach ($ga['lines'] as $line) {
+            if ($salesPersonId !== null && (int) ($line['sales_person_id'] ?? 0) !== $salesPersonId) {
+                continue;
+            }
+            if ($supplierId !== null && (int) ($line['account_id'] ?? 0) !== $supplierId) {
+                continue;
+            }
+            if ($ageingPeriodBucket !== null && ($line['bucket_key'] ?? '') !== $ageingPeriodBucket) {
+                continue;
+            }
+            $lines[] = $line;
+        }
+
+        if (empty($lines)) {
+            return null;
+        }
+
+        $buckets = $this->emptyAgeingBuckets();
+        $allocatedQty = 0.0;
+        $totalFinanceCost = 0.0;
+
+        foreach ($lines as $line) {
+            $allocatedQty += (float) ($line['qty_alloc'] ?? 0);
+            $totalFinanceCost += (float) ($line['finance_cost'] ?? 0);
+            $this->addAgeingSliceToBuckets(
+                $buckets,
+                $line['bucket_key'] ?? '',
+                (float) ($line['bucket_value'] ?? 0)
+            );
+        }
+
+        return [
+            'lines' => $lines,
+            'buckets' => $buckets,
+            'allocated_qty' => $allocatedQty,
+            'unallocated_qty' => 0.0,
+            'avg_rate' => (float) ($ga['avg_rate'] ?? 0),
+            'total_finance_cost' => $totalFinanceCost,
+        ];
+    }
+
+    protected function ageingWiseDrillDownQuery($groupBy, $row, $to_date)
+    {
+        $q = [
+            'to_date' => Carbon::parse($to_date)->format('d/m/Y'),
+            'run' => 1,
+            'qty' => 'positive',
+        ];
+        switch ($groupBy) {
+            case 'brand':
+                $q['brand'] = $row['group_key'];
+                break;
+            case 'category':
+                $q['category'] = $row['group_key'];
+                break;
+            case 'sub_category':
+                $q['sub_category'] = $row['group_key'];
+                break;
+            case 'company':
+                $q['filter_company'] = $row['group_key'];
+                break;
+            case 'customer':
+                $q['supplier'] = $row['group_key'];
+                break;
+            case 'sales_person':
+                $q['sales_person'] = $row['group_key'];
+                break;
+        }
+
+        return array_filter($q, function ($v) {
+            return $v !== '' && $v !== null;
+        });
     }
 
     public function stockregister_test(Request $request)
@@ -2308,9 +2706,10 @@ class SmItemStoreController extends Controller
      * @param array $company_id
      * @param string $to_date Y-m-d
      * @param \Illuminate\Support\Collection $stocklist
+     * @param float $financeCostPercentage inventory finance cost % from logged-in company
      * @return array keyed by partno (sm_items.id)
      */
-    protected function loadGrnAgeingAllocationsMap($company_id, $to_date, $stocklist)
+    protected function loadGrnAgeingAllocationsMap($company_id, $to_date, $stocklist, $financeCostPercentage = 0.0, $splitByCompany = false)
     {
         $result = [];
         if (!$stocklist || $stocklist->isEmpty()) {
@@ -2357,6 +2756,8 @@ class SmItemStoreController extends Controller
                 's.qty_in',
                 's.price_in',
                 'v.account_name as vendor_name',
+                's.account_id',
+                's.sales_person as sales_person_id',
                 'sp.full_name as sales_person_name',
                 'g.sales_person_name as grn_header_sales_name',
             ])
@@ -2385,10 +2786,11 @@ class SmItemStoreController extends Controller
 
         foreach ($stocklist as $item) {
             $partno = $item->partno;
+            $mapKey = $this->ageingStockMapKey($item, $splitByCompany);
             $balanceQty = (float) $item->balance_qty;
             $lines = isset($byPartno[$partno]) ? $byPartno[$partno] : [];
             $avgRate = (float) SysHelper::get_stock_register_ledger_avg_rate($partno, $to_date);
-            $result[$partno] = $this->allocateGrnStockLinesToBalance($lines, $balanceQty, $asOf, $avgRate, $grnDocTotals);
+            $result[$mapKey] = $this->allocateGrnStockLinesToBalance($lines, $balanceQty, $asOf, $avgRate, $grnDocTotals, $financeCostPercentage);
         }
 
         return $result;
@@ -2400,9 +2802,10 @@ class SmItemStoreController extends Controller
      * @param Carbon $asOf
      * @param float $avgRate ledger avg (same basis as stock register column)
      * @param array $grnDocTotals grn_id => full GRN document total (sum of taxableamount + vatamount on all lines)
+     * @param float $financeCostPercentage inventory finance cost % from logged-in company
      * @return array
      */
-    protected function allocateGrnStockLinesToBalance(array $lines, $balanceQty, Carbon $asOf, $avgRate = 0.0, array $grnDocTotals = [])
+    protected function allocateGrnStockLinesToBalance(array $lines, $balanceQty, Carbon $asOf, $avgRate = 0.0, array $grnDocTotals = [], $financeCostPercentage = 0.0)
     {
         $buckets = [
             '1_30' => 0.0,
@@ -2414,6 +2817,7 @@ class SmItemStoreController extends Controller
 
         $outLines = [];
         $remaining = (float) $balanceQty;
+        $totalFinanceCost = 0.0;
         $eps = 0.00001;
 
         if ($remaining <= $eps || empty($lines)) {
@@ -2423,10 +2827,12 @@ class SmItemStoreController extends Controller
                 'allocated_qty' => 0.0,
                 'unallocated_qty' => max(0.0, $remaining),
                 'avg_rate' => (float) $avgRate,
+                'total_finance_cost' => 0.0,
             ];
         }
 
         $avgRate = (float) $avgRate;
+        $financeCostPercentage = (float) $financeCostPercentage;
         $asOfDay = $asOf->copy()->startOfDay();
 
         foreach ($lines as $row) {
@@ -2452,20 +2858,26 @@ class SmItemStoreController extends Controller
 
             $ageDays = (int) floor(max(0, ($asOfDay->timestamp - $docDate->timestamp) / 86400));
 
+            $bucketKey = '121_plus';
             if ($ageDays <= 30) {
                 $buckets['1_30'] += $bucketSliceAmount;
+                $bucketKey = '1_30';
                 $period = '1-30';
             } elseif ($ageDays <= 60) {
                 $buckets['31_60'] += $bucketSliceAmount;
+                $bucketKey = '31_60';
                 $period = '31-60';
             } elseif ($ageDays <= 90) {
                 $buckets['61_90'] += $bucketSliceAmount;
+                $bucketKey = '61_90';
                 $period = '61-90';
             } elseif ($ageDays <= 120) {
                 $buckets['91_120'] += $bucketSliceAmount;
+                $bucketKey = '91_120';
                 $period = '91-120';
             } else {
                 $buckets['121_plus'] += $bucketSliceAmount;
+                $bucketKey = '121_plus';
                 $period = '121+';
             }
 
@@ -2502,6 +2914,8 @@ class SmItemStoreController extends Controller
             }
 
             $lineStockRowTotal = $qtyIn * $priceIn;
+            $financeCost = $this->calculateGrnLineFinanceCost($take, $avgRate, $financeCostPercentage, $ageDays);
+            $totalFinanceCost += $financeCost;
 
             $line = [
                 'stock_row_id' => $stockRowId,
@@ -2522,9 +2936,14 @@ class SmItemStoreController extends Controller
                 'line_stock_row_total' => $lineStockRowTotal,
                 'grn_doc_total' => $grnDocTotal,
                 'vendor_name' => isset($row->vendor_name) ? (string) $row->vendor_name : '',
+                'account_id' => isset($row->account_id) ? (int) $row->account_id : 0,
+                'sales_person_id' => isset($row->sales_person_id) ? (int) $row->sales_person_id : 0,
                 'sales_person_name' => $salesName,
                 'ageing_days' => $ageDays,
                 'ageing_period' => $period,
+                'bucket_key' => $bucketKey,
+                'bucket_value' => $bucketSliceAmount,
+                'finance_cost' => $financeCost,
             ];
             $line['popover_html'] = $this->buildGrnAgeingPopoverHtml($line);
             $line['popover_content_attr'] = htmlspecialchars($line['popover_html'], ENT_QUOTES, 'UTF-8');
@@ -2568,7 +2987,31 @@ class SmItemStoreController extends Controller
             'allocated_qty' => $allocatedQty,
             'unallocated_qty' => max(0.0, (float) $remaining),
             'avg_rate' => $avgRate,
+            'total_finance_cost' => $totalFinanceCost,
         ];
+    }
+
+    /**
+     * Finance cost per GRN ageing slice: qty × avg rate × finance % × days / 365.
+     *
+     * @param float $qty Allocated GRN quantity for this slice
+     * @param float $avgRate Stock register ledger average rate
+     * @param float $financeCostPercentage Company inventory finance cost % (e.g. 5 for 5%)
+     * @param int $ageingDays Days from GRN date to report as-of date
+     * @return float
+     */
+    protected function calculateGrnLineFinanceCost($qty, $avgRate, $financeCostPercentage, $ageingDays)
+    {
+        $qty = (float) $qty;
+        $avgRate = (float) $avgRate;
+        $financeCostPercentage = (float) $financeCostPercentage;
+        $ageingDays = (int) $ageingDays;
+
+        if ($qty <= 0 || $avgRate <= 0 || $financeCostPercentage <= 0 || $ageingDays <= 0) {
+            return 0.0;
+        }
+
+        return ($qty * $avgRate * ($financeCostPercentage / 100) * $ageingDays) / 365;
     }
 
     /**
