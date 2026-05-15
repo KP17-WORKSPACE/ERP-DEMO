@@ -41,6 +41,7 @@ $currentReportGroup = $report_group ?? 'date_wise';
                                     <li><a class="dropdown-item {{ $currentRouteName === 'sales.return.report.detail' && $currentReportGroup === 'sales_person_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.return.report.detail', ['report_group' => 'sales_person_wise']) }}">Sales Person Wise</a></li>
                                 </ul>
                             </li>
+                            @include('backEnd.partials.salesAgeingReportMenu')
                         </ul>
                     </div>
                 </div>
