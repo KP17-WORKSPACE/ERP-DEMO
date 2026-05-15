@@ -41,6 +41,8 @@ class SysCompany extends Model
         'is_account_code',
         'is_subaccount_code',
         'opening_balance_date',
+        'finance_cost_percentage',
+        'receivables_finance_cost_percentage'
     ];
      protected $casts = [
         // 'date_of_incorporation' => 'date',
