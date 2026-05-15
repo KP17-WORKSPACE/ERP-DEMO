@@ -205,6 +205,8 @@
                                     List Price</a></li>
                             <li><a href="{{ url('license-key-report') }}" class="dropdown-item">
                                     License Key Report</a></li>
+                                     <li><a href="{{ url('ageing-report-stock') }}" class="dropdown-item">
+                                    Ageing Report</a></li>
                         </ul>
                     </div>
 
