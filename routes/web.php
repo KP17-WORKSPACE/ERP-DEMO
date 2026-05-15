@@ -3014,6 +3014,10 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::get('stock-register', 'SmItemStoreController@stockregister');
         Route::post('stock-register', 'SmItemStoreController@stockregister');
 
+        
+        Route::get('ageing-report-stock', 'SmItemStoreController@ageingReport');
+        Route::post('ageing-report-stock', 'SmItemStoreController@ageingReport');
+
         Route::get('inventory-brand-report/{id?}', 'SysStockLedgerController@inventory_report_brand');
         Route::post('inventory-brand-report', 'SysStockLedgerController@inventory_report_brand');
         Route::get('inventory-brand-wise-report', 'SysStockLedgerController@inventory_report_brand_wise');
