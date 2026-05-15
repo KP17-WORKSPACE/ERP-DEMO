@@ -1273,6 +1273,20 @@
                             </div>
                         </div>
 
+                        <div class="col">
+                            <label class="form-label">Inventory Finance Cost %</label>
+                            <div class="form-control-plaintext truncate-text-custom">
+                                {{ $company->finance_cost_percentage ?? '' }}
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <label class="form-label">Receivable Finance cost %</label>
+                            <div class="form-control-plaintext truncate-text-custom">
+                                {{ $company->receivables_finance_cost_percentage ?? '' }}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>

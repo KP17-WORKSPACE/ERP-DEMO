@@ -1675,6 +1675,21 @@
                                                                             value="{{ @App\SysHelper::normalizeToDmy($company->opening_balance_date) }}">
                                                                     </div>
 
+                                                                    <div class="col-lg-1">
+                                                                        <label class="form-label mb-1">Inventory Finance Cost</label>
+                                                                        <input type="text" name="inventory_finance_value" placeholder="%"
+                                                                            class="form-control form-control-sm setting-input"
+                                                                            value="{{ old('inventory_finance_value', $company->finance_cost_percentage ?? '') }}">
+                                                                    </div>
+
+                                                                    
+                                                                    <div class="col-lg-1">
+                                                                        <label class="form-label mb-1">Receivable Finance cost</label>
+                                                                        <input type="text" name="receivable_finance_cost" placeholder="%"
+                                                                            class="form-control form-control-sm setting-input"
+                                                                            value="{{ old('receivable_finance_cost', $company->receivables_finance_cost_percentage ?? '') }}">
+                                                                    </div>
+
                                                                 </div>
                                                             </div>
                                                         </div>
