@@ -3017,6 +3017,18 @@ Route::get('/industry', 'SmIndustryController@index');
         
         Route::get('ageing-report-stock', 'SmItemStoreController@ageingReport');
         Route::post('ageing-report-stock', 'SmItemStoreController@ageingReport');
+        Route::get('ageing-report-brand-wise', 'SmItemStoreController@ageingReportBrandWise');
+        Route::post('ageing-report-brand-wise', 'SmItemStoreController@ageingReportBrandWise');
+        Route::get('ageing-report-category-wise', 'SmItemStoreController@ageingReportCategoryWise');
+        Route::post('ageing-report-category-wise', 'SmItemStoreController@ageingReportCategoryWise');
+        Route::get('ageing-report-subcategory-wise', 'SmItemStoreController@ageingReportSubCategoryWise');
+        Route::post('ageing-report-subcategory-wise', 'SmItemStoreController@ageingReportSubCategoryWise');
+        Route::get('ageing-report-company-wise', 'SmItemStoreController@ageingReportCompanyWise');
+        Route::post('ageing-report-company-wise', 'SmItemStoreController@ageingReportCompanyWise');
+        Route::get('ageing-report-customer-wise', 'SmItemStoreController@ageingReportCustomerWise');
+        Route::post('ageing-report-customer-wise', 'SmItemStoreController@ageingReportCustomerWise');
+        Route::get('ageing-report-salesperson-wise', 'SmItemStoreController@ageingReportSalesPersonWise');
+        Route::post('ageing-report-salesperson-wise', 'SmItemStoreController@ageingReportSalesPersonWise');
 
         Route::get('inventory-brand-report/{id?}', 'SysStockLedgerController@inventory_report_brand');
         Route::post('inventory-brand-report', 'SysStockLedgerController@inventory_report_brand');
