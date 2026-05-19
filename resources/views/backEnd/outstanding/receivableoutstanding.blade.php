@@ -7,6 +7,80 @@
     @endphp
 
     <?php try { ?>
+    <style>
+        .ageing-grn-popover { max-width: 320px; text-align: left; }
+        .ageing-grn-popover .popover-body { padding: 0.5rem 0.65rem; }
+        .receivable-due-cell {
+            padding: 4px 6px !important;
+            vertical-align: middle !important;
+        }
+        .recv-due-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            line-height: 1.25;
+            min-width: 72px;
+        }
+        .recv-due-date {
+            font-size: 10px;
+            color: #6c757d;
+            letter-spacing: 0.01em;
+        }
+        .recv-due-amt {
+            font-size: 11px;
+            font-weight: 600;
+            color: #212529;
+        }
+        .recv-od-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            line-height: 1.2;
+            padding: 2px 7px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+        .recv-od-late { background: #fde8e8; color: #c92a2a; }
+        .recv-od-soon { background: #e6f6ec; color: #2b8a3e; }
+        .recv-od-today { background: #f1f3f5; color: #495057; }
+        .recv-due-more {
+            display: none;
+            width: 100%;
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px solid #e9ecef;
+        }
+        .recv-due-more-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 9px;
+            color: #495057;
+            padding: 1px 0;
+        }
+        .recv-due-more-row span:first-child {
+            color: #868e96;
+            flex-shrink: 0;
+        }
+        .recv-due-more-row span:last-child {
+            text-align: right;
+            font-weight: 500;
+        }
+        .receivable-due-cell {
+            cursor: pointer;
+        }
+        .receivable-due-cell.is-expanded .recv-due-more {
+            display: block;
+        }
+        .ageing-grn-tip {
+            cursor: help;
+            border-bottom: 1px dotted #adb5bd;
+        }
+        .sub_table .receivable-due-cell {
+            overflow: visible;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
@@ -19,14 +93,17 @@
                     var asOfDate      = $('#till_date').val() || '';
 
                     // Build header label array
+                    var maxInst = {{ (int) ($max_installments ?? 1) }};
                     var headerLabels = [
                         'Account Code', 'Customer', 'Deal ID',
                         'Inv Date', 'Inv No', 'LPO No',
-                        'Amount', 'Adjustments', 'Balance', 'Total Balance',
-                        'Due Date', 'Over Due'
+                        'Amount', 'Adjustments', 'Balance', 'Total Balance'
                     ];
+                    for (var hi = 1; hi <= maxInst; hi++) {
+                        headerLabels.push('Due ' + hi);
+                    }
                     if (!hideBasicCols) {
-                        headerLabels = headerLabels.concat(['0-30', '31-60', '61-90', '>90']);
+                        headerLabels = headerLabels.concat(['0-30', '31-60', '61-90', '>90', 'Finance Cost']);
                     }
                     headerLabels = headerLabels.concat(['Sales Person', 'Payment Terms']);
                     if (!hideBasicCols) {
@@ -576,6 +653,13 @@
                   
                   @php
                       $hideBasicColumns = !empty($ctrl_basic_search);
+                      $max_installments = $max_installments ?? 1;
+                      $receivable_finance_rate = $receivable_finance_rate ?? 0;
+                      $sales_invoice_map = $sales_invoice_map ?? collect([]);
+                      $payment_terms_map = $payment_terms_map ?? collect([]);
+                      $maxInstCols = (int) $max_installments;
+                      $scheduleColCount = $maxInstCols;
+                      $asOfDateCalc = App\SysHelper::normalizeToYmd($till_date) ?: $till_date;
                   @endphp
 
                   @if($ctrl_list_option == 'pdc')
@@ -763,13 +847,13 @@ function check_total(id, amount) {
                           <th class="text-end" style="width:5%">Adjustments</th>
                           <th class="text-end" style="width:5%">Balance</th>
                           <th class="text-end" style="width:5%">Total Balance</th>
-                          <th class="text-center" style="width:6%">Due Date</th>
-                          <th class="text-center" style="width:4%">Over Due</th>
+                          @include('backEnd.outstanding.partials.receivable_schedule_header')
                           @if(!$hideBasicColumns)
                             <th class="text-center" style="width:5%">0-30</th>
                             <th class="text-center" style="width:5%">31-60</th>
                             <th class="text-center" style="width:5%">61-90</th>
                             <th class="text-center" style="width:5%">>90</th>
+                            <th class="text-end" style="width:6%">Finance Cost</th>
                           @endif
                             <th class="text-start" style="width:8%">Sales Person</th>
                             <th class="text-start" style="width:6%">Payment Terms</th>
@@ -868,6 +952,7 @@ function check_total(id, amount) {
                         $grand_balance=0;
                         $grand_total_balance=0;
                         $gtot1=0;$gtot2=0;$gtot3=0;$gtot4=0;
+                        $gtot_finance=0;
                         @endphp
                         
                         @if (count($data)>0)
@@ -1066,79 +1151,76 @@ function check_total(id, amount) {
                             
                            
                            
-                            @php                            
-                            if ($dt->transaction_type=="opbinvoice"){
-                                $DueData =  @App\SysHelper::get_due_date_invoice_opbinvoice($dt->transaction_no,$duedate,$payment_terms);
-                            } else {
-                               $DueData =  @App\SysHelper::get_due_date_sales_invoice($dt->transaction_no,$dt->transaction_date);
-                            }                            
+                            @php
+                                $rowBalance = $dt->debit_amount - abs($paid);
+                                if (str_contains($dt->transaction_no, 'SR')) {
+                                    $rowBalance = $dt->credit_amount - abs($paid);
+                                }
+                                $invoiceDate = $dt->transaction_date;
+                                $paymentTermRow = null;
+                                if ($dt->transaction_type == 'opbinvoice') {
+                                    $opbDays = 0;
+                                    if (!empty($duedate)) {
+                                        $opbDays = max(0, (int) round((strtotime($duedate) - strtotime($invoiceDate)) / 86400));
+                                    }
+                                    $breakdown = App\SysPaymentTerms::buildOutstandingBreakdown(
+                                        $invoiceDate,
+                                        $rowBalance,
+                                        ['title' => $payment_terms, 'payment_schedule' => [['percentage' => 100, 'days' => $opbDays]]],
+                                        $receivable_finance_rate ?? 0,
+                                        $asOfDateCalc
+                                    );
+                                    $breakdown['payment_terms_title'] = $payment_terms ?: '';
+                                } else {
+                                    $siRow = isset($sales_invoice_map) ? $sales_invoice_map->get($dt->transaction_no) : null;
+                                    if ($siRow) {
+                                        $invoiceDate = $siRow->doc_date;
+                                        $paymentTermRow = isset($payment_terms_map) ? $payment_terms_map->get($siRow->payment_terms) : null;
+                                    }
+                                    $breakdown = App\SysPaymentTerms::buildOutstandingBreakdown(
+                                        $invoiceDate,
+                                        $rowBalance,
+                                        $paymentTermRow,
+                                        $receivable_finance_rate ?? 0,
+                                        $asOfDateCalc
+                                    );
+                                }
+                                $ageingRow = $breakdown['ageing'];
+                                $gtot1 += $ageingRow['0_30'];
+                                $gtot2 += $ageingRow['31_60'];
+                                $gtot3 += $ageingRow['61_90'];
+                                $gtot4 += $ageingRow['90_plus'];
+                                $all_0_30 += $ageingRow['0_30'];
+                                $all_31_60 += $ageingRow['31_60'];
+                                $all_61_90 += $ageingRow['61_90'];
+                                $all_90_above += $ageingRow['90_plus'];
+                                $gtot_finance += $breakdown['total_finance_cost'];
+                                $all_overdue += $breakdown['max_overdue_days'];
                             @endphp
 
-                            
-                            <td class="text-center">{{ $DueData[0] }} </td>
-                            <?php 
-                            if($DueData[1] >0){ ?>
-                            <td class="text-center" style="color:red">{{ $DueData[1] }}</td>
+                            @include('backEnd.outstanding.partials.receivable_schedule_cells', ['breakdown' => $breakdown])
+
+                            @if(($breakdown['max_overdue_days'] ?? 0) > 0)
                             <script>
-                                if ($('#sum_{{ $aname->id }}').css('color') === 'red') { // red
-                                    $('#sum_{{ $aname->id }}').css('color', 'red');
-                                } else {
-                                    $('#sum_{{ $aname->id }}').css('color', 'blue');
-                                }
+                                $('#sum_{{ $aname->id }}').css('color', 'red');
                             </script>
-                            <?php } else { ?>
-
-                            <td class="text-center">{{ $DueData[1] }} <?php $all_overdue += $DueData[1]; ?></td>
-                            <?php }  ?>
-                            <?php 
-                            if($DueData[3] ==1)	  {
-                                $gtot1+=$dt->debit_amount-abs($paid);
-                                $all_0_30 += $dt->debit_amount-abs($paid);
-                            ?><input type="hidden" class="inv_all_0_30" value="{{ $dt->debit_amount-abs($paid) }}" /><?php
-                            }
-                            if($DueData[3] ==2)	  {
-                                $gtot2+=$dt->debit_amount-abs($paid);
-                                $all_31_60 += $dt->debit_amount-abs($paid);                                
-                            ?><input type="hidden" class="inv_all_31_60" value="{{ $dt->debit_amount-abs($paid) }}" /><?php
-                            }
-                            if($DueData[3] ==3)	  {
-                                $gtot3+=$dt->debit_amount-abs($paid);
-                                $all_61_90 += $dt->debit_amount-abs($paid);
-                            ?><input type="hidden" class="inv_all_61_90" value="{{ $dt->debit_amount-abs($paid) }}" /><?php
-                            }
-                            if($DueData[3] ==4)	  {
-                                $gtot4+=$dt->debit_amount-abs($paid);
-                                $all_90_above += $dt->debit_amount-abs($paid);
-                            ?><input type="hidden" class="inv_all_90_above" value="{{ $dt->debit_amount-abs($paid) }}" /><?php
-                            }                                   
-
-                            ?>
-                            
+                            @endif
 
 @if(!$hideBasicColumns)
-                            @if($DueData[3] ==1)                            
-                            <td class="text-end" >{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }}</td>
-                            @else 	
-                            <td class="text-end">&nbsp;</td>
-                            @endif
-                            @if($DueData[3] ==2)	                            
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }}</td>
-                            @else 	
-                            <td class="text-end">&nbsp;</td>
-                            @endif
-                            @if($DueData[3] ==3)	                            
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }}</td>
-                            @else 	
-                            <td class="text-end">&nbsp;</td>
-                            @endif	    
-                            @if($DueData[3] ==4)	                            
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }}</td>
-                            @else 	
-                            <td class="text-end">&nbsp;</td>
-                            @endif
+                            <td class="text-end">{{ $ageingRow['0_30'] > 0 ? App\SysHelper::com_curr_format($ageingRow['0_30'], 2, '.', ',') : '' }}</td>
+                            <td class="text-end">{{ $ageingRow['31_60'] > 0 ? App\SysHelper::com_curr_format($ageingRow['31_60'], 2, '.', ',') : '' }}</td>
+                            <td class="text-end">{{ $ageingRow['61_90'] > 0 ? App\SysHelper::com_curr_format($ageingRow['61_90'], 2, '.', ',') : '' }}</td>
+                            <td class="text-end">{{ $ageingRow['90_plus'] > 0 ? App\SysHelper::com_curr_format($ageingRow['90_plus'], 2, '.', ',') : '' }}</td>
+                            <td class="text-end">
+                                @if (!empty($breakdown['finance_cost_popover_content_attr']) && ($breakdown['total_finance_cost'] ?? 0) != 0)
+                                    <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto" data-bs-content="{!! $breakdown['finance_cost_popover_content_attr'] !!}">{{ App\SysHelper::com_curr_format($breakdown['total_finance_cost'], 2, '.', ',') }}</span>
+                                @else
+                                    {{ ($breakdown['total_finance_cost'] ?? 0) != 0 ? App\SysHelper::com_curr_format($breakdown['total_finance_cost'], 2, '.', ',') : '' }}
+                                @endif
+                            </td>
 
                              <td class="text-start">{{ $sales_person }}</td>
-                            <td class="text-start">{{ $DueData[2] }}</td>
+                            <td class="text-start">{{ $breakdown['payment_terms_title'] }}</td>
                             <td class="text-center hidecol_{{ $aname->id }}">{{ rtrim($receipt_date, ',') }} </td>
                              <td class="text-center hidecol_{{ $aname->id }}">@foreach(explode(',', rtrim($doc_number, ',')) as $doc)
     <a href="{{ url('get-url-receipt/' . trim($doc)) }}" target="_blank">
@@ -1147,7 +1229,7 @@ function check_total(id, amount) {
 @endforeach</td>
                           @else
                             <td class="text-start">{{ $sales_person }}</td>
-                            <td class="text-start">{{ $DueData[2] }}</td>
+                            <td class="text-start">{{ $breakdown['payment_terms_title'] ?? '' }}</td>
                           @endif
 
 
@@ -1175,13 +1257,13 @@ function check_total(id, amount) {
                         <td class="text-end"><b><?php echo  @App\SysHelper::com_curr_format($b,2,'.',',')   ?> </td>
          
                         @if(!$hideBasicColumns)
-                            <td class="text-center" colspan="2">&nbsp </td>
-
-                            <td class="text-end" ><b><?php echo  @App\SysHelper::com_curr_format($gtot1,2,'.',',')   ?></b> </td>
-                            <td class="text-end" ><b><?php echo  @App\SysHelper::com_curr_format($gtot2,2,'.',',')   ?></b> </td>
-                            <td class="text-end" ><b><?php echo  @App\SysHelper::com_curr_format($gtot3,2,'.',',')   ?> </b></td>
-                            <td class="text-end" ><b><?php echo  @App\SysHelper::com_curr_format($gtot4,2,'.',',')   ?> </b></td>
-                            <td class="text-center" colspan="2">&nbsp </td>
+                            <td colspan="{{ $scheduleColCount }}"></td>
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot1, 2, '.', ',') }}</b></td>
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot2, 2, '.', ',') }}</b></td>
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot3, 2, '.', ',') }}</b></td>
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot4, 2, '.', ',') }}</b></td>
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot_finance, 2, '.', ',') }}</b></td>
+                            <td colspan="2"></td>
                             <td class="text-center hidecol_{{ $aname->id }}" width="150px">&nbsp;</td>
                             <td class="text-center hidecol_{{ $aname->id }}" width="150px">&nbsp;</td>
                         @endif
@@ -1812,7 +1894,58 @@ function check_total(id, amount) {
     
         <?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
 
-        
+@push('scripts')
+<script>
+(function () {
+    function initAgeingGrnPopovers(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+        var nodes = scope.querySelectorAll ? scope.querySelectorAll('.ageing-grn-pop') : document.querySelectorAll('.ageing-grn-pop');
+        nodes.forEach(function (el) {
+            if (typeof bootstrap === 'undefined' || !bootstrap.Popover) {
+                return;
+            }
+            if (bootstrap.Popover.getInstance(el)) {
+                return;
+            }
+            var raw = el.getAttribute('data-bs-content');
+            if (!raw) {
+                return;
+            }
+            new bootstrap.Popover(el, {
+                container: 'body',
+                html: true,
+                sanitize: false,
+                trigger: 'hover focus',
+                placement: 'auto',
+                delay: { show: 120, hide: 60 }
+            });
+        });
+    }
+
+    $(document).on('click', '.receivable-due-cell', function (e) {
+        if ($(e.target).closest('.ageing-grn-pop').length) {
+            return;
+        }
+        $(this).toggleClass('is-expanded');
+    });
+
+    $(document).on('click', '.ageing-grn-pop', function (e) {
+        e.stopPropagation();
+    });
+
+    $(function () {
+        initAgeingGrnPopovers(document);
+        $(document).on('shown.bs.collapse', '.collapse', function () {
+            initAgeingGrnPopovers(this);
+        });
+        setTimeout(function () {
+            initAgeingGrnPopovers(document);
+        }, 600);
+    });
+})();
+</script>
+@endpush
+
 @endsection
 
 
@@ -2076,10 +2209,6 @@ function check_total(id, amount) {
             }
         });
     }
-
-
-
-
 
 </script>
 
