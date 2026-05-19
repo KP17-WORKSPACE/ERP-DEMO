@@ -22,6 +22,7 @@ use App\SysReceiptAdjustmentsTemp;
 use App\SysSalesInvoice;
 use App\SysSalesReturn;
 use App\SysSalesReturnAdjestment;
+use App\SysPaymentTerms;
 use Illuminate\Http\Request;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
@@ -161,7 +162,7 @@ class SysReceivableOutstandingController extends Controller
 
                             if (SysHelper::get_pagination_post($request)) {
                                 if ($request->over != "") {
-                                    $overdue_list = SysHelper::get_receivable_os_by_overdue($request->over, $a->id);
+                                    $overdue_list = SysHelper::get_receivable_os_by_overdue($request->over, $a->id, SysHelper::normalizeToYmd($till_date));
                                     if (count($overdue_list) > 0) {
                                         $data_query->wherein('transaction_no', $overdue_list);
                                     } else {
@@ -329,7 +330,7 @@ class SysReceivableOutstandingController extends Controller
                     }
 
                     if ($overdue != "") {
-                        $overdue_list = SysHelper::get_receivable_os_by_overdue($overdue, $a->id);
+                        $overdue_list = SysHelper::get_receivable_os_by_overdue($overdue, $a->id, SysHelper::normalizeToYmd($till_date));
                         if (count($overdue_list) > 0) {
                             $data_query->wherein('transaction_no', $overdue_list);
                         } else {
@@ -339,7 +340,7 @@ class SysReceivableOutstandingController extends Controller
                     }
 
                     if ($ageing != "") {
-                        $ageing_list = SysHelper::get_receivable_os_by_ageing($ageing, $a->id);
+                        $ageing_list = SysHelper::get_receivable_os_by_ageing($ageing, $a->id, SysHelper::normalizeToYmd($till_date));
                         if (count($ageing_list) > 0) {
                             $data_query->wherein('transaction_no', $ageing_list);
                         } else {
@@ -414,12 +415,18 @@ class SysReceivableOutstandingController extends Controller
             //unadjested_list
 
             // if(isset($request->redirect_by_dealtrack) && $request->redirect_by_dealtrack == 1){
-            // return view('backEnd.outstanding.receivableoutstanding-modal', compact('data', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_all', 'com_id', 'overdue', 'ageing', 'sales_person_list', 'data_adjestment_all', 'data_receipt_all', 'data_receipt_opb', 'data_receipt2_all', 'data_receipt3_all', 'data_return_all', 'list_option', 'opbinvoice', 'opb_balance_amount', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc',  'ctrl_account_id', 'ctrl_asofdate', 'ctrl_doc_no', 'ctrl_deal_id', 'ctrl_amount', 'ctrl_sales_person', 'ctrl_overdue', 'ctrl_ageing', 'ctrl_list_option', 'ctrl_intext'));
-            // }
+            $payment_terms_map = SysPaymentTerms::where('active_status', 1)->get()->keyBy('id');
+            $sales_invoice_map = DB::table('sys_sales_invoice')
+                ->where('company_id', $com_id)
+                ->where('status', 1)
+                ->select('doc_number', 'payment_terms', 'doc_date')
+                ->get()
+                ->keyBy('doc_number');
+            $max_installments = SysPaymentTerms::resolveMaxInstallmentsFromMaps($sales_invoice_map, $payment_terms_map);
+            $company_row = SysCompany::find($com_id);
+            $receivable_finance_rate = (float) ($company_row->receivables_finance_cost_percentage ?? 0);
 
-     
-
-            return view('backEnd.outstanding.receivableoutstanding', compact('data','is_view_all_cust', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_all', 'com_id', 'overdue', 'ageing', 'sales_person_list', 'data_adjestment_all', 'data_receipt_all', 'data_receipt_opb', 'data_receipt2_all', 'data_receipt3_all', 'data_return_all', 'list_option', 'opbinvoice', 'opb_balance_amount', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'ctrl_account_id', 'ctrl_asofdate', 'ctrl_doc_no', 'ctrl_deal_id', 'ctrl_amount', 'ctrl_sales_person', 'ctrl_overdue', 'ctrl_ageing', 'ctrl_followup_from', 'ctrl_followup_to', 'ctrl_list_option', 'ctrl_intext','accounts_select','first_load','ctrl_basic_search'));
+            return view('backEnd.outstanding.receivableoutstanding', compact('data','is_view_all_cust', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_all', 'com_id', 'overdue', 'ageing', 'sales_person_list', 'data_adjestment_all', 'data_receipt_all', 'data_receipt_opb', 'data_receipt2_all', 'data_receipt3_all', 'data_return_all', 'list_option', 'opbinvoice', 'opb_balance_amount', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'ctrl_account_id', 'ctrl_asofdate', 'ctrl_doc_no', 'ctrl_deal_id', 'ctrl_amount', 'ctrl_sales_person', 'ctrl_overdue', 'ctrl_ageing', 'ctrl_followup_from', 'ctrl_followup_to', 'ctrl_list_option', 'ctrl_intext','accounts_select','first_load','ctrl_basic_search', 'payment_terms_map', 'max_installments', 'sales_invoice_map', 'receivable_finance_rate'));
 
         } catch (\Exception $e) {
             return $e;
@@ -1141,7 +1148,7 @@ class SysReceivableOutstandingController extends Controller
 
                             if (SysHelper::get_pagination_post($request)) {
                                 if ($request->over != "") {
-                                    $overdue_list = SysHelper::get_receivable_os_by_overdue($request->over, $a->id);
+                                    $overdue_list = SysHelper::get_receivable_os_by_overdue($request->over, $a->id, SysHelper::normalizeToYmd($till_date));
                                     if (count($overdue_list) > 0) {
                                         $data_query->wherein('transaction_no', $overdue_list);
                                     } else {
@@ -1245,7 +1252,7 @@ class SysReceivableOutstandingController extends Controller
                     }
 
                     if ($overdue != "") {
-                        $overdue_list = SysHelper::get_receivable_os_by_overdue($overdue, $a->id);
+                        $overdue_list = SysHelper::get_receivable_os_by_overdue($overdue, $a->id, SysHelper::normalizeToYmd($till_date));
                         if (count($overdue_list) > 0) {
                             $data_query->wherein('transaction_no', $overdue_list);
                         } else {
@@ -1255,7 +1262,7 @@ class SysReceivableOutstandingController extends Controller
                     }
 
                     if ($ageing != "") {
-                        $ageing_list = SysHelper::get_receivable_os_by_ageing($ageing, $a->id);
+                        $ageing_list = SysHelper::get_receivable_os_by_ageing($ageing, $a->id, SysHelper::normalizeToYmd($till_date));
                         if (count($ageing_list) > 0) {
                             $data_query->wherein('transaction_no', $ageing_list);
                         } else {

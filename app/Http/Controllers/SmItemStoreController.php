@@ -1414,6 +1414,8 @@ class SmItemStoreController extends Controller
             );
         }
 
+        $financeCostPopoverHtml = $this->buildFinanceCostBreakdownPopoverHtml($lines, $totalFinanceCost);
+
         return [
             'lines' => $lines,
             'buckets' => $buckets,
@@ -1421,6 +1423,8 @@ class SmItemStoreController extends Controller
             'unallocated_qty' => 0.0,
             'avg_rate' => (float) ($ga['avg_rate'] ?? 0),
             'total_finance_cost' => $totalFinanceCost,
+            'finance_cost_popover_html' => $financeCostPopoverHtml,
+            'finance_cost_popover_content_attr' => htmlspecialchars($financeCostPopoverHtml, ENT_QUOTES, 'UTF-8'),
         ];
     }
 
@@ -2981,6 +2985,8 @@ class SmItemStoreController extends Controller
             $allocatedQty += (float) $ol['qty_alloc'];
         }
 
+        $financeCostPopoverHtml = $this->buildFinanceCostBreakdownPopoverHtml($outLines, $totalFinanceCost);
+
         return [
             'lines' => $outLines,
             'buckets' => $buckets,
@@ -2988,6 +2994,8 @@ class SmItemStoreController extends Controller
             'unallocated_qty' => max(0.0, (float) $remaining),
             'avg_rate' => $avgRate,
             'total_finance_cost' => $totalFinanceCost,
+            'finance_cost_popover_html' => $financeCostPopoverHtml,
+            'finance_cost_popover_content_attr' => htmlspecialchars($financeCostPopoverHtml, ENT_QUOTES, 'UTF-8'),
         ];
     }
 
@@ -3040,6 +3048,46 @@ class SmItemStoreController extends Controller
         foreach ($rows as $r) {
             $html .= '<div><strong>' . $esc($r[0]) . '</strong> ' . $esc($r[1]) . '</div>';
         }
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
+     * Bootstrap popover HTML: finance cost per GRN line plus total.
+     *
+     * @param array $lines
+     * @param float $totalFinanceCost
+     * @return string
+     */
+    protected function buildFinanceCostBreakdownPopoverHtml(array $lines, $totalFinanceCost)
+    {
+        if (empty($lines)) {
+            return '';
+        }
+
+        $esc = function ($v) {
+            return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        };
+
+        $html = '<div class="small text-start ageing-grn-popover">';
+        $html .= '<div class="fw-semibold mb-1">Finance cost breakdown</div>';
+
+        foreach ($lines as $line) {
+            $grnNo = ($line['doc_number'] ?? '') !== '' ? (string) $line['doc_number'] : '—';
+            $grnDate = ($line['doc_date_disp'] ?? '') !== '' ? (string) $line['doc_date_disp'] : '';
+            $financeCost = SysHelper::com_curr_format((float) ($line['finance_cost'] ?? 0), 2, '.', ',');
+            $label = $grnDate !== '' ? $grnNo . ' (' . $grnDate . ')' : $grnNo;
+            $html .= '<div class="d-flex justify-content-between gap-3 mb-1">';
+            $html .= '<span>' . $esc($label) . '</span>';
+            $html .= '<span class="text-nowrap">' . $esc($financeCost) . '</span>';
+            $html .= '</div>';
+        }
+
+        $html .= '<div class="d-flex justify-content-between gap-3 border-top pt-1 mt-1 fw-semibold">';
+        $html .= '<span>Total</span>';
+        $html .= '<span class="text-nowrap">' . $esc(SysHelper::com_curr_format((float) $totalFinanceCost, 2, '.', ',')) . '</span>';
+        $html .= '</div>';
         $html .= '</div>';
 
         return $html;
