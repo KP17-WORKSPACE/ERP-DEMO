@@ -80,6 +80,26 @@
         .sub_table .receivable-due-cell {
             overflow: visible;
         }
+        .recv-sched-col {
+            font-size: 11px;
+            line-height: 1.35;
+            overflow: visible;
+        }
+        .recv-sched-list {
+            display: inline;
+            word-break: break-word;
+        }
+        .recv-sched-item {
+            cursor: help;
+            border-bottom: 1px dotted #adb5bd;
+            white-space: nowrap;
+        }
+        .recv-sched-sep {
+            color: #868e96;
+        }
+        .recv-sched-od-late { color: #c92a2a; font-weight: 600; }
+        .recv-sched-od-soon { color: #2b8a3e; font-weight: 600; }
+        .recv-sched-od-today { color: #495057; font-weight: 600; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -93,15 +113,12 @@
                     var asOfDate      = $('#till_date').val() || '';
 
                     // Build header label array
-                    var maxInst = {{ (int) ($max_installments ?? 1) }};
                     var headerLabels = [
                         'Account Code', 'Customer', 'Deal ID',
                         'Inv Date', 'Inv No', 'LPO No',
-                        'Amount', 'Adjustments', 'Balance', 'Total Balance'
+                        'Amount', 'Adjustments', 'Balance', 'Total Balance',
+                        'Due Date', 'Over Due Days', 'Due Amount'
                     ];
-                    for (var hi = 1; hi <= maxInst; hi++) {
-                        headerLabels.push('Due ' + hi);
-                    }
                     if (!hideBasicCols) {
                         headerLabels = headerLabels.concat(['0-30', '31-60', '61-90', '>90', 'Finance Cost']);
                     }
@@ -657,8 +674,7 @@
                       $receivable_finance_rate = $receivable_finance_rate ?? 0;
                       $sales_invoice_map = $sales_invoice_map ?? collect([]);
                       $payment_terms_map = $payment_terms_map ?? collect([]);
-                      $maxInstCols = (int) $max_installments;
-                      $scheduleColCount = $maxInstCols;
+                      $scheduleColCount = 3;
                       $asOfDateCalc = App\SysHelper::normalizeToYmd($till_date) ?: $till_date;
                   @endphp
 
@@ -839,15 +855,19 @@ function check_total(id, amount) {
                     <thead>
                         
                       <tr>
-                        <th class="text-center" style="width:6%">Deal ID</th>
-                          <th class="text-center" style="width:6%">Inv Date</th>
-                          <th class="text-center" style="width:7%">Inv No</th>
+                        <th class="text-center" style="width:5%">Deal ID</th>
+                          <th class="text-center" style="width:5%">Inv Date</th>
+                          <th class="text-center" style="width:5%">Inv No</th>
                           <th class="text-center" style="width:5%">LPO No</th>
                           <th class="text-end" style="width:6%">Amount</th>
-                          <th class="text-end" style="width:5%">Adjustments</th>
+                          <th class="text-end" style="width:7%">Adjustments</th>
                           <th class="text-end" style="width:5%">Balance</th>
-                          <th class="text-end" style="width:5%">Total Balance</th>
-                          @include('backEnd.outstanding.partials.receivable_schedule_header')
+                          <th class="text-end" style="width:7%">Total Balance</th>
+                          <th class="text-start" style="width:7%">Due Date</th>
+                          <th class="text-start" style="width:6%">Over Due Days</th>
+                          <th class="text-start" style="width:7%">Due Amount</th>
+
+                          
                           @if(!$hideBasicColumns)
                             <th class="text-center" style="width:5%">0-30</th>
                             <th class="text-center" style="width:5%">31-60</th>
@@ -1198,13 +1218,16 @@ function check_total(id, amount) {
                                 $all_overdue += $breakdown['max_overdue_days'];
                             @endphp
 
-                            @include('backEnd.outstanding.partials.receivable_schedule_cells', ['breakdown' => $breakdown])
+
+
 
                             @if(($breakdown['max_overdue_days'] ?? 0) > 0)
                             <script>
                                 $('#sum_{{ $aname->id }}').css('color', 'red');
                             </script>
                             @endif
+
+                            @include('backEnd.outstanding.partials.receivable_due_columns', ['breakdown' => $breakdown])
 
 @if(!$hideBasicColumns)
                             <td class="text-end">{{ $ageingRow['0_30'] > 0 ? App\SysHelper::com_curr_format($ageingRow['0_30'], 2, '.', ',') : '' }}</td>
@@ -1255,9 +1278,8 @@ function check_total(id, amount) {
                         <td class="text-end"><b><?php echo  @App\SysHelper::com_curr_format($grand_paid,2,'.',',')   ?> </b></td>
                         <td class="text-end"><b><?php echo  @App\SysHelper::com_curr_format($grand_balance,2,'.',',')   ?> </b></td>
                         <td class="text-end"><b><?php echo  @App\SysHelper::com_curr_format($b,2,'.',',')   ?> </td>
-         
+                        <td colspan="{{ $scheduleColCount }}"></td>
                         @if(!$hideBasicColumns)
-                            <td colspan="{{ $scheduleColCount }}"></td>
                             <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot1, 2, '.', ',') }}</b></td>
                             <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot2, 2, '.', ',') }}</b></td>
                             <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot3, 2, '.', ',') }}</b></td>
@@ -1266,6 +1288,8 @@ function check_total(id, amount) {
                             <td colspan="2"></td>
                             <td class="text-center hidecol_{{ $aname->id }}" width="150px">&nbsp;</td>
                             <td class="text-center hidecol_{{ $aname->id }}" width="150px">&nbsp;</td>
+                        @else
+                            <td colspan="2"></td>
                         @endif
                        
                        
