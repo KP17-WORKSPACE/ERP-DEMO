@@ -695,15 +695,17 @@
                                                 <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto"  data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ e($x['ageing_period'] ?? '—') }}</span>@if (!$loop->last)<span> , </span>@endif
                                             @endforeach
                                         </td>
-                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['1_30'], 2, '.', ',') }}</td>
-                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['31_60'], 2, '.', ',') }}</td>
-                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['61_90'], 2, '.', ',') }}</td>
-                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['91_120'], 2, '.', ',') }}</td>
-                                        <td class="text-start no-toggle">{{ @App\SysHelper::com_curr_format($ga['buckets']['121_plus'], 2, '.', ',') }}</td>
-                                        <td class="text-start align-top ageing-grn-cell no-toggle" style="font-size: 11px;">
-                                            @foreach ($ga['lines'] as $x)
-                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto" data-bs-content="{!! $x['popover_content_attr'] ?? '' !!}">{{ @App\SysHelper::com_curr_format((float) ($x['finance_cost'] ?? 0), 2, '.', ',') }}</span>@if (!$loop->last)<span> , </span>@endif
-                                            @endforeach
+                                        <td class="text-start">{{ @App\SysHelper::com_curr_format($ga['buckets']['1_30'], 2, '.', ',') }}</td>
+                                        <td class="text-start">{{ @App\SysHelper::com_curr_format($ga['buckets']['31_60'], 2, '.', ',') }}</td>
+                                        <td class="text-start">{{ @App\SysHelper::com_curr_format($ga['buckets']['61_90'], 2, '.', ',') }}</td>
+                                        <td class="text-start">{{ @App\SysHelper::com_curr_format($ga['buckets']['91_120'], 2, '.', ',') }}</td>
+                                        <td class="text-start">{{ @App\SysHelper::com_curr_format($ga['buckets']['121_plus'], 2, '.', ',') }}</td>
+                                        <td class="text-start align-top" style="font-size: 11px;">
+                                            @if (!empty($ga['finance_cost_popover_content_attr']))
+                                                <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto" data-bs-content="{!! $ga['finance_cost_popover_content_attr'] !!}">{{ @App\SysHelper::com_curr_format((float) ($ga['total_finance_cost'] ?? 0), 2, '.', ',') }}</span>
+                                            @else
+                                                {{ @App\SysHelper::com_curr_format((float) ($ga['total_finance_cost'] ?? 0), 2, '.', ',') }}
+                                            @endif
                                         </td>
                                     @else
                                         <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
@@ -715,12 +717,12 @@
                                         <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
                                         <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
                                         <td class="text-end ageing-grn-cell ageing-detail-col">—</td>
-                                        <td class="text-end no-toggle">—</td>
-                                        <td class="text-end no-toggle">—</td>
-                                        <td class="text-end no-toggle">—</td>
-                                        <td class="text-end no-toggle">—</td>
-                                        <td class="text-end no-toggle">—</td>
-                                        <td class="text-end no-toggle">—</td>
+                                        <td class="text-end">—</td>
+                                        <td class="text-end">—</td>
+                                        <td class="text-end">—</td>
+                                        <td class="text-end">—</td>
+                                        <td class="text-end">—</td>
+                                        <td class="text-end">—</td>
                                     @endif
 
                                 </tr>
