@@ -9645,7 +9645,8 @@ SysPriceBook::insert([
         }
     }
 
-    public static function get_receivable_os_by_overdue($overdue,$account_id){
+    public static function get_receivable_os_by_overdue($overdue, $account_id, $asOfDate = null)
+    {
         try {
             if($overdue == "0") { //0
                 $df = 0;
@@ -9679,43 +9680,34 @@ SysPriceBook::insert([
                 $overdue_date_t = date("2050-01-01");                
             }
 
-            $list = DB::table('sys_sales_invoice as si')->select('si.doc_number','si.doc_date',DB::raw('DATE_ADD(si.doc_date, INTERVAL pt.days_calculation DAY) as due_date'),'pt.days_calculation')
-            ->join('sys_payment_terms as pt','pt.id','si.payment_terms')
-            ->where('si.company_id',session('logged_session_data.company_id'))
-            ->where("customer",$account_id)->get();
+            $list = DB::table('sys_sales_invoice as si')
+                ->select('si.doc_number', 'si.doc_date', 'pt.payment_schedule', 'pt.days_calculation', 'pt.title')
+                ->join('sys_payment_terms as pt', 'pt.id', 'si.payment_terms')
+                ->where('si.company_id', session('logged_session_data.company_id'))
+                ->where('customer', $account_id)
+                ->get();
 
-            $retlist[]="";
+            $retlist = [];
 
-            if(count($list)>0){
-                foreach($list as $li){
-                    //$diff = $li->due_date->diffInDays(now());
-                    //$diff = now()->diffInDays(Carbon::parse($li->due_date), true);
-                    $diff = Carbon::parse($li->due_date)->diffInDays(now(), false);
-                    
-                    if($diff >= $df && $diff <= $dt){
-                        //$retlist[]=[$li->doc_number,$li->doc_date,$li->due_date,$diff];
-                        $retlist[]=$li->doc_number;
+            if (count($list) > 0) {
+                foreach ($list as $li) {
+                    $breakdown = SysPaymentTerms::buildOutstandingBreakdown($li->doc_date, 1, $li, 0, $asOfDate);
+                    if (SysPaymentTerms::invoiceMatchesOverdueFilter($breakdown['installments'], $overdue)) {
+                        $retlist[] = $li->doc_number;
                     }
-
                 }
                 return $retlist;
             }
 
-            
-            //->whereBetween(DB::raw('DATE_ADD(si.doc_date, INTERVAL pt.days_calculation DAY)'),[$overdue_date_f,$overdue_date_t])
-            
-            //->whereRaw('DATE_ADD(si.doc_date, INTERVAL pt.days_calculation DAY)' ,'<' ,$overdue_date_f)
-            //->whereRaw('DATE_ADD(si.doc_date, INTERVAL pt.days_calculation DAY)' ,'>' ,$overdue_date_t)
-            //->pluck('doc_number');
             return [];
             
         } catch (\Throwable $th) {
-            //throw $th;
             return [];
         }
     }
 
-    public static function get_receivable_os_by_ageing($ageing,$account_id){
+    public static function get_receivable_os_by_ageing($ageing, $account_id, $asOfDate = null)
+    {
         try {
             if($ageing == "0") { //0-30
                 $df = 0;
@@ -9743,32 +9735,27 @@ SysPriceBook::insert([
                 $overdue_date_t = date("2050-01-01");                
             }
 
-            $list = DB::table('sys_sales_invoice as si')->select('si.doc_number','si.doc_date',DB::raw('DATE_ADD(si.doc_date, INTERVAL pt.days_calculation DAY) as due_date'),'pt.days_calculation')
-            ->join('sys_payment_terms as pt','pt.id','si.payment_terms')
-            ->where('si.company_id',session('logged_session_data.company_id'))
-            ->where("customer",$account_id)->get();
-            $retlist[]="";
+            $list = DB::table('sys_sales_invoice as si')
+                ->select('si.doc_number', 'si.doc_date', 'pt.payment_schedule', 'pt.days_calculation', 'pt.title')
+                ->join('sys_payment_terms as pt', 'pt.id', 'si.payment_terms')
+                ->where('si.company_id', session('logged_session_data.company_id'))
+                ->where('customer', $account_id)
+                ->get();
+            $retlist = [];
 
-            if(count($list)>0){
-                foreach($list as $li){
-                    //$diff = $li->due_date->diffInDays(now());
-                    //$diff = now()->diffInDays(Carbon::parse($li->due_date), true);
-                    $diff = Carbon::parse($li->doc_date)->diffInDays(now(), false);
-                    
-                    if($diff+1 >= $df && $diff+1 <= $dt){
-                        //$retlist[]=[$li->doc_number,$li->doc_date,$li->due_date,$diff];
-                        $retlist[]=$li->doc_number;
+            if (count($list) > 0) {
+                foreach ($list as $li) {
+                    $breakdown = SysPaymentTerms::buildOutstandingBreakdown($li->doc_date, 1, $li, 0, $asOfDate);
+                    if (SysPaymentTerms::invoiceMatchesAgeingFilter($breakdown['installments'], $ageing)) {
+                        $retlist[] = $li->doc_number;
                     }
-
                 }
                 return $retlist;
             }
-            //->whereBetween(DB::raw('DATE_ADD(si.doc_date, INTERVAL pt.days_calculation DAY)'),[$overdue_date_f,$overdue_date_t])
-            //->pluck('doc_number');
-            return $list;
+            return [];
             
         } catch (\Throwable $th) {
-            //throw $th;
+            return [];
         }
     }
 
