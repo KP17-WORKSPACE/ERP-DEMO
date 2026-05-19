@@ -1922,7 +1922,7 @@ class SysChartofAccountsController extends Controller
                     $accounts->transaction_ref = "";
                     $accounts->entry_no = 1;
                     $accounts->save();
-                    DB::table('sys_chartofaccounts_transaction_Invoice_detail')->insert([
+                    DB::table('sys_chartofaccounts_transaction_invoice_detail')->insert([
                         'trn_id' => $accounts->id,
                         'po_no' => $dt->po_no,
                         'payment_terms' => $dt->payment_terms,
