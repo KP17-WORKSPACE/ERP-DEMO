@@ -279,7 +279,7 @@
                                             <div class="col-lg-3 mb-2">
                                                 <div class="input-effect">
                                                     <label class="form-label">Choose File<span>*.csv</span> (<a
-                                                            href="{{ url('public/uploads/product_upload/chartofaccounts_invoice_import_sample_file_dmy.csv') }}"
+                                                            href="{{ url('public/uploads/product_upload/chartofaccounts_invoice_import_sample_file_dmy.csv') }}?v={{ filemtime(public_path('uploads/product_upload/chartofaccounts_invoice_import_sample_file_dmy.csv')) }}"
                                                             target="_blank">Sample File</a>)</label>
                                                     <input class="form-control" type="file" accept=".csv"
                                                         name="import_file" required>
