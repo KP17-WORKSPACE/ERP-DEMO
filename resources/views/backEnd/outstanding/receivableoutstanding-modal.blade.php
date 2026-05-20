@@ -277,7 +277,11 @@ function check_total(id, amount) {
                                 }
                             }
 
-                            $paid += ($adjustments+$bi_amount+$bi_amount2+$bi_amount6)-($bi_amount3+$bi_amount4);
+                            $opb_import_paid = 0;
+                            if (isset($dt->transaction_type) && $dt->transaction_type == 'opbinvoice') {
+                                $opb_import_paid = (float) ($dt->credit_amount ?? 0);
+                            }
+                            $paid += ($adjustments + $bi_amount + $bi_amount2 + $bi_amount6 + $opb_import_paid) - ($bi_amount3 + $bi_amount4);
                             
                             
                             $deal_id="";
@@ -297,11 +301,16 @@ function check_total(id, amount) {
                                 $deal_track_id=$deal->track_id;
                             }
                             if ($dt->transaction_type=="opbinvoice"){
-                                if(count($opbinvoice)>0){
-                                $lpo_no = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('po_no')->first();
-                                $deal_code = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('deal_id')->first();
-                                $payment_terms = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('payment_terms')->first();
-                                $duedate = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('due_date')->first();
+                                $opbinvoice_map = $opbinvoice_map ?? collect([]);
+                                $opbDet = $opbinvoice_map->get($dt->transaction_no);
+                                if ($opbDet) {
+                                    $lpo_no = $opbDet->po_no ?? '';
+                                    $deal_code = $opbDet->deal_id ?? '';
+                                    $payment_terms = $opbDet->payment_terms ?? '';
+                                    $duedate = $opbDet->due_date ?? '';
+                                    if (!empty($opbDet->sales_person)) {
+                                        $sales_person = $opbDet->sales_person;
+                                    }
                                 }
                             }else{
                                 if(isset($lpono) && $lpono != ""){
@@ -321,7 +330,9 @@ function check_total(id, amount) {
                         if(($dt->credit_amount)>0){
                             //if(!str_contains($dt->transaction_no,'SR')){
                             $grand_debit_amount-=$dt->credit_amount;
-                            $grand_paid+=$dt->credit_amount;
+                            if (!isset($dt->transaction_type) || $dt->transaction_type != 'opbinvoice') {
+                                $grand_paid+=$dt->credit_amount;
+                            }
                             //}
                             //$grand_paid+=$paid;
                             //$grand_balance+=$dt->debit_amount-abs($paid);

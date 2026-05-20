@@ -115,7 +115,7 @@
                                 <thead>
                                     <tr style="background: #eeeeee; color: #000000;">
                                         <th class=" text-start" width="300px">Customer Name</th>
-                                        <th class=" text-end" width="120px">Total Balance</th>
+                                        <th class=" text-end" width="120px">Net Balance</th>
                                         <th class=" text-end" width="120px">0-30</th>
                                         <th class=" text-end" width="120px">31-60</th>
                                         <th class=" text-end" width="120px">61-90</th>

@@ -674,6 +674,7 @@
                       $receivable_finance_rate = $receivable_finance_rate ?? 0;
                       $sales_invoice_map = $sales_invoice_map ?? collect([]);
                       $payment_terms_map = $payment_terms_map ?? collect([]);
+                      $opbinvoice_map = $opbinvoice_map ?? collect([]);
                       $scheduleColCount = 3;
                       $asOfDateCalc = App\SysHelper::normalizeToYmd($till_date) ?: $till_date;
                   @endphp
@@ -897,8 +898,16 @@ function check_total(id, amount) {
                          $k=0;
                          $row_count_1 = 0;
                          foreach ($data as $dt){
-                           
-                            $DueData =  App\SysHelper::get_due_date_sales_invoice($dt->transaction_no,$dt->transaction_date); 
+                            if (isset($dt->transaction_type) && $dt->transaction_type == 'opbinvoice') {
+                                $opbFilterDet = $opbinvoice_map->get($dt->transaction_no);
+                                $DueData = @App\SysHelper::get_due_date_invoice_opbinvoice(
+                                    $dt->transaction_no,
+                                    $opbFilterDet->due_date ?? '',
+                                    $opbFilterDet->payment_terms ?? ''
+                                );
+                            } else {
+                                $DueData = App\SysHelper::get_due_date_sales_invoice($dt->transaction_no, $dt->transaction_date);
+                            } 
                        
                            
 
@@ -1048,7 +1057,11 @@ function check_total(id, amount) {
                                 }
                             }
 
-                            $paid += ($adjustments+$bi_amount+$bi_amount2+$bi_amount6)-($bi_amount3+$bi_amount4);
+                            $opb_import_paid = 0;
+                            if (isset($dt->transaction_type) && $dt->transaction_type == 'opbinvoice') {
+                                $opb_import_paid = (float) ($dt->credit_amount ?? 0);
+                            }
+                            $paid += ($adjustments + $bi_amount + $bi_amount2 + $bi_amount6 + $opb_import_paid) - ($bi_amount3 + $bi_amount4);
                             
                             
                             $deal_id="";
@@ -1068,11 +1081,15 @@ function check_total(id, amount) {
                                 $deal_track_id=$deal->track_id;
                             }
                             if ($dt->transaction_type=="opbinvoice"){
-                                if(count($opbinvoice)>0){
-                                $lpo_no = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('po_no')->first();
-                                $deal_code = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('deal_id')->first();
-                                $payment_terms = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('payment_terms')->first();
-                                $duedate = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('due_date')->first();
+                                $opbDet = $opbinvoice_map->get($dt->transaction_no);
+                                if ($opbDet) {
+                                    $lpo_no = $opbDet->po_no ?? '';
+                                    $deal_code = $opbDet->deal_id ?? '';
+                                    $payment_terms = $opbDet->payment_terms ?? '';
+                                    $duedate = $opbDet->due_date ?? '';
+                                    if (!empty($opbDet->sales_person)) {
+                                        $sales_person = $opbDet->sales_person;
+                                    }
                                 }
                             }else{
                                 if(isset($lpono) && $lpono != ""){
@@ -1092,7 +1109,10 @@ function check_total(id, amount) {
                         if(($dt->credit_amount)>0){
                             //if(!str_contains($dt->transaction_no,'SR')){
                             $grand_debit_amount-=$dt->credit_amount;
-                            $grand_paid+=$dt->credit_amount;
+                            // OPB import credit is already included in $paid via $opb_import_paid
+                            if (!isset($dt->transaction_type) || $dt->transaction_type != 'opbinvoice') {
+                                $grand_paid+=$dt->credit_amount;
+                            }
                             //}
                             //$grand_paid+=$paid;
                             //$grand_balance+=$dt->debit_amount-abs($paid);
@@ -1179,18 +1199,19 @@ function check_total(id, amount) {
                                 $invoiceDate = $dt->transaction_date;
                                 $paymentTermRow = null;
                                 if ($dt->transaction_type == 'opbinvoice') {
-                                    $opbDays = 0;
-                                    if (!empty($duedate)) {
-                                        $opbDays = max(0, (int) round((strtotime($duedate) - strtotime($invoiceDate)) / 86400));
-                                    }
+                                    $opbPaymentTerm = App\SysPaymentTerms::resolveOpbPaymentTerm(
+                                        $payment_terms,
+                                        $invoiceDate,
+                                        $duedate,
+                                        $payment_terms_map
+                                    );
                                     $breakdown = App\SysPaymentTerms::buildOutstandingBreakdown(
                                         $invoiceDate,
                                         $rowBalance,
-                                        ['title' => $payment_terms, 'payment_schedule' => [['percentage' => 100, 'days' => $opbDays]]],
+                                        $opbPaymentTerm,
                                         $receivable_finance_rate ?? 0,
                                         $asOfDateCalc
                                     );
-                                    $breakdown['payment_terms_title'] = $payment_terms ?: '';
                                 } else {
                                     $siRow = isset($sales_invoice_map) ? $sales_invoice_map->get($dt->transaction_no) : null;
                                     if ($siRow) {
