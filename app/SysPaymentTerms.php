@@ -119,6 +119,87 @@ class SysPaymentTerms extends Model
         return $max;
     }
 
+    /**
+     * Max installment columns from opening-balance invoice import rows.
+     */
+    public static function resolveMaxInstallmentsFromOpbMap($opbinvoiceMap, $paymentTermsMap)
+    {
+        $max = 1;
+        if (!$opbinvoiceMap || $opbinvoiceMap->isEmpty()) {
+            return $max;
+        }
+        foreach ($opbinvoiceMap as $row) {
+            $pt = self::resolveByIdOrTitle($row->payment_terms ?? '', $paymentTermsMap);
+            $count = count(self::parseSchedule($pt));
+            if ($count < 1) {
+                $count = 1;
+            }
+            if ($count > $max) {
+                $max = $count;
+            }
+        }
+        return $max;
+    }
+
+    /**
+     * Resolve payment term by numeric id or title (import / OPB rows may store either).
+     */
+    public static function resolveByIdOrTitle($value, $paymentTermsMap = null)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            $id = (int) $value;
+            if ($paymentTermsMap && $paymentTermsMap->has($id)) {
+                return $paymentTermsMap->get($id);
+            }
+            $found = self::where('id', $id)->where('active_status', 1)->first();
+            if ($found) {
+                return $found;
+            }
+        }
+
+        if ($paymentTermsMap) {
+            foreach ($paymentTermsMap as $term) {
+                if (strcasecmp(trim((string) ($term->title ?? '')), $value) === 0) {
+                    return $term;
+                }
+            }
+        }
+
+        return self::where('title', $value)->where('active_status', 1)->first();
+    }
+
+    /**
+     * Payment term payload for receivable breakdown on imported OPB invoices.
+     */
+    public static function resolveOpbPaymentTerm($paymentTermsValue, $invoiceDate, $dueDate = null, $paymentTermsMap = null)
+    {
+        $term = self::resolveByIdOrTitle($paymentTermsValue, $paymentTermsMap);
+        if ($term) {
+            return $term;
+        }
+
+        $opbDays = 0;
+        $normalizedInvoice = SysHelper::normalizeToYmd($invoiceDate);
+        $normalizedDue = SysHelper::normalizeToYmd($dueDate);
+        if ($normalizedInvoice && $normalizedDue) {
+            $opbDays = max(0, (int) round((strtotime($normalizedDue) - strtotime($normalizedInvoice)) / 86400));
+        }
+
+        return [
+            'title' => trim((string) $paymentTermsValue),
+            'payment_schedule' => [['percentage' => 100, 'days' => $opbDays]],
+        ];
+    }
+
     public static function resolveAsOfDate($asOfDate = null)
     {
         if (!$asOfDate) {
