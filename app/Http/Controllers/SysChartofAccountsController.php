@@ -1843,6 +1843,16 @@ class SysChartofAccountsController extends Controller
                 if (isset($dataArray[$i][12])) {
                     $sales_person = $dataArray[$i][12];
                 }
+
+                $paymentTermsRaw = trim((string) ($dataArray[$i][7] ?? ''));
+                $paymentTermsStored = $paymentTermsRaw;
+                if ($paymentTermsRaw !== '') {
+                    $resolvedPaymentTerm = SysPaymentTerms::resolveByIdOrTitle($paymentTermsRaw);
+                    if ($resolvedPaymentTerm) {
+                        $paymentTermsStored = (string) $resolvedPaymentTerm->id;
+                    }
+                }
+                
                 //for($j=0; $j < count($dataArray[0]); $j++){
                 $data[] = [
                     'invoice_date' => SysHelper::normalizeToYmd($dataArray[$i][0]),
@@ -1852,11 +1862,11 @@ class SysChartofAccountsController extends Controller
                     'debit_amount' => $dataArray[$i][4],
                     'credit_amount' => $dataArray[$i][5],
                     'po_no' => $dataArray[$i][6],
-                    'payment_terms' => $dataArray[$i][7],
+                    'payment_terms' => $paymentTermsStored,
                     'due_date' => SysHelper::normalizeToYmd($dataArray[$i][8]),
-                    'deal_id' => $dataArray[$i][9],
+                    'deal_id' => trim((string) ($dataArray[$i][9] ?? '')),
                     'bill_no' => $bill_no,
-                    'bill_date' => $bill_date,
+                    'bill_date' => SysHelper::normalizeToYmd($bill_date),
                     'sales_person' => $sales_person,
                     'status' => 1,
                     'created_by' => Auth()->user()->id,
@@ -1905,6 +1915,17 @@ class SysChartofAccountsController extends Controller
             if (count($data) > 0) {
                 foreach ($data as $dt) {
                     $account_id = $account_name->where('account_code', $dt->account_code)->max('id');
+                    $resolvedPaymentTerm = SysPaymentTerms::resolveByIdOrTitle($dt->payment_terms ?? '');
+                    $paymentTermsStored = $dt->payment_terms;
+                    if ($resolvedPaymentTerm) {
+                        $paymentTermsStored = (string) $resolvedPaymentTerm->id;
+                    }
+                    $dueDateStored = $dt->due_date;
+                    if (empty($dueDateStored) && $resolvedPaymentTerm && !empty($dt->invoice_date)) {
+                        $dueDateStored = Carbon::parse($dt->invoice_date)
+                            ->addDays(SysPaymentTerms::resolveCreditDays($resolvedPaymentTerm))
+                            ->format('Y-m-d');
+                    }
                     $accounts = new SysChartofAccountsTransaction();
                     $accounts->account_id = $account_id;
                     $accounts->transaction_id = $account_id;
@@ -1913,7 +1934,7 @@ class SysChartofAccountsController extends Controller
                     $accounts->transaction_type = 'opbinvoice';
                     $accounts->debit_amount = $dt->debit_amount;
                     $accounts->credit_amount = $dt->credit_amount;
-                    $accounts->remarks = 'Invoive Opening Balance';
+                    $accounts->remarks = 'Invoice Opening Balance';
                     $accounts->status = 1;
                     $accounts->plan = 0;
                     $accounts->created_by = Auth::user()->id;
@@ -1925,15 +1946,14 @@ class SysChartofAccountsController extends Controller
                     DB::table('sys_chartofaccounts_transaction_invoice_detail')->insert([
                         'trn_id' => $accounts->id,
                         'po_no' => $dt->po_no,
-                        'payment_terms' => $dt->payment_terms,
-                        'due_date' => $dt->due_date,
-                        'deal_id' => $dt->deal_id,
+                        'payment_terms' => $paymentTermsStored,
+                        'due_date' => $dueDateStored,
+                        'deal_id' => trim((string) ($dt->deal_id ?? '')),
                         'account_id' => $accounts->account_id,
                         'transaction_no' => $accounts->transaction_no,
                         'bill_no' => $dt->bill_no,
                         'bill_date' => $dt->bill_date,
-                        'bill_date' => $dt->bill_date,
-                        'sales_person' => $dt->sales_person,
+                        'sales_person' => trim((string) ($dt->sales_person ?? '')),
                         'status' => 1,
                         'created_by' => Auth::user()->id,
                         'created_at' => Carbon::now('+04:00'),
@@ -1965,7 +1985,6 @@ class SysChartofAccountsController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return $e;
             Toastr::error('Operation Failed', 'Failed');
             return redirect()->back();
         }

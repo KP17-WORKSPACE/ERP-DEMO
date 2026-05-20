@@ -155,7 +155,7 @@ class SysReceivableOutstandingController extends Controller
                         $transaction_no = $abc->where('account_id', $a->id)->pluck('transaction_no');
                         if (count($transaction_no) > 0) {
                             $selectBigData = clone $BigData;
-                            $data_query = $selectBigData->select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw($a->id . ' as account_id'))->wherein('company_id', $company_id);
+                            $data_query = $selectBigData->select(...$this->receivableOsAggregateSelect((string) $a->id))->wherein('company_id', $company_id);
                             $data_query->where("account_id", $a->id)->where('status', 1);
                             $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'");
                             $data_query->wherein('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111']);
@@ -283,7 +283,7 @@ class SysReceivableOutstandingController extends Controller
                     }
                 }
 
-                $bigData = SysChartofAccountsTransaction::select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw('account_id as account_id'))->wherein('company_id', $company_id)->where('status', 1)->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'")->wherein('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])->groupby('transaction_date', 'transaction_id', 'transaction_no', 'account_id');
+                $bigData = SysChartofAccountsTransaction::select(...$this->receivableOsAggregateSelect('account_id'))->wherein('company_id', $company_id)->where('status', 1)->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'")->wherein('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])->groupby('transaction_date', 'transaction_id', 'transaction_no', 'account_id');
 
                 foreach ($accounts as $a) {
                     $bdata = clone $bigData;
@@ -297,6 +297,7 @@ class SysReceivableOutstandingController extends Controller
                     if ($request->deal_id != "") {
                         $deal_id = SysHelper::get_dealid_from_code($request->deal_id);
                         $deal_trn_no = SysSalesInvoice::where('deal_id', $deal_id)->where('status', 1)->where('company_id', $com_id)->where("customer", $a->id)->pluck('doc_number');
+                        $deal_trn_no = $deal_trn_no->merge($this->opbTransactionNosByDeal($com_id, $a->id, $request->deal_id, $deal_id))->unique()->values();
                         if (count($deal_trn_no) > 0) {
                             $data_query->wherein('transaction_no', $deal_trn_no);
                         } else {
@@ -320,7 +321,7 @@ class SysReceivableOutstandingController extends Controller
                     if ($request->sales_person != "") {
                         $inv_trn_no1 = SysSalesInvoice::wherein('sales_man', $request->sales_person)->where('status', 1)->where('company_id', $com_id)->where("customer", $a->id)->pluck('doc_number');
                         $inv_trn_no2 = SysSalesReturn::wherein('sales_man', $request->sales_person)->where('status', 1)->where('company_id', $com_id)->where("customer", $a->id)->pluck('doc_number');
-                        $inv_trn_no = $inv_trn_no2->merge($inv_trn_no1);
+                        $inv_trn_no = $inv_trn_no2->merge($inv_trn_no1)->merge($this->opbTransactionNosBySalesPerson($com_id, $a->id, (array) $request->sales_person))->unique()->values();
                         if (count($inv_trn_no) > 0) {
                             $data_query->wherein('transaction_no', $inv_trn_no);
                         } else {
@@ -406,27 +407,10 @@ class SysReceivableOutstandingController extends Controller
             $data_return_all = DB::table('sys_sales_return as r')->select('ra.siv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date', 'r.customer', 'ra.srn_no')
                 ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
 
-            $opbinvoice = DB::table('sys_chartofaccounts_transaction_invoice_detail')->get();
-            if (count($opbinvoice) == 0) {
-                $opbinvoice = [];
-            }
-            //return $data_all;
-            //pdc_list
-            //unadjested_list
+            $viewSupport = $this->loadReceivableOutstandingViewData($com_id);
+            extract($viewSupport);
 
-            // if(isset($request->redirect_by_dealtrack) && $request->redirect_by_dealtrack == 1){
-            $payment_terms_map = SysPaymentTerms::where('active_status', 1)->get()->keyBy('id');
-            $sales_invoice_map = DB::table('sys_sales_invoice')
-                ->where('company_id', $com_id)
-                ->where('status', 1)
-                ->select('doc_number', 'payment_terms', 'doc_date')
-                ->get()
-                ->keyBy('doc_number');
-            $max_installments = SysPaymentTerms::resolveMaxInstallmentsFromMaps($sales_invoice_map, $payment_terms_map);
-            $company_row = SysCompany::find($com_id);
-            $receivable_finance_rate = (float) ($company_row->receivables_finance_cost_percentage ?? 0);
-
-            return view('backEnd.outstanding.receivableoutstanding', compact('data','is_view_all_cust', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_all', 'com_id', 'overdue', 'ageing', 'sales_person_list', 'data_adjestment_all', 'data_receipt_all', 'data_receipt_opb', 'data_receipt2_all', 'data_receipt3_all', 'data_return_all', 'list_option', 'opbinvoice', 'opb_balance_amount', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'ctrl_account_id', 'ctrl_asofdate', 'ctrl_doc_no', 'ctrl_deal_id', 'ctrl_amount', 'ctrl_sales_person', 'ctrl_overdue', 'ctrl_ageing', 'ctrl_followup_from', 'ctrl_followup_to', 'ctrl_list_option', 'ctrl_intext','accounts_select','first_load','ctrl_basic_search', 'payment_terms_map', 'max_installments', 'sales_invoice_map', 'receivable_finance_rate'));
+            return view('backEnd.outstanding.receivableoutstanding', compact('data','is_view_all_cust', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_all', 'com_id', 'overdue', 'ageing', 'sales_person_list', 'data_adjestment_all', 'data_receipt_all', 'data_receipt_opb', 'data_receipt2_all', 'data_receipt3_all', 'data_return_all', 'list_option', 'opbinvoice', 'opbinvoice_map', 'opb_balance_amount', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'ctrl_account_id', 'ctrl_asofdate', 'ctrl_doc_no', 'ctrl_deal_id', 'ctrl_amount', 'ctrl_sales_person', 'ctrl_overdue', 'ctrl_ageing', 'ctrl_followup_from', 'ctrl_followup_to', 'ctrl_list_option', 'ctrl_intext','accounts_select','first_load','ctrl_basic_search', 'payment_terms_map', 'max_installments', 'sales_invoice_map', 'receivable_finance_rate'));
 
         } catch (\Exception $e) {
             return $e;
@@ -1006,7 +990,7 @@ class SysReceivableOutstandingController extends Controller
                         $transaction_no = $abc->where('account_id', $a->id)->pluck('transaction_no');
                         if (count($transaction_no) > 0) {
                             $selectBigData = clone $BigData;
-                            $data_query = $selectBigData->select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw($a->id . ' as account_id'))->wherein('company_id', $company_id);
+                            $data_query = $selectBigData->select(...$this->receivableOsAggregateSelect((string) $a->id))->wherein('company_id', $company_id);
                             $data_query->where("account_id", $a->id)->where('status', 1);
                             $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'");
                             $data_query->wherein('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111']);
@@ -1030,7 +1014,7 @@ class SysReceivableOutstandingController extends Controller
                     $ctrl_intext = $request->list_in_ex;
                 }
 
-                $bigData = SysChartofAccountsTransaction::select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw('account_id as account_id'))->wherein('company_id', $company_id)->where('status', 1)->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'")->wherein('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])->groupby('transaction_date', 'transaction_id', 'transaction_no', 'account_id');
+                $bigData = SysChartofAccountsTransaction::select(...$this->receivableOsAggregateSelect('account_id'))->wherein('company_id', $company_id)->where('status', 1)->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'")->wherein('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])->groupby('transaction_date', 'transaction_id', 'transaction_no', 'account_id');
 
                 foreach ($accounts as $a) {
                     $bdata = clone $bigData;
@@ -1141,7 +1125,7 @@ class SysReceivableOutstandingController extends Controller
                         $transaction_no = $abc->where('account_id', $a->id)->pluck('transaction_no');
                         if (count($transaction_no) > 0) {
                             $selectBigData = clone $BigData;
-                            $data_query = $selectBigData->select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw($a->id . ' as account_id'))->wherein('company_id', $company_id);
+                            $data_query = $selectBigData->select(...$this->receivableOsAggregateSelect((string) $a->id))->wherein('company_id', $company_id);
                             $data_query->where("account_id", $a->id)->where('status', 1);
                             $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'");
                             $data_query->wherein('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111']);
@@ -1205,7 +1189,7 @@ class SysReceivableOutstandingController extends Controller
                     $ctrl_intext = $request->list_in_ex;
                 }
 
-                $bigData = SysChartofAccountsTransaction::select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw('account_id as account_id'))->wherein('company_id', $company_id)->where('status', 1)->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'")->wherein('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])->groupby('transaction_date', 'transaction_id', 'transaction_no', 'account_id');
+                $bigData = SysChartofAccountsTransaction::select(...$this->receivableOsAggregateSelect('account_id'))->wherein('company_id', $company_id)->where('status', 1)->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'")->wherein('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])->groupby('transaction_date', 'transaction_id', 'transaction_no', 'account_id');
 
                 foreach ($accounts as $a) {
                     $bdata = clone $bigData;
@@ -1219,6 +1203,7 @@ class SysReceivableOutstandingController extends Controller
                     if ($request->deal_id != "") {
                         $deal_id = SysHelper::get_dealid_from_code($request->deal_id);
                         $deal_trn_no = SysSalesInvoice::where('deal_id', $deal_id)->where('status', 1)->where('company_id', $com_id)->where("customer", $a->id)->pluck('doc_number');
+                        $deal_trn_no = $deal_trn_no->merge($this->opbTransactionNosByDeal($com_id, $a->id, $request->deal_id, $deal_id))->unique()->values();
                         if (count($deal_trn_no) > 0) {
                             $data_query->wherein('transaction_no', $deal_trn_no);
                         } else {
@@ -1242,7 +1227,7 @@ class SysReceivableOutstandingController extends Controller
                     if ($request->sales_person != "") {
                         $inv_trn_no1 = SysSalesInvoice::wherein('sales_man', $request->sales_person)->where('status', 1)->where('company_id', $com_id)->where("customer", $a->id)->pluck('doc_number');
                         $inv_trn_no2 = SysSalesReturn::wherein('sales_man', $request->sales_person)->where('status', 1)->where('company_id', $com_id)->where("customer", $a->id)->pluck('doc_number');
-                        $inv_trn_no = $inv_trn_no2->merge($inv_trn_no1);
+                        $inv_trn_no = $inv_trn_no2->merge($inv_trn_no1)->merge($this->opbTransactionNosBySalesPerson($com_id, $a->id, (array) $request->sales_person))->unique()->values();
                         if (count($inv_trn_no) > 0) {
                             $data_query->wherein('transaction_no', $inv_trn_no);
                         } else {
@@ -1331,25 +1316,104 @@ class SysReceivableOutstandingController extends Controller
             $data_return_all = DB::table('sys_sales_return as r')->select('ra.siv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date', 'r.customer', 'ra.srn_no')
                 ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
 
-            $opbinvoice = DB::table('sys_chartofaccounts_transaction_invoice_detail')->get();
-            if (count($opbinvoice) == 0) {
-                $opbinvoice = [];
-            }
-            //return $data_all;
-            //pdc_list
-            //unadjested_list
+            $viewSupport = $this->loadReceivableOutstandingViewData($com_id);
+            extract($viewSupport);
 
-            // if(isset($request->redirect_by_dealtrack) && $request->redirect_by_dealtrack == 1){
-            return view('backEnd.outstanding.receivableoutstanding-modal', compact('data', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_all', 'com_id', 'overdue', 'ageing', 'sales_person_list', 'data_adjestment_all', 'data_receipt_all', 'data_receipt_opb', 'data_receipt2_all', 'data_receipt3_all', 'data_return_all', 'list_option', 'opbinvoice', 'opb_balance_amount', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'ctrl_account_id', 'ctrl_asofdate', 'ctrl_doc_no', 'ctrl_deal_id', 'ctrl_amount', 'ctrl_sales_person', 'ctrl_overdue', 'ctrl_ageing', 'ctrl_list_option', 'ctrl_intext'));
+            return view('backEnd.outstanding.receivableoutstanding-modal', compact('data', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_all', 'com_id', 'overdue', 'ageing', 'sales_person_list', 'data_adjestment_all', 'data_receipt_all', 'data_receipt_opb', 'data_receipt2_all', 'data_receipt3_all', 'data_return_all', 'list_option', 'opbinvoice', 'opbinvoice_map', 'opb_balance_amount', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'ctrl_account_id', 'ctrl_asofdate', 'ctrl_doc_no', 'ctrl_deal_id', 'ctrl_amount', 'ctrl_sales_person', 'ctrl_overdue', 'ctrl_ageing', 'ctrl_list_option', 'ctrl_intext', 'payment_terms_map', 'max_installments', 'sales_invoice_map', 'receivable_finance_rate'));
             // }
 
             // return view('backEnd.outstanding.receivableoutstanding', compact('data', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_all', 'com_id', 'overdue', 'ageing', 'sales_person_list', 'data_adjestment_all', 'data_receipt_all', 'data_receipt_opb', 'data_receipt2_all', 'data_receipt3_all', 'data_return_all', 'list_option', 'opbinvoice', 'opb_balance_amount', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc',  'ctrl_account_id', 'ctrl_asofdate', 'ctrl_doc_no', 'ctrl_deal_id', 'ctrl_amount', 'ctrl_sales_person', 'ctrl_overdue', 'ctrl_ageing', 'ctrl_list_option', 'ctrl_intext'));
 
         } catch (\Exception $e) {
-            return $e;
             Toastr::error('Operation Failed', 'Failed');
             return redirect()->back();
         }
+    }
+
+    private function receivableOsAggregateSelect($accountIdExpression)
+    {
+        return [
+            'transaction_date',
+            'transaction_id',
+            'transaction_no',
+            DB::raw('sum(debit_amount) as debit_amount'),
+            DB::raw('sum(credit_amount) as credit_amount'),
+            DB::raw("{$accountIdExpression} as account_id"),
+            DB::raw('MAX(transaction_type) as transaction_type'),
+        ];
+    }
+
+    private function loadOpbInvoiceDetailMap($companyId)
+    {
+        return DB::table('sys_chartofaccounts_transaction_invoice_detail as d')
+            ->join('sys_chartofaccounts_transaction as t', 't.id', '=', 'd.trn_id')
+            ->where('t.company_id', $companyId)
+            ->where('t.transaction_type', 'opbinvoice')
+            ->where('t.status', 1)
+            ->select('d.*')
+            ->get()
+            ->keyBy('transaction_no');
+    }
+
+    private function loadReceivableOutstandingViewData($companyId)
+    {
+        $payment_terms_map = SysPaymentTerms::where('active_status', 1)->get()->keyBy('id');
+        $sales_invoice_map = DB::table('sys_sales_invoice')
+            ->where('company_id', $companyId)
+            ->where('status', 1)
+            ->select('doc_number', 'payment_terms', 'doc_date')
+            ->get()
+            ->keyBy('doc_number');
+        $opbinvoice_map = $this->loadOpbInvoiceDetailMap($companyId);
+        $opbinvoice = $opbinvoice_map->values();
+        $max_installments = max(
+            SysPaymentTerms::resolveMaxInstallmentsFromMaps($sales_invoice_map, $payment_terms_map),
+            SysPaymentTerms::resolveMaxInstallmentsFromOpbMap($opbinvoice_map, $payment_terms_map)
+        );
+        $company_row = SysCompany::find($companyId);
+        $receivable_finance_rate = (float) ($company_row->receivables_finance_cost_percentage ?? 0);
+
+        return compact(
+            'payment_terms_map',
+            'sales_invoice_map',
+            'opbinvoice_map',
+            'opbinvoice',
+            'max_installments',
+            'receivable_finance_rate'
+        );
+    }
+
+    private function opbTransactionNosByDeal($companyId, $accountId, $dealCode, $dealId = null)
+    {
+        return DB::table('sys_chartofaccounts_transaction_invoice_detail as d')
+            ->join('sys_chartofaccounts_transaction as t', 't.id', '=', 'd.trn_id')
+            ->where('t.company_id', $companyId)
+            ->where('t.account_id', $accountId)
+            ->where('t.transaction_type', 'opbinvoice')
+            ->where('t.status', 1)
+            ->where(function ($query) use ($dealCode, $dealId) {
+                $query->where('d.deal_id', $dealCode);
+                if ($dealId) {
+                    $query->orWhere('d.deal_id', (string) $dealId);
+                }
+            })
+            ->pluck('d.transaction_no');
+    }
+
+    private function opbTransactionNosBySalesPerson($companyId, $accountId, array $salesPersons)
+    {
+        if (empty($salesPersons)) {
+            return collect();
+        }
+
+        return DB::table('sys_chartofaccounts_transaction_invoice_detail as d')
+            ->join('sys_chartofaccounts_transaction as t', 't.id', '=', 'd.trn_id')
+            ->where('t.company_id', $companyId)
+            ->where('t.account_id', $accountId)
+            ->where('t.transaction_type', 'opbinvoice')
+            ->where('t.status', 1)
+            ->whereIn('d.sales_person', $salesPersons)
+            ->pluck('d.transaction_no');
     }
 
 
