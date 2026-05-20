@@ -1164,5 +1164,24 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
 </script>
 
 
+<script>
+    
+    
+    // Apply formatting on typing
+    $('#ob_debit_amount, #ob_credit_amount').on('blur', function () {
+        
+        // Remove invalid characters except decimal
+        let rawValue = $(this).val().replace(/[^\d.]/g, '');
+    
+        // Prevent multiple decimals
+        let parts = rawValue.split('.');
+        if (parts.length > 2) {
+            rawValue = parts[0] + '.' + parts[1];
+        }
+    
+        $(this).val(formatAmount(rawValue));
+    });
+    </script>
+
     <?php } catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
 @endsection

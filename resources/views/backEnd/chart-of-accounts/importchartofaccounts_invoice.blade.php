@@ -365,7 +365,7 @@
                                                     <td class="text-center">{{ date('d/m/Y', strtotime(@$value->due_date)) }}</td>
                                                     <td class="text-center">{{ @$value->deal_id }}</td>
                                                     <td class="text-center">{{ @$value->bill_no }}</td>
-                                                    <td class="text-center">{{ @$value->bill_date }}</td>
+                                                    <td class="text-center">{{ date('d/m/Y', strtotime(@$value->bill_date)) }}</td>
                                                     <td>{{ @$value->sales_person }}</td>
                                             @endforeach
                                         @endif
