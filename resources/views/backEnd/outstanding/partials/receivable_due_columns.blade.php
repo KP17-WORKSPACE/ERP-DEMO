@@ -34,7 +34,7 @@
             return (string) $od;
         }
         if ($od < 0) {
-            return (string) $od;
+            return (string) abs($od);
         }
 
         return '0';
