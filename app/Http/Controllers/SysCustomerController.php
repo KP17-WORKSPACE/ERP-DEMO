@@ -1358,259 +1358,234 @@ class SysCustomerController extends Controller
         }
     }
 
-    public function customerUpdate(Request $request)
-    {
+   public function customerUpdate(Request $request)
+{
+    $input = $request->all();
+    $dom = explode("@", $request->email);
 
-        $input = $request->all();
-        //return $input;
-        $dom = explode("@", $request->email);
-        //$check = SysCustSuppl::select('id','code','name')->where('email', $request->email)->wherenotin('email', ['x','xx','xxx','xxxx'])->first();
-
-        /*$check = SysCustSuppl::select('id','code','name')->where('name', $request->customer_name)->first();
-        if(isset($check)){
-            Toastr::error('Operation Failed', 'Failed');
-            return redirect()->back(); 
-        }*/
-
-
-        try {
-            DB::beginTransaction();
-            $company_access = "";
-            if ($request->company_access != "") {
-                $company_access = implode(",", $request->company_access);
-            }
-            if (!in_array(1, $request->company_access)) {
-                $company_access = '1,' . $company_access;
-            }
-            $new_customer = SysCustSuppl::find($request->cust_id);
-            $new_customer->account_type = $request->account_type;
-            $new_customer->customer_salutation = $request->customer_salutation;
-            $new_customer->first_name = $request->first_name;
-            $new_customer->designation = $request->designation;
-            $new_customer->last_name = $request->last_name;
-            
-            $new_customer->grn_select = $request->grn_select;
-
-            if (SysHelper::check_customer_is_added($request->customer_name) == 0) {
-                $new_customer->name = $request->customer_name;
-                $new_customer->customer_name_display = $request->customer_name_display;
-                SysChartofAccounts::where('account_code', $new_customer->code)->update(['account_name' => $request->customer_name, 'company_access' => $company_access, 'internal' => $request->internal, 'grn_select' => $request->grn_select]);
-            }
-
-            $new_customer->contcat_person = $request->e_first_name[0];
-
-            $new_customer->contcat_number = $request->mobile_code;
-            $new_customer->mobile = $request->mobile;
-            $new_customer->email = $request->email;
-
-            if (count($request->sales_person) > 0) {
-                $new_customer->sales_person = $request->sales_person[0];
-            }
-
-            $new_customer->country_telephone = $request->country_telephone ?: null;
-
-
-            //$new_customer->vat_type = $request->vat_type;
-            $new_customer->customer_type = $request->customer_type;
-            $new_customer->sale_type = $request->sale_type;
-            $new_customer->vat_country = $request->country_vat;
-            $new_customer->vat_state = $request->vat_state;
-            $new_customer->city = $request->city;
-            $new_customer->zip_code = $request->zip_code;
-            $new_customer->vat_percentage = $request->vat_percentage;
-            $new_customer->vat_number = $request->vat_number;
-
-            if ($request->credit_limit == "") {
-                $new_customer->credit_limit = 0;
-            } else {
-                $new_customer->credit_limit = str_replace(',', '', $request->credit_limit);
-            }
-
-            if ($request->credit_days == "") {
-                $new_customer->credit_days = 0;
-            } else {
-                $new_customer->credit_days = $request->credit_days;
-            }
-
-
-            if ($request->transaction_type == "Cash") {
-                $new_customer->payment_terms = $request->payment_terms_cash;
-            } else {
-                $new_customer->payment_terms = $request->payment_terms;
-            }
-
-
-            $new_customer->payment_terms_txt = $request->payment_terms_txt;
-            $new_customer->transaction_type = $request->transaction_type;
-            //$new_customer->customer_documents = $customer_documents;
-            $new_customer->status = 1;
-            $new_customer->internal = $request->internal;
-            if ($request->vat_percentage_fixed) {
-                $new_customer->vat_is_fixed = 1;
-            }
-            $new_customer->updated_by = Auth::user()->id;
-            $new_customer->updated_at = Carbon::now('+04:00')->format('Y-m-d H:i:s');
-            $new_customer->type = $request->type;
-            $new_customer->company_access = $company_access;
-
-            $new_customer->website = $request->customer_website;
-            $new_customer->maps_location = $request->maps_location;
-            $new_customer->created_at = $new_customer->created_at;
-
-            // $new_customer->company_id = session('logged_session_data.company_id');
-            $results1 = $new_customer->save();
-
-            DB::table('sys_cust_suppl_assign')->where(['cust_supp_id' => $request->cust_id,])->delete();
-
-            for ($i = 0; $i < count($request->sales_person); $i++) {
-                DB::table('sys_cust_suppl_assign')->insert(
-                    [
-                        'cust_supp_id' => $request->cust_id,
-                        'user_id' => $request->sales_person[$i],
-                        'type' => 1, //1 customers, 2 suppliers
-                    ]
-                );
-            }
-
-            DB::table('sys_cust_suppl_addressbook')->where('cust_suppl_id', $request->cust_id)->update(['set_default' => 0]);
-            DB::table('sys_cust_suppl_contact')->where('cust_suppl_id', $request->cust_id)->update(['set_default' => 0]);
-
-            SysCustSupplContact::where('cust_suppl_id', $request->cust_id)->delete();
-            if (count($request->e_first_name) > 0) {
-                for ($i = 0; $i < count($request->e_first_name); $i++) {
-                    if ($request->e_first_name[$i] != "" && $request->e_email_address[$i] != "" && ($request->e_work_phone[$i] != "" || $request->e_mobile[$i] != "")) {
-                        $contact = new SysCustSupplContact();
-                        $contact->cust_suppl_id = $request->cust_id;
-                        $contact->salutation = $request->e_salutation[$i];
-                        $contact->first_name = $request->e_first_name[$i];
-                        $contact->last_name = $request->e_last_name[$i];
-                        $contact->email_address = $request->e_email_address[$i];
-                        $contact->work_phone = $request->e_work_phone[$i];
-                        $contact->mobile = $request->e_mobile[$i];
-                        $contact->designation = $request->e_designation[$i];
-                        $contact->department = $request->e_department[$i];
-                        $contact->status = 1;
-                        $contact->set_default = 1;
-                        $contact->company_id = session('logged_session_data.company_id');
-                        $contact->updated_by = Auth::user()->id;
-                        $results = $contact->save();
-                    }
-                }
-            }
-
-            for ($i = 1; $i <= count($request->doc_name); $i++) {
-                if ($request->file('customer_documents_' . $i) != "") {
-                    $doc_exp_date = date('Y-m-d');
-                    if ($i == 1) {
-                        $doc_exp_date = SysHelper::normalizeToYmd($request->doc_exp_date[$i - 1]);
-                        DB::table('sys_cust_suppl')->where('id', $new_customer->id)->update(['is_file' => 1]);
-                    }
-                    if ($i == 2) {
-                        DB::table('sys_cust_suppl')->where('id', $new_customer->id)->update(['is_file' => 2]);
-                    }
-                    $file = $request->file('customer_documents_' . $i);
-                    $company_doc = md5($file->getClientOriginalName() . time()) . "_customer_doc_" . $i . "." . $file->getClientOriginalExtension();
-                    $file->move('public/uploads/cust-suppl/', $company_doc);
-                    DB::table('sys_cust_suppl_doc')->insert([
-                        'cust_suppl_id' => $new_customer->id,
-                        'doc_name' => $request->doc_name[$i - 1],
-                        'doc_file' => $company_doc,
-                        'doc_exp_date' => $doc_exp_date,
-                        'status' => 1,
-                        'created_by' => Auth::user()->id,
-                    ]);
-                }
-            }
-            //SysChartofAccounts::where('account_code',$new_customer->code)->update(['account_name' => $new_customer->name,'company_access' => $company_access]);
-            //SysChartofAccounts::where('account_code',$new_customer->code)->update(['company_access' => $company_access]);
-
-            $hasDocs = SysCustSupplDoc::where('cust_suppl_id', $new_customer->id)->count();
-
-            DB::table('sys_cust_suppl')
-                ->where('id', $new_customer->id)
-                ->update(['is_file' => $hasDocs > 0 ? 1 : 0]);
-
-            session()->forget('subgroup2');
-
-
-
-            $address = SysCustSupplAddressbook::find($request->billing_address_id);
-            if (!$address) {
-                $address = new SysCustSupplAddressbook();
-            }
-            $address->cust_suppl_id = $new_customer->id;
-            // $address->address = $request->address;
-            // $address->address2 = $request->address2;
-
-            $address->area = $request->billing_area;
-            $address->building_name = $request->billing_building_name;
-            $address->flat_office_no = $request->billing_flat_office_shop_no;
-
-            $address->city = $request->city;
-
-            $address->country = $request->country ?? null;
-            if ($request->state == "") {
-                $address->state = 0;
-            } else {
-                $address->state = $request->state;
-            }
-            $address->zip_code = $request->zip_code;
-            $address->set_default = 1;
-            $address->company_id = session('logged_session_data.company_id');
-            $address->is_shipping = 0;
-            $address->status = 1;
-            $address->created_by = Auth::user()->id;
-
-            $results = $address->save();
-
-
-            $address_s = SysCustSupplAddressbook::find($request->shipping_address_id);
-            if (!$address_s) {
-                $address_s = new SysCustSupplAddressbook();
-            }
-            $address_s->cust_suppl_id = $new_customer->id;
-            // $address->address = $request->address_ship;
-            // $address->address2 = $request->address2_ship;
-            $address_s->area = $request->shipping_area;
-            $address_s->building_name = $request->shipping_building_name;
-            $address_s->flat_office_no = $request->shipping_flat_office_shop_no;
-            $address_s->city = $request->city_ship;
-
-
-            if ($request->country_ship == "") {
-                $address_s->country = null;
-            } else {
-                $address_s->country = $request->country_ship;
-            }
-
-
-
-            if ($request->state_ship == "") {
-                $address_s->state = 0;
-            } else {
-                $address_s->state = $request->state_ship;
-            }
-            $address_s->zip_code = $request->zip_code_ship;
-            $address_s->set_default = 1;
-            $address_s->company_id = session('logged_session_data.company_id');
-            $address_s->is_shipping = 1;
-            $address_s->status = 1;
-            $address_s->created_by = Auth::user()->id;
-            $results = $address_s->save();
-
-            DB::commit();
-
-
-
-            Toastr::success('Operation successful', 'Success');
-            return redirect('customers/' . $new_customer->id);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $e;
-            Toastr::error('Operation Failed', 'Failed');
-            return redirect()->back();
+    try {
+        DB::beginTransaction();
+        $company_access = "";
+        if ($request->company_access != "") {
+            $company_access = implode(",", $request->company_access);
         }
+        if (!in_array(1, $request->company_access)) {
+            $company_access = '1,' . $company_access;
+        }
+        $new_customer = SysCustSuppl::find($request->cust_id);
+        $new_customer->account_type = $request->account_type;
+        $new_customer->customer_salutation = $request->customer_salutation;
+        $new_customer->first_name = $request->first_name;
+        $new_customer->designation = $request->designation;
+        $new_customer->last_name = $request->last_name;
+        $new_customer->grn_select = $request->grn_select;
+
+        if (SysHelper::check_customer_is_added($request->customer_name) == 0) {
+            $new_customer->name = $request->customer_name;
+            $new_customer->customer_name_display = $request->customer_name_display;
+            SysChartofAccounts::where('account_code', $new_customer->code)->update([
+                'account_name' => $request->customer_name,
+                'company_access' => $company_access,
+                'internal' => $request->internal,
+                'grn_select' => $request->grn_select
+            ]);
+        }
+
+        // FIX 1: null-safe access on e_first_name
+        $eFirstNames = $request->e_first_name ?? [];
+        $new_customer->contcat_person = $eFirstNames[0] ?? null;
+
+        $new_customer->contcat_number = $request->mobile_code;
+        $new_customer->mobile = $request->mobile;
+        $new_customer->email = $request->email;
+
+        // FIX 2: null-safe access on sales_person
+        $salesPersons = $request->sales_person ?? [];
+        if (count($salesPersons) > 0) {
+            $new_customer->sales_person = $salesPersons[0];
+        }
+
+        $new_customer->country_telephone = $request->country_telephone ?: null;
+
+        $new_customer->customer_type = $request->customer_type;
+        $new_customer->sale_type = $request->sale_type;
+        $new_customer->vat_country = $request->country_vat;
+        $new_customer->vat_state = $request->vat_state;
+        $new_customer->city = $request->city;
+        $new_customer->zip_code = $request->zip_code;
+        $new_customer->vat_percentage = $request->vat_percentage;
+        $new_customer->vat_number = $request->vat_number;
+
+        if ($request->credit_limit == "") {
+            $new_customer->credit_limit = 0;
+        } else {
+            $new_customer->credit_limit = str_replace(',', '', $request->credit_limit);
+        }
+
+        if ($request->credit_days == "") {
+            $new_customer->credit_days = 0;
+        } else {
+            $new_customer->credit_days = $request->credit_days;
+        }
+
+        if ($request->transaction_type == "Cash") {
+            $new_customer->payment_terms = $request->payment_terms_cash;
+        } else {
+            $new_customer->payment_terms = $request->payment_terms;
+        }
+
+        $new_customer->payment_terms_txt = $request->payment_terms_txt;
+        $new_customer->transaction_type = $request->transaction_type;
+        $new_customer->status = 1;
+        $new_customer->internal = $request->internal;
+        if ($request->vat_percentage_fixed) {
+            $new_customer->vat_is_fixed = 1;
+        }
+        $new_customer->updated_by = Auth::user()->id;
+        $new_customer->updated_at = Carbon::now('+04:00')->format('Y-m-d H:i:s');
+        $new_customer->type = $request->type;
+        $new_customer->company_access = $company_access;
+        $new_customer->website = $request->customer_website;
+        $new_customer->maps_location = $request->maps_location;
+        $new_customer->created_at = $new_customer->created_at;
+
+        $results1 = $new_customer->save();
+
+        // FIX 3: null-safe sales_person loop
+        DB::table('sys_cust_suppl_assign')->where(['cust_supp_id' => $request->cust_id])->delete();
+        for ($i = 0; $i < count($salesPersons); $i++) {
+            DB::table('sys_cust_suppl_assign')->insert([
+                'cust_supp_id' => $request->cust_id,
+                'user_id' => $salesPersons[$i],
+                'type' => 1,
+            ]);
+        }
+
+        DB::table('sys_cust_suppl_addressbook')->where('cust_suppl_id', $request->cust_id)->update(['set_default' => 0]);
+        DB::table('sys_cust_suppl_contact')->where('cust_suppl_id', $request->cust_id)->update(['set_default' => 0]);
+
+        // FIX 4: null-safe e_first_name loop
+        SysCustSupplContact::where('cust_suppl_id', $request->cust_id)->delete();
+        if (count($eFirstNames) > 0) {
+            for ($i = 0; $i < count($eFirstNames); $i++) {
+                if (
+                    !empty($eFirstNames[$i]) &&
+                    !empty($request->e_email_address[$i]) &&
+                    (!empty($request->e_work_phone[$i]) || !empty($request->e_mobile[$i]))
+                ) {
+                    $contact = new SysCustSupplContact();
+                    $contact->cust_suppl_id = $request->cust_id;
+                    $contact->salutation = $request->e_salutation[$i] ?? null;
+                    $contact->first_name = $request->e_first_name[$i];
+                    $contact->last_name = $request->e_last_name[$i] ?? null;
+                    $contact->email_address = $request->e_email_address[$i];
+                    $contact->work_phone = $request->e_work_phone[$i] ?? null;
+                    $contact->mobile = $request->e_mobile[$i] ?? null;
+                    $contact->designation = $request->e_designation[$i] ?? null;
+                    $contact->department = $request->e_department[$i] ?? null;
+                    $contact->status = 1;
+                    $contact->set_default = 1;
+                    $contact->company_id = session('logged_session_data.company_id');
+                    $contact->updated_by = Auth::user()->id;
+                    $results = $contact->save();
+                }
+            }
+        }
+
+        // FIX 5: null-safe doc_name loop
+        $docNames = $request->doc_name ?? [];
+        for ($i = 1; $i <= count($docNames); $i++) {
+            if ($request->file('customer_documents_' . $i) != "") {
+                $doc_exp_date = date('Y-m-d');
+                if ($i == 1) {
+                    $doc_exp_date = SysHelper::normalizeToYmd($request->doc_exp_date[$i - 1]);
+                    DB::table('sys_cust_suppl')->where('id', $new_customer->id)->update(['is_file' => 1]);
+                }
+                if ($i == 2) {
+                    DB::table('sys_cust_suppl')->where('id', $new_customer->id)->update(['is_file' => 2]);
+                }
+                $file = $request->file('customer_documents_' . $i);
+                $company_doc = md5($file->getClientOriginalName() . time()) . "_customer_doc_" . $i . "." . $file->getClientOriginalExtension();
+                $file->move('public/uploads/cust-suppl/', $company_doc);
+                DB::table('sys_cust_suppl_doc')->insert([
+                    'cust_suppl_id' => $new_customer->id,
+                    'doc_name' => $docNames[$i - 1],
+                    'doc_file' => $company_doc,
+                    'doc_exp_date' => $doc_exp_date,
+                    'status' => 1,
+                    'created_by' => Auth::user()->id,
+                ]);
+            }
+        }
+
+        $hasDocs = SysCustSupplDoc::where('cust_suppl_id', $new_customer->id)->count();
+        DB::table('sys_cust_suppl')
+            ->where('id', $new_customer->id)
+            ->update(['is_file' => $hasDocs > 0 ? 1 : 0]);
+
+        session()->forget('subgroup2');
+
+        $address = SysCustSupplAddressbook::find($request->billing_address_id);
+        if (!$address) {
+            $address = new SysCustSupplAddressbook();
+        }
+        $address->cust_suppl_id = $new_customer->id;
+        $address->area = $request->billing_area;
+        $address->building_name = $request->billing_building_name;
+        $address->flat_office_no = $request->billing_flat_office_shop_no;
+        $address->city = $request->city;
+        $address->country = $request->country ?? null;
+        if ($request->state == "") {
+            $address->state = 0;
+        } else {
+            $address->state = $request->state;
+        }
+        $address->zip_code = $request->zip_code;
+        $address->set_default = 1;
+        $address->company_id = session('logged_session_data.company_id');
+        $address->is_shipping = 0;
+        $address->status = 1;
+        $address->created_by = Auth::user()->id;
+        $results = $address->save();
+
+        $address_s = SysCustSupplAddressbook::find($request->shipping_address_id);
+        if (!$address_s) {
+            $address_s = new SysCustSupplAddressbook();
+        }
+        $address_s->cust_suppl_id = $new_customer->id;
+        $address_s->area = $request->shipping_area;
+        $address_s->building_name = $request->shipping_building_name;
+        $address_s->flat_office_no = $request->shipping_flat_office_shop_no;
+        $address_s->city = $request->city_ship;
+        if ($request->country_ship == "") {
+            $address_s->country = null;
+        } else {
+            $address_s->country = $request->country_ship;
+        }
+        if ($request->state_ship == "") {
+            $address_s->state = 0;
+        } else {
+            $address_s->state = $request->state_ship;
+        }
+        $address_s->zip_code = $request->zip_code_ship;
+        $address_s->set_default = 1;
+        $address_s->company_id = session('logged_session_data.company_id');
+        $address_s->is_shipping = 1;
+        $address_s->status = 1;
+        $address_s->created_by = Auth::user()->id;
+        $results = $address_s->save();
+
+        DB::commit();
+
+        Toastr::success('Operation successful', 'Success');
+        return redirect('customers/' . $new_customer->id);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Toastr::error('Operation Failed', 'Failed');
+        return redirect()->back()->withErrors(['error' => $e->getMessage()]);
     }
+}
     //end customer update 
 
     public function customerUpdateDealTrack(Request $request)
