@@ -7,6 +7,33 @@
     @endphp
 
 <?php try { ?>
+    <style>
+        .ageing-grn-popover { max-width: 320px; text-align: left; }
+        .ageing-grn-popover .popover-body { padding: 0.5rem 0.65rem; }
+        .ageing-grn-tip {
+            cursor: help;
+            border-bottom: 1px dotted #adb5bd;
+        }
+        .recv-sched-col {
+            font-size: 11px;
+            line-height: 1.35;
+            overflow: visible;
+            border: 1px solid #dee2e6 !important;
+        }
+        #dataTable td.recv-sched-col + td.recv-sched-col + td.recv-sched-col {
+            text-align: end !important;
+        }
+        .recv-sched-list { display: inline; word-break: break-word; }
+        .recv-sched-item {
+            cursor: help;
+            border-bottom: 1px dotted #adb5bd;
+            white-space: nowrap;
+        }
+        .recv-sched-sep { color: #868e96; }
+        .recv-sched-od-late { color: #c92a2a; font-weight: 600; }
+        .recv-sched-od-soon { color: #2b8a3e; font-weight: 600; }
+        .recv-sched-od-today { color: #495057; font-weight: 600; }
+    </style>
 
     <script>
 function set_total(id,at){
@@ -137,7 +164,7 @@ function check_total(id, amount) {
                 <div class="card-body">
                     <div class="row gap-rows">
 
-                        <table class="table table-hover form-item-table" id="dataTable" width="100%" cellspacing="0" style="border: solid 1px #e3e6f0; width:auto; width:100%;">
+                        <table class="table table-hover" id="long-list" style="border: solid 1px #e3e6f0; width:100%; table-layout:fixed;">
                             @php
                                 $grouped = $purchase_invoice->groupBy('vendors');
                             @endphp
@@ -153,7 +180,7 @@ function check_total(id, amount) {
 
                                 <thead>
                                     <tr>
-                                        <td style="cursor: pointer; padding: 5px 10px !important;" onclick="show_details({{ $invoices->first()->account_id }})" colspan="17"><h7>{{ $invoices->first()->account_code }} - {{ $invoices->first()->account_name }}</h7> <label style="float: right;" class="main_sum" id="sum_{{ $invoices->first()->account_id }}"></label></td>
+                                        <td style="cursor: pointer; padding: 5px 10px !important;" onclick="show_details({{ $invoices->first()->account_id }})" colspan="19"><h7>{{ $invoices->first()->account_code }} - {{ $invoices->first()->account_name }}</h7> <label style="float: right;" class="main_sum" id="sum_{{ $invoices->first()->account_id }}"></label></td>
                                     </tr>
                                     <tr class="{{ $invoices->first()->account_id }}" style="display: none;">
                                         <th class="border text-center">Doc Number</th>
@@ -173,56 +200,75 @@ function check_total(id, amount) {
                                         <th class="border text-center">Payment Date</th>
 
 
-                                        <th class="border text-center">Sales Person</th>
                                         <th class="border text-center">Due Date</th>
-                                        <th class="border text-center">Over Due</th>
+                                        <th class="border text-center">Over Due Days</th>
+                                        <th class="border text-center">Due Amount</th>
+                                        <th class="border text-center">Sales Person</th>
+                                        <th class="border text-center">Payment Terms</th>
                                     </tr>
                                 </thead>
                                 <tbody class="{{ $invoices->first()->account_id }}" style="display: none;">
                                     @foreach($invoices as $invoice)
                                     
-                                            <?php $adjustment_data =  $sys_adjustment_list->where('bi_doc_no',$invoice->doc_number);
-                                            if(count($adjustment_data)>0){
-                                                foreach ($adjustment_data as $item) {
-                                                    $adjustments =  $item['total_paid'];
-                                                    $balance = max(0, $invoice->amount - $adjustments);
-                                                    $p_doc_date = $item['p_doc_date'];
-                                                    $bi_doc_numbers = $item['bi_doc_numbers'];
-                                                    $cheque_amount = $item['cheque_amount'];
-                                                    $p_cheque_date = $item['p_cheque_date'];
-                                                    $p_cheque_number = $item['p_cheque_number'];
-                                                    $p_doc_date = $item['p_doc_date'];
-                                                    $displayDate = '';
-                                                    if (!empty($item['p_doc_date'])) {
-                                                        $displayDate = $item['p_doc_date'];
-                                                    } elseif (!empty($item['j_doc_date'])) {
-                                                        $displayDate = $item['j_doc_date'];
-                                                    } elseif (!empty($item['s_doc_date'])) {
-                                                        $displayDate = $item['s_doc_date'];
+                                            @php
+                                                $isImportedInvoice = ($invoice->transaction_type ?? '') === 'opbinvoice';
+                                                $importedPaid = $isImportedInvoice ? (float) ($invoice->imported_paid ?? 0) : 0;
+                                                $legacyAdjustments = 0;
+                                                $p_doc_date = '';
+                                                $bi_doc_numbers = '';
+                                                $cheque_amount = '';
+                                                $p_cheque_date = '';
+                                                $p_cheque_number = '';
+                                                $displayDate = '';
+                                                $adjustment_data = $sys_adjustment_list->where('bi_doc_no', $invoice->doc_number);
+                                                if (count($adjustment_data) > 0) {
+                                                    foreach ($adjustment_data as $item) {
+                                                        $legacyAdjustments = (float) $item['total_paid'];
+                                                        $p_doc_date = $item['p_doc_date'];
+                                                        $bi_doc_numbers = $item['bi_doc_numbers'];
+                                                        $cheque_amount = $item['cheque_amount'];
+                                                        $p_cheque_date = $item['p_cheque_date'];
+                                                        $p_cheque_number = $item['p_cheque_number'];
+                                                        if (!empty($item['p_doc_date'])) {
+                                                            $displayDate = $item['p_doc_date'];
+                                                        } elseif (!empty($item['j_doc_date'])) {
+                                                            $displayDate = $item['j_doc_date'];
+                                                        } elseif (!empty($item['s_doc_date'])) {
+                                                            $displayDate = $item['s_doc_date'];
+                                                        }
                                                     }
                                                 }
-                                            } else {
-                                                $adjustments = 0;
-                                                $balance = 0;
-                                                $p_doc_date = 0;
-                                                $bi_doc_numbers = "";
-                                                $cheque_amount = "";
-                                                $p_cheque_date = "";
-                                                $p_cheque_number = "";
-                                                $p_doc_date = "";
-                                                $displayDate="";
-                                            }
-                                            ?>
+                                                $displayAmount = isset($invoice->payable_credit_amount) ? (float) $invoice->payable_credit_amount : (float) $invoice->amount;
+                                                $debitAmount = isset($invoice->payable_debit_amount) ? (float) $invoice->payable_debit_amount : 0;
+                                                $adjustments = isset($invoice->payable_adjustments) ? (float) $invoice->payable_adjustments : ($legacyAdjustments + $importedPaid);
+                                                $balance = isset($invoice->payable_balance) ? (float) $invoice->payable_balance : ($displayAmount - abs($adjustments));
+                                                $ageingBalance = isset($invoice->payable_ageing_balance) ? (float) $invoice->payable_ageing_balance : $balance;
+                                                $rowVisible = isset($invoice->payable_visible) ? (bool) $invoice->payable_visible : (abs($balance) >= 0.01 || abs($debitAmount) >= 0.01);
+                                                $reportAsOfDate = $as_of_date ?? date('Y-m-d');
+                                            @endphp
+                                            @continue(!$rowVisible)
                                         <tr>
-                                            <td class="border text-center"><a href="{{url('get-url-sales-invoice/'.$invoice->doc_number)}}" target="_blank">{{ $invoice->doc_number }}</a></td>
+                                            <td class="border text-center">
+                                                @if($isImportedInvoice)
+                                                    {{ $invoice->doc_number }}
+                                                @else
+                                                    <a href="{{url('get-url-purchase-invoice/'.$invoice->doc_number)}}" target="_blank">{{ $invoice->doc_number }}</a>
+                                                @endif
+                                            </td>
                                             <td class="border text-center">{{ date('d/m/Y', strtotime(@$invoice->doc_date)) }}</td>
                                             <td class="border text-center">{{ $invoice->lpo_number }}</td>
-                                            <td class="border text-center"><a href="{{url('get-url-deal-track/'.@$invoice->deal_code->code)}}" target="_blank">{{ @$invoice->deal_code->code }}</a></td>
+                                            <td class="border text-center">
+                                                @if($isImportedInvoice)
+                                                    {{ @$invoice->deal_id }}
+                                                @else
+                                                    <a href="{{url('get-url-deal-track/'.@$invoice->deal_code->code)}}" target="_blank">{{ @$invoice->deal_code->code }}</a>
+                                                @endif
+                                            </td>
 
-                                            <td class="border text-end">{{ number_format($invoice->amount, 2) }} <?php $total_invoice_amount += @$invoice->amount; ?></td>
-                                            <td class="border text-end">{{ number_format(@$adjustments, 2) }}  <?php $total_adjustments += @$adjustments; ?></td>
-                                            <td class="border text-end">{{ number_format(@$balance, 2) }}  <?php $total_balance += @$balance; ?></td>
-                                            <td class="border text-end">{{ number_format(@$total_balance, 2) }} <?php $total_total_balance += @$balance; ?></td>
+                                            <td class="border text-end">{{ App\SysHelper::com_curr_format($displayAmount, 2, '.', ',') }} <?php $total_invoice_amount += @$displayAmount; ?></td>
+                                            <td class="border text-end">{{ App\SysHelper::com_curr_format($adjustments, 2, '.', ',') }}  <?php $total_adjustments += @$adjustments; ?></td>
+                                            <td class="border text-end">{{ App\SysHelper::com_curr_format($balance, 2, '.', ',') }}  <?php $total_balance += @$balance; ?></td>
+                                            <td class="border text-end">{{ App\SysHelper::com_curr_format($total_balance, 2, '.', ',') }} <?php $total_total_balance += @$balance; ?></td>
                                             
                                             <td class="border text-center">{{ @$displayDate ? date('d/m/Y', strtotime($displayDate)) : '' }}</td> 
                                             
@@ -243,21 +289,50 @@ function check_total(id, amount) {
                                     {{ @$bi_doc_numbers }}
                                 </td>
                             @endif
-                                            <td class="border text-end">{{ @$cheque_amount }}<?php /*$total_cheque_amount += @$cheque_amount;*/ ?></td>
-                                            <td class="border text-center" class="border">{{ @$r_cheque_date ? date('d/m/Y', strtotime($r_cheque_date)) : '' }}</td> 
-                                            <td class="border text-center">{{ @$r_cheque_number }}</td>
+                                            <td class="border text-end">{{ $cheque_amount !== '' && $cheque_amount !== null ? App\SysHelper::com_curr_format($cheque_amount, 2, '.', ',') : '' }}<?php /*$total_cheque_amount += @$cheque_amount;*/ ?></td>
+                                            <td class="border text-center">{{ @$p_cheque_date ? date('d/m/Y', strtotime($p_cheque_date)) : '' }}</td>
+                                            <td class="border text-center">{{ @$p_cheque_number }}</td>
                                             <td class="border text-center">{{ @$displayDate ? date('d/m/Y', strtotime($displayDate)) : '' }}</td> 
 
-                                            <td class="border text-center">{{ @$invoice->salesman->full_name }}</td>
-
-                                            <?php $DueData =  App\SysHelper::get_due_date_sales_invoice_report($sys_payment_terms_list,$invoice->payment_terms,$invoice->doc_date,$displayDate);  ?>
-                                            @if($displayDate!="")
-                                            <td class="border text-center">{{ $DueData[0] }}</td>
-                                            <td class="border text-center">{{ $DueData[1] }}</td>
+                                            @php
+                                                if ($isImportedInvoice) {
+                                                    $paymentTermRow = App\SysPaymentTerms::resolveOpbPaymentTerm(
+                                                        $invoice->payment_terms ?? '',
+                                                        $invoice->doc_date,
+                                                        $invoice->due_date ?? '',
+                                                        $payment_terms_map ?? collect([])
+                                                    );
+                                                } else {
+                                                    $paymentTermRow = isset($payment_terms_map) ? $payment_terms_map->get($invoice->payment_terms) : null;
+                                                }
+                                                $paymentTermsTitle = $paymentTermRow ? ($paymentTermRow->title ?? '') : '';
+                                                $breakdown = abs($ageingBalance) >= 0.01
+                                                    ? App\SysPaymentTerms::buildOutstandingBreakdown(
+                                                        $invoice->doc_date,
+                                                        $ageingBalance,
+                                                        $paymentTermRow,
+                                                        $payable_finance_rate ?? 0,
+                                                        $reportAsOfDate
+                                                    )
+                                                    : ['installments' => [], 'max_overdue_days' => 0];
+                                                if (abs($ageingBalance) >= 0.01) {
+                                                    $paymentTermsTitle = $breakdown['payment_terms_title'] ?? $paymentTermsTitle;
+                                                }
+                                            @endphp
+                                            @if(($breakdown['max_overdue_days'] ?? 0) > 0 && abs($ageingBalance) >= 0.01)
+                                            <script>
+                                                $('#sum_{{ $invoices->first()->account_id }}').css('color', 'red');
+                                            </script>
+                                            @endif
+                                            @if(abs($ageingBalance) >= 0.01)
+                                                @include('backEnd.outstanding.partials.receivable_due_columns', ['breakdown' => $breakdown])
                                             @else
                                             <td class="border"></td>
                                             <td class="border"></td>
+                                            <td class="border"></td>
                                             @endif
+                                            <td class="border text-center">{{ $isImportedInvoice ? (@$invoice->imported_sales_person ?? '') : @$invoice->salesman->full_name }}</td>
+                                            <td class="border text-center">{{ $paymentTermsTitle }}</td>
                                         </tr>
 
                             
@@ -266,17 +341,17 @@ function check_total(id, amount) {
                                     @endforeach
                                     <tr>
                                         <th class="border text-end" colspan="4">Total</th>
-                                        <th class="border text-end">{{ number_format($total_invoice_amount, 2) }}</th>
-                                        <th class="border text-end">{{ number_format($total_adjustments, 2) }}</th>
-                                        <th class="border text-end">{{ number_format($total_balance, 2) }}</th>
-                                        <th class="border text-end">{{ number_format($total_total_balance, 2) }}</th>
+                                        <th class="border text-end">{{ App\SysHelper::com_curr_format($total_invoice_amount, 2, '.', ',') }}</th>
+                                        <th class="border text-end">{{ App\SysHelper::com_curr_format($total_adjustments, 2, '.', ',') }}</th>
+                                        <th class="border text-end">{{ App\SysHelper::com_curr_format($total_balance, 2, '.', ',') }}</th>
+                                        <th class="border text-end">{{ App\SysHelper::com_curr_format($total_total_balance, 2, '.', ',') }}</th>
                                         <th class="border" colspan="2"></th>
                                         <th class="border">
                                             {{-- {{ $total_cheque_amount }} --}}
                                         </td>
-                                        <th class="border" style="margin-bottom: 40px;" colspan="6"></th>
+                                        <th class="border" style="margin-bottom: 40px;" colspan="8"></th>
                                     </tr>
-                                    <tr><td colspan="17">
+                                    <tr><td colspan="19">
 
                             <script>
                                 set_total({{ $invoices->first()->account_id }},{{ $total_total_balance }});
@@ -353,7 +428,7 @@ function check_total(id, amount) {
                             <td class="border">{{ $p->remarks }}</td>
                         </tr>
                         <script>
-                            set_total_lessmore({{ $invoices->first()->account_id }},{{ $p->amount - $p->amount }})
+                            set_total_lessmore({{ $invoices->first()->account_id }},{{ $p->amount - $p->amount2 }})
                         </script>
                         @endforeach
                         @endif                       
@@ -478,6 +553,9 @@ function check_total(id, amount) {
 <script>
     function show_details(account_code) {
         $('.' + account_code).toggle(); // Toggle visibility
+        if (typeof window.initPiAdjDuePopovers === 'function') {
+            window.initPiAdjDuePopovers(document);
+        }
     }
 </script>
 
@@ -537,6 +615,44 @@ $(document).ready(function () {
     });
 });
 </script>
+
+@push('scripts')
+<script>
+(function () {
+    window.initPiAdjDuePopovers = function initAgeingGrnPopovers(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+        var nodes = scope.querySelectorAll ? scope.querySelectorAll('.ageing-grn-pop') : document.querySelectorAll('.ageing-grn-pop');
+        nodes.forEach(function (el) {
+            if (typeof bootstrap === 'undefined' || !bootstrap.Popover) {
+                return;
+            }
+            if (bootstrap.Popover.getInstance(el)) {
+                return;
+            }
+            var raw = el.getAttribute('data-bs-content');
+            if (!raw) {
+                return;
+            }
+            new bootstrap.Popover(el, {
+                container: 'body',
+                html: true,
+                sanitize: false,
+                trigger: 'hover focus',
+                placement: 'auto',
+                delay: { show: 120, hide: 60 }
+            });
+        });
+    };
+
+    $(function () {
+        window.initPiAdjDuePopovers(document);
+        setTimeout(function () {
+            window.initPiAdjDuePopovers(document);
+        }, 600);
+    });
+})();
+</script>
+@endpush
         
     <?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
 

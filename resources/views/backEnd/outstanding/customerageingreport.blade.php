@@ -100,6 +100,12 @@
             </div>
 
 
+            <form id="receivableOutstandingRedirectForm" method="POST" action="{{ route('receivable-outstanding') }}" target="_blank" style="display:none;">
+                @csrf
+                <input type="hidden" name="account_id[]" id="receivableOutstandingCustomerId" value="">
+                <input type="hidden" name="till_date" id="receivableOutstandingTillDate" value="">
+            </form>
+
             <div class="card mb-3">
                 <div class="card-body">
 
@@ -115,139 +121,91 @@
                                 <thead>
                                     <tr style="background: #eeeeee; color: #000000;">
                                         <th class=" text-start" width="300px">Customer Name</th>
+                                        <th class=" text-end" width="120px">Net Invoice Amount</th>
                                         <th class=" text-end" width="120px">Net Balance</th>
                                         <th class=" text-end" width="120px">0-30</th>
                                         <th class=" text-end" width="120px">31-60</th>
                                         <th class=" text-end" width="120px">61-90</th>
                                         <th class=" text-end" width="120px">>90</th>
+                                        <th class=" text-end" width="120px">Total Finance Cost</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @php
+                                        $grand_total_invoice_amount = 0;
                                         $grand_total_balance = 0;
                                         $grand_total_0_30 = 0;
                                         $grand_total_31_60 = 0;
                                         $grand_total_61_90 = 0;
                                         $grand_total_90_above = 0;
+                                        $grand_total_finance_cost = 0;
                                         $total_customers = 0;
                                     @endphp
 
+                                    @php
+                                        $opbinvoice_map = $opbinvoice_map ?? collect([]);
+                                        $payment_terms_map = $payment_terms_map ?? collect([]);
+                                        $sales_invoice_map = $sales_invoice_map ?? collect([]);
+                                        $receivable_finance_rate = $receivable_finance_rate ?? 0;
+                                        $list_of_unadjusted = $list_of_unadjusted ?? collect([]);
+                                        $list_of_unadjusted_jv_to_jv = $list_of_unadjusted_jv_to_jv ?? collect([]);
+                                        $list_of_adjusted_pdc = $list_of_adjusted_pdc ?? collect([]);
+                                        $opb_balance_amount = $opb_balance_amount ?? collect([]);
+                                        $com_id = $com_id ?? session('logged_session_data.company_id');
+                                    @endphp
                                     @if (count($data_all) > 0)
                                         @foreach ($data_all as $data)
                                             <?php
                                             if(count($data)>0){
                                                 $aname = $accounts->where('id', $data[0]->account_id)->first();
-                                                
-                                                $a1 = clone $data_adjestment_all;
-                                                $a2 = clone $data_receipt_all;
-                                                $a3 = clone $data_receipt2_all;
-                                                $a4 = clone $data_receipt3_all;
-                                                $a5 = clone $data_return_all;
-                                                $a6 = clone $data_receipt_opb;
 
-                                                $data_adjestment = $a1->wherein('srn_no',$data->pluck("transaction_no"));
-                                                $data_receipt = $a2->where('account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->get();
-                                                $data_receipt2 = $a3->where('account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->get();
-                                                $data_receipt3 = $a4->where('account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->get();
-                                                $data_receipt6 = $a6->where('account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->get();
-                                                $data_return = $a5->where('customer',$data[0]->account_id)->wherein('srn_no',$data->pluck("transaction_no"))->get();
+                                                $customerTotals = App\SysHelper::getReceivableOutstandingCustomerTotals(
+                                                    $data[0]->account_id,
+                                                    $com_id,
+                                                    $till_date,
+                                                    $data,
+                                                    $list_of_unadjusted,
+                                                    $list_of_unadjusted_jv_to_jv,
+                                                    $payment_terms_map,
+                                                    $sales_invoice_map,
+                                                    $opbinvoice_map,
+                                                    $receivable_finance_rate,
+                                                    $list_of_adjusted_pdc
+                                                );
+                                                $customer_total_invoice_amount = $customerTotals['net_invoice_amount'];
+                                                $customer_total_balance = $customerTotals['net_balance'];
+                                                $customer_total_0_30 = $customerTotals['0_30'];
+                                                $customer_total_31_60 = $customerTotals['31_60'];
+                                                $customer_total_61_90 = $customerTotals['61_90'];
+                                                $customer_total_90_above = $customerTotals['90_plus'];
+                                                $customer_total_finance_cost = $customerTotals['finance_cost'];
+                                                $opb_record = $opb_balance_amount->where('account_id', $data[0]->account_id)->first();
+                                                $opb_total = $opb_record ? (float) $opb_record->opb_amount : 0;
+                                                $is_total_attention = !empty($customerTotals['has_overdue']) || round((float) $customer_total_balance, 2) != round($opb_total, 2);
                                                 
-                                                // Initialize customer totals
-                                                $customer_total_balance = 0;
-                                                $customer_total_0_30 = 0;
-                                                $customer_total_31_60 = 0;
-                                                $customer_total_61_90 = 0;
-                                                $customer_total_90_above = 0;
-                                                
-                                                // Process each transaction for this customer
-                                                foreach ($data as $dt) {
-                                                    $paid = 0;
-                                                    
-                                                    // Calculate adjustments
-                                                    $adjustments = $data_adjestment->where('srn_no', $dt->transaction_no)->max('paid_amount');
-                                                    $paid += $adjustments;
-                                                    
-                                                    // Calculate receipts
-                                                    $bi_amount = $data_receipt->where('bi_doc_no', $dt->transaction_no)->sum('bi_amount');
-                                                    $paid += $bi_amount;
-                                                    
-                                                    $bi_amount2 = $data_receipt2->where('bi_doc_no', $dt->transaction_no)->sum('bi_amount');
-                                                    $paid += $bi_amount2;
-                                                    
-                                                    $bi_amount6 = $data_receipt6->where('bi_doc_no', $dt->transaction_no)->sum('bi_amount');
-                                                    $paid += $bi_amount6;
-                                                    
-                                                    // Calculate returns (subtract)
-                                                    $bi_amount3 = $data_receipt3->where('bi_doc_no', $dt->transaction_no)->sum('bi_amount');
-                                                    $bi_amount4 = $data_return->where('siv_no', $dt->transaction_no)->sum('paid_amount');
-                                                    $paid -= ($bi_amount3 + $bi_amount4);
-                                                    
-                                                    // Calculate balance based on transaction type
-                                                    $balance = $dt->debit_amount - abs($paid);
-                                                    
-                                                    // Check if row should be hidden (matches receivable outstanding logic)
-                                                    $is_hide2 = 0;
-                                                    if (str_contains($dt->transaction_no, 'SR')) {
-                                                        if ($dt->credit_amount >= $paid) {
-                                                            $is_hide2 = 1;
-                                                        }
-                                                    }
-                                                    if (str_contains($dt->transaction_no, 'SI')) {
-                                                        if (abs($dt->debit_amount) == abs($paid)) {
-                                                            $is_hide2 = 1;
-                                                        }
-                                                    }
-                                                    
-                                                    // Only process if row would be visible OR has credit amount
-                                                    if ((($dt->debit_amount != $paid) || ($dt->credit_amount > 0)) && $is_hide2 == 0) {
-                                                        // Calculate running balance like receivable outstanding
-                                                        if (str_contains($dt->transaction_no, 'SR')) {
-                                                            if ($dt->credit_amount >= $paid) {
-                                                                $customer_total_balance -= $dt->credit_amount;
-                                                            }
-                                                        } else {
-                                                            $customer_total_balance += $balance;
-                                                        }
-                                                        
-                                                        // Get ageing bucket
-                                                        $DueData = @App\SysHelper::get_due_date_sales_invoice($dt->transaction_no, $dt->transaction_date);
-                                                        $ageing_bucket = isset($DueData[3]) ? $DueData[3] : 0;
-                                                        
-                                                        // Add to ageing bucket - ALWAYS use balance (debit_amount - abs(paid))
-                                                        // This matches receivable outstanding logic
-                                                        if($ageing_bucket == 1) {
-                                                            $customer_total_0_30 += $balance;
-                                                        } elseif($ageing_bucket == 2) {
-                                                            $customer_total_31_60 += $balance;
-                                                        } elseif($ageing_bucket == 3) {
-                                                            $customer_total_61_90 += $balance;
-                                                        } elseif($ageing_bucket == 4) {
-                                                            $customer_total_90_above += $balance;
-                                                        }
-                                                    }
-                                                }
-                                                
-                                                // Show customer if they have any outstanding transactions
-                                                // Match receivable outstanding logic: show if balance exists OR has activity
-                                                if(abs($customer_total_balance) > 0.01 || $customer_total_0_30 != 0 || $customer_total_31_60 != 0 || $customer_total_61_90 != 0 || $customer_total_90_above != 0) {
+                                                // Match receivable outstanding visibility: the customer header is shown only when its main total is non-zero.
+                                                if(abs($customer_total_balance) > 0.01) {
+                                                    $grand_total_invoice_amount += $customer_total_invoice_amount;
                                                     $grand_total_balance += $customer_total_balance;
                                                     $grand_total_0_30 += $customer_total_0_30;
                                                     $grand_total_31_60 += $customer_total_31_60;
                                                     $grand_total_61_90 += $customer_total_61_90;
                                                     $grand_total_90_above += $customer_total_90_above;
+                                                    $grand_total_finance_cost += $customer_total_finance_cost;
                                                     $total_customers++;
                                             ?>
                                             <tr>
                                                 <td style="cursor: pointer;"
-                                                    onclick="window.open('{{ url('get-url-customer/' . $aname->account_code) }}', '_blank')"
-                                                    class=" text-start">
-                                                   
+                                                    class="text-start open-receivable-outstanding"
+                                                    data-customer-id="{{ $aname->id }}"
+                                                    data-till-date="{{ @App\SysHelper::normalizeToDmy($till_date) }}">
                                                     {{ $aname->account_name }} @if (@App\SysHelper::getCompanyCodeSettings()['is_customer_code']) ({{ $aname->account_code }})
-
-                                                  
-                                                        
-                                                    @endif </td>
+                                                    @endif
+                                                </td>
                                                 <td class=" text-end">
+                                                    {{ @App\SysHelper::com_curr_format($customer_total_invoice_amount, 2, '.', ',') }}
+                                                </td>
+                                                <td class=" text-end {{ $is_total_attention ? 'text-danger' : '' }}">
                                                     {{ @App\SysHelper::com_curr_format($customer_total_balance, 2, '.', ',') }}
                                                 </td>
                                                 <td class=" text-end">
@@ -262,6 +220,9 @@
                                                 <td class=" text-end">
                                                     {{ @App\SysHelper::com_curr_format($customer_total_90_above, 2, '.', ',') }}
                                                 </td>
+                                                <td class=" text-end">
+                                                    {{ ($customer_total_finance_cost ?? 0) != 0 ? App\SysHelper::com_curr_format($customer_total_finance_cost, 2, '.', ',') : '' }}
+                                                </td>
                                             </tr>
                                             <?php
                                                 }
@@ -274,6 +235,8 @@
                                     <tr style="background: #f8f9fa; font-weight: bold;">
                                         <th class=" text-start">Grand Total ({{ $total_customers }} Customers)</th>
                                         <th class=" text-end">
+                                            {{ @App\SysHelper::com_curr_format($grand_total_invoice_amount, 2, '.', ',') }}</th>
+                                        <th class=" text-end">
                                             {{ @App\SysHelper::com_curr_format($grand_total_balance, 2, '.', ',') }}</th>
                                         <th class=" text-end">
                                             {{ @App\SysHelper::com_curr_format($grand_total_0_30, 2, '.', ',') }}</th>
@@ -283,6 +246,8 @@
                                             {{ @App\SysHelper::com_curr_format($grand_total_61_90, 2, '.', ',') }}</th>
                                         <th class=" text-end">
                                             {{ @App\SysHelper::com_curr_format($grand_total_90_above, 2, '.', ',') }}</th>
+                                        <th class=" text-end">
+                                            {{ ($grand_total_finance_cost ?? 0) != 0 ? App\SysHelper::com_curr_format($grand_total_finance_cost, 2, '.', ',') : '' }}</th>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -299,6 +264,15 @@
     <script>
         // Export customer ageing table to Excel
         $(document).ready(function () {
+            $(document).on('click', '.open-receivable-outstanding', function (e) {
+                e.preventDefault();
+                var customerId = $(this).data('customer-id');
+                var tillDate = $(this).data('till-date') || $('#till_date').val() || '';
+                $('#receivableOutstandingCustomerId').val(customerId);
+                $('#receivableOutstandingTillDate').val(tillDate);
+                $('#receivableOutstandingRedirectForm').trigger('submit');
+            });
+
             $('#exportExcelAgeing').on('click', function () {
                 var companyName = @json(@App\SysCompany::find(session('logged_session_data.company_id') ?? '')->trade_name ?? '');
                 var dateFrom = $('#from_date').val() ? $('#from_date').val().trim() : '';

@@ -18,10 +18,10 @@
                         Supplier Ageing Report
                     </h4>
                     <div class="purchase-order-content-header-right">
-                        <button type="button" id="exportSupplierAgeing" class="btn btn-light me-2">
+
+   <button type="button" id="exportExcelAgeing" class="btn btn-light me-2">
                             <i class="ico icon-outline-export text-success"></i> Export
                         </button>
-
 
 
                         <div class="dropdown">
@@ -37,6 +37,8 @@
                                             class="ico icon-outline-document-text text-success title-15 me-2"></i>
                                         Payables Outstanding</a>
                                 </li>
+
+                                 
 
 
                             </ul>
@@ -70,6 +72,18 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-1-5  mb-2">
+
+                                    <label for="" class="form-label">Internal/External</label>
+                                    <select class="form-control js-example-basic-single" name="list_in_ex" id="list_in_ex">
+                                        <option value="" @if (@$ctrl_intext == '') selected @endif>-Select-
+                                        </option>
+                                        <option value="1" @if (@$ctrl_intext == '1') selected @endif>Internal
+                                        </option>
+                                        <option value="0" @if (@$ctrl_intext == '0') selected @endif>External
+                                        </option>
+                                    </select>
+                                </div>
                                 <div class="col-1-5  mt-4" >
                                             <button class="btn btn-light" type="submit">
                                                 <i class="ico icon-outline-minimalistic-magnifer text-success"></i> Filter
@@ -86,6 +100,12 @@
             </div>
 
 
+            <form id="payablesOutstandingRedirectForm" method="POST" action="{{ route('payables-outstanding') }}" target="_blank" style="display:none;">
+                @csrf
+                <input type="hidden" name="account_id[]" id="payablesOutstandingSupplierId" value="">
+                <input type="hidden" name="till_date" id="payablesOutstandingTillDate" value="">
+            </form>
+
             <div class="card mb-3">
                 <div class="card-body">
 
@@ -101,131 +121,91 @@
                                 <thead>
                                     <tr style="background: #eeeeee; color: #000000;">
                                         <th class=" text-start" width="300px">Supplier Name</th>
-                                        <th class=" text-end" width="120px">Total Balance</th>
+                                        <th class=" text-end" width="120px">Net Invoice Amount</th>
+                                        <th class=" text-end" width="120px">Net Balance</th>
                                         <th class=" text-end" width="120px">0-30</th>
                                         <th class=" text-end" width="120px">31-60</th>
                                         <th class=" text-end" width="120px">61-90</th>
                                         <th class=" text-end" width="120px">>90</th>
+                                        <th class=" text-end" width="120px">Total Finance Cost</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @php
+                                        $grand_total_invoice_amount = 0;
                                         $grand_total_balance = 0;
                                         $grand_total_0_30 = 0;
                                         $grand_total_31_60 = 0;
                                         $grand_total_61_90 = 0;
                                         $grand_total_90_above = 0;
+                                        $grand_total_finance_cost = 0;
                                         $total_suppliers = 0;
                                     @endphp
 
+                                    @php
+                                        $opbinvoice_map = $opbinvoice_map ?? collect([]);
+                                        $payment_terms_map = $payment_terms_map ?? collect([]);
+                                        $purchase_invoice_map = $purchase_invoice_map ?? collect([]);
+                                        $sales_invoice_map = $sales_invoice_map ?? collect([]);
+                                        $payable_finance_rate = $payable_finance_rate ?? 0;
+                                        $list_of_unadjusted = $list_of_unadjusted ?? collect([]);
+                                        $list_of_unadjusted_jv_to_jv = $list_of_unadjusted_jv_to_jv ?? collect([]);
+                                        $opb_balance_amount = $opb_balance_amount ?? collect([]);
+                                        $com_id = $com_id ?? session('logged_session_data.company_id');
+                                    @endphp
                                     @if (count($data_all) > 0)
                                         @foreach ($data_all as $data)
                                             <?php
                                             if(count($data)>0){
                                                 $aname = $accounts->where('id', $data[0]->account_id)->first();
-                                                
-                                                $data_adjestment = @App\SysPurchaseReturnAdjestment::select('piv_no',DB::raw('sum(paid_amount) as paid_amount'))->wherein('piv_no',$data->pluck("transaction_no"))->groupby('piv_no')->get();
-        
-                                                $data_payment = DB::table('sys_payment as p')->select('pa.bi_doc_no','p.doc_number','pa.bi_amount','p.payment_through','p.payment_date','p.cheque_number','p.cheque_bank_name')
-                                                ->join('sys_payment_adjustments as pa','pa.bi_doc_number','p.doc_number')->where('pa.account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->where('p.status',1)->get();
-                                                
-                                                $data_payment2 = DB::table('sys_journalvoucher as j')->select('pa.bi_doc_no','j.doc_number','pa.bi_amount','j.doc_date')
-                                                ->join('sys_payment_adjustments as pa','pa.bi_doc_number','j.doc_number')->where('pa.account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->where('j.status',1)->get();
 
-                                                $data_payment3 = DB::table('sys_journalvoucher as j')->select('ra.bi_doc_no','j.doc_number','ra.bi_amount','j.doc_date')
-                                                ->join('sys_receipt_adjustments as ra','ra.bi_doc_number','j.doc_number')->where('ra.account_id',$data[0]->account_id)->wherein('bi_doc_no',$data->pluck("transaction_no"))->where('j.status',1)->get();
+                                                $supplierTotals = App\SysHelper::getPayableOutstandingSupplierTotals(
+                                                    $data[0]->account_id,
+                                                    $com_id,
+                                                    $till_date,
+                                                    $data,
+                                                    $list_of_unadjusted,
+                                                    $list_of_unadjusted_jv_to_jv,
+                                                    $payment_terms_map,
+                                                    $purchase_invoice_map,
+                                                    $sales_invoice_map,
+                                                    $opbinvoice_map,
+                                                    $payable_finance_rate
+                                                );
+                                                $supplier_total_invoice_amount = $supplierTotals['net_invoice_amount'];
+                                                $supplier_total_balance = $supplierTotals['net_balance'];
+                                                $supplier_total_0_30 = $supplierTotals['0_30'];
+                                                $supplier_total_31_60 = $supplierTotals['31_60'];
+                                                $supplier_total_61_90 = $supplierTotals['61_90'];
+                                                $supplier_total_90_above = $supplierTotals['90_plus'];
+                                                $supplier_total_finance_cost = $supplierTotals['finance_cost'];
+                                                $opb_record = $opb_balance_amount->where('account_id', $data[0]->account_id)->first();
+                                                $opb_total = $opb_record ? (float) $opb_record->opb_amount : 0;
+                                                $is_total_attention = !empty($supplierTotals['has_overdue']) || round((float) $supplier_total_balance, 2) != round($opb_total, 2);
 
-                                                $data_return = DB::table('sys_purchase_return as r')->select('ra.piv_no','r.doc_number','ra.paid_amount','r.doc_date')
-                                                ->join('sys_purchase_return_adjestment as ra','ra.pri_no','r.doc_number')->where('r.vendors',$data[0]->account_id)->wherein('pri_no',$data->pluck("transaction_no"))->where('r.status',1)->get();
-                                                
-                                                // Initialize supplier totals
-                                                $supplier_total_balance = 0;
-                                                $supplier_total_0_30 = 0;
-                                                $supplier_total_31_60 = 0;
-                                                $supplier_total_61_90 = 0;
-                                                $supplier_total_90_above = 0;
-                                                
-                                                // Process each transaction for this supplier
-                                                foreach ($data as $dt) {
-                                                    $paid = 0;
-                                                    
-                                                    // Calculate adjustments
-                                                    $adjustments = $data_adjestment->where('piv_no', $dt->transaction_no)->max('paid_amount');
-                                                    $paid += $adjustments;
-                                                    
-                                                    // Calculate payments
-                                                    $bi_amount = $data_payment->where('bi_doc_no', $dt->transaction_no)->sum('bi_amount');
-                                                    $paid += $bi_amount;
-                                                    
-                                                    $bi_amount2 = $data_payment2->where('bi_doc_no', $dt->transaction_no)->sum('bi_amount');
-                                                    $paid += $bi_amount2;
-                                                    
-                                                    // Calculate returns (subtract)
-                                                    $bi_amount3 = $data_payment3->where('bi_doc_no', $dt->transaction_no)->sum('bi_amount');
-                                                    $bi_amount4 = $data_return->where('piv_no', $dt->transaction_no)->sum('paid_amount');
-                                                    $paid -= ($bi_amount3 - $bi_amount4);
-                                                    
-                                                    // Calculate balance based on transaction type
-                                                    $balance = $dt->credit_amount - abs($paid);
-                                                    
-                                                    // Check if row should be hidden (matches payable outstanding logic)
-                                                    $is_hide2 = 0;
-                                                    if (str_contains($dt->transaction_no, 'PR')) {
-                                                        if ($dt->debit_amount >= $paid) {
-                                                            $is_hide2 = 1;
-                                                        }
-                                                    }
-                                                    
-                                                    // Only process if row would be visible OR has debit amount
-                                                    if ((($dt->credit_amount != $paid) || ($dt->debit_amount > 0)) && $is_hide2 == 0) {
-                                                        // Calculate running balance like payable outstanding
-                                                        if (str_contains($dt->transaction_no, 'PR')) {
-                                                            if ($dt->debit_amount >= $paid) {
-                                                                $supplier_total_balance -= $dt->debit_amount;
-                                                            }
-                                                        } else {
-                                                            $supplier_total_balance += $balance;
-                                                        }
-                                                        
-                                                        // Get ageing bucket
-                                                        $DueData = @App\SysHelper::get_due_date_purchase_invoice($dt->transaction_no, $dt->transaction_date);
-                                                        $ageing_bucket = isset($DueData[3]) ? $DueData[3] : 0;
-                                                        
-                                                        // Add to ageing bucket - ALWAYS use balance (credit_amount - abs(paid))
-                                                        // This matches payable outstanding logic
-                                                        if($ageing_bucket == 1) {
-                                                            $supplier_total_0_30 += $balance;
-                                                        } elseif($ageing_bucket == 2) {
-                                                            $supplier_total_31_60 += $balance;
-                                                        } elseif($ageing_bucket == 3) {
-                                                            $supplier_total_61_90 += $balance;
-                                                        } elseif($ageing_bucket == 4) {
-                                                            $supplier_total_90_above += $balance;
-                                                        }
-                                                    }
-                                                }
-                                                
-                                                // Show supplier if they have any outstanding transactions
-                                                // Match payable outstanding logic: show if balance exists OR has activity
-                                                if(abs($supplier_total_balance) > 0.01 || $supplier_total_0_30 != 0 || $supplier_total_31_60 != 0 || $supplier_total_61_90 != 0 || $supplier_total_90_above != 0) {
+                                                // Match payable outstanding visibility: the supplier header is shown only when its main total is non-zero.
+                                                if(abs($supplier_total_balance) > 0.01) {
+                                                    $grand_total_invoice_amount += $supplier_total_invoice_amount;
                                                     $grand_total_balance += $supplier_total_balance;
                                                     $grand_total_0_30 += $supplier_total_0_30;
                                                     $grand_total_31_60 += $supplier_total_31_60;
                                                     $grand_total_61_90 += $supplier_total_61_90;
                                                     $grand_total_90_above += $supplier_total_90_above;
+                                                    $grand_total_finance_cost += $supplier_total_finance_cost;
                                                     $total_suppliers++;
                                             ?>
                                             <tr>
                                                 <td style="cursor: pointer;"
-                                                    onclick="window.open('{{ url('get-url-supplier/' . $aname->account_code) }}', '_blank')"
-                                                    class=" text-start"> 
-                                                    {{ $aname->account_name }}
-                                                @if (@App\SysHelper::getCompanyCodeSettings()['is_supplier_code'])
-                                                ({{ $aname->account_code }})
-                                                    
-                                                @endif
+                                                    class="text-start open-payables-outstanding"
+                                                    data-supplier-id="{{ $aname->id }}"
+                                                    data-till-date="{{ @App\SysHelper::normalizeToDmy($till_date) }}">
+                                                    {{ $aname->account_name }} @if (@App\SysHelper::getCompanyCodeSettings()['is_supplier_code']) ({{ $aname->account_code }})
+                                                    @endif
                                                 </td>
                                                 <td class=" text-end">
+                                                    {{ @App\SysHelper::com_curr_format($supplier_total_invoice_amount, 2, '.', ',') }}
+                                                </td>
+                                                <td class=" text-end {{ $is_total_attention ? 'text-danger' : '' }}">
                                                     {{ @App\SysHelper::com_curr_format($supplier_total_balance, 2, '.', ',') }}
                                                 </td>
                                                 <td class=" text-end">
@@ -240,6 +220,9 @@
                                                 <td class=" text-end">
                                                     {{ @App\SysHelper::com_curr_format($supplier_total_90_above, 2, '.', ',') }}
                                                 </td>
+                                                <td class=" text-end">
+                                                    {{ ($supplier_total_finance_cost ?? 0) != 0 ? App\SysHelper::com_curr_format($supplier_total_finance_cost, 2, '.', ',') : '' }}
+                                                </td>
                                             </tr>
                                             <?php
                                                 }
@@ -252,6 +235,8 @@
                                     <tr style="background: #f8f9fa; font-weight: bold;">
                                         <th class=" text-start">Grand Total ({{ $total_suppliers }} Suppliers)</th>
                                         <th class=" text-end">
+                                            {{ @App\SysHelper::com_curr_format($grand_total_invoice_amount, 2, '.', ',') }}</th>
+                                        <th class=" text-end">
                                             {{ @App\SysHelper::com_curr_format($grand_total_balance, 2, '.', ',') }}</th>
                                         <th class=" text-end">
                                             {{ @App\SysHelper::com_curr_format($grand_total_0_30, 2, '.', ',') }}</th>
@@ -261,6 +246,8 @@
                                             {{ @App\SysHelper::com_curr_format($grand_total_61_90, 2, '.', ',') }}</th>
                                         <th class=" text-end">
                                             {{ @App\SysHelper::com_curr_format($grand_total_90_above, 2, '.', ',') }}</th>
+                                        <th class=" text-end">
+                                            {{ ($grand_total_finance_cost ?? 0) != 0 ? App\SysHelper::com_curr_format($grand_total_finance_cost, 2, '.', ',') : '' }}</th>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -275,41 +262,57 @@
     </div>
 
     <script>
-        $(document).ready(function() {
-            $('#exportSupplierAgeing').on('click', function(e) {
+        // Export supplier ageing table to Excel
+        $(document).ready(function () {
+            $(document).on('click', '.open-payables-outstanding', function (e) {
                 e.preventDefault();
+                var supplierId = $(this).data('supplier-id');
+                var tillDate = $(this).data('till-date') || $('#till_date').val() || '';
+                $('#payablesOutstandingSupplierId').val(supplierId);
+                $('#payablesOutstandingTillDate').val(tillDate);
+                $('#payablesOutstandingRedirectForm').trigger('submit');
+            });
 
+            $('#exportExcelAgeing').on('click', function () {
                 var companyName = @json(@App\SysCompany::find(session('logged_session_data.company_id') ?? '')->trade_name ?? '');
-                var dateFrom = $('#from_date').length ? $('#from_date').val().trim() : '';
-                var dateTo = $('#to_date').length ? $('#to_date').val().trim() : '';
-                var tillDate = $('#till_date').length ? $('#till_date').val().trim() : '';
+                var dateFrom = $('#from_date').val() ? $('#from_date').val().trim() : '';
+                var dateTo = $('#to_date').val() ? $('#to_date').val().trim() : '';
+                var tillDate = $('#till_date').val() ? $('#till_date').val().trim() : '';
+                var totalSuppliers = $('#long-list tbody tr').length;
+                var reportTitle = 'Supplier Ageing Report' + (totalSuppliers ? ' (' + totalSuppliers + ' Suppliers)' : '');
 
                 function formatDMY(value) {
-                    if (!value) return '';
-                    var text = value.trim();
-                    if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(text)) {
-                        return text.replace(/-/g, '/');
-                    }
-                    var normalized = text.replace(/-/g, '/');
-                    var parts = normalized.split('/');
+                    if (!value) return value;
+                    var normalized = value.trim().replace(/\s+/g, '');
+                    var parts = normalized.split(/[\/\-\.]/);
                     if (parts.length === 3) {
                         if (parts[0].length === 4) {
                             return parts[2] + '/' + parts[1] + '/' + parts[0];
                         }
-                        return normalized;
+                        return parts[0] + '/' + parts[1] + '/' + parts[2];
                     }
-                    return text;
+                    return value;
                 }
 
-                var $table = $('#long-list');
+                var visibleColIndexes = [];
                 var headerLabels = [];
-                $table.find('thead th').each(function() {
-                    headerLabels.push($(this).text().trim());
+                var $table = $('#long-list');
+                var lastIndex = $table.find('thead tr th').length - 1;
+
+                $table.find('thead tr th').each(function (i) {
+                    if ($(this).css('display') !== 'none') {
+                        var label = $(this).text().trim();
+                        if (['actions', 'action', 'actions '].includes(label.toLowerCase().trim())) {
+                            return;
+                        }
+                        visibleColIndexes.push(i);
+                        headerLabels.push(label);
+                    }
                 });
 
                 var rows = [];
                 rows.push([companyName]);
-                rows.push(['Supplier Ageing Report (' + $table.find('tbody tr').length + ')']);
+                rows.push([reportTitle]);
 
                 if (dateFrom || dateTo) {
                     var parts = [];
@@ -323,12 +326,16 @@
                 rows.push([]);
                 rows.push(headerLabels);
 
-                $table.find('tbody tr').each(function() {
+                $('#long-list tbody tr').each(function () {
+                    var $cells = $(this).find('td');
                     var rowData = [];
-                    $(this).find('td').each(function() {
-                        rowData.push($(this).text().trim().replace(/\s+/g, ' '));
+                    visibleColIndexes.forEach(function (i) {
+                        var cellText = $cells.eq(i).text().trim().replace(/\s+/g, ' ');
+                        rowData.push(cellText);
                     });
-                    rows.push(rowData);
+                    if (rowData.length) {
+                        rows.push(rowData);
+                    }
                 });
 
                 if (rows.length <= 5) {
@@ -336,10 +343,13 @@
                     return;
                 }
 
-                var N = headerLabels.length || 1;
                 var workbook = new ExcelJS.Workbook();
                 var worksheet = workbook.addWorksheet('Supplier Ageing');
-                worksheet.columns = Array.from({ length: N }, function() { return { width: 22 }; });
+                var wsCols = [];
+                for (var ci = 0; ci < headerLabels.length; ci++) {
+                    wsCols.push({ width: 22 });
+                }
+                worksheet.columns = wsCols;
 
                 var hdrIdx = rows.indexOf(headerLabels);
                 if (hdrIdx < 0) hdrIdx = rows.length - 1;
@@ -350,11 +360,11 @@
                     wsRowNum++;
                     var wsRow = worksheet.addRow([]);
                     wsRow.height = ri === 0 ? 26 : ri === 1 ? 20 : 16;
-                    if (N > 1) worksheet.mergeCells(wsRowNum, 1, wsRowNum, N);
-                    var cell = wsRow.getCell(1);
-                    cell.value = rows[ri][0] || '';
-                    cell.font = ri === 0 ? { bold: true, size: 14 } : ri === 1 ? { bold: true, size: 12 } : { bold: true, size: 11 };
-                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    if (headerLabels.length > 1) worksheet.mergeCells(wsRowNum, 1, wsRowNum, headerLabels.length);
+                    wsRow.getCell(1).value = rows[ri][0] || '';
+                    if (ri === 0) wsRow.getCell(1).font = { bold: true, size: 14 };
+                    else if (ri === 1) wsRow.getCell(1).font = { bold: true, size: 12 };
+                    wsRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
                 }
 
                 wsRowNum++;
@@ -363,7 +373,7 @@
                 wsRowNum++;
                 var wsHdrRow = worksheet.addRow(headerLabels);
                 wsHdrRow.height = 20;
-                wsHdrRow.eachCell({ includeEmpty: true }, function(cell) {
+                wsHdrRow.eachCell({ includeEmpty: true }, function (cell) {
                     cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2D5496' } };
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -377,7 +387,7 @@
 
                 for (var di = hdrIdx + 1; di < rows.length; di++) {
                     var wsDataRow = worksheet.addRow(rows[di]);
-                    wsDataRow.eachCell({ includeEmpty: true }, function(cell) {
+                    wsDataRow.eachCell({ includeEmpty: true }, function (cell) {
                         cell.border = {
                             top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
                             left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
@@ -387,16 +397,17 @@
                     });
                 }
 
-                workbook.xlsx.writeBuffer().then(function(buffer) {
+                workbook.xlsx.writeBuffer().then(function (buffer) {
                     var blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                    function pad(n){ return n<10 ? ('0'+n) : n; }
+                    function pad(n) { return n < 10 ? '0' + n : n; }
                     var d = new Date();
-                    var filename = 'supplier_ageing_' + pad(d.getDate()) + '-' + pad(d.getMonth()+1) + '-' + d.getFullYear() + '.xlsx';
+                    var filename = 'supplier_ageing_' + pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear() + '.xlsx';
                     saveAs(blob, filename);
                 });
             });
         });
     </script>
+
     <?php }catch (\Exception $e) { ?> {{ $e }}
     <?php  } ?>
 @endsection

@@ -903,10 +903,11 @@ function check_total(id, amount) {
                                 $DueData = @App\SysHelper::get_due_date_invoice_opbinvoice(
                                     $dt->transaction_no,
                                     $opbFilterDet->due_date ?? '',
-                                    $opbFilterDet->payment_terms ?? ''
+                                    $opbFilterDet->payment_terms ?? '',
+                                    $asOfDateCalc
                                 );
                             } else {
-                                $DueData = App\SysHelper::get_due_date_sales_invoice($dt->transaction_no, $dt->transaction_date);
+                                $DueData = App\SysHelper::get_due_date_sales_invoice($dt->transaction_no, $dt->transaction_date, $asOfDateCalc);
                             } 
                        
                            
@@ -916,56 +917,52 @@ function check_total(id, amount) {
                                     $ats[$k]=$dt;
                                     $k++;
                                 }
-                                if($ageing >=0 && $ageing <31 && $DueData[1] <0  ){
+                                if($ageing >=0 && $ageing <31 && $DueData[1] >=0 && $DueData[1] <=30 ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }
-                                if($ageing >30 && $ageing <61 &&  $DueData[1] >=0 && $DueData[1] <31 ){
+                                if($ageing >=30 && $ageing <61 &&  $DueData[1] >=31 && $DueData[1] <=60 ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }
-                                if($ageing >=60 && $ageing <=90 &&  $DueData[1] >30 && $DueData[1] <61  ){
+                                if($ageing >=60 && $ageing <=90 &&  $DueData[1] >=61 && $DueData[1] <=90  ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }  
-                                if($ageing >=90 &&   $DueData[1] >60 && $DueData[1] <90  ){
+                                if($ageing > 90 && $DueData[1] >90 ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }  
-                                
-                                
                             }
 
                             if($overdue != 999999 && $ageing == 99999){    
-                                if(  $DueData[1] < $overdue ){
+                                if(  $DueData[1] >= $overdue ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }
                             }
 
                             if($ageing != 99999 && $overdue == 999999){
-                             
                                 if($ageing <0 && $DueData[1] <0 ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }
-                                if($ageing >=0 && $ageing <31 && $DueData[1] <0  ){
+                                if($ageing >=0 && $ageing <31 && $DueData[1] >=0 && $DueData[1] <=30 ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }
-                                if($ageing >=30 && $ageing <61 &&  $DueData[1] >=0 && $DueData[1] <31 ){
+                                if($ageing >=30 && $ageing <61 &&  $DueData[1] >=31 && $DueData[1] <=60 ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }
-                                if($ageing >=60 && $ageing <=90 &&  $DueData[1] >30 && $DueData[1] <61  ){
+                                if($ageing >=60 && $ageing <=90 &&  $DueData[1] >=61 && $DueData[1] <=90  ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }  
-                                if($ageing >=90 &&   $DueData[1] >60 && $DueData[1] <90  ){
+                                if($ageing > 90 && $DueData[1] >90 ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }  
-                              
                             }  
 
                          }
@@ -1198,8 +1195,9 @@ function check_total(id, amount) {
                                 }
                                 $invoiceDate = $dt->transaction_date;
                                 $paymentTermRow = null;
+                                $effectivePaymentTerm = null;
                                 if ($dt->transaction_type == 'opbinvoice') {
-                                    $opbPaymentTerm = App\SysPaymentTerms::resolveOpbPaymentTerm(
+                                    $effectivePaymentTerm = App\SysPaymentTerms::resolveOpbPaymentTerm(
                                         $payment_terms,
                                         $invoiceDate,
                                         $duedate,
@@ -1208,7 +1206,7 @@ function check_total(id, amount) {
                                     $breakdown = App\SysPaymentTerms::buildOutstandingBreakdown(
                                         $invoiceDate,
                                         $rowBalance,
-                                        $opbPaymentTerm,
+                                        $effectivePaymentTerm,
                                         $receivable_finance_rate ?? 0,
                                         $asOfDateCalc
                                     );
@@ -1218,15 +1216,22 @@ function check_total(id, amount) {
                                         $invoiceDate = $siRow->doc_date;
                                         $paymentTermRow = isset($payment_terms_map) ? $payment_terms_map->get($siRow->payment_terms) : null;
                                     }
+                                    $effectivePaymentTerm = $paymentTermRow;
                                     $breakdown = App\SysPaymentTerms::buildOutstandingBreakdown(
                                         $invoiceDate,
                                         $rowBalance,
-                                        $paymentTermRow,
+                                        $effectivePaymentTerm,
                                         $receivable_finance_rate ?? 0,
                                         $asOfDateCalc
                                     );
                                 }
-                                $ageingRow = $breakdown['ageing'];
+                                $ageingRow = App\SysPaymentTerms::buildOsListAgeingBuckets(
+                                    $invoiceDate,
+                                    $rowBalance,
+                                    $effectivePaymentTerm,
+                                    $asOfDateCalc,
+                                    $breakdown['max_overdue_days'] ?? null
+                                );
                                 $gtot1 += $ageingRow['0_30'];
                                 $gtot2 += $ageingRow['31_60'];
                                 $gtot3 += $ageingRow['61_90'];
@@ -1251,10 +1256,10 @@ function check_total(id, amount) {
                             @include('backEnd.outstanding.partials.receivable_due_columns', ['breakdown' => $breakdown])
 
 @if(!$hideBasicColumns)
-                            <td class="text-end">{{ $ageingRow['0_30'] > 0 ? App\SysHelper::com_curr_format($ageingRow['0_30'], 2, '.', ',') : '' }}</td>
-                            <td class="text-end">{{ $ageingRow['31_60'] > 0 ? App\SysHelper::com_curr_format($ageingRow['31_60'], 2, '.', ',') : '' }}</td>
-                            <td class="text-end">{{ $ageingRow['61_90'] > 0 ? App\SysHelper::com_curr_format($ageingRow['61_90'], 2, '.', ',') : '' }}</td>
-                            <td class="text-end">{{ $ageingRow['90_plus'] > 0 ? App\SysHelper::com_curr_format($ageingRow['90_plus'], 2, '.', ',') : '' }}</td>
+                            <td class="text-end">{{ abs($ageingRow['0_30']) >= 0.01 ? App\SysHelper::com_curr_format($ageingRow['0_30'], 2, '.', ',') : '' }}<input type="hidden" class="inv_all_0_30" value="{{ $ageingRow['0_30'] }}" /></td>
+                            <td class="text-end">{{ abs($ageingRow['31_60']) >= 0.01 ? App\SysHelper::com_curr_format($ageingRow['31_60'], 2, '.', ',') : '' }}<input type="hidden" class="inv_all_31_60" value="{{ $ageingRow['31_60'] }}" /></td>
+                            <td class="text-end">{{ abs($ageingRow['61_90']) >= 0.01 ? App\SysHelper::com_curr_format($ageingRow['61_90'], 2, '.', ',') : '' }}<input type="hidden" class="inv_all_61_90" value="{{ $ageingRow['61_90'] }}" /></td>
+                            <td class="text-end">{{ abs($ageingRow['90_plus']) >= 0.01 ? App\SysHelper::com_curr_format($ageingRow['90_plus'], 2, '.', ',') : '' }}<input type="hidden" class="inv_all_90_above" value="{{ $ageingRow['90_plus'] }}" /></td>
                             <td class="text-end">
                                 @if (!empty($breakdown['finance_cost_popover_content_attr']) && ($breakdown['total_finance_cost'] ?? 0) != 0)
                                     <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto" data-bs-content="{!! $breakdown['finance_cost_popover_content_attr'] !!}">{{ App\SysHelper::com_curr_format($breakdown['total_finance_cost'], 2, '.', ',') }}</span>
@@ -1790,6 +1795,7 @@ function check_total(id, amount) {
         let totalall_31_60 = 0;
         let totalall_61_90 = 0;
         let totalall_90_above = 0;
+        let totalMainSum = 0;
 
         var ctrlOption = '{{ @$ctrl_list_option }}';
         $('label.main_sum').each(function () {
@@ -1798,6 +1804,7 @@ function check_total(id, amount) {
             var color = $(this).css('color');
             var mainTableId = $mainTable.attr('id') || '';
             var anameId = mainTableId.replace('account_table', '');
+            var headerTotal = formatAmountToNumber(value);
 
             // if unadjusted_balance filter is active, require at least one unadjusted row
             if (ctrlOption === 'unadjusted_balance') {
@@ -1831,7 +1838,7 @@ function check_total(id, amount) {
                 }
             }
 
-            if (!value || value === '0') {
+            if (!value || Math.abs(headerTotal) <= 0.01) {
                 $mainTable.hide();
                 $('#collapse' + anameId).hide();
             } else {
@@ -1846,26 +1853,26 @@ function check_total(id, amount) {
                 // Now find the corresponding .sub_table inside the collapse div
                 var $subTable = $('#collapse' + anameId).find('.sub_table');
 
-                // Get the .inv_e_total value
-                var invValue = $subTable.find('.inv_e_total').val();
-                var numericValue = parseFloat(invValue) || 0;
-                totalInv += numericValue;
-                
-                var all_0_30 = $subTable.find('.inv_all_0_30').val();
-                var all_0_30 = parseFloat(all_0_30) || 0;
-                totalall_0_30 += all_0_30;
-                
-                var all_31_60 = $subTable.find('.inv_all_31_60').val();
-                var all_31_60 = parseFloat(all_31_60) || 0;
-                totalall_31_60 += all_31_60;
-                
-                var all_61_90 = $subTable.find('.inv_all_61_90').val();
-                var all_61_90 = parseFloat(all_61_90) || 0;
-                totalall_61_90 += all_61_90;
-                
-                // the .main_sum label sits in the header row (this element), not inside the subtable
-                var all_90_above = formatAmountToNumber($(this).text());
-                totalall_90_above += all_90_above;
+                $subTable.find('.inv_e_total').each(function () {
+                    totalInv += parseFloat($(this).val()) || 0;
+                });
+
+                $subTable.find('.inv_all_0_30').each(function () {
+                    totalall_0_30 += parseFloat($(this).val()) || 0;
+                });
+
+                $subTable.find('.inv_all_31_60').each(function () {
+                    totalall_31_60 += parseFloat($(this).val()) || 0;
+                });
+
+                $subTable.find('.inv_all_61_90').each(function () {
+                    totalall_61_90 += parseFloat($(this).val()) || 0;
+                });
+
+                $subTable.find('.inv_all_90_above').each(function () {
+                    totalall_90_above += parseFloat($(this).val()) || 0;
+                });
+                totalMainSum += headerTotal;
             }
         });
 
@@ -1876,7 +1883,7 @@ function check_total(id, amount) {
         $('#lbl_all_total_61_90').text(formatAmount(totalall_61_90.toFixed(2)));
         $('#lbl_all_total_90_above').text(formatAmount(totalall_90_above.toFixed(2)));
         // display the sum of all visible .main_sum totals in summary row
-        $('#lbl_main_sum_total').text(formatAmount(totalall_90_above.toFixed(2)));
+        $('#lbl_main_sum_total').text(formatAmount(totalMainSum.toFixed(2)));
 
         // After all data is processed, expand accordions for consolidated view
         // but only those whose header row is still visible (non-empty)
@@ -2256,4 +2263,3 @@ function check_total(id, amount) {
     }
 
 </script>
-

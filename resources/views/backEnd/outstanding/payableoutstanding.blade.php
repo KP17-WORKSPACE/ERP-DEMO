@@ -6,6 +6,27 @@
     $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
     @endphp
 
+    <style>
+        .ageing-grn-popover { max-width: 320px; text-align: left; }
+        .ageing-grn-popover .popover-body { padding: 0.5rem 0.65rem; }
+        .ageing-grn-tip {
+            cursor: help;
+            border-bottom: 1px dotted #adb5bd;
+        }
+        .sub_table .recv-sched-col { overflow: visible; }
+        .recv-sched-col { font-size: 11px; line-height: 1.35; overflow: visible; }
+        .recv-sched-list { display: inline; word-break: break-word; }
+        .recv-sched-item {
+            cursor: help;
+            border-bottom: 1px dotted #adb5bd;
+            white-space: nowrap;
+        }
+        .recv-sched-sep { color: #868e96; }
+        .recv-sched-od-late { color: #c92a2a; font-weight: 600; }
+        .recv-sched-od-soon { color: #2b8a3e; font-weight: 600; }
+        .recv-sched-od-today { color: #495057; font-weight: 600; }
+    </style>
+
      <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script>
@@ -21,10 +42,10 @@
                         'Account Code', 'Supplier', 'Deal ID',
                         'Inv Date', 'Inv No', 'LPO No', 'Bill No', 'Bill Date',
                         'Amount', 'Adjustments', 'Balance', 'Total Balance',
-                        'Due Date', 'Over Due'
+                        'Due Date', 'Over Due Days', 'Due Amount'
                     ];
                     if (!hideBasicCols) {
-                        headerLabels = headerLabels.concat(['0-30', '31-60', '61-90', '>90']);
+                        headerLabels = headerLabels.concat(['0-30', '31-60', '61-90', '>90', 'Finance Cost']);
                     }
                     headerLabels.push('Payment Terms');
                     if (!hideBasicCols) {
@@ -680,7 +701,17 @@ vv+="</div>";
                         $data_return = DB::table('sys_purchase_return as r')->select('ra.piv_no','r.doc_number','ra.paid_amount','r.doc_date')
                         ->join('sys_purchase_return_adjestment as ra','ra.pri_no','r.doc_number')->where('r.vendors',$data[0]->account_id)->wherein('pri_no',$data->pluck("transaction_no"))->where('r.status',1)->get();
                   ?>
-                  @php $hideBasicColumns = !empty($ctrl_basic_search); @endphp
+                  @php
+                      $hideBasicColumns = !empty($ctrl_basic_search);
+                      $max_installments = $max_installments ?? 1;
+                      $payable_finance_rate = $payable_finance_rate ?? 0;
+                      $purchase_invoice_map = $purchase_invoice_map ?? collect([]);
+                      $sales_invoice_map = $sales_invoice_map ?? collect([]);
+                      $payment_terms_map = $payment_terms_map ?? collect([]);
+                      $opbinvoice_map = $opbinvoice_map ?? collect([]);
+                      $scheduleColCount = 3;
+                      $asOfDateCalc = App\SysHelper::normalizeToYmd($till_date) ?: $till_date;
+                  @endphp
 
                   @if($ctrl_list_option == 'pdc')
                   <?php $pdc_1 = !empty($list_of_unadjusted_pdc) ? $list_of_unadjusted_pdc->where('account_id',$aname->id) : []; ?>
@@ -849,13 +880,15 @@ function check_total(id, amount) {
                           <th class="text-center" style="width:7%">Adjustments</th>
                           <th class="text-center" style="width:6%">Balance</th>
                           <th class="text-center" style="width:6%">Total Balance</th>
-                          <th class="text-center" style="width:6%">Due Date</th>
-                          <th class="text-center" style="width:4%">Over Due</th>
+                          <th class="text-start" style="width:7%">Due Date</th>
+                          <th class="text-start" style="width:6%">Over Due Days</th>
+                          <th class="text-start" style="width:7%">Due Amount</th>
                         @if(!$hideBasicColumns)
                         <th class="text-center" style="width:6%">0-30</th>
                         <th class="text-center" style="width:6%">31-60</th>
                         <th class="text-center" style="width:6%">61-90</th>
                         <th class="text-center" style="width:6%">>90</th>
+                        <th class="text-end" style="width:6%">Finance Cost</th>
                         @endif
                            <th class="text-start" style="width:11%">Payment Terms</th>
                         @if(!$hideBasicColumns)
@@ -871,7 +904,19 @@ function check_total(id, amount) {
                          $k=0;
                           $row_count_1 = 0;  // count rows for this account
                          foreach ($data as $dt){
-                            $DueData =  App\SysHelper::get_due_date_purchase_invoice($dt->transaction_no,$dt->transaction_date); 
+                            if (isset($dt->transaction_type) && $dt->transaction_type == 'opbinvoice') {
+                                $opbFilterDet = $opbinvoice_map->get($dt->transaction_no);
+                                $DueData = @App\SysHelper::get_due_date_invoice_opbinvoice(
+                                    $dt->transaction_no,
+                                    $opbFilterDet->due_date ?? '',
+                                    $opbFilterDet->payment_terms ?? '',
+                                    $asOfDateCalc
+                                );
+                            } elseif (Illuminate\Support\Str::contains($dt->transaction_no, ['SI'])) {
+                                $DueData = App\SysHelper::get_due_date_sales_invoice($dt->transaction_no, $dt->transaction_date, $asOfDateCalc);
+                            } else {
+                                $DueData = App\SysHelper::get_due_date_purchase_invoice($dt->transaction_no, $dt->transaction_date, $asOfDateCalc);
+                            }
                        
                             // if( $DueData[1] < $overdue && $DueData[1] < $ageing ){
                             //     $ats[$k]=$dt;
@@ -886,35 +931,33 @@ function check_total(id, amount) {
                            
 
                             if($overdue != 999999){    
-                                if(  $DueData[1] < $overdue ){
+                                if(  $DueData[1] >= $overdue ){
                                     $ats[$k]=$dt;
                                     $k++;
                                 }
                             }
 
                             if($ageing != 99999){
-                               // if(  $DueData[1] < $ageing ){
-                                    if($ageing <0 && $DueData[1] <0 ){
-                                        $ats[$k]=$dt;
-                                        $k++;
-                                    }
-                                    if($ageing >=0 && $ageing <31 && $DueData[1] >=0 && $DueData[1] <31 ){
-                                        $ats[$k]=$dt;
-                                        $k++;
-                                    }
-                                    if($ageing >30 && $ageing <61 &&  $DueData[1] >30 && $DueData[1] <61 ){
-                                        $ats[$k]=$dt;
-                                        $k++;
-                                    }
-                                    if($ageing >=60 && $ageing <=90 && $DueData[1] >=60 && $DueData[1] <=90 ){
-                                        $ats[$k]=$dt;
-                                        $k++;
-                                    }
-                                    if($ageing > 90 && $DueData[1] >90 ){
-                                        $ats[$k]=$dt;
-                                        $k++;
-                                    }    //echo 'xxxxxxxxxxxxxxxxxxxx'.$k;
-                              //  }
+                                if($ageing <0 && $DueData[1] <0 ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing >=0 && $ageing <31 && $DueData[1] >=0 && $DueData[1] <=30 ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing >=30 && $ageing <61 &&  $DueData[1] >=31 && $DueData[1] <=60 ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing >=60 && $ageing <=90 &&  $DueData[1] >=61 && $DueData[1] <=90  ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
+                                if($ageing > 90 && $DueData[1] >90 ){
+                                    $ats[$k]=$dt;
+                                    $k++;
+                                }
                             }  
 
                          }
@@ -928,7 +971,8 @@ function check_total(id, amount) {
                         $grand_paid=0;
                         $grand_balance=0;
                         $grand_total_balance=0;
-                        $gtot1=0;$gtot2=0;$gtot3=0;$gtot4=0;$gtot5=0;
+                        $gtot1=0;$gtot2=0;$gtot3=0;$gtot4=0;
+                        $gtot_finance=0;
                         @endphp
                         @if (count($data)>0)
                         @php $sum_b=0; @endphp
@@ -984,7 +1028,11 @@ function check_total(id, amount) {
                             }
                             
 
-                            $paid += ($adjustments+$bi_amount+$bi_amount2) - ($bi_amount3 - $bi_amount4);
+                            $opb_import_paid = 0;
+                            if (isset($dt->transaction_type) && $dt->transaction_type == 'opbinvoice') {
+                                $opb_import_paid = (float) ($dt->debit_amount ?? 0);
+                            }
+                            $paid += ($adjustments + $bi_amount + $bi_amount2 + $opb_import_paid) - ($bi_amount3 - $bi_amount4);
 
                             $deal_id="";
                             $deal_code="";
@@ -1013,13 +1061,14 @@ function check_total(id, amount) {
                             }
                             
                             if ($dt->transaction_type=="opbinvoice"){
-                                if(count($opbinvoice)>0){
-                                $lpo_no = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('po_no')->first();
-                                $deal_code = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('deal_id')->first();
-                                $payment_terms = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('payment_terms')->first();
-                                $duedate = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('due_date')->first();
-                                $bill_no = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('bill_no')->first();
-                                $bill_date = $opbinvoice->where('transaction_no', $dt->transaction_no)->pluck('bill_date')->first();
+                                $opbDet = $opbinvoice_map->get($dt->transaction_no);
+                                if ($opbDet) {
+                                    $lpo_no = $opbDet->po_no ?? '';
+                                    $deal_code = $opbDet->deal_id ?? '';
+                                    $payment_terms = $opbDet->payment_terms ?? '';
+                                    $duedate = $opbDet->due_date ?? '';
+                                    $bill_no = $opbDet->bill_no ?? '';
+                                    $bill_date = $opbDet->bill_date ?? '';
                                 }
                             }else{
                                 if(isset($lpono) && $lpono != ""){
@@ -1039,9 +1088,6 @@ function check_total(id, amount) {
                         }                        
                         if(($dt->debit_amount)>0){
                             $grand_credit_amount-=$dt->debit_amount;
-                            //$grand_paid+=$paid;
-                            //$grand_balance+=$dt->debit_amount-abs($paid);
-                            //$grand_total_balance+=$b;
                         }
 
                         ?>
@@ -1052,153 +1098,169 @@ function check_total(id, amount) {
                         $is_hide=1;
                         }} ?>
 
-                         @php $DueData =  @App\SysHelper::get_due_date_purchase_invoice($dt->transaction_no,$dt->transaction_date); @endphp 
-                        <?php
-                         //$DueData =  App\SysHelper::get_due_date_purchase_invoice($dt->transaction_no,$dt->transaction_date); 
-                         //if($overdue == null )
-                           // $overdue=-999999;
-                       //  if( $DueData[1] < $overdue && $DueData[1] < $ageing ){
-                         ?>
-                         @if(($dt->credit_amount != $paid || ($dt->debit_amount)>0)  && $is_hide == 0)
-                       
+                         @if(((@App\SysHelper::com_curr_format($dt->credit_amount,2,'.','') != @App\SysHelper::com_curr_format($paid,2,'.','')) || (@App\SysHelper::com_curr_format($dt->debit_amount,2,'.',''))>0) && $is_hide == 0)
+                        @php
+                            $row_count_1++;
+                            $rowAmount = (float) ($dt->credit_amount ?? 0);
+                            if (isset($dt->transaction_type) && $dt->transaction_type == 'opbinvoice' && ($dt->debit_amount ?? 0) > 0) {
+                                $rowAmount = (float) $dt->credit_amount - (float) $dt->debit_amount;
+                            }
+                            $paidExOpb = $paid - $opb_import_paid;
+                            $paidDisplayParts = [];
+                            if (abs($paidExOpb) >= 0.005) {
+                                $paidDisplayParts[] = App\SysHelper::com_curr_format($paidExOpb, 2, '.', ',');
+                            }
+                            if ($opb_import_paid > 0) {
+                                $paidDisplayParts[] = '- ' . App\SysHelper::com_curr_format($opb_import_paid, 2, '.', ',');
+                            }
+                            $paidDisplay = count($paidDisplayParts) > 0 ? implode(' ', $paidDisplayParts) : App\SysHelper::com_curr_format(0, 2, '.', ',');
+                        @endphp
                         <tr>
-                             @php $row_count_1++; @endphp
                             <td class="text-center">
                                 @if ($dt->transaction_type=="opbinvoice")
                                 {{ $deal_code }}
                                 @else
-                                <a href="{{url('get-url-deal-track/'.$deal_code)}}" target="_blank">{{ $deal_code }}</a>
+                                <a href="{{url('get-url-deal-track/'.$deal_code)}}" target="_blank">{{ $deal_code }}</a><input type="hidden" id="inv_e_deal_code_{{ $dt->transaction_no }}" value="{{ $deal_code }}" />
                                 @endif
                             </td>
-                            <td class="text-center">{{ date('d/m/Y', strtotime($dt->transaction_date)) }}</td>                            
+                            <td class="text-center">{{ date('d/m/Y', strtotime($dt->transaction_date)) }}<input type="hidden" id="inv_e_doc_date_{{ $dt->transaction_no }}" value="{{ date('d/m/Y', strtotime($dt->transaction_date)) }}" /></td>
                             <td class="text-center">
                                 @if ($dt->transaction_type=="opbinvoice")
                                 {{ $dt->transaction_no }}
                                 @else
-
                                  @if(Illuminate\Support\Str::contains($dt->transaction_no, ['SI']))
-                              
                                     <a href="{{ url('get-url-sales-invoice/' . $dt->transaction_no) }}" target="_blank">{{ $dt->transaction_no }}</a>
-                                
                                 @else
                                   <a href="{{url('get-url-purchase-invoice/'.$dt->transaction_no)}}" target="_blank">{{ $dt->transaction_no }}</a>
                                 @endif
+                                <input type="hidden" id="inv_e_doc_no_{{ $dt->transaction_no }}" value="{{ $dt->transaction_no }}" />
                                 @endif
                             </td>
-                            <td class="text-center">
-                                {{ $lpo_no }}
-                            </td>
-                            <td class="text-center">
-                                {{ $bill_no }}
-                            </td>
+                            <td class="text-center">{{ $lpo_no }}<input type="hidden" id="inv_e_lpo_no_{{ $dt->transaction_no }}" value="{{ $lpo_no }}" /></td>
+                            <td class="text-center">{{ $bill_no }}</td>
                             <td class="text-center">
                                 @if($bill_date !="" && $bill_date !=null)
                                 {{ date('d/m/Y', strtotime($bill_date)) }}
                                 @endif
                             </td>
-                            
-                            <td class="text-end">@if(str_contains($dt->transaction_no,'PR')) - {{ @App\SysHelper::com_curr_format($dt->debit_amount,2,'.',',') }} @else  {{ @App\SysHelper::com_curr_format($dt->credit_amount,2,'.',',') }} @endif </td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($paid,2,'.',',') }}</td>
+                            <td class="text-end">
+                                @if(str_contains($dt->transaction_no,'PR'))
+                                    - {{ @App\SysHelper::com_curr_format($dt->debit_amount,2,'.',',') }}
+                                    <input type="hidden" id="inv_e_amount_{{ $dt->transaction_no }}" value="{{ @App\SysHelper::com_curr_format($dt->debit_amount,2,'.',',') }}" />
+                                @else
+                                    {{ @App\SysHelper::com_curr_format($rowAmount,2,'.',',') }}
+                                    <input type="hidden" id="inv_e_amount_{{ $dt->transaction_no }}" value="{{ @App\SysHelper::com_curr_format($rowAmount,2,'.',',') }}" />
+                                @endif
+                            </td>
+                            <td class="text-end">{{ $paidDisplay }}<input type="hidden" id="inv_e_adjustment_{{ $dt->transaction_no }}" value="{{ $paidDisplay }}" /></td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($dt->credit_amount-abs($paid),2,'.',',') }}
-                                
-                                @php 
+                                @php
                                 if(str_contains($dt->transaction_no,'PR')){
-                                    $b -= $dt->debit_amount;
-                                } else{ $b += $dt->credit_amount-abs($paid); } @endphp
-
-                                {{--  @php $b += $dt->credit_amount-abs($paid); @endphp  --}}
+                                    if($dt->debit_amount >= $paid){
+                                        $b -= $dt->debit_amount;
+                                    }
+                                } else {
+                                    $b += $dt->credit_amount-abs($paid);
+                                }
+                                @endphp
                             </td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($b,2,'.',',') }}</td>
-                            
                             @php $sum_b += $dt->credit_amount-abs($paid); $all_total += $dt->credit_amount-abs($paid); @endphp
                             <input type="hidden" class="inv_e_total" value="{{ $dt->credit_amount-abs($paid) }}" />
                             <script>
                                 set_total({{ $aname->id }},{{ $sum_b }});
                             </script>
 
-                            
-                            {{--  <td class="text-center">{{ $sales_person }}</td>  --}}
-                            {{--  <td class="text-center">{{ rtrim($cheque_number, ',') }}</td>
-                            <td class="text-center">{{ rtrim($bank_name, ',') }}</td>  --}}
-
-                            @php                            
-                            if ($dt->transaction_type=="opbinvoice"){
-                                $DueData =  @App\SysHelper::get_due_date_invoice_opbinvoice($dt->transaction_no,$duedate,$payment_terms);
-                            } else {
-                                $DueData =  @App\SysHelper::get_due_date_purchase_invoice($dt->transaction_no,$dt->transaction_date);
-                            }                            
-                            @endphp
-                            
-
-                     
-                            <td class="text-center">{{ $DueData[0] }}</td>
-                            <?php 
-                            if($DueData[1] >0){ ?>
-                            <td class="text-center" style="color:red">{{ $DueData[1] }}</td>
-                            <script>
-                                if ($('#sum_{{ $aname->id }}').css('color') === 'red') { // red
-                                    $('#sum_{{ $aname->id }}').css('color', 'red');
-                                } else {
-                                    $('#sum_{{ $aname->id }}').css('color', 'blue');
+                            @php
+                                $rowBalance = $dt->credit_amount - abs($paid);
+                                if (str_contains($dt->transaction_no, 'PR')) {
+                                    $rowBalance = $dt->debit_amount - abs($paid);
                                 }
+                                $invoiceDate = $dt->transaction_date;
+                                $paymentTermRow = null;
+                                $effectivePaymentTerm = null;
+                                if ($dt->transaction_type == 'opbinvoice') {
+                                    $effectivePaymentTerm = App\SysPaymentTerms::resolveOpbPaymentTerm(
+                                        $payment_terms,
+                                        $invoiceDate,
+                                        $duedate,
+                                        $payment_terms_map
+                                    );
+                                    $breakdown = App\SysPaymentTerms::buildOutstandingBreakdown(
+                                        $invoiceDate,
+                                        $rowBalance,
+                                        $effectivePaymentTerm,
+                                        $payable_finance_rate ?? 0,
+                                        $asOfDateCalc
+                                    );
+                                } elseif (Illuminate\Support\Str::contains($dt->transaction_no, ['SI'])) {
+                                    $siRow = $sales_invoice_map->get($dt->transaction_no);
+                                    if ($siRow) {
+                                        $invoiceDate = $siRow->doc_date;
+                                        $paymentTermRow = $payment_terms_map->get($siRow->payment_terms);
+                                    }
+                                    $effectivePaymentTerm = $paymentTermRow;
+                                    $breakdown = App\SysPaymentTerms::buildOutstandingBreakdown(
+                                        $invoiceDate,
+                                        $rowBalance,
+                                        $effectivePaymentTerm,
+                                        $payable_finance_rate ?? 0,
+                                        $asOfDateCalc
+                                    );
+                                } else {
+                                    $piRow = $purchase_invoice_map->get($dt->transaction_no);
+                                    if ($piRow) {
+                                        $invoiceDate = $piRow->pi_date ?? $dt->transaction_date;
+                                        $paymentTermRow = $payment_terms_map->get($piRow->payment_terms);
+                                    }
+                                    $effectivePaymentTerm = $paymentTermRow;
+                                    $breakdown = App\SysPaymentTerms::buildOutstandingBreakdown(
+                                        $invoiceDate,
+                                        $rowBalance,
+                                        $effectivePaymentTerm,
+                                        $payable_finance_rate ?? 0,
+                                        $asOfDateCalc
+                                    );
+                                }
+                                $ageingRow = App\SysPaymentTerms::buildOsListAgeingBuckets(
+                                    $invoiceDate,
+                                    $rowBalance,
+                                    $effectivePaymentTerm,
+                                    $asOfDateCalc,
+                                    $breakdown['max_overdue_days'] ?? null
+                                );
+                                $gtot1 += $ageingRow['0_30'];
+                                $gtot2 += $ageingRow['31_60'];
+                                $gtot3 += $ageingRow['61_90'];
+                                $gtot4 += $ageingRow['90_plus'];
+                                $gtot_finance += $breakdown['total_finance_cost'];
+                            @endphp
+
+                            @if(($breakdown['max_overdue_days'] ?? 0) > 0)
+                            <script>
+                                $('#sum_{{ $aname->id }}').css('color', 'red');
                             </script>
-                            <?php } else { ?>
+                            @endif
 
-                            <td class="text-center">{{ $DueData[1] }}</td>
-                            <?php }  ?>
-
-                            <?php 
-                 if($DueData[3] ==1)	  {
-                    $gtot1+=$dt->credit_amount-abs($paid);
-                 }
-                 if($DueData[3] ==2)	  {
-                    $gtot2+=$dt->credit_amount-abs($paid);
-                 }
-                 if($DueData[3] ==3)	  {
-                    $gtot3+=$dt->credit_amount-abs($paid);
-                 }
-                 if($DueData[3] ==4)	  {
-                    $gtot4+=$dt->credit_amount-abs($paid);
-                 }
-                        
-
-                 ?>
-                            
+                            @include('backEnd.outstanding.partials.receivable_due_columns', ['breakdown' => $breakdown])
 
 @if(!$hideBasicColumns)
-            @if($DueData[3] ==1)	                            
-			<td class="text-end">{{ @App\SysHelper::com_curr_format($dt->credit_amount-abs($paid),2,'.',',') }}</td>
-            <input type="hidden" class="inv_all_0_30" value="{{ $dt->credit_amount-abs($paid) }}" />
-			 @else 	
-				                            <td class="text-center">&nbsp;</td>
-			 @endif
-
-			   @if($DueData[3] ==2)	                            
-			<td class="text-end">{{ @App\SysHelper::com_curr_format($dt->credit_amount-abs($paid),2,'.',',') }}</td>
-            <input type="hidden" class="inv_all_31_60" value="{{ $dt->credit_amount-abs($paid) }}" />
-			 @else 	
-				                            <td class="text-center">&nbsp;</td>
-			 @endif
-
-   @if($DueData[3] ==3)	                            
-			<td class="text-end">{{ @App\SysHelper::com_curr_format($dt->credit_amount-abs($paid),2,'.',',') }}</td>
-            <input type="hidden" class="inv_all_61_90" value="{{ $dt->credit_amount-abs($paid) }}" />
-			 @else 	
-				                            <td class="text-center">&nbsp;</td>
-			 @endif	
-
-   @if($DueData[3] ==4)	                            
-			<td class="text-end">{{ @App\SysHelper::com_curr_format($dt->credit_amount-abs($paid),2,'.',',') }}</td>
-            <input type="hidden" class="inv_all_90_above" value="{{ $dt->credit_amount-abs($paid) }}" />
-			 @else 	
-				                            <td class="text-center">&nbsp;</td>
-			 @endif
-             
-                    <td class="text-start">{{ $DueData[2] }}</td>
-                     <td class="text-start hidecol_{{ $aname->id }}">{{ rtrim($receipt_date, ',') }}</td>
+                            <td class="text-end">{{ abs($ageingRow['0_30']) >= 0.01 ? App\SysHelper::com_curr_format($ageingRow['0_30'], 2, '.', ',') : '' }}<input type="hidden" class="inv_all_0_30" value="{{ $ageingRow['0_30'] }}" /></td>
+                            <td class="text-end">{{ abs($ageingRow['31_60']) >= 0.01 ? App\SysHelper::com_curr_format($ageingRow['31_60'], 2, '.', ',') : '' }}<input type="hidden" class="inv_all_31_60" value="{{ $ageingRow['31_60'] }}" /></td>
+                            <td class="text-end">{{ abs($ageingRow['61_90']) >= 0.01 ? App\SysHelper::com_curr_format($ageingRow['61_90'], 2, '.', ',') : '' }}<input type="hidden" class="inv_all_61_90" value="{{ $ageingRow['61_90'] }}" /></td>
+                            <td class="text-end">{{ abs($ageingRow['90_plus']) >= 0.01 ? App\SysHelper::com_curr_format($ageingRow['90_plus'], 2, '.', ',') : '' }}<input type="hidden" class="inv_all_90_above" value="{{ $ageingRow['90_plus'] }}" /></td>
+                            <td class="text-end">
+                                @if (!empty($breakdown['finance_cost_popover_content_attr']) && ($breakdown['total_finance_cost'] ?? 0) != 0)
+                                    <span class="ageing-grn-pop ageing-grn-tip d-inline-block" tabindex="0" role="button" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-placement="auto" data-bs-content="{!! $breakdown['finance_cost_popover_content_attr'] !!}">{{ App\SysHelper::com_curr_format($breakdown['total_finance_cost'], 2, '.', ',') }}</span>
+                                @else
+                                    {{ ($breakdown['total_finance_cost'] ?? 0) != 0 ? App\SysHelper::com_curr_format($breakdown['total_finance_cost'], 2, '.', ',') : '' }}
+                                @endif
+                            </td>
+                            <td class="text-start">{{ $breakdown['payment_terms_title'] }}</td>
+                            <td class="text-start hidecol_{{ $aname->id }}">{{ rtrim($receipt_date, ',') }}</td>
                             <td class="text-start hidecol_{{ $aname->id }}">{{ rtrim($doc_number, ',') }}</td>
 @else
-                    <td class="text-start">{{ $DueData[2] }}</td>
+                            <td class="text-start">{{ $breakdown['payment_terms_title'] ?? '' }}</td>
 @endif
                         </tr>
                        
@@ -1214,26 +1276,28 @@ function check_total(id, amount) {
                             
                         @endforeach
                         @endif
-<tr>
-                            <td class="text-center"></td>
-                            <td colspan="5"></td>
-                       <td class="text-end"><b><?php echo   @App\SysHelper::com_curr_format($grand_credit_amount,2,'.',',')    ?> </b></td>
-                       <td class="text-end"><b><?php echo  @App\SysHelper::com_curr_format($grand_paid,2,'.',',')   ?> </b></td>
-                       <td class="text-end"><b><?php echo  @App\SysHelper::com_curr_format($grand_balance,2,'.',',')   ?></b> </td>
-                       <td class="text-end"><b><?php echo  @App\SysHelper::com_curr_format($b,2,'.',',')   ?></b> </td>
-
-                       <td class="text-center" colspan="2">&nbsp </td>
-               
-                       @if(!$hideBasicColumns)
-                       <td class="text-end" ><b><?php echo  @App\SysHelper::com_curr_format($gtot1,2,'.',',')   ?></b> </td>
-                       <td class="text-end" ><b><?php echo  @App\SysHelper::com_curr_format($gtot2,2,'.',',')   ?></b> </td>
-                       <td class="text-end" ><b><?php echo  @App\SysHelper::com_curr_format($gtot3,2,'.',',')   ?> </b></td>
-                       <td class="text-end" ><b><?php echo  @App\SysHelper::com_curr_format($gtot4,2,'.',',')   ?> </b></td>
-                       <td class="text-center" colspan="3">&nbsp </td>
-                       @endif
-
-                    
+                    @if (count($data) > 0)
+                    <tr>
+                        <td colspan="6"></td>
+                        <td class="text-end"><b><?php echo @App\SysHelper::com_curr_format($grand_credit_amount,2,'.',',') ?></b></td>
+                        <td class="text-end"><b><?php echo @App\SysHelper::com_curr_format($grand_paid,2,'.',',') ?></b></td>
+                        <td class="text-end"><b><?php echo @App\SysHelper::com_curr_format($grand_balance,2,'.',',') ?></b></td>
+                        <td class="text-end"><b><?php echo @App\SysHelper::com_curr_format($b,2,'.',',') ?></b></td>
+                        <td colspan="{{ $scheduleColCount }}"></td>
+                        @if(!$hideBasicColumns)
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot1, 2, '.', ',') }}</b></td>
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot2, 2, '.', ',') }}</b></td>
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot3, 2, '.', ',') }}</b></td>
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot4, 2, '.', ',') }}</b></td>
+                            <td class="text-end"><b>{{ App\SysHelper::com_curr_format($gtot_finance, 2, '.', ',') }}</b></td>
+                            <td colspan="1"></td>
+                            <td class="text-center hidecol_{{ $aname->id }}">&nbsp;</td>
+                            <td class="text-center hidecol_{{ $aname->id }}">&nbsp;</td>
+                        @else
+                            <td colspan="1"></td>
+                        @endif
                     </tr>
+                    @endif
                         <?php $tot = 0; $total=0; $total_dr=0; $total_cr=0; ?>    
                     </tbody>
                   </table>
@@ -1579,7 +1643,7 @@ function check_total(id, amount) {
                             <th class="text-center" width="114px"></th>
                             <th class="text-end" width="103px"><b>Total</b></th>
                             <th class="text-center" width="103px"><b><label class="fw-bold" id="lbl_all_sivno_count"></label></b></th>
-                            <th class="text-end" width="102px"><b><label class="fw-bold" id="lbl_all_total_90_above"></label></b></th>
+                            <th class="text-end" width="102px"><b><label class="fw-bold" id="lbl_main_sum_total"></label></b></th>
                         </tr>
                     </thead>
                   </table>
@@ -1680,17 +1744,20 @@ function check_total(id, amount) {
             var value = $(this).text().trim();
             var $mainTable = $(this).closest('.main_table');
             var color = $(this).css('color');
+            var mainTableId = $mainTable.attr('id') || '';
+            var anameId = mainTableId.replace('account_table', '');
+            var headerTotal = formatAmountToNumber(value);
 
              // if unadjusted_balance filter is active, require at least one unadjusted row
             if (ctrlOption === 'unadjusted_balance') {
                 // look for any <b> tag containing "unadjusted" inside this account's collapse
-                var acctId = $mainTable.attr('id').replace('account_table', '');
-                var $section = $('#collapse' + acctId);
+                var $section = $('#collapse' + anameId);
                 var hasUnadj = $section.find('b').filter(function() {
                     return $(this).text().trim().toLowerCase().indexOf('unadjusted balance') !== -1;
                 }).length > 0;
                 if (!hasUnadj) {
                     $mainTable.hide();
+                    $('#collapse' + anameId).hide();
                     return;
                 }
             }
@@ -1712,43 +1779,38 @@ function check_total(id, amount) {
                 }
             }
 
-            if (!value || value === '0') {
+            if (!value || Math.abs(headerTotal) <= 0.01) {
                 $mainTable.hide();
+                $('#collapse' + anameId).hide();
             } else {
                 $mainTable.show(); // optional if hidden by default
                 visibleCount++;
 
                 // Extract ID from main table to locate sub_table
-                var mainTableId = $mainTable.attr('id'); // e.g., "account_table23"
-                var anameId = mainTableId.replace('account_table', ''); // get "23"
-
                 // Now find the corresponding .sub_table inside the collapse div
                 var $subTable = $('#collapse' + anameId).find('.sub_table');
 
-                // Get the .inv_e_total value
-                var invValue = $subTable.find('.inv_e_total').val();
-                var numericValue = parseFloat(invValue) || 0;
-                totalInv += numericValue;
-                
-                var all_0_30 = $subTable.find('.inv_all_0_30').val();
-                var all_0_30 = parseFloat(all_0_30) || 0;
-                totalall_0_30 += all_0_30;
-                
-                var all_31_60 = $subTable.find('.inv_all_31_60').val();
-                var all_31_60 = parseFloat(all_31_60) || 0;
-                totalall_31_60 += all_31_60;
-                
-                var all_61_90 = $subTable.find('.inv_all_61_90').val();
-                var all_61_90 = parseFloat(all_61_90) || 0;
-                totalall_61_90 += all_61_90;
-                
-                // collect 90+ bucket from subtable if still needed
-                var all_90_above = $subTable.find('.inv_all_90_above').val();
-                var all_90_above = parseFloat(all_90_above) || 0;
-                totalall_90_above += all_90_above;
+                $subTable.find('.inv_e_total').each(function () {
+                    totalInv += parseFloat($(this).val()) || 0;
+                });
+
+                $subTable.find('.inv_all_0_30').each(function () {
+                    totalall_0_30 += parseFloat($(this).val()) || 0;
+                });
+
+                $subTable.find('.inv_all_31_60').each(function () {
+                    totalall_31_60 += parseFloat($(this).val()) || 0;
+                });
+
+                $subTable.find('.inv_all_61_90').each(function () {
+                    totalall_61_90 += parseFloat($(this).val()) || 0;
+                });
+
+                $subTable.find('.inv_all_90_above').each(function () {
+                    totalall_90_above += parseFloat($(this).val()) || 0;
+                });
                 // also grab this account header total (main_sum)
-                var headerVal = formatAmountToNumber($(this).text());
-                totalMainSum += headerVal;
+                totalMainSum += headerTotal;
             }
         });
 
@@ -1757,8 +1819,8 @@ function check_total(id, amount) {
         $('#lbl_all_total_0_30').text(formatAmount(totalall_0_30.toFixed(2)));
         $('#lbl_all_total_31_60').text(formatAmount(totalall_31_60.toFixed(2)));
         $('#lbl_all_total_61_90').text(formatAmount(totalall_61_90.toFixed(2)));
-        // footer now shows sum of visible main_sum headers (not bucket)
-        $('#lbl_all_total_90_above').text(formatAmount(totalMainSum.toFixed(2)));
+        // footer shows sum of visible main_sum headers, matching supplier ageing net balance.
+        $('#lbl_main_sum_total').text(formatAmount(totalMainSum.toFixed(2)));
         
     });
 </script>
@@ -1802,7 +1864,51 @@ function check_total(id, amount) {
         </script>
     
 
-        
+
+@push('scripts')
+<script>
+(function () {
+    function initAgeingGrnPopovers(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+        var nodes = scope.querySelectorAll ? scope.querySelectorAll('.ageing-grn-pop') : document.querySelectorAll('.ageing-grn-pop');
+        nodes.forEach(function (el) {
+            if (typeof bootstrap === 'undefined' || !bootstrap.Popover) {
+                return;
+            }
+            if (bootstrap.Popover.getInstance(el)) {
+                return;
+            }
+            if (!el.getAttribute('data-bs-content')) {
+                return;
+            }
+            new bootstrap.Popover(el, {
+                container: 'body',
+                html: true,
+                sanitize: false,
+                trigger: 'hover focus',
+                placement: 'auto',
+                delay: { show: 120, hide: 60 }
+            });
+        });
+    }
+
+    $(document).on('click', '.ageing-grn-pop', function (e) {
+        e.stopPropagation();
+    });
+
+    $(function () {
+        initAgeingGrnPopovers(document);
+        $(document).on('shown.bs.collapse', '.collapse', function () {
+            initAgeingGrnPopovers(this);
+        });
+        setTimeout(function () {
+            initAgeingGrnPopovers(document);
+        }, 600);
+    });
+})();
+</script>
+@endpush
+
 @endsection
 
 
