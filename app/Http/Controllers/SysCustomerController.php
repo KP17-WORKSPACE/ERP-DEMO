@@ -1139,18 +1139,32 @@ class SysCustomerController extends Controller
             }
             SysCustSupplAddressbookCart::where('cart_id', session('logged_session_data.cart_id'))->delete();
 
-            for ($i = 0; $i < count($request->e_first_name); $i++) {
-                if ($request->e_first_name[$i] != "" && $request->e_email_address[$i] != "" && ($request->e_work_phone[$i] != "" || $request->e_mobile[$i] != "")) {
+            $eFirstNames = (array) $request->input('e_first_name', []);
+            $eEmails = (array) $request->input('e_email_address', []);
+            $eWorkPhones = (array) $request->input('e_work_phone', []);
+            $eMobiles = (array) $request->input('e_mobile', []);
+            $eSalutations = (array) $request->input('e_salutation', []);
+            $eLastNames = (array) $request->input('e_last_name', []);
+            $eDesignations = (array) $request->input('e_designation', []);
+            $eDepartments = (array) $request->input('e_department', []);
+
+            foreach ($eFirstNames as $i => $firstName) {
+                $firstName = trim((string) $firstName);
+                $email = trim((string) ($eEmails[$i] ?? ''));
+                $workPhone = trim((string) ($eWorkPhones[$i] ?? ''));
+                $mobile = trim((string) ($eMobiles[$i] ?? ''));
+
+                if ($firstName !== '' && $email !== '' && ($workPhone !== '' || $mobile !== '')) {
                     $contact = new SysCustSupplContact();
                     $contact->cust_suppl_id = $new_customer->id;
-                    $contact->salutation = $request->e_salutation[$i];
-                    $contact->first_name = $request->e_first_name[$i];
-                    $contact->last_name = $request->e_last_name[$i];
-                    $contact->email_address = $request->e_email_address[$i];
-                    $contact->work_phone = $request->e_work_phone[$i];
-                    $contact->mobile = $request->e_mobile[$i];
-                    $contact->designation = $request->e_designation[$i];
-                    $contact->department = $request->e_department[$i];
+                    $contact->salutation = (string) ($eSalutations[$i] ?? '');
+                    $contact->first_name = $firstName;
+                    $contact->last_name = (string) ($eLastNames[$i] ?? '');
+                    $contact->email_address = $email;
+                    $contact->work_phone = $workPhone;
+                    $contact->mobile = $mobile;
+                    $contact->designation = (string) ($eDesignations[$i] ?? '');
+                    $contact->department = (string) ($eDepartments[$i] ?? '');
                     $contact->status = 1;
                     $contact->set_default = 1;
                     $contact->company_id = session('logged_session_data.company_id');
