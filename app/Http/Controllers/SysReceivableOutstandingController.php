@@ -180,7 +180,7 @@ class SysReceivableOutstandingController extends Controller
                     }
 
 
-                    $list_of_unadjusted = SysHelper::get_list_of_unadjusted($accounts->pluck('id'), $com_id);
+                    $list_of_unadjusted = SysHelper::get_list_of_unadjusted($accounts->pluck('id'), $com_id, $till_date);
                     $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv($accounts->pluck('id'), $com_id);
                     $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc($accounts->pluck('id'), $com_id);
                     $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc($accounts->pluck('id'), $com_id);
@@ -245,7 +245,11 @@ class SysReceivableOutstandingController extends Controller
 
                 if ($request->list_in_ex != "") {
                     $accounts = SysChartofAccounts::select('sys_chartofaccounts.id', 'sys_chartofaccounts.account_name', 'sys_chartofaccounts.account_code','sys_chartofaccounts.grn_select')
-                        ->where('sys_chartofaccounts.internal', $request->list_in_ex)->get();
+                        ->whereIn('sys_chartofaccounts.id', $accounts_select->pluck('id'))
+                        ->where('sys_chartofaccounts.internal', $request->list_in_ex)
+                        ->where('sys_chartofaccounts.status', 1)
+                        ->orderby('sys_chartofaccounts.account_name', 'asc')
+                        ->get();
                     $ctrl_intext = $request->list_in_ex;
                 }
 
@@ -363,7 +367,7 @@ class SysReceivableOutstandingController extends Controller
                     }
                 }
 
-                $list_of_unadjusted = SysHelper::get_list_of_unadjusted($account_id, $com_id);
+                $list_of_unadjusted = SysHelper::get_list_of_unadjusted($account_id, $com_id, $till_date);
                 $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv($account_id, $com_id);
                 $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc($account_id, $com_id);
                 $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc($account_id, $com_id);
@@ -585,7 +589,7 @@ class SysReceivableOutstandingController extends Controller
 
 
 
-                $list_of_unadjusted = SysHelper::get_list_of_unadjusted([$account], $com_id);
+                $list_of_unadjusted = SysHelper::get_list_of_unadjusted([$account], $com_id, $date);
                 $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv([$account], $com_id);
                 $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc([$account], $com_id);
                 $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc([$account], $com_id);
@@ -1010,7 +1014,11 @@ class SysReceivableOutstandingController extends Controller
 
                 if ($request->list_in_ex != "") {
                     $accounts = SysChartofAccounts::select('sys_chartofaccounts.id', 'sys_chartofaccounts.account_name', 'sys_chartofaccounts.account_code')
-                        ->where('sys_chartofaccounts.internal', $request->list_in_ex)->get();
+                        ->whereIn('sys_chartofaccounts.id', $accounts->pluck('id'))
+                        ->where('sys_chartofaccounts.internal', $request->list_in_ex)
+                        ->where('sys_chartofaccounts.status', 1)
+                        ->orderby('sys_chartofaccounts.account_name', 'asc')
+                        ->get();
                     $ctrl_intext = $request->list_in_ex;
                 }
 
@@ -1044,7 +1052,45 @@ class SysReceivableOutstandingController extends Controller
             $data_return_all = DB::table('sys_sales_return as r')->select('ra.siv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date', 'r.customer', 'ra.srn_no')
                 ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
 
-            return view('backEnd.outstanding.customerageingreport', compact('accounts', 'till_date', 'data_all', 'data_adjestment_all', 'data_receipt_all', 'data_receipt_opb', 'data_receipt2_all', 'data_receipt3_all', 'data_return_all', 'ctrl_intext'));
+            $accountIdsForUnadj = collect($data_all)->map(function ($chunk) {
+                return count($chunk) > 0 ? $chunk[0]->account_id : null;
+            })->filter()->unique()->values();
+
+            $list_of_unadjusted = $accountIdsForUnadj->isNotEmpty()
+                ? SysHelper::get_list_of_unadjusted($accountIdsForUnadj, $com_id, $till_date)
+                : collect([]);
+            $list_of_unadjusted_jv_to_jv = $accountIdsForUnadj->isNotEmpty()
+                ? SysHelper::get_list_of_unadjusted_jv_to_jv($accountIdsForUnadj, $com_id)
+                : collect([]);
+            $list_of_adjusted_pdc = $accountIdsForUnadj->isNotEmpty()
+                ? SysHelper::get_list_of_adjusted_pdc($accountIdsForUnadj, $com_id)
+                : collect([]);
+            $opb_balance_amount = $accountIdsForUnadj->isNotEmpty()
+                ? SysHelper::get_customer_opening_balance($accountIdsForUnadj, date('Y-m-d', strtotime('+1 day')), $com_id)
+                : collect([]);
+
+            $osViewData = $this->loadReceivableOutstandingViewData($com_id);
+
+            return view('backEnd.outstanding.customerageingreport', array_merge(
+                compact(
+                    'accounts',
+                    'till_date',
+                    'data_all',
+                    'data_adjestment_all',
+                    'data_receipt_all',
+                    'data_receipt_opb',
+                    'data_receipt2_all',
+                    'data_receipt3_all',
+                    'data_return_all',
+                    'ctrl_intext',
+                    'com_id',
+                    'list_of_unadjusted',
+                    'list_of_unadjusted_jv_to_jv',
+                    'list_of_adjusted_pdc',
+                    'opb_balance_amount'
+                ),
+                $osViewData
+            ));
 
         } catch (\Exception $e) {
             return $e;
@@ -1062,6 +1108,7 @@ class SysReceivableOutstandingController extends Controller
             $data = [];
             $data_all = [];
             $accounts = SysHelper::get_customer_list($company_id);
+            $accounts_select = $accounts;
             $sales_person_list = SysHelper::get_sales_persons();
             $com_id = session('logged_session_data.company_id');
             $account_id = "";
@@ -1150,7 +1197,7 @@ class SysReceivableOutstandingController extends Controller
                     }
 
 
-                    $list_of_unadjusted = SysHelper::get_list_of_unadjusted($accounts->pluck('id'), $com_id);
+                    $list_of_unadjusted = SysHelper::get_list_of_unadjusted($accounts->pluck('id'), $com_id, $till_date);
                     $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv($accounts->pluck('id'), $com_id);
                     $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc($accounts->pluck('id'), $com_id);
                     $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc($accounts->pluck('id'), $com_id);
@@ -1185,7 +1232,11 @@ class SysReceivableOutstandingController extends Controller
 
                 if ($request->list_in_ex != "") {
                     $accounts = SysChartofAccounts::select('sys_chartofaccounts.id', 'sys_chartofaccounts.account_name', 'sys_chartofaccounts.account_code')
-                        ->where('sys_chartofaccounts.internal', $request->list_in_ex)->get();
+                        ->whereIn('sys_chartofaccounts.id', $accounts_select->pluck('id'))
+                        ->where('sys_chartofaccounts.internal', $request->list_in_ex)
+                        ->where('sys_chartofaccounts.status', 1)
+                        ->orderby('sys_chartofaccounts.account_name', 'asc')
+                        ->get();
                     $ctrl_intext = $request->list_in_ex;
                 }
 
@@ -1272,7 +1323,7 @@ class SysReceivableOutstandingController extends Controller
                     }
                 }
 
-                $list_of_unadjusted = SysHelper::get_list_of_unadjusted($account_id, $com_id);
+                $list_of_unadjusted = SysHelper::get_list_of_unadjusted($account_id, $com_id, $till_date);
                 $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv($account_id, $com_id);
                 $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc($account_id, $com_id);
                 $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc($account_id, $com_id);

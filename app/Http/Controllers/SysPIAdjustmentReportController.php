@@ -17,6 +17,7 @@ use App\SysHelper;
 use App\SysJournalVoucher;
 use App\SysLedgerEntries;
 use App\SysPaymentAdjustments;
+use App\SysPaymentTerms;
 use App\SysPurchaseInvoice;
 use App\SysReceipt;
 use App\SysReceiptAdjustments;
@@ -81,27 +82,9 @@ $ageing = -999999;
 
 if(!$_POST){
     
-    $purchase_invoice = SysPurchaseInvoice::select(        
-        'sys_purchase_invoice.id',
-        'doc_number',
-        'pi_date as doc_date',
-        'lpo_number',
-        'deal_id',
-        db::raw('sum(taxableamount) + sum(vatamount) as amount'),
-        'salesman_name',
-        'payment_terms',
-        'vendors',
-        'ca.account_code',
-        'ca.account_name',
-        'ca.id as account_id'
-    )
-    ->join('sys_purchase_invoice_items as pi_items', 'pi_items.pi_id', 'sys_purchase_invoice.id')
-    ->join('sys_chartofaccounts as ca', 'ca.id', 'sys_purchase_invoice.vendors')
-    ->where('sys_purchase_invoice.company_id', $company_id)
-    ->where('sys_purchase_invoice.status', 1)
-    ->groupBy('sys_purchase_invoice.id','doc_number', 'pi_date', 'lpo_number', 'deal_id', 'salesman_name', 'payment_terms', 'vendors','ca.id')
-    ->orderby('ca.account_name', 'asc')->orderby('pi_date', 'asc')
-    ->get();
+    $as_of_date = $this->piAdjustmentAsOfDate($till_date);
+    $purchase_invoice = $this->buildPayableAdjustmentTransactions($company_id, $as_of_date);
+    $purchase_invoice = $this->applyPayableOutstandingValues($purchase_invoice, $company_id, $as_of_date);
     
     $sys_payment_terms_list = DB::table('sys_payment_terms')->get();
 
@@ -143,13 +126,15 @@ db::raw('IFNULL(max(s.doc_date), "") as s_doc_date')
     ->values();   
 
     
-        $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($purchase_invoice->pluck('vendors'),$company_id);
+        $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($purchase_invoice->pluck('vendors'),$company_id,$as_of_date);
         $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($purchase_invoice->pluck('vendors'),$company_id);
         $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($purchase_invoice->pluck('vendors'),$company_id);
         $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($purchase_invoice->pluck('vendors'),$company_id);        
-        $opb_balance_amount = SysHelper::get_supplier_opening_balance($purchase_invoice->pluck('vendors'),date('Y-m-d'),$company_id);
+        $opb_balance_amount = SysHelper::get_supplier_opening_balance($purchase_invoice->pluck('vendors'),$as_of_date,$company_id);
+        $viewSupport = $this->loadPiAdjustmentViewData();
+        extract($viewSupport);
 
-return view('backEnd.outstanding.pi_adjustment_report', compact('purchase_invoice','sys_payment_terms_list','sys_adjustment_list','list_of_unadjusted','list_of_unadjusted_jv_to_jv','list_of_unadjusted_pdc','list_of_adjusted_pdc','opb_balance_amount','from_date','to_date','filter_by'));
+return view('backEnd.outstanding.pi_adjustment_report', compact('purchase_invoice','sys_payment_terms_list','sys_adjustment_list','list_of_unadjusted','list_of_unadjusted_jv_to_jv','list_of_unadjusted_pdc','list_of_adjusted_pdc','opb_balance_amount','from_date','to_date','filter_by','payment_terms_map','payable_finance_rate','as_of_date'));
 
 }
 
@@ -221,42 +206,11 @@ return view('backEnd.outstanding.pi_adjustment_report', compact('purchase_invoic
                 }
 
                 
-                $query = SysPurchaseInvoice::select(        
-                    'sys_purchase_invoice.id',
-                    'doc_number',
-                    'pi_date as doc_date',
-                    'lpo_number',
-                    'deal_id',
-                    db::raw('sum(taxableamount) + sum(vatamount) as amount'),
-                    'salesman_name',
-                    'payment_terms',
-                    'vendors',
-                    'ca.account_code',
-                    'ca.account_name',
-                    'ca.id as account_id'
-                )
-                ->join('sys_purchase_invoice_items as pi_items', 'pi_items.pi_id', 'sys_purchase_invoice.id')
-                ->join('sys_chartofaccounts as ca', 'ca.id', 'sys_purchase_invoice.vendors')
-                ->where('sys_purchase_invoice.company_id', $company_id);
-                if($account_id !=""){
-                    $query->where('sys_purchase_invoice.vendors',$account_id);
-                }
-                if (!empty($from_date) && !empty($to_date)) {
-                    $query->whereBetween('sys_purchase_invoice.pi_date', [$from_date, $to_date]);
-                } elseif (!empty($from_date)) {
-                    $query->whereDate('sys_purchase_invoice.pi_date', '>=', $from_date);
-                } elseif (!empty($to_date)) {
-                    $query->whereDate('sys_purchase_invoice.pi_date', '<=', $to_date);
-                }
+                $as_of_date = $this->piAdjustmentAsOfDate($to_date);
+                $purchase_invoice = $this->buildPayableAdjustmentTransactions($company_id, $as_of_date, $account_id, $from_date, $to_date);
+                $purchase_invoice = $this->applyPayableOutstandingValues($purchase_invoice, $company_id, $as_of_date);
                 
-                
-
-            $purchase_invoice = $query->where('sys_purchase_invoice.status', 1)
-                ->groupBy('sys_purchase_invoice.id','doc_number', 'pi_date', 'lpo_number', 'deal_id', 'salesman_name', 'payment_terms', 'vendors','ca.id')
-                ->orderby('ca.account_name', 'asc')->orderby('pi_date', 'asc')
-                ->get();
-    
-        $sys_payment_terms_list = DB::table('sys_payment_terms')->get();
+                $sys_payment_terms_list = DB::table('sys_payment_terms')->get();
 
         $sys_adjustment_list = SysPaymentAdjustments::select(
         'bi_doc_number',
@@ -296,13 +250,15 @@ db::raw('IFNULL(max(s.doc_date), "") as s_doc_date')
     ->values();   
 
     
-        $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($purchase_invoice->pluck('vendors'),$company_id);
+        $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($purchase_invoice->pluck('vendors'),$company_id,$as_of_date);
         $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($purchase_invoice->pluck('vendors'),$company_id);
         $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($purchase_invoice->pluck('vendors'),$company_id);
         $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($purchase_invoice->pluck('vendors'),$company_id);        
-        $opb_balance_amount = SysHelper::get_supplier_opening_balance($purchase_invoice->pluck('vendors'),date('Y-m-d'),$company_id);
+        $opb_balance_amount = SysHelper::get_supplier_opening_balance($purchase_invoice->pluck('vendors'),$as_of_date,$company_id);
+        $viewSupport = $this->loadPiAdjustmentViewData();
+        extract($viewSupport);
 
-return view('backEnd.outstanding.pi_adjustment_report', compact('purchase_invoice','sys_payment_terms_list','sys_adjustment_list','list_of_unadjusted','list_of_unadjusted_jv_to_jv','list_of_unadjusted_pdc','list_of_adjusted_pdc','opb_balance_amount','from_date','to_date','filter_by'));
+return view('backEnd.outstanding.pi_adjustment_report', compact('purchase_invoice','sys_payment_terms_list','sys_adjustment_list','list_of_unadjusted','list_of_unadjusted_jv_to_jv','list_of_unadjusted_pdc','list_of_adjusted_pdc','opb_balance_amount','from_date','to_date','filter_by','payment_terms_map','payable_finance_rate','as_of_date'));
             }
 
         }catch (\Exception $e) {
@@ -310,6 +266,415 @@ return view('backEnd.outstanding.pi_adjustment_report', compact('purchase_invoic
            Toastr::error('Operation Failed', 'Failed');
            return redirect()->back(); 
         }
+    }
+
+    private function loadPiAdjustmentViewData()
+    {
+        $companyId = session('logged_session_data.company_id');
+        $payment_terms_map = SysPaymentTerms::where('active_status', 1)->get()->keyBy('id');
+        $company_row = SysCompany::find($companyId);
+        $payable_finance_rate = 0;
+        if ($company_row) {
+            $payable_finance_rate = (float) ($company_row->finance_cost_percentage ?? 0);
+        }
+
+        return compact('payment_terms_map', 'payable_finance_rate');
+    }
+
+    private function piAdjustmentAsOfDate($date = '')
+    {
+        if (empty($date)) {
+            return date('Y-m-d');
+        }
+
+        return SysHelper::normalizeToYmd($date) ?: $date;
+    }
+
+    private function piAdjustmentMapKey($accountId, $docNo)
+    {
+        return (string) $accountId . '|' . (string) $docNo;
+    }
+
+    private function buildPayableAdjustmentTransactions($companyId, $asOfDate, $accountId = '', $fromDate = '', $toDate = '')
+    {
+        $companyIds = collect(is_array($companyId) ? $companyId : [$companyId])->filter()->values();
+        if ($companyIds->isEmpty()) {
+            return collect([]);
+        }
+
+        $accountIds = $accountId !== '' ? collect([$accountId]) : SysHelper::get_supplier_list($companyIds->all())->pluck('id');
+        $accountIds = collect($accountIds)->filter()->values();
+        if ($accountIds->isEmpty()) {
+            return collect([]);
+        }
+
+        $invoiceDetails = DB::table('sys_chartofaccounts_transaction_invoice_detail')
+            ->select(
+                'trn_id',
+                DB::raw('MAX(po_no) as po_no'),
+                DB::raw('MAX(deal_id) as deal_id'),
+                DB::raw('MAX(payment_terms) as payment_terms'),
+                DB::raw('MAX(due_date) as due_date'),
+                DB::raw('MAX(sales_person) as sales_person')
+            )
+            ->groupBy('trn_id');
+
+        $query = DB::table('sys_chartofaccounts_transaction as t')
+            ->join('sys_chartofaccounts as ca', 'ca.id', '=', 't.account_id')
+            ->leftJoin('sys_purchase_invoice as pi', function ($join) {
+                $join->on('pi.doc_number', '=', 't.transaction_no')
+                    ->on('pi.company_id', '=', 't.company_id');
+            })
+            ->leftJoin('sys_sales_invoice as si', function ($join) {
+                $join->on('si.doc_number', '=', 't.transaction_no')
+                    ->on('si.company_id', '=', 't.company_id');
+            })
+            ->leftJoinSub($invoiceDetails, 'd', function ($join) {
+                $join->on('d.trn_id', '=', 't.id');
+            })
+            ->whereIn('t.company_id', $companyIds)
+            ->whereIn('t.account_id', $accountIds)
+            ->where('t.status', 1)
+            ->whereIn('t.transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice'])
+            ->whereRaw("DATE_FORMAT(t.transaction_date, '%Y-%m-%d') <= ?", [$asOfDate]);
+
+        if (!empty($fromDate) && !empty($toDate)) {
+            $query->whereBetween('t.transaction_date', [$fromDate, $toDate]);
+        } elseif (!empty($fromDate)) {
+            $query->whereDate('t.transaction_date', '>=', $fromDate);
+        } elseif (!empty($toDate)) {
+            $query->whereDate('t.transaction_date', '<=', $toDate);
+        }
+
+        return $query
+            ->select(
+                DB::raw('MIN(t.id) as id'),
+                DB::raw('t.transaction_no as doc_number'),
+                DB::raw('MIN(t.transaction_date) as doc_date'),
+                DB::raw('MAX(COALESCE(pi.lpo_number, d.po_no)) as lpo_number'),
+                DB::raw('MAX(COALESCE(pi.deal_id, d.deal_id)) as deal_id'),
+                DB::raw('SUM(t.credit_amount) as amount'),
+                DB::raw('SUM(t.debit_amount) as imported_paid'),
+                DB::raw('MAX(pi.salesman_name) as salesman_name'),
+                DB::raw('MAX(COALESCE(pi.payment_terms, si.payment_terms, d.payment_terms)) as payment_terms'),
+                DB::raw('t.account_id as vendors'),
+                'ca.account_code',
+                'ca.account_name',
+                DB::raw('ca.id as account_id'),
+                DB::raw('MAX(t.transaction_type) as transaction_type'),
+                DB::raw('MAX(d.due_date) as due_date'),
+                DB::raw('MAX(d.sales_person) as imported_sales_person')
+            )
+            ->groupBy('t.transaction_no', 't.account_id', 'ca.account_code', 'ca.account_name', 'ca.id')
+            ->orderBy('ca.account_name', 'asc')
+            ->orderBy('doc_date', 'asc')
+            ->get();
+    }
+
+    private function applyPayableOutstandingValues($purchaseInvoice, $companyId, $asOfDate)
+    {
+        $purchaseInvoice = collect($purchaseInvoice);
+        if ($purchaseInvoice->isEmpty()) {
+            return $purchaseInvoice;
+        }
+
+        $companyIds = collect(is_array($companyId) ? $companyId : [$companyId])->filter()->values();
+        $accountIds = $purchaseInvoice->pluck('vendors')->filter()->unique()->values();
+        $docNos = $purchaseInvoice->pluck('doc_number')->filter()->unique()->values();
+
+        if ($companyIds->isEmpty() || $accountIds->isEmpty() || $docNos->isEmpty()) {
+            return $purchaseInvoice;
+        }
+
+        $ledgerRows = DB::table('sys_chartofaccounts_transaction')
+            ->select(
+                'account_id',
+                'transaction_no',
+                DB::raw('MIN(transaction_date) as transaction_date'),
+                DB::raw('MAX(transaction_type) as transaction_type'),
+                DB::raw('SUM(debit_amount) as debit_amount'),
+                DB::raw('SUM(credit_amount) as credit_amount')
+            )
+            ->whereIn('company_id', $companyIds)
+            ->whereIn('account_id', $accountIds)
+            ->whereIn('transaction_no', $docNos)
+            ->where('status', 1)
+            ->whereIn('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice'])
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$asOfDate])
+            ->groupBy('account_id', 'transaction_no')
+            ->get()
+            ->keyBy(function ($row) {
+                return $this->piAdjustmentMapKey($row->account_id, $row->transaction_no);
+            });
+
+        if ($ledgerRows->isEmpty()) {
+            return $purchaseInvoice;
+        }
+
+        $trnNos = $ledgerRows->pluck('transaction_no')->unique()->values();
+
+        $prPaid = DB::table('sys_purchase_return_adjestment')
+            ->select('piv_no', DB::raw('SUM(paid_amount) as paid_amount'))
+            ->whereIn('piv_no', $trnNos)
+            ->groupBy('piv_no')
+            ->pluck('paid_amount', 'piv_no');
+
+        $paymentPaid = DB::table('sys_payment as p')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'p.doc_number')
+            ->whereIn('pa.account_id', $accountIds)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->whereIn('p.company_id', $companyIds)
+            ->where('p.status', 1)
+            ->select('pa.account_id', 'pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.account_id', 'pa.bi_doc_no')
+            ->get()
+            ->mapWithKeys(function ($row) {
+                return [$this->piAdjustmentMapKey($row->account_id, $row->bi_doc_no) => (float) $row->bi_amount];
+            });
+
+        $jvPaymentPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'j.doc_number')
+            ->whereIn('pa.account_id', $accountIds)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->whereIn('j.company_id', $companyIds)
+            ->where('j.status', 1)
+            ->select('pa.account_id', 'pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.account_id', 'pa.bi_doc_no')
+            ->get()
+            ->mapWithKeys(function ($row) {
+                return [$this->piAdjustmentMapKey($row->account_id, $row->bi_doc_no) => (float) $row->bi_amount];
+            });
+
+        $jvReceiptPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'j.doc_number')
+            ->whereIn('ra.account_id', $accountIds)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->whereIn('j.company_id', $companyIds)
+            ->where('j.status', 1)
+            ->select('ra.account_id', 'ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.account_id', 'ra.bi_doc_no')
+            ->get()
+            ->mapWithKeys(function ($row) {
+                return [$this->piAdjustmentMapKey($row->account_id, $row->bi_doc_no) => (float) $row->bi_amount];
+            });
+
+        $returnPaid = DB::table('sys_purchase_return as r')
+            ->join('sys_purchase_return_adjestment as ra', 'ra.pri_no', '=', 'r.doc_number')
+            ->whereIn('r.vendors', $accountIds)
+            ->whereIn('ra.piv_no', $trnNos)
+            ->whereIn('r.company_id', $companyIds)
+            ->where('r.status', 1)
+            ->whereRaw("DATE_FORMAT(r.doc_date, '%Y-%m-%d') <= ?", [$asOfDate])
+            ->select('r.vendors', 'ra.piv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
+            ->groupBy('r.vendors', 'ra.piv_no')
+            ->get()
+            ->mapWithKeys(function ($row) {
+                return [$this->piAdjustmentMapKey($row->vendors, $row->piv_no) => (float) $row->paid_amount];
+            });
+
+        return $purchaseInvoice->map(function ($invoice) use ($ledgerRows, $prPaid, $paymentPaid, $jvPaymentPaid, $jvReceiptPaid, $returnPaid) {
+            $key = $this->piAdjustmentMapKey($invoice->vendors ?? '', $invoice->doc_number ?? '');
+            $ledger = $ledgerRows->get($key);
+
+            if (!$ledger) {
+                $paid = (float) ($invoice->imported_paid ?? 0);
+                $amount = (float) ($invoice->amount ?? 0);
+                $invoice->payable_credit_amount = $amount;
+                $invoice->payable_debit_amount = 0;
+                $invoice->payable_adjustments = $paid;
+                $invoice->payable_balance = $amount - abs($paid);
+                $invoice->payable_ageing_balance = $invoice->payable_balance;
+                $invoice->payable_visible = abs($invoice->payable_balance) >= 0.01;
+                return $invoice;
+            }
+
+            $docNo = (string) $ledger->transaction_no;
+            $credit = (float) ($ledger->credit_amount ?? 0);
+            $debit = (float) ($ledger->debit_amount ?? 0);
+
+            $opbImportPaid = 0.0;
+            if (($ledger->transaction_type ?? '') === 'opbinvoice') {
+                $opbImportPaid = $debit;
+            }
+
+            $paid = (float) ($prPaid[$docNo] ?? 0)
+                + (float) ($paymentPaid[$key] ?? 0)
+                + (float) ($jvPaymentPaid[$key] ?? 0)
+                + $opbImportPaid
+                - ((float) ($jvReceiptPaid[$key] ?? 0) - (float) ($returnPaid[$key] ?? 0));
+
+            $isHidden = false;
+            if (strpos($docNo, 'PR') !== false && round($debit, 2) >= round($paid, 2)) {
+                $isHidden = true;
+            }
+
+            $rowBalance = $credit - abs($paid);
+            if (strpos($docNo, 'PR') !== false) {
+                $rowBalance = $debit - abs($paid);
+            }
+
+            $invoice->amount = $credit;
+            $invoice->imported_paid = ($ledger->transaction_type ?? '') === 'opbinvoice' ? $debit : ($invoice->imported_paid ?? 0);
+            $invoice->transaction_type = $ledger->transaction_type ?: ($invoice->transaction_type ?? '');
+            $invoice->payable_credit_amount = $credit;
+            $invoice->payable_debit_amount = $debit;
+            $invoice->payable_adjustments = $paid;
+            $invoice->payable_balance = $rowBalance;
+            $invoice->payable_ageing_balance = $rowBalance;
+            $invoice->payable_visible = ((number_format($credit, 2, '.', '') != number_format($paid, 2, '.', '')) || $debit > 0) && !$isHidden;
+
+            if (!empty($ledger->transaction_date)) {
+                $invoice->doc_date = $ledger->transaction_date;
+            }
+
+            return $invoice;
+        });
+    }
+
+    private function appendPayableLedgerTransactions($purchaseInvoice, $companyId, $asOfDate, $accountId = '', $fromDate = '', $toDate = '')
+    {
+        $purchaseInvoice = collect($purchaseInvoice);
+
+        $companyIds = collect(is_array($companyId) ? $companyId : [$companyId])->filter()->values();
+        if ($companyIds->isEmpty()) {
+            return $purchaseInvoice;
+        }
+
+        $accountIds = $purchaseInvoice->pluck('vendors')->filter()->unique()->values();
+        if ($accountId !== '') {
+            $accountIds = collect([$accountId]);
+        }
+        if ($accountIds->isEmpty()) {
+            return $purchaseInvoice;
+        }
+
+        $query = DB::table('sys_chartofaccounts_transaction as t')
+            ->join('sys_chartofaccounts as ca', 'ca.id', '=', 't.account_id')
+            ->whereIn('t.company_id', $companyIds)
+            ->whereIn('t.account_id', $accountIds)
+            ->where('t.status', 1)
+            ->whereIn('t.transaction_type', ['purchasereturn', 'salesinvoice', 'openingbalance111'])
+            ->whereRaw("DATE_FORMAT(t.transaction_date, '%Y-%m-%d') <= ?", [$asOfDate]);
+
+        if (!empty($fromDate) && !empty($toDate)) {
+            $query->whereBetween('t.transaction_date', [$fromDate, $toDate]);
+        } elseif (!empty($fromDate)) {
+            $query->whereDate('t.transaction_date', '>=', $fromDate);
+        } elseif (!empty($toDate)) {
+            $query->whereDate('t.transaction_date', '<=', $toDate);
+        }
+
+        $rows = $query
+            ->select(
+                DB::raw('MIN(t.id) as id'),
+                DB::raw('t.transaction_no as doc_number'),
+                DB::raw('MIN(t.transaction_date) as doc_date'),
+                DB::raw('NULL as lpo_number'),
+                DB::raw('NULL as deal_id'),
+                DB::raw('SUM(t.credit_amount) as amount'),
+                DB::raw('0 as imported_paid'),
+                DB::raw('NULL as salesman_name'),
+                DB::raw('NULL as payment_terms'),
+                DB::raw('t.account_id as vendors'),
+                'ca.account_code',
+                'ca.account_name',
+                DB::raw('ca.id as account_id'),
+                DB::raw('MAX(t.transaction_type) as transaction_type'),
+                DB::raw('NULL as due_date'),
+                DB::raw('NULL as imported_sales_person')
+            )
+            ->groupBy('t.transaction_no', 't.account_id', 'ca.account_code', 'ca.account_name', 'ca.id')
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return $purchaseInvoice;
+        }
+
+        $existingKeys = $purchaseInvoice->map(function ($row) {
+            return $this->piAdjustmentMapKey($row->vendors ?? '', $row->doc_number ?? '');
+        })->filter()->flip();
+
+        $merged = $purchaseInvoice;
+        foreach ($rows as $row) {
+            $key = $this->piAdjustmentMapKey($row->vendors ?? '', $row->doc_number ?? '');
+            if (!$existingKeys->has($key)) {
+                $merged->push($row);
+            }
+        }
+
+        return $merged
+            ->sortBy(function ($row) {
+                return strtolower((string) ($row->account_name ?? '')) . '|' . (string) ($row->doc_date ?? '');
+            })
+            ->values();
+    }
+
+    private function appendPayableImportedInvoices($purchaseInvoice, $companyId, $accountId = '', $fromDate = '', $toDate = '')
+    {
+        $accountIds = SysHelper::get_supplier_list(is_array($companyId) ? $companyId : [$companyId])->pluck('id');
+        $invoiceDetails = DB::table('sys_chartofaccounts_transaction_invoice_detail')
+            ->select(
+                'trn_id',
+                DB::raw('MAX(po_no) as po_no'),
+                DB::raw('MAX(deal_id) as deal_id'),
+                DB::raw('MAX(payment_terms) as payment_terms'),
+                DB::raw('MAX(due_date) as due_date'),
+                DB::raw('MAX(sales_person) as sales_person')
+            )
+            ->groupBy('trn_id');
+
+        $query = DB::table('sys_chartofaccounts_transaction as t')
+            ->join('sys_chartofaccounts as ca', 'ca.id', '=', 't.account_id')
+            ->leftJoinSub($invoiceDetails, 'd', function ($join) {
+                $join->on('d.trn_id', '=', 't.id');
+            })
+            ->where('t.status', 1)
+            ->whereIn('t.company_id', is_array($companyId) ? $companyId : [$companyId])
+            ->where('t.transaction_type', 'opbinvoice')
+            ->whereIn('t.account_id', $accountIds)
+            ->select(
+                DB::raw('MIN(t.id) as id'),
+                DB::raw('t.transaction_no as doc_number'),
+                DB::raw('MIN(t.transaction_date) as doc_date'),
+                DB::raw('MAX(d.po_no) as lpo_number'),
+                DB::raw('MAX(d.deal_id) as deal_id'),
+                DB::raw('SUM(t.credit_amount) as amount'),
+                DB::raw('SUM(t.debit_amount) as imported_paid'),
+                DB::raw('NULL as salesman_name'),
+                DB::raw('MAX(d.payment_terms) as payment_terms'),
+                DB::raw('t.account_id as vendors'),
+                'ca.account_code',
+                'ca.account_name',
+                DB::raw('ca.id as account_id'),
+                DB::raw("'opbinvoice' as transaction_type"),
+                DB::raw('MAX(d.due_date) as due_date'),
+                DB::raw('MAX(d.sales_person) as imported_sales_person')
+            )
+            ->groupBy(
+                't.transaction_no',
+                't.account_id',
+                'ca.account_code',
+                'ca.account_name',
+                'ca.id'
+            );
+
+        if ($accountId !== '') {
+            $query->where('t.account_id', $accountId);
+        }
+        if (!empty($fromDate) && !empty($toDate)) {
+            $query->whereBetween('t.transaction_date', [$fromDate, $toDate]);
+        } elseif (!empty($fromDate)) {
+            $query->whereDate('t.transaction_date', '>=', $fromDate);
+        } elseif (!empty($toDate)) {
+            $query->whereDate('t.transaction_date', '<=', $toDate);
+        }
+
+        return collect($purchaseInvoice->all())
+            ->merge($query->get())
+            ->sortBy(function ($row) {
+                return strtolower((string) ($row->account_name ?? '')) . '|' . (string) ($row->doc_date ?? '');
+            })
+            ->values();
     }
 
 }

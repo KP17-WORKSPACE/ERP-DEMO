@@ -10,6 +10,7 @@ use App\SysAccountGroup;
 use App\SysAccountGroupSub;
 use App\SysChartofAccountsTransaction;
 use App\SysCompany;
+use App\SysPaymentTerms;
 use App\SysCustSuppl;
 use App\SysCustSupplAddressbook;
 use App\SysHelper;
@@ -35,6 +36,11 @@ class SysPayablesOutstandingController extends Controller
     public function __construct()
     {
         $this->middleware('PM');
+    }
+
+    private function payableOsSalesInvoiceRowGroup()
+    {
+        return DB::raw("CASE WHEN transaction_type = 'salesinvoice' THEN id ELSE 0 END");
     }
 
     /**
@@ -119,7 +125,7 @@ class SysPayablesOutstandingController extends Controller
                             }
 
                             $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'");
-                            $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type')->orderby('transaction_date', 'asc')->get();
+                            $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type', $this->payableOsSalesInvoiceRowGroup())->orderby('transaction_date', 'asc')->get();
 
                             //return $data_all;
 
@@ -240,7 +246,7 @@ class SysPayablesOutstandingController extends Controller
                             }
 
                             if ($overdue != "") {
-                                $overdue_list = SysHelper::get_payable_os_by_overdue($overdue, $a->id);
+                                $overdue_list = SysHelper::get_payable_os_by_overdue($overdue, $a->id, $till_date);
                                 if (count($overdue_list) > 0) {
                                     $data_query->wherein('transaction_no', $overdue_list)->where('account_id', $a->id);
                                 } else {
@@ -251,7 +257,7 @@ class SysPayablesOutstandingController extends Controller
                             }
 
                             if ($ageing != "") {
-                                $ageing_list = SysHelper::get_payable_os_by_ageing($ageing, $a->id);
+                                $ageing_list = SysHelper::get_payable_os_by_ageing($ageing, $a->id, $till_date);
                                 if (count($ageing_list) > 0) {
                                     $data_query->wherein('transaction_no', $ageing_list)->where('account_id', $a->id);
                                 } else {
@@ -296,7 +302,7 @@ class SysPayablesOutstandingController extends Controller
 
 
                             $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'");
-                            $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type')->orderby('transaction_date', 'asc')->get();
+                            $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type', $this->payableOsSalesInvoiceRowGroup())->orderby('transaction_date', 'asc')->get();
                         }
                     }
                 }
@@ -335,14 +341,10 @@ class SysPayablesOutstandingController extends Controller
                 }
             }
 
-            $opbinvoice = DB::table('sys_chartofaccounts_transaction_invoice_detail')->get();
+            $viewSupport = $this->loadPayableOutstandingViewData($com_id);
+            extract($viewSupport);
 
-            if (count($opbinvoice) == 0) {
-                $opbinvoice = [];
-            }
-
-            //1return $data_all; 
-            return view('backEnd.outstanding.payableoutstanding', compact('data', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_payment', 'data_all', 'overdue', 'ageing', 'doc_date', 'sales_person_list', 'opbinvoice', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'opb_balance_amount', 'ctrl_overdue', 'ctrl_ageing', 'is_view_all_supp', 'accounts_select', 'ctrl_sales_person', 'list_option', 'ctrl_list_option', 'first_load', 'ctrl_basic_search', 'ctrl_intext', 'ctrl_followup_from', 'ctrl_followup_to'));
+            return view('backEnd.outstanding.payableoutstanding', compact('data', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_payment', 'data_all', 'overdue', 'ageing', 'doc_date', 'sales_person_list', 'opbinvoice', 'opbinvoice_map', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'opb_balance_amount', 'ctrl_overdue', 'ctrl_ageing', 'is_view_all_supp', 'accounts_select', 'ctrl_sales_person', 'list_option', 'ctrl_list_option', 'first_load', 'ctrl_basic_search', 'ctrl_intext', 'ctrl_followup_from', 'ctrl_followup_to', 'payment_terms_map', 'max_installments', 'purchase_invoice_map', 'sales_invoice_map', 'payable_finance_rate'));
 
         } catch (\Exception $e) {
             return $e;
@@ -446,7 +448,7 @@ class SysPayablesOutstandingController extends Controller
                                 $data_query->wherein('transaction_no', $transaction_no)->where('status', 1);
                                 $data_query->wherein('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice']);
                                 $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') < '" . $till_date . "'");
-                                $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no')->orderby('transaction_date', 'asc')->get();
+                                $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', $this->payableOsSalesInvoiceRowGroup())->orderby('transaction_date', 'asc')->get();
                             }
                         }
                     }
@@ -460,7 +462,7 @@ class SysPayablesOutstandingController extends Controller
                                 $data_query->wherein('transaction_no', $transaction_no)->where('status', 1);
                                 $data_query->wherein('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice']);
                                 $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') < '" . $till_date . "'");
-                                $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no')->orderby('transaction_date', 'asc')->get();
+                                $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', $this->payableOsSalesInvoiceRowGroup())->orderby('transaction_date', 'asc')->get();
                             }
                         }
                     }
@@ -498,7 +500,7 @@ class SysPayablesOutstandingController extends Controller
             $data_query->wherein('transaction_no', $transaction_no)->where('status', 1);
             $data_query->wherein('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice']);
             $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $date . "'");
-            $payable = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no')->orderby('transaction_date', 'asc')->get();
+            $payable = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', $this->payableOsSalesInvoiceRowGroup())->orderby('transaction_date', 'asc')->get();
 
 
             $data_adjestment = SysPurchaseReturnAdjestment::select('piv_no', DB::raw('sum(paid_amount) as paid_amount'))->wherein('piv_no', $payable->pluck("transaction_no"))->groupby('piv_no')->get();
@@ -831,29 +833,19 @@ class SysPayablesOutstandingController extends Controller
             $data_all = [];
             $accounts = SysHelper::get_supplier_list($company_id);
             $till_date = date('Y-m-d');
+            $ctrl_intext = '';
 
             if (!$_POST) {
+                if (SysHelper::get_pagination_post($request)) {
+                    $com_id = $request->com;
+                    $company_id = [$request->com];
+                }
+
                 if (count($accounts) > 0) {
                     foreach ($accounts as $a) {
-                        $transaction_no = SysChartofAccountsTransaction::where('account_id', $a->id)->where('status', 1)->where('company_id', $com_id)->pluck('transaction_no');
-
-                        if (count($transaction_no) > 0) {
-                            $data_query = SysChartofAccountsTransaction::select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw($a->id . ' as account_id'), 'transaction_type')->where('account_id', $a->id)->wherein('company_id', $company_id)->where('status', 1);
-
-                            if ($a->id == 7642) {
-                                $cash_supplier_list = SysHelper::get_cash_supplier($a->id);
-                                if (count($cash_supplier_list) > 0) {
-                                    $data_query->wherein('transaction_no', $cash_supplier_list)->where('account_id', $a->id);
-                                } else {
-                                    $data_query->where('transaction_no', '0')->where('account_id', $a->id);
-                                }
-                                $data_query->wherein('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice']);
-                            } else {
-                                $data_query->wherein('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111']);
-                            }
-
-                            $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'");
-                            $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type')->orderby('transaction_date', 'asc')->get();
+                        $dq = $this->buildSupplierAgeingDataQuery($a, $company_id, $com_id, $till_date);
+                        if ($dq !== null && count($dq) > 0) {
+                            $data_all[] = $dq;
                         }
                     }
                 }
@@ -862,38 +854,158 @@ class SysPayablesOutstandingController extends Controller
             if ($_POST) {
                 $till_date = SysHelper::normalizeToYmd($request->till_date);
 
+                if ($request->list_in_ex != '') {
+                    $accounts = SysChartofAccounts::select('sys_chartofaccounts.id', 'sys_chartofaccounts.account_name', 'sys_chartofaccounts.account_code')
+                        ->whereIn('sys_chartofaccounts.id', $accounts->pluck('id'))
+                        ->where('sys_chartofaccounts.internal', $request->list_in_ex)
+                        ->where('sys_chartofaccounts.status', 1)
+                        ->orderby('sys_chartofaccounts.account_name', 'asc')
+                        ->get();
+                    $ctrl_intext = $request->list_in_ex;
+                }
+
                 if (count($accounts) > 0) {
                     foreach ($accounts as $a) {
-                        $transaction_no = SysChartofAccountsTransaction::where('account_id', $a->id)->where('status', 1)->where('company_id', $com_id)->pluck('transaction_no');
-                        if (count($transaction_no) > 0) {
-                            $data_query = SysChartofAccountsTransaction::select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw($a->id . ' as account_id'), 'transaction_type')->where('account_id', $a->id)->wherein('company_id', $company_id)->where('status', 1);
-
-                            if ($a->id == 7642) {
-                                $cash_supplier_list = SysHelper::get_cash_supplier($a->id);
-                                if (count($cash_supplier_list) > 0) {
-                                    $data_query->wherein('transaction_no', $cash_supplier_list)->where('account_id', $a->id);
-                                } else {
-                                    $data_query->where('transaction_no', '0')->where('account_id', $a->id);
-                                }
-                                $data_query->wherein('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice']);
-                            } else {
-                                $data_query->wherein('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111']);
-                            }
-
-                            $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $till_date . "'");
-                            $data_all[] = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type')->orderby('transaction_date', 'asc')->get();
+                        $dq = $this->buildSupplierAgeingDataQuery($a, $company_id, $com_id, $till_date);
+                        if ($dq !== null && count($dq) > 0) {
+                            $data_all[] = $dq;
                         }
                     }
                 }
             }
 
-            return view('backEnd.outstanding.supplierageingreport', compact('accounts', 'till_date', 'data_all'));
+            $accountIdsForUnadj = collect($data_all)->map(function ($chunk) {
+                return count($chunk) > 0 ? $chunk[0]->account_id : null;
+            })->filter()->unique()->values();
+
+            $list_of_unadjusted = $accountIdsForUnadj->isNotEmpty()
+                ? SysHelper::get_list_of_payable_unadjusted($accountIdsForUnadj, $com_id)
+                : collect([]);
+            $list_of_unadjusted_jv_to_jv = $accountIdsForUnadj->isNotEmpty()
+                ? SysHelper::get_list_of_payable_unadjusted_jv_to_jv($accountIdsForUnadj, $com_id)
+                : collect([]);
+            $opb_balance_amount = $accountIdsForUnadj->isNotEmpty()
+                ? SysHelper::get_supplier_opening_balance($accountIdsForUnadj, date('Y-m-d'), $com_id)
+                : collect([]);
+
+            $osViewData = $this->loadPayableOutstandingViewData($com_id);
+
+            return view('backEnd.outstanding.supplierageingreport', array_merge(
+                compact(
+                    'accounts',
+                    'till_date',
+                    'data_all',
+                    'ctrl_intext',
+                    'com_id',
+                    'list_of_unadjusted',
+                    'list_of_unadjusted_jv_to_jv',
+                    'opb_balance_amount'
+                ),
+                $osViewData
+            ));
 
         } catch (\Exception $e) {
             return $e;
             Toastr::error('Operation Failed', 'Failed');
             return redirect()->back();
         }
+    }
+
+    private function payableOsAggregateSelect($accountIdExpression)
+    {
+        return [
+            'transaction_date',
+            'transaction_id',
+            'transaction_no',
+            DB::raw('sum(debit_amount) as debit_amount'),
+            DB::raw('sum(credit_amount) as credit_amount'),
+            DB::raw("{$accountIdExpression} as account_id"),
+            DB::raw('MAX(transaction_type) as transaction_type'),
+        ];
+    }
+
+    private function buildSupplierAgeingDataQuery($account, $companyIds, $comId, $tillDate)
+    {
+        $transactionNo = SysChartofAccountsTransaction::where('account_id', $account->id)
+            ->where('status', 1)
+            ->where('company_id', $comId)
+            ->pluck('transaction_no');
+
+        if (count($transactionNo) === 0) {
+            return null;
+        }
+
+        $dataQuery = SysChartofAccountsTransaction::select(...$this->payableOsAggregateSelect((string) $account->id))
+            ->where('account_id', $account->id)
+            ->whereIn('company_id', $companyIds)
+            ->where('status', 1);
+
+        if ($account->id == 7642) {
+            $cashSupplierList = SysHelper::get_cash_supplier($account->id);
+            if (count($cashSupplierList) > 0) {
+                $dataQuery->whereIn('transaction_no', $cashSupplierList);
+            } else {
+                $dataQuery->where('transaction_no', '0');
+            }
+            $dataQuery->whereIn('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice']);
+        } else {
+            $dataQuery->whereIn('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice']);
+        }
+
+        $dataQuery->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $tillDate . "'");
+
+        return $dataQuery
+            ->groupBy('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type', $this->payableOsSalesInvoiceRowGroup())
+            ->orderBy('transaction_date', 'asc')
+            ->get();
+    }
+
+    private function loadOpbInvoiceDetailMap($companyId)
+    {
+        return DB::table('sys_chartofaccounts_transaction_invoice_detail as d')
+            ->join('sys_chartofaccounts_transaction as t', 't.id', '=', 'd.trn_id')
+            ->where('t.company_id', $companyId)
+            ->where('t.transaction_type', 'opbinvoice')
+            ->where('t.status', 1)
+            ->select('d.*')
+            ->get()
+            ->keyBy('transaction_no');
+    }
+
+    private function loadPayableOutstandingViewData($companyId)
+    {
+        $payment_terms_map = SysPaymentTerms::where('active_status', 1)->get()->keyBy('id');
+        $purchase_invoice_map = DB::table('sys_purchase_invoice')
+            ->where('company_id', $companyId)
+            ->where('status', 1)
+            ->select('doc_number', 'payment_terms', 'pi_date')
+            ->get()
+            ->keyBy('doc_number');
+        $sales_invoice_map = DB::table('sys_sales_invoice')
+            ->where('company_id', $companyId)
+            ->where('status', 1)
+            ->select('doc_number', 'payment_terms', 'doc_date')
+            ->get()
+            ->keyBy('doc_number');
+        $opbinvoice_map = $this->loadOpbInvoiceDetailMap($companyId);
+        $opbinvoice = $opbinvoice_map->values();
+        $max_installments = max(
+            SysPaymentTerms::resolveMaxInstallmentsFromMaps($purchase_invoice_map, $payment_terms_map),
+            SysPaymentTerms::resolveMaxInstallmentsFromMaps($sales_invoice_map, $payment_terms_map),
+            SysPaymentTerms::resolveMaxInstallmentsFromOpbMap($opbinvoice_map, $payment_terms_map)
+        );
+        $company_row = SysCompany::find($companyId);
+        $payable_finance_rate = (float) ($company_row->finance_cost_percentage ?? 0);
+
+        return compact(
+            'payment_terms_map',
+            'purchase_invoice_map',
+            'sales_invoice_map',
+            'opbinvoice_map',
+            'opbinvoice',
+            'max_installments',
+            'payable_finance_rate'
+        );
     }
 
 }
