@@ -7742,7 +7742,658 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
     }
 
 //receivable outatsnding start
-    public static function get_list_of_unadjusted($account_ids,$company)
+    /**
+     * Same total as receivableoutstanding.blade.php footer "Amount" (grand_debit_amount) for invoice rows.
+     */
+    protected static function sumReceivableOutstandingInvoiceAmountTotal($accountId, $companyId, $tillDate = null)
+    {
+        $till = $tillDate ? (self::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+
+        $rows = DB::table('sys_chartofaccounts_transaction')
+            ->select(
+                'transaction_no',
+                DB::raw('SUM(debit_amount) as debit_amount'),
+                DB::raw('SUM(credit_amount) as credit_amount')
+            )
+            ->where('account_id', $accountId)
+            ->where('company_id', $companyId)
+            ->where('status', 1)
+            ->whereIn('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
+            ->groupBy('transaction_date', 'transaction_id', 'transaction_no')
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return 0.0;
+        }
+
+        $trnNos = $rows->pluck('transaction_no')->unique()->values();
+
+        $srnPaid = DB::table('sys_sales_return_adjestment')
+            ->select('srn_no', DB::raw('SUM(paid_amount) as paid_amount'))
+            ->whereIn('srn_no', $trnNos)
+            ->groupBy('srn_no')
+            ->pluck('paid_amount', 'srn_no');
+
+        $receiptPaid = DB::table('sys_receipt as r')
+            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'r.doc_number')
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->where('r.status', 1)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvReceiptPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'j.doc_number')
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->where('j.status', 1)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvPaymentPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'j.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->where('j.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $returnPaid = DB::table('sys_sales_return as r')
+            ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', '=', 'r.doc_number')
+            ->where('r.customer', $accountId)
+            ->whereIn('ra.srn_no', $trnNos)
+            ->where('r.status', 1)
+            ->select('ra.siv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
+            ->groupBy('ra.siv_no')
+            ->pluck('paid_amount', 'siv_no');
+
+        $opbReceiptPaid = DB::table('sys_receipt_adjustments as ra')
+            ->where('ra.transaction_type', 'openingbalance')
+            ->where('ra.company_id', $companyId)
+            ->where('ra.status', 1)
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $total = 0.0;
+        foreach ($rows as $dt) {
+            $paid = (float) ($srnPaid[$dt->transaction_no] ?? 0)
+                + (float) ($receiptPaid[$dt->transaction_no] ?? 0)
+                + (float) ($jvReceiptPaid[$dt->transaction_no] ?? 0)
+                + (float) ($opbReceiptPaid[$dt->transaction_no] ?? 0)
+                + (float) ($dt->credit_amount ?? 0)
+                - (float) ($jvPaymentPaid[$dt->transaction_no] ?? 0)
+                - (float) ($returnPaid[$dt->transaction_no] ?? 0);
+
+            if ((float) $dt->debit_amount != $paid) {
+                $total += (float) $dt->debit_amount;
+            }
+            if ((float) $dt->credit_amount > 0) {
+                $total -= (float) $dt->credit_amount;
+            }
+        }
+
+        return $total;
+    }
+
+    /**
+     * Per-customer totals aligned with receivableoutstanding.blade.php (header #sum_{id} and gtot1–gtot4 columns).
+     */
+    public static function getReceivableOutstandingCustomerTotals(
+        $accountId,
+        $companyId,
+        $tillDate = null,
+        $rows = null,
+        $unadjustedList = null,
+        $unadjustedJvToJv = null,
+        $paymentTermsMap = null,
+        $salesInvoiceMap = null,
+        $opbinvoiceMap = null,
+        $receivableFinanceRate = 0,
+        $adjustedPdcList = null
+    ) {
+        $till = $tillDate ? (self::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+
+        if ($rows === null) {
+            $rows = DB::table('sys_chartofaccounts_transaction')
+                ->select(
+                    'transaction_no',
+                    'transaction_type',
+                    'transaction_date',
+                    DB::raw('SUM(debit_amount) as debit_amount'),
+                    DB::raw('SUM(credit_amount) as credit_amount')
+                )
+                ->where('account_id', $accountId)
+                ->where('company_id', $companyId)
+                ->where('status', 1)
+                ->whereIn('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])
+                ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
+                ->groupBy('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type')
+                ->get();
+        }
+
+        $empty = [
+            'net_invoice_amount' => 0.0,
+            'net_balance' => 0.0,
+            '0_30' => 0.0,
+            '31_60' => 0.0,
+            '61_90' => 0.0,
+            '90_plus' => 0.0,
+            'finance_cost' => 0.0,
+            'has_overdue' => false,
+        ];
+        if ($rows->isEmpty()) {
+            return $empty;
+        }
+
+        $paymentTermsMap = $paymentTermsMap ?? collect([]);
+        $salesInvoiceMap = $salesInvoiceMap ?? collect([]);
+        $opbinvoiceMap = $opbinvoiceMap ?? collect([]);
+
+        $trnNos = $rows->pluck('transaction_no')->unique()->values();
+
+        $srnPaid = DB::table('sys_sales_return_adjestment')
+            ->select('srn_no', DB::raw('SUM(paid_amount) as paid_amount'))
+            ->whereIn('srn_no', $trnNos)
+            ->groupBy('srn_no')
+            ->pluck('paid_amount', 'srn_no');
+
+        $receiptPaid = DB::table('sys_receipt as r')
+            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'r.doc_number')
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->where('r.company_id', $companyId)
+            ->where('r.status', 1)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvReceiptPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'j.doc_number')
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvPaymentPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'j.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $returnPaid = DB::table('sys_sales_return as r')
+            ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', '=', 'r.doc_number')
+            ->where('r.customer', $accountId)
+            ->whereIn('ra.srn_no', $trnNos)
+            ->where('r.company_id', $companyId)
+            ->where('r.status', 1)
+            ->select('ra.siv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
+            ->groupBy('ra.siv_no')
+            ->pluck('paid_amount', 'siv_no');
+
+        $opbReceiptPaid = DB::table('sys_receipt_adjustments as ra')
+            ->where('ra.transaction_type', 'openingbalance')
+            ->where('ra.company_id', $companyId)
+            ->where('ra.status', 1)
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $sumB = 0.0;
+        $ageing = ['0_30' => 0.0, '31_60' => 0.0, '61_90' => 0.0, '90_plus' => 0.0];
+        $totalFinance = 0.0;
+        $hasOverdue = false;
+
+        foreach ($rows as $dt) {
+            $paid = (float) ($srnPaid[$dt->transaction_no] ?? 0)
+                + (float) ($receiptPaid[$dt->transaction_no] ?? 0)
+                + (float) ($jvReceiptPaid[$dt->transaction_no] ?? 0)
+                + (float) ($opbReceiptPaid[$dt->transaction_no] ?? 0)
+                - (float) ($jvPaymentPaid[$dt->transaction_no] ?? 0)
+                - (float) ($returnPaid[$dt->transaction_no] ?? 0);
+
+            if (($dt->transaction_type ?? '') === 'opbinvoice') {
+                $paid += (float) ($dt->credit_amount ?? 0);
+            }
+
+            $debit = (float) ($dt->debit_amount ?? 0);
+            $credit = (float) ($dt->credit_amount ?? 0);
+            $trnNo = (string) ($dt->transaction_no ?? '');
+
+            $isHide2 = 0;
+            if (str_contains($trnNo, 'SR') && round($credit, 2) >= round($paid, 2)) {
+                $isHide2 = 1;
+            }
+            if (str_contains($trnNo, 'SI') && round(abs($debit), 2) == round(abs($paid), 2)) {
+                $isHide2 = 1;
+            }
+
+            if (((round($debit, 2) != round($paid, 2)) || ($credit > 0)) && $isHide2 === 0) {
+                $sumB += $debit - abs($paid);
+
+                $rowBalance = $debit - abs($paid);
+                if (str_contains($trnNo, 'SR')) {
+                    $rowBalance = $credit - abs($paid);
+                }
+
+                $invoiceDate = $dt->transaction_date;
+                $paymentTermRow = null;
+
+                if (($dt->transaction_type ?? '') === 'opbinvoice') {
+                    $opbDet = $opbinvoiceMap->get($dt->transaction_no);
+                    $paymentTermRow = SysPaymentTerms::resolveOpbPaymentTerm(
+                        $opbDet->payment_terms ?? '',
+                        $invoiceDate,
+                        $opbDet->due_date ?? '',
+                        $paymentTermsMap
+                    );
+                } else {
+                    $siRow = $salesInvoiceMap->get($dt->transaction_no);
+                    if ($siRow) {
+                        $invoiceDate = $siRow->doc_date;
+                        $paymentTermRow = $paymentTermsMap->get($siRow->payment_terms);
+                    }
+                }
+
+                $breakdown = SysPaymentTerms::buildOutstandingBreakdown(
+                    $invoiceDate,
+                    $rowBalance,
+                    $paymentTermRow,
+                    (float) $receivableFinanceRate,
+                    $till
+                );
+                $ageingRow = SysPaymentTerms::buildOsListAgeingBuckets(
+                    $invoiceDate,
+                    $rowBalance,
+                    $paymentTermRow,
+                    $till,
+                    $breakdown['max_overdue_days'] ?? null
+                );
+                $ageing['0_30'] += (float) ($ageingRow['0_30'] ?? 0);
+                $ageing['31_60'] += (float) ($ageingRow['31_60'] ?? 0);
+                $ageing['61_90'] += (float) ($ageingRow['61_90'] ?? 0);
+                $ageing['90_plus'] += (float) ($ageingRow['90_plus'] ?? 0);
+                $totalFinance += (float) ($breakdown['total_finance_cost'] ?? 0);
+                if (($breakdown['max_overdue_days'] ?? 0) > 0) {
+                    $hasOverdue = true;
+                }
+            }
+        }
+
+        $netInvoiceAmount = $sumB;
+
+        if ($adjustedPdcList === null) {
+            $adjustedPdcList = self::get_list_of_adjusted_pdc([$accountId], $companyId);
+        }
+        if ($adjustedPdcList) {
+            foreach ($adjustedPdcList->where('account_id', $accountId) as $p) {
+                $sumB += (float) ($p->adj_amount ?? 0);
+            }
+        }
+
+        if ($unadjustedList === null) {
+            $unadjustedList = self::get_list_of_unadjusted([$accountId], $companyId, $tillDate);
+        }
+        if ($unadjustedList) {
+            foreach ($unadjustedList->where('account_id', $accountId) as $p) {
+                $amt = (float) ($p->amount ?? 0);
+                if (isset($p->adj_amount)) {
+                    $amt -= (float) $p->adj_amount;
+                }
+                $sumB -= $amt;
+            }
+        }
+
+        if ($unadjustedJvToJv === null) {
+            $unadjustedJvToJv = self::get_list_of_unadjusted_jv_to_jv([$accountId], $companyId);
+        }
+        if ($unadjustedJvToJv) {
+            foreach ($unadjustedJvToJv->where('account_id', $accountId) as $p) {
+                $sumB -= (float) ($p->amount ?? 0) - (float) ($p->amount2 ?? 0);
+            }
+        }
+
+        return [
+            'net_invoice_amount' => $netInvoiceAmount,
+            'net_balance' => $sumB,
+            '0_30' => $ageing['0_30'],
+            '31_60' => $ageing['31_60'],
+            '61_90' => $ageing['61_90'],
+            '90_plus' => $ageing['90_plus'],
+            'finance_cost' => $totalFinance,
+            'has_overdue' => $hasOverdue,
+        ];
+    }
+
+    /**
+     * Per-supplier totals aligned with payableoutstanding.blade.php (header #sum_{id} and ageing columns).
+     */
+    public static function getPayableOutstandingSupplierTotals(
+        $accountId,
+        $companyId,
+        $tillDate = null,
+        $rows = null,
+        $unadjustedList = null,
+        $unadjustedJvToJv = null,
+        $paymentTermsMap = null,
+        $purchaseInvoiceMap = null,
+        $salesInvoiceMap = null,
+        $opbinvoiceMap = null,
+        $payableFinanceRate = 0
+    ) {
+        $till = $tillDate ? (self::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+
+        if ($rows === null) {
+            $rows = DB::table('sys_chartofaccounts_transaction')
+                ->select(
+                    'transaction_no',
+                    'transaction_type',
+                    'transaction_date',
+                    DB::raw('SUM(debit_amount) as debit_amount'),
+                    DB::raw('SUM(credit_amount) as credit_amount')
+                )
+                ->where('account_id', $accountId)
+                ->where('company_id', $companyId)
+                ->where('status', 1)
+                ->whereIn('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice'])
+                ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
+                ->groupBy(
+                    'transaction_date',
+                    'transaction_id',
+                    'transaction_no',
+                    'transaction_type',
+                    DB::raw("CASE WHEN transaction_type = 'salesinvoice' THEN id ELSE 0 END")
+                )
+                ->get();
+        }
+
+        $empty = [
+            'net_invoice_amount' => 0.0,
+            'net_balance' => 0.0,
+            '0_30' => 0.0,
+            '31_60' => 0.0,
+            '61_90' => 0.0,
+            '90_plus' => 0.0,
+            'finance_cost' => 0.0,
+            'has_overdue' => false,
+        ];
+        if ($rows->isEmpty()) {
+            return $empty;
+        }
+
+        $paymentTermsMap = $paymentTermsMap ?? collect([]);
+        $purchaseInvoiceMap = $purchaseInvoiceMap ?? collect([]);
+        $salesInvoiceMap = $salesInvoiceMap ?? collect([]);
+        $opbinvoiceMap = $opbinvoiceMap ?? collect([]);
+
+        $trnNos = $rows->pluck('transaction_no')->unique()->values();
+
+        $prPaid = DB::table('sys_purchase_return_adjestment')
+            ->select('piv_no', DB::raw('SUM(paid_amount) as paid_amount'))
+            ->whereIn('piv_no', $trnNos)
+            ->groupBy('piv_no')
+            ->pluck('paid_amount', 'piv_no');
+
+        $paymentPaid = DB::table('sys_payment as p')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'p.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->where('p.company_id', $companyId)
+            ->where('p.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvPaymentPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'j.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvReceiptPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'j.doc_number')
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $returnPaid = DB::table('sys_purchase_return as r')
+            ->join('sys_purchase_return_adjestment as ra', 'ra.pri_no', '=', 'r.doc_number')
+            ->where('r.vendors', $accountId)
+            ->whereIn('ra.pri_no', $trnNos)
+            ->where('r.company_id', $companyId)
+            ->where('r.status', 1)
+            ->select('ra.piv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
+            ->groupBy('ra.piv_no')
+            ->pluck('paid_amount', 'piv_no');
+
+        $sumB = 0.0;
+        $ageing = ['0_30' => 0.0, '31_60' => 0.0, '61_90' => 0.0, '90_plus' => 0.0];
+        $totalFinance = 0.0;
+        $hasOverdue = false;
+
+        foreach ($rows as $dt) {
+            $opbImportPaid = 0.0;
+            if (($dt->transaction_type ?? '') === 'opbinvoice') {
+                $opbImportPaid = (float) ($dt->debit_amount ?? 0);
+            }
+
+            $paid = (float) ($prPaid[$dt->transaction_no] ?? 0)
+                + (float) ($paymentPaid[$dt->transaction_no] ?? 0)
+                + (float) ($jvPaymentPaid[$dt->transaction_no] ?? 0)
+                + $opbImportPaid
+                - ((float) ($jvReceiptPaid[$dt->transaction_no] ?? 0) - (float) ($returnPaid[$dt->transaction_no] ?? 0));
+
+            $debit = (float) ($dt->debit_amount ?? 0);
+            $credit = (float) ($dt->credit_amount ?? 0);
+            $trnNo = (string) ($dt->transaction_no ?? '');
+
+            $isHide2 = 0;
+            if (str_contains($trnNo, 'PR') && round($debit, 2) >= round($paid, 2)) {
+                $isHide2 = 1;
+            }
+
+            if (((round($credit, 2) != round($paid, 2)) || ($debit > 0)) && $isHide2 === 0) {
+                $sumB += $credit - abs($paid);
+
+                $rowBalance = $credit - abs($paid);
+                if (str_contains($trnNo, 'PR')) {
+                    $rowBalance = $debit - abs($paid);
+                }
+
+                $invoiceDate = $dt->transaction_date;
+                $paymentTermRow = null;
+
+                if (($dt->transaction_type ?? '') === 'opbinvoice') {
+                    $opbDet = $opbinvoiceMap->get($dt->transaction_no);
+                    $paymentTermRow = SysPaymentTerms::resolveOpbPaymentTerm(
+                        $opbDet->payment_terms ?? '',
+                        $invoiceDate,
+                        $opbDet->due_date ?? '',
+                        $paymentTermsMap
+                    );
+                    $breakdown = SysPaymentTerms::buildOutstandingBreakdown(
+                        $invoiceDate,
+                        $rowBalance,
+                        $paymentTermRow,
+                        (float) $payableFinanceRate,
+                        $till
+                    );
+                } elseif (str_contains($trnNo, 'SI')) {
+                    $siRow = $salesInvoiceMap->get($dt->transaction_no);
+                    if ($siRow) {
+                        $invoiceDate = $siRow->doc_date;
+                        $paymentTermRow = $paymentTermsMap->get($siRow->payment_terms);
+                    }
+                    $breakdown = SysPaymentTerms::buildOutstandingBreakdown(
+                        $invoiceDate,
+                        $rowBalance,
+                        $paymentTermRow,
+                        (float) $payableFinanceRate,
+                        $till
+                    );
+                } else {
+                    $piRow = $purchaseInvoiceMap->get($dt->transaction_no);
+                    if ($piRow) {
+                        $invoiceDate = $piRow->pi_date ?? $dt->transaction_date;
+                        $paymentTermRow = $paymentTermsMap->get($piRow->payment_terms);
+                    }
+                    $breakdown = SysPaymentTerms::buildOutstandingBreakdown(
+                        $invoiceDate,
+                        $rowBalance,
+                        $paymentTermRow,
+                        (float) $payableFinanceRate,
+                        $till
+                    );
+                }
+
+                $ageingRow = SysPaymentTerms::buildOsListAgeingBuckets(
+                    $invoiceDate,
+                    $rowBalance,
+                    $paymentTermRow,
+                    $till,
+                    $breakdown['max_overdue_days'] ?? null
+                );
+                $ageing['0_30'] += (float) ($ageingRow['0_30'] ?? 0);
+                $ageing['31_60'] += (float) ($ageingRow['31_60'] ?? 0);
+                $ageing['61_90'] += (float) ($ageingRow['61_90'] ?? 0);
+                $ageing['90_plus'] += (float) ($ageingRow['90_plus'] ?? 0);
+                $totalFinance += (float) ($breakdown['total_finance_cost'] ?? 0);
+                if (($breakdown['max_overdue_days'] ?? 0) > 0) {
+                    $hasOverdue = true;
+                }
+            }
+        }
+
+        $netInvoiceAmount = $sumB;
+
+        $adjustedPdcList = self::get_list_of_payable_adjusted_pdc([$accountId], $companyId);
+        if ($adjustedPdcList) {
+            foreach ($adjustedPdcList->where('account_id', $accountId) as $p) {
+                $sumB += (float) ($p->adj_amount ?? 0);
+            }
+        }
+
+        if ($unadjustedList === null) {
+            $unadjustedList = self::get_list_of_payable_unadjusted([$accountId], $companyId);
+        }
+        if ($unadjustedList) {
+            foreach ($unadjustedList->where('account_id', $accountId) as $p) {
+                $amt = (float) ($p->amount ?? 0);
+                if (isset($p->adj_amount)) {
+                    $amt -= (float) $p->adj_amount;
+                }
+                $sumB -= $amt;
+            }
+        }
+
+        if ($unadjustedJvToJv === null) {
+            $unadjustedJvToJv = self::get_list_of_payable_unadjusted_jv_to_jv([$accountId], $companyId);
+        }
+        if ($unadjustedJvToJv) {
+            foreach ($unadjustedJvToJv->where('account_id', $accountId) as $p) {
+                $sumB -= (float) ($p->amount ?? 0) - (float) ($p->amount2 ?? 0);
+            }
+        }
+
+        return [
+            'net_invoice_amount' => $netInvoiceAmount,
+            'net_balance' => $sumB,
+            '0_30' => $ageing['0_30'],
+            '31_60' => $ageing['31_60'],
+            '61_90' => $ageing['61_90'],
+            '90_plus' => $ageing['90_plus'],
+            'finance_cost' => $totalFinance,
+            'has_overdue' => $hasOverdue,
+        ];
+    }
+
+    /**
+     * Per-customer net balance shown on receivable outstanding header (#sum_{id}).
+     */
+    public static function getReceivableOutstandingCustomerNetBalance($accountId, $companyId, $tillDate = null, $rows = null, $unadjustedList = null, $unadjustedJvToJv = null)
+    {
+        $totals = self::getReceivableOutstandingCustomerTotals(
+            $accountId,
+            $companyId,
+            $tillDate,
+            $rows,
+            $unadjustedList,
+            $unadjustedJvToJv
+        );
+
+        return $totals['net_balance'];
+    }
+
+    /**
+     * Split receivable OPB-{id} into separate credit and debit unadjusted lines.
+     */
+    protected static function expand_receivable_opb_unadjusted_rows($rows, array $invoiceAmountTotalsByAccount = [])
+    {
+        $out = collect();
+        foreach ($rows as $r) {
+            $docNo = $r->doc_number ?? '';
+            $isReceivableOpb = ($r->transaction_type ?? '') === 'openingbalance'
+                && in_array((int) ($r->account_group ?? 0), [1, 3], true)
+                && preg_match('/^OPB-\d+$/', $docNo);
+
+            if (!$isReceivableOpb) {
+                $out->push($r);
+                continue;
+            }
+
+            $invNet = (float) ($invoiceAmountTotalsByAccount[$r->account_id] ?? 0);
+            $adj = (float) ($r->adj_amount ?? 0);
+            $creditAmt = (float) ($r->credit_amount ?? 0);
+            $debitAmt = (float) ($r->debit_amount ?? 0);
+
+            if ($creditAmt > 0) {
+                $creditRow = (object) (array) $r;
+                $creditRow->amount = -$creditAmt;
+                $creditRow->adj_amount = 0;
+                $creditRow->remarks = 'Credit amount : ' . self::com_curr_format($creditAmt, 2, '.', ',');
+                $out->push($creditRow);
+            }
+
+            if ($debitAmt > 0) {
+                $netDebit = $debitAmt - $invNet;
+                if (abs($netDebit - $adj) > 0.0001) {
+                    $debitRow = (object) (array) $r;
+                    $debitRow->amount = $netDebit;
+                    $debitRow->adj_amount = $adj;
+                    $debitRow->remarks = 'Debit amount : ' . self::com_curr_format($debitAmt, 2, '.', ',')
+                        . ' (Invoices amount : ' . self::com_curr_format($invNet, 2, '.', ',') . ')';
+                    $out->push($debitRow);
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    public static function get_list_of_unadjusted($account_ids,$company,$till_date = null)
     {
         try {  
              if($account_ids == null || empty($account_ids)){
@@ -7752,7 +8403,9 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 $removed_receipt = db::table('sys_receipt_adjustments_jv')->where('company_id',$company)->where('status',1)->pluck('receipt_no');
 
                 $unadjested_receipt = DB::table('sys_chartofaccounts_transaction as t')->select('t.account_id','c.account_name',
-                    't.transaction_no as doc_number','t.transaction_date as doc_date','t.remarks',DB::raw('t.credit_amount-t.debit_amount AS amount'),
+                    't.transaction_no as doc_number','t.transaction_date as doc_date','t.remarks','t.transaction_type',
+                    't.debit_amount','t.credit_amount','c.group as account_group',
+                    DB::raw('t.credit_amount - t.debit_amount AS amount'),
                     DB::raw('COALESCE(SUM(ra.bi_paid), 0)+COALESCE(SUM(sr.paid_amount), 0) AS adj_amount'))
                 ->leftJoin('sys_chartofaccounts as c', 'c.id', '=', 't.account_id')
                 ->leftJoin('sys_receipt_adjustments as ra', function ($join) {
@@ -7773,11 +8426,22 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                         ->orWhereNotIn('sys_receipt.receipt_through', [3]);
                 })
                 ->whereNotIn('t.transaction_no', $removed_receipt)
-                ->groupBy('t.account_id','t.transaction_no','t.transaction_date','t.remarks',DB::raw('t.credit_amount-t.debit_amount'))
-                ->havingRaw('amount > COALESCE(SUM(ra.bi_paid), 0)+COALESCE(SUM(sr.paid_amount), 0)')
+                ->groupBy('t.account_id','t.transaction_no','t.transaction_date','t.remarks','t.debit_amount','t.credit_amount','t.transaction_type','c.group')
+                ->havingRaw('(
+                    (t.transaction_type = \'openingbalance\' AND c.group IN (1,3) AND t.transaction_no REGEXP \'^OPB-[0-9]+$\' AND (IFNULL(t.credit_amount,0) > 0 OR IFNULL(t.debit_amount,0) > 0))
+                    OR
+                    (NOT (t.transaction_type = \'openingbalance\' AND c.group IN (1,3) AND t.transaction_no REGEXP \'^OPB-[0-9]+$\' ) AND (t.credit_amount - t.debit_amount) > (COALESCE(SUM(ra.bi_paid), 0)+COALESCE(SUM(sr.paid_amount), 0)))
+                )')
                 ->orderby('t.transaction_date','asc')
                 ->get();
-                return $unadjested_receipt;
+
+                $invoiceAmountTotalsByAccount = [];
+                $accountIds = collect($account_ids)->merge($unadjested_receipt->pluck('account_id'))->unique()->filter();
+                foreach ($accountIds as $accountId) {
+                    $invoiceAmountTotalsByAccount[$accountId] = self::sumReceivableOutstandingInvoiceAmountTotal($accountId, $company, $till_date);
+                }
+
+                return self::expand_receivable_opb_unadjusted_rows($unadjested_receipt, $invoiceAmountTotalsByAccount);
 
                 /*$unadjested_receipt = DB::table('sys_receipt as r')->select('t.account_id',
                     'r.doc_number','r.doc_date','t.credit_amount AS amount',
@@ -8020,9 +8684,10 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
 //payable outatsnding start
 
-public static function get_list_of_payable_unadjusted($account_ids,$company)
+public static function get_list_of_payable_unadjusted($account_ids,$company,$till_date = null)
     {
         try {           
+                $till = $till_date ? (self::normalizeToYmd($till_date) ?: $till_date) : date('Y-m-d');
                 $removed_payment = db::table('sys_payment_adjustments_jv')->where('company_id',$company)->where('status',1)->pluck('payment_no');
 
                 $unadjested_payment = DB::table('sys_chartofaccounts_transaction as t')->select('t.account_id','c.account_name',
@@ -8039,6 +8704,7 @@ public static function get_list_of_payable_unadjusted($account_ids,$company)
                 ->where('t.company_id', $company)
                 ->where('t.status', 1)
                 ->wherein('t.transaction_type',['openingbalance','journalvoucher','bankpayment','cashpayment','purchasereturn'])
+                ->whereRaw("DATE_FORMAT(t.transaction_date, '%Y-%m-%d') <= ?", [$till])
                 ->where(function ($query) {
                     $query->whereNull('sys_payment.payment_through')
                         ->orWhereNotIn('sys_payment.payment_through', [3]);
@@ -9449,53 +10115,25 @@ SysPriceBook::insert([
     //         return ['','',''];
     //     }
     // }
-    public static function get_due_date_sales_invoice($transaction_no,$transaction_date)
+    public static function get_due_date_sales_invoice($transaction_no, $transaction_date, $asOfDate = null)
     {
         try {
-            $payment_terms_id = DB::table('sys_sales_invoice')->select('payment_terms','doc_date')->where('doc_number',$transaction_no)->first();
-
-            
-           
-          
-            $days = DB::table('sys_payment_terms')->select('days_calculation','title')->where('id',$payment_terms_id->payment_terms)->first();
-            $get_date = Carbon::parse($payment_terms_id->doc_date)->addDays($days->days_calculation);
-            $due_date = date('d/m/Y', strtotime(@$get_date));
-            $payment_terms= $days->title;
-            
-            $dates= round ( (strtotime("now")-strtotime( $payment_terms_id->doc_date)) /(3600*24) );
-            $col=0;
-
-            $due_days= round ( (strtotime("now")-strtotime( $get_date)) /(3600*24) ); 
-
-            if( $due_days < 0 ){
-                $col=0;     
-            }
-            else if($due_days >=0 && $due_days <31){
-                $col=1;
-            }
-            else if($due_days >=31 &&  $due_days<=60 ){
-                $col=2;
-            }
-            else if($due_days >=61 &&  $due_days<=90){
-                $col=3;
-            }
-            else if($due_days >90){
-                $col=4;
+            $si = DB::table('sys_sales_invoice')->select('payment_terms', 'doc_date')->where('doc_number', $transaction_no)->first();
+            if (!$si) {
+                return ['', '', '', '', ''];
             }
 
-                
-            // if($get_date>now()){
-            //     $due_days =  now()->diffInDays($get_date);
-               
-            //  } else {
-            //      $due_days =  0;
+            $term = DB::table('sys_payment_terms')->where('id', $si->payment_terms)->first();
+            $invoiceDate = $si->doc_date ?? $transaction_date;
+            $due_days = SysPaymentTerms::computePrimaryOverdueDays($invoiceDate, $term, $asOfDate);
+            $due_date = Carbon::parse($invoiceDate)->addDays(SysPaymentTerms::resolveCreditDays($term))->format('d/m/Y');
+            $col = SysPaymentTerms::legacyColFromOverdueDays($due_days);
+            $asOf = SysPaymentTerms::resolveAsOfDate($asOfDate);
+            $dates = (int) round(($asOf->timestamp - Carbon::parse($invoiceDate)->startOfDay()->timestamp) / 86400);
 
-            //     }
-                   
-
-            return [$due_date,$due_days,$payment_terms,$col,$dates];
+            return [$due_date, $due_days, $term->title ?? '', $col, $dates];
         } catch (\Throwable $th) {
-            return ['','','','',''];
+            return ['', '', '', '', ''];
         }
     }
     public static function get_due_date_sales_invoice_report($sys_payment_terms_list,$payment_terms_id,$transaction_date,$receipt_date)
@@ -9552,96 +10190,47 @@ SysPriceBook::insert([
         }
     }
 
-    public static function get_due_date_purchase_invoice($transaction_no,$transaction_date)
+    public static function get_due_date_purchase_invoice($transaction_no, $transaction_date, $asOfDate = null)
     {
-        
         try {
-            $payment_terms_id = DB::table('sys_purchase_invoice')->select('payment_terms','pi_date')->where('doc_number',$transaction_no)->first();
-
-          
-            $days = DB::table('sys_payment_terms')->select('days_calculation','title')->where('id',$payment_terms_id->payment_terms)->first();
-        
-            $get_date = Carbon::parse($payment_terms_id->pi_date)->addDays($days->days_calculation);
-            $due_date = date('d/m/Y', strtotime(@$get_date));
-        
-            $payment_terms= $days->title;
-            
-            $dates= round ( (strtotime("now")-strtotime( $payment_terms_id->pi_date)) /(3600*24) );
-            $col=0;
-            $due_days= round ( (strtotime("now")-strtotime( $get_date)) /(3600*24) ); 
-
-            if( $due_days < 0 ){
-                $col=0;         
-            }
-            else if($due_days >=0 && $due_days <31){
-                $col=1;
-            }
-            else if($due_days >=31 &&  $due_days<=60 ){
-                $col=2;
-            }
-            else if($due_days >=61 &&  $due_days<=90){
-                $col=3;
-            }
-            else if($due_days >90){
-                $col=4;
+            $pi = DB::table('sys_purchase_invoice')->select('payment_terms', 'pi_date')->where('doc_number', $transaction_no)->first();
+            if (!$pi) {
+                return ['', '', '', '', ''];
             }
 
+            $term = DB::table('sys_payment_terms')->where('id', $pi->payment_terms)->first();
+            $invoiceDate = $pi->pi_date ?? $transaction_date;
+            $due_days = SysPaymentTerms::computePrimaryOverdueDays($invoiceDate, $term, $asOfDate);
+            $due_date = Carbon::parse($invoiceDate)->addDays(SysPaymentTerms::resolveCreditDays($term))->format('d/m/Y');
+            $col = SysPaymentTerms::legacyColFromOverdueDays($due_days);
+            $asOf = SysPaymentTerms::resolveAsOfDate($asOfDate);
+            $dates = (int) round(($asOf->timestamp - Carbon::parse($invoiceDate)->startOfDay()->timestamp) / 86400);
 
-            // if($get_date>now()){
-            //     $due_days =  now()->diffInDays($get_date);
-              
-            // } else {
-            //     $due_days =  0;
-            // }
-
-            return [$due_date,$due_days,$payment_terms,$col,$dates];
+            return [$due_date, $due_days, $term->title ?? '', $col, $dates];
         } catch (\Throwable $th) {
-            return ['','','','',''];
+            return ['', '', '', '', ''];
         }
     }
-    public static function get_due_date_invoice_opbinvoice($transaction_no,$duedate,$paymentterms)
+
+    public static function get_due_date_invoice_opbinvoice($transaction_no, $duedate, $paymentterms, $asOfDate = null)
     {
-        
         try {
-          
-            $days = DB::table('sys_payment_terms')->select('days_calculation','title')->where('title',$paymentterms)->first();
-        
-            $get_date = Carbon::parse($duedate)->addDays($days->days_calculation);
-            $due_date = date('d/m/Y', strtotime(@$get_date));
-        
-            $payment_terms= $days->title;
-            
-            $dates= round ( (strtotime("now")-strtotime( $duedate)) /(3600*24) );
-            $col=0;
-            $due_days= round ( (strtotime("now")-strtotime( $get_date)) /(3600*24) ); 
-
-            if( $due_days < 0 ){
-                $col=0;         
-            }
-            else if($due_days >=0 && $due_days <31){
-                $col=1;
-            }
-            else if($due_days >=31 &&  $due_days<=60 ){
-                $col=2;
-            }
-            else if($due_days >=61 &&  $due_days<=90){
-                $col=3;
-            }
-            else if($due_days >90){
-                $col=4;
+            $term = SysPaymentTerms::resolveByIdOrTitle($paymentterms);
+            $invoiceDate = $duedate;
+            if (!$invoiceDate) {
+                return ['', '', '', '', ''];
             }
 
+            $due_days = SysPaymentTerms::computePrimaryOverdueDays($invoiceDate, $term, $asOfDate);
+            $due_date = Carbon::parse($invoiceDate)->addDays(SysPaymentTerms::resolveCreditDays($term))->format('d/m/Y');
+            $col = SysPaymentTerms::legacyColFromOverdueDays($due_days);
+            $asOf = SysPaymentTerms::resolveAsOfDate($asOfDate);
+            $dates = (int) round(($asOf->timestamp - Carbon::parse($invoiceDate)->startOfDay()->timestamp) / 86400);
+            $title = is_array($term) ? ($term['title'] ?? $paymentterms) : ($term->title ?? $paymentterms);
 
-            // if($get_date>now()){
-            //     $due_days =  now()->diffInDays($get_date);
-              
-            // } else {
-            //     $due_days =  0;
-            // }
-
-            return [$due_date,$due_days,$payment_terms,$col,$dates];
+            return [$due_date, $due_days, $title, $col, $dates];
         } catch (\Throwable $th) {
-            return ['','','','',''];
+            return ['', '', '', '', ''];
         }
     }
 
@@ -9759,97 +10348,97 @@ SysPriceBook::insert([
         }
     }
 
-    public static function get_payable_os_by_overdue($overdue,$account_id){
+    public static function get_payable_os_by_overdue($overdue, $account_id, $asOfDate = null)
+    {
         try {
-            if($overdue == "0") { //0
-                $df = 0;
-                $dt = 100000;
-            }
-            if($overdue == "30") { //0-30
-                $df = 0;
-                $dt = 30;
-            }
-            if($overdue == "60") { //31-60
-                $df = 31;
-                $dt = 60;
-            }
-            if($overdue == "90") { //61-90
-                $df = 61;
-                $dt = 90;
-            
-            }            
-            if($overdue == "90+") { //>90
-                $df = 91;
-                $dt = 100000;              
-            }
+            $companyId = session('logged_session_data.company_id');
+            $purchaseList = DB::table('sys_purchase_invoice as pi')
+                ->select('pi.doc_number', 'pi.pi_date', 'pt.payment_schedule', 'pt.days_calculation', 'pt.title')
+                ->join('sys_payment_terms as pt', 'pt.id', 'pi.payment_terms')
+                ->where('pi.company_id', $companyId)
+                ->where('vendors', $account_id)
+                ->get();
 
-            $list = DB::table('sys_purchase_invoice as pi')->select('pi.doc_number','pi.pi_date',DB::raw('DATE_ADD(pi.pi_date, INTERVAL pt.days_calculation DAY) as due_date'),'pt.days_calculation')
-            ->join('sys_payment_terms as pt','pt.id','pi.payment_terms')
-            ->where('pi.company_id',session('logged_session_data.company_id'))
-            ->where("vendors",$account_id)->get();
+            $salesCreditList = DB::table('sys_sales_invoice as si')
+                ->select('si.doc_number', 'si.doc_date as pi_date', 'pt.payment_schedule', 'pt.days_calculation', 'pt.title')
+                ->join('sys_payment_terms as pt', 'pt.id', 'si.payment_terms')
+                ->join('sys_chartofaccounts_transaction as cat', function ($join) use ($account_id, $companyId) {
+                    $join->on('cat.transaction_no', '=', 'si.doc_number')
+                        ->where('cat.transaction_type', 'salesinvoice')
+                        ->where('cat.account_id', $account_id)
+                        ->where('cat.company_id', $companyId)
+                        ->where('cat.status', 1);
+                })
+                ->where('si.company_id', $companyId)
+                ->where('si.status', 1)
+                ->groupBy('si.doc_number', 'si.doc_date', 'pt.payment_schedule', 'pt.days_calculation', 'pt.title')
+                ->get();
 
-            $retlist[]="";
+            $list = $purchaseList->merge($salesCreditList);
 
-            if(count($list)>0){
-                foreach($list as $li){
-                    $diff = Carbon::parse($li->due_date)->diffInDays(now(), false);
-                    
-                    if($diff >= $df && $diff <= $dt){
-                        $retlist[]=$li->doc_number;
+            $retlist = [];
+
+            if (count($list) > 0) {
+                foreach ($list as $li) {
+                    $breakdown = SysPaymentTerms::buildOutstandingBreakdown($li->pi_date, 1, $li, 0, $asOfDate);
+                    if (SysPaymentTerms::invoiceMatchesOverdueFilter($breakdown['installments'], $overdue)) {
+                        $retlist[] = $li->doc_number;
                     }
-
                 }
+
                 return $retlist;
             }
+
             return [];
-            
         } catch (\Throwable $th) {
-            throw $th;
             return [];
         }
     }
 
-    public static function get_payable_os_by_ageing($ageing,$account_id){
+    public static function get_payable_os_by_ageing($ageing, $account_id, $asOfDate = null)
+    {
         try {
-            if($ageing == "0") { //0-30
-                $df = 0;
-                $dt = 30;
-            }
-            if($ageing == "30") { //31-60
-                $df = 31;
-                $dt = 60;
-            }
-            if($ageing == "60") { //61-90
-                $df = 61;
-                $dt = 90;
-            
-            }
-            if($ageing == "90+") { //>90
-                $df = 91;
-                $dt = 100000;
-            }
+            $companyId = session('logged_session_data.company_id');
+            $purchaseList = DB::table('sys_purchase_invoice as pi')
+                ->select('pi.doc_number', 'pi.pi_date', 'pt.payment_schedule', 'pt.days_calculation', 'pt.title')
+                ->join('sys_payment_terms as pt', 'pt.id', 'pi.payment_terms')
+                ->where('pi.company_id', $companyId)
+                ->where('vendors', $account_id)
+                ->get();
 
-            $list = DB::table('sys_purchase_invoice as pi')->select('pi.doc_number','pi.pi_date',DB::raw('DATE_ADD(pi.pi_date, INTERVAL pt.days_calculation DAY) as due_date'),'pt.days_calculation')
-            ->join('sys_payment_terms as pt','pt.id','pi.payment_terms')
-            ->where('pi.company_id',session('logged_session_data.company_id'))
-            ->where("vendors",$account_id)->get();
-            $retlist[]="";
+            $salesCreditList = DB::table('sys_sales_invoice as si')
+                ->select('si.doc_number', 'si.doc_date as pi_date', 'pt.payment_schedule', 'pt.days_calculation', 'pt.title')
+                ->join('sys_payment_terms as pt', 'pt.id', 'si.payment_terms')
+                ->join('sys_chartofaccounts_transaction as cat', function ($join) use ($account_id, $companyId) {
+                    $join->on('cat.transaction_no', '=', 'si.doc_number')
+                        ->where('cat.transaction_type', 'salesinvoice')
+                        ->where('cat.account_id', $account_id)
+                        ->where('cat.company_id', $companyId)
+                        ->where('cat.status', 1);
+                })
+                ->where('si.company_id', $companyId)
+                ->where('si.status', 1)
+                ->groupBy('si.doc_number', 'si.doc_date', 'pt.payment_schedule', 'pt.days_calculation', 'pt.title')
+                ->get();
 
-            if(count($list)>0){
-                foreach($list as $li){
-                    $diff = Carbon::parse($li->pi_date)->diffInDays(now(), false);
-                    
-                    if($diff+1 >= $df && $diff+1 <= $dt){
-                        $retlist[]=$li->doc_number;
+            $list = $purchaseList->merge($salesCreditList);
+
+            $retlist = [];
+
+            if (count($list) > 0) {
+                foreach ($list as $li) {
+                    $breakdown = SysPaymentTerms::buildOutstandingBreakdown($li->pi_date, 1, $li, 0, $asOfDate);
+                    if (SysPaymentTerms::invoiceMatchesAgeingFilter($breakdown['installments'], $ageing)) {
+                        $retlist[] = $li->doc_number;
                     }
-
                 }
+
                 return $retlist;
             }
-            return $list;
-            
+
+            return [];
         } catch (\Throwable $th) {
-            return $th;
+            return [];
         }
     }
     

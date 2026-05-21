@@ -213,6 +213,93 @@ class SysPaymentTerms extends Model
     }
 
     /**
+     * Days from due date to as-of date (matches legacy get_due_date_* overdue / col logic).
+     */
+    public static function computePrimaryOverdueDays($invoiceDate, $paymentTerm, $asOfDate = null)
+    {
+        $asOf = self::resolveAsOfDate($asOfDate);
+        $invDate = Carbon::parse($invoiceDate)->startOfDay();
+        $creditDays = self::resolveCreditDays($paymentTerm);
+        $dueDate = $invDate->copy()->addDays($creditDays);
+
+        return (int) round(($asOf->timestamp - $dueDate->timestamp) / 86400);
+    }
+
+    /**
+     * Legacy bucket index (1–4) from days overdue — matches get_due_date_* $col.
+     */
+    public static function legacyColFromOverdueDays($overdueDays)
+    {
+        $overdueDays = (int) $overdueDays;
+
+        if ($overdueDays < 0) {
+            return 0;
+        }
+        if ($overdueDays <= 30) {
+            return 1;
+        }
+        if ($overdueDays <= 60) {
+            return 2;
+        }
+        if ($overdueDays <= 90) {
+            return 3;
+        }
+
+        return 4;
+    }
+
+    /**
+     * Ageing buckets for OS list columns: place full outstanding in one bucket by overdue days.
+     * Uses max installment overdue when provided (matches due-column display on OS screens).
+     */
+    public static function buildOsListAgeingBuckets($invoiceDate, $outstandingBalance, $paymentTerm, $asOfDate = null, $maxOverdueDays = null)
+    {
+        $ageing = ['0_30' => 0.0, '31_60' => 0.0, '61_90' => 0.0, '90_plus' => 0.0];
+        $balance = round((float) $outstandingBalance, 2);
+
+        if (abs($balance) < 0.005) {
+            return $ageing;
+        }
+
+        $overdueDays = $maxOverdueDays !== null && $maxOverdueDays !== ''
+            ? (int) $maxOverdueDays
+            : self::computePrimaryOverdueDays($invoiceDate, $paymentTerm, $asOfDate);
+
+        self::addAmountToAgeingBuckets($ageing, $overdueDays, $balance);
+
+        return $ageing;
+    }
+
+    /**
+     * Assign an amount into ageing buckets by days overdue (matches legacy get_due_date_* col 1–4).
+     */
+    public static function addAmountToAgeingBuckets(array &$ageing, $overdueDays, $amount)
+    {
+        $amount = round((float) $amount, 2);
+        if (abs($amount) < 0.005) {
+            return;
+        }
+
+        $overdueDays = (int) $overdueDays;
+
+        // Not yet due: legacy col=0 → current bucket (0-30)
+        if ($overdueDays < 0) {
+            $ageing['0_30'] += $amount;
+            return;
+        }
+
+        if ($overdueDays <= 30) {
+            $ageing['0_30'] += $amount;
+        } elseif ($overdueDays <= 60) {
+            $ageing['31_60'] += $amount;
+        } elseif ($overdueDays <= 90) {
+            $ageing['61_90'] += $amount;
+        } else {
+            $ageing['90_plus'] += $amount;
+        }
+    }
+
+    /**
      * Build per-installment due dates, amounts, overdue days, ageing buckets, and finance cost.
      */
     public static function buildOutstandingBreakdown($invoiceDate, $outstandingBalance, $paymentTerm, $financeRatePercent = 0, $asOfDate = null)
@@ -248,17 +335,15 @@ class SysPaymentTerms extends Model
             $overdueDays = (int) round(($asOf->timestamp - $dueDate->timestamp) / 86400);
 
             $bucketKey = null;
-            if ($overdueDays >= 0 && $overdueDays <= 30) {
-                $ageing['0_30'] += $amount;
+            if ($overdueDays < 0) {
                 $bucketKey = '0_30';
-            } elseif ($overdueDays >= 31 && $overdueDays <= 60) {
-                $ageing['31_60'] += $amount;
+            } elseif ($overdueDays <= 30) {
+                $bucketKey = '0_30';
+            } elseif ($overdueDays <= 60) {
                 $bucketKey = '31_60';
-            } elseif ($overdueDays >= 61 && $overdueDays <= 90) {
-                $ageing['61_90'] += $amount;
+            } elseif ($overdueDays <= 90) {
                 $bucketKey = '61_90';
-            } elseif ($overdueDays > 90) {
-                $ageing['90_plus'] += $amount;
+            } else {
                 $bucketKey = '90_plus';
             }
 
@@ -282,6 +367,18 @@ class SysPaymentTerms extends Model
                 'finance_cost' => $financeCost,
                 'popover_content_attr' => htmlspecialchars($popoverHtml, ENT_QUOTES, 'UTF-8'),
             ];
+
+            self::addAmountToAgeingBuckets($ageing, $overdueDays, $amount);
+        }
+
+        $allocated = round(
+            (float) ($ageing['0_30'] + $ageing['31_60'] + $ageing['61_90'] + $ageing['90_plus']),
+            2
+        );
+        $remainder = round($balance - $allocated, 2);
+        if (abs($remainder) >= 0.01) {
+            $remainderOverdue = $maxOverdue ?? self::computePrimaryOverdueDays($invoiceDate, $paymentTerm, $asOfDate);
+            self::addAmountToAgeingBuckets($ageing, $remainderOverdue, $remainder);
         }
 
         $financePopoverHtml = self::buildFinanceCostPopoverHtml($installments, $totalFinance);
