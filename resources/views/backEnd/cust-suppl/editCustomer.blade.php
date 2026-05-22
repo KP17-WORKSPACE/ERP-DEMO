@@ -30,6 +30,40 @@
                 <i class="ico icon-outline-bookmark-opened text-warning"></i> Update
             </button>
 
+             <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ico icon-outline-hamburger-menu"></i>
+            </button>
+            <ul class="dropdown-menu" style="">
+
+
+
+
+            @if ($editData->supplier_id != null && $editData->supplier_id != '')
+                <li>
+                    <a class="dropdown-item d-flex align-items-center text-dark copy-onboard-url"
+                        href="{{ url('suppliers/' . $editData->supplier_id) }}">
+                        <i class="ico icon-outline-document text-success  title-15 me-2"></i>
+                        View Supplier
+                    </a>
+                </li>
+                
+            @else
+                <li>
+                    <a class="dropdown-item d-flex align-items-center text-dark copy-onboard-url"
+                        href="{{ url('suppliers?supplier_action=createsupplier&customer_id=' . $editData->id) }}">
+                        <i class="ico icon-outline-add-square text-success  title-15 me-2"></i>
+                        Create Supplier
+                    </a>
+                </li>
+            @endif
+
+
+
+            </ul>
+        </div>
+
         </div>
     </div>
     <div class="card mb-3">

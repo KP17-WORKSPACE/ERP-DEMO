@@ -30,6 +30,40 @@
                 <i class="ico icon-outline-bookmark-opened text-warning"></i> Update
             </button>
 
+
+             <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ico icon-outline-hamburger-menu"></i>
+            </button>
+            <ul class="dropdown-menu" style="">
+
+
+
+
+            @if ($editData->customer_id != null && $editData->customer_id != '')
+                <li>
+                    <a class="dropdown-item d-flex align-items-center text-dark copy-onboard-url"
+                        href="{{ url('customers/' . $editData->customer_id) }}">
+                        <i class="ico icon-outline-document text-success  title-15 me-2"></i>
+                        View Customer
+                    </a>
+                </li>
+                
+            @else
+                <li>
+                    <a class="dropdown-item d-flex align-items-center text-dark copy-onboard-url"
+                        href="{{ url('customers?customer_action=createcustomer&supplier_id=' . $editData->id) }}">
+                        <i class="ico icon-outline-add-square text-success  title-15 me-2"></i>
+                        Create Customer
+                    </a>
+                </li>
+            @endif
+
+
+
+            </ul>
+        </div>
             
 
         </div>
