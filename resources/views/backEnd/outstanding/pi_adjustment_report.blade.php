@@ -369,7 +369,7 @@ function check_total(id, amount) {
                     <thead>
                         <tr>
                             <th class="border">Doc Date</th>
-                            <th class="border">Receipt No</th>
+                            <th class="border">Payment No</th>
                             <th class="border text-end">Amount</th>
                             <th class="border">Remarks</th>
                         </tr>
@@ -382,17 +382,17 @@ function check_total(id, amount) {
                             @php
                                 $docNumber = $p->doc_number;
                             @endphp
-                            @if(Illuminate\Support\Str::contains($docNumber, ['BR', 'CR']))
+                            @if(Illuminate\Support\Str::contains($docNumber, ['BP', 'CP']))
                                 <td class="border">
-                                    <a href="{{ url('get-url-receipt/' . $docNumber) }}" target="_blank">{{ $docNumber }}</a>
+                                    <a href="{{ url('get-url-payment/' . $docNumber) }}" target="_blank">{{ $docNumber }}</a>
                                 </td>
                             @elseif(Illuminate\Support\Str::contains($docNumber, ['JV']))
                                 <td class="border">
                                     <a href="{{ url('get-url-journalvoucher/' . $docNumber) }}" target="_blank">{{ $docNumber }}</a>
                                 </td>
-                            @elseif(Illuminate\Support\Str::contains($docNumber, ['SR']))
+                            @elseif(Illuminate\Support\Str::contains($docNumber, ['PR']))
                                 <td class="border">
-                                    <a href="{{ url('get-url-sales-return/' . $docNumber) }}" target="_blank">{{ $docNumber }}</a>
+                                    <a href="{{ url('get-url-purchase-return/' . $docNumber) }}" target="_blank">{{ $docNumber }}</a>
                                 </td>
                             @else
                             <td class="border">
@@ -444,11 +444,11 @@ function check_total(id, amount) {
                     <thead>
                         <tr>
                             <th class="border">Doc Date</th>
-                            <th class="border">Receipt No</th>
+                            <th class="border">Payment No</th>
                             <th class="border text-end">Amount</th>
                             <th class="border">Cheque Date</th>
                             <th class="border">Cheque No</th>
-                            <th class="border">Receipt Date</th>
+                            <th class="border">Payment Date</th>
                             <th class="border">Remarks</th>
                         </tr>
                     </thead>:
@@ -475,11 +475,11 @@ function check_total(id, amount) {
                     <thead>
                         <tr>
                             <th class="border">Doc Date</th>
-                            <th class="border">Receipt No</th>
+                            <th class="border">Payment No</th>
                             <th class="border text-end">Amount</th>
                             <th class="border">Cheque Date</th>
                             <th class="border">Cheque No</th>
-                            <th class="border">Receipt Date</th>
+                            <th class="border">Payment Date</th>
                             <th class="border">Invoice Adjusted</th>
                             <th class="border text-end">Adjusted</th>
                             <th class="border">Remarks</th>
