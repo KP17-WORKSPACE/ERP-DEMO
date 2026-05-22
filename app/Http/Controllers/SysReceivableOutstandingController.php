@@ -371,6 +371,7 @@ class SysReceivableOutstandingController extends Controller
                 $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv($account_id, $com_id);
                 $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc($account_id, $com_id);
                 $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc($account_id, $com_id);
+                $data_all = $this->appendUnadjustedOnlyReceivableAccounts($data_all, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $till_date);
 
 
 
@@ -1392,6 +1393,42 @@ class SysReceivableOutstandingController extends Controller
             DB::raw("{$accountIdExpression} as account_id"),
             DB::raw('MAX(transaction_type) as transaction_type'),
         ];
+    }
+
+    private function appendUnadjustedOnlyReceivableAccounts($dataAll, $accounts, $listOfUnadjusted, $listOfUnadjustedJvToJv, $tillDate)
+    {
+        $renderedAccountIds = collect($dataAll)
+            ->map(function ($rows) {
+                $rows = collect($rows);
+                return optional($rows->first())->account_id;
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        $unadjustedAccountIds = collect($listOfUnadjusted)->pluck('account_id')
+            ->merge(collect($listOfUnadjustedJvToJv)->pluck('account_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $missingAccounts = collect($accounts)
+            ->whereIn('id', $unadjustedAccountIds)
+            ->whereNotIn('id', $renderedAccountIds);
+
+        foreach ($missingAccounts as $account) {
+            $dataAll[] = collect([(object) [
+                'transaction_date' => $tillDate ?: date('Y-m-d'),
+                'transaction_id' => 0,
+                'transaction_no' => '__unadjusted_only_' . $account->id,
+                'debit_amount' => 0,
+                'credit_amount' => 0,
+                'account_id' => $account->id,
+                'transaction_type' => 'unadjusted_placeholder',
+            ]]);
+        }
+
+        return $dataAll;
     }
 
     private function loadOpbInvoiceDetailMap($companyId)

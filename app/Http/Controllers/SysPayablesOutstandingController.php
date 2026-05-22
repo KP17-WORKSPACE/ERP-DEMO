@@ -317,11 +317,12 @@ class SysPayablesOutstandingController extends Controller
                 ->groupby('doc_date','doc_number','payment_mode','cat.account_id','cat.debit_amount','cat.credit_amount','cheque_date','cheque_number','payment_date','cat.remarks')->get();*/
 
                 // $account_id = [$request->account_id];
-                $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($account_id, $com_id);
+                $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($account_id, $com_id, $till_date);
                 $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($account_id, $com_id);
                 $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($account_id, $com_id);
                 $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($account_id, $com_id);
                 $opb_balance_amount = SysHelper::get_supplier_opening_balance($account_id, date('Y-m-d'), $com_id);
+                $data_all = $this->appendUnadjustedOnlyPayableAccounts($data_all, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $till_date);
 
 
                 if ($request->amount != "") {
@@ -922,6 +923,42 @@ class SysPayablesOutstandingController extends Controller
             DB::raw("{$accountIdExpression} as account_id"),
             DB::raw('MAX(transaction_type) as transaction_type'),
         ];
+    }
+
+    private function appendUnadjustedOnlyPayableAccounts($dataAll, $accounts, $listOfUnadjusted, $listOfUnadjustedJvToJv, $tillDate)
+    {
+        $renderedAccountIds = collect($dataAll)
+            ->map(function ($rows) {
+                $rows = collect($rows);
+                return optional($rows->first())->account_id;
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        $unadjustedAccountIds = collect($listOfUnadjusted)->pluck('account_id')
+            ->merge(collect($listOfUnadjustedJvToJv)->pluck('account_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $missingAccounts = collect($accounts)
+            ->whereIn('id', $unadjustedAccountIds)
+            ->whereNotIn('id', $renderedAccountIds);
+
+        foreach ($missingAccounts as $account) {
+            $dataAll[] = collect([(object) [
+                'transaction_date' => $tillDate ?: date('Y-m-d'),
+                'transaction_id' => 0,
+                'transaction_no' => '__unadjusted_only_' . $account->id,
+                'debit_amount' => 0,
+                'credit_amount' => 0,
+                'account_id' => $account->id,
+                'transaction_type' => 'unadjusted_placeholder',
+            ]]);
+        }
+
+        return $dataAll;
     }
 
     private function buildSupplierAgeingDataQuery($account, $companyIds, $comId, $tillDate)

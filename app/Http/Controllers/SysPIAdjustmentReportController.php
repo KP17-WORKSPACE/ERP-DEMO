@@ -56,7 +56,7 @@ class SysPIAdjustmentReportController extends Controller
             $company_id = $r[0];
             $data = [];
             $data_all = [];
-            $accounts = SysHelper::get_customer_list($company_id);
+            $accounts = SysHelper::get_supplier_list($company_id);
             $sales_person_list = SysHelper::get_sales_persons();
             $com_id = session('logged_session_data.company_id');
             $account_id = "";
@@ -87,6 +87,14 @@ if(!$_POST){
     $purchase_invoice = $this->applyPayableOutstandingValues($purchase_invoice, $company_id, $as_of_date);
     
     $sys_payment_terms_list = DB::table('sys_payment_terms')->get();
+    $candidateAccountIds = $accounts->pluck('id');
+
+    $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($candidateAccountIds,$company_id,$as_of_date);
+    $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($candidateAccountIds,$company_id);
+    $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($candidateAccountIds,$company_id);
+    $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($candidateAccountIds,$company_id);
+    $opb_balance_amount = SysHelper::get_supplier_opening_balance($candidateAccountIds,$as_of_date,$company_id);
+    $purchase_invoice = $this->appendUnadjustedOnlyPurchaseInvoiceRows($purchase_invoice, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $as_of_date);
 
     $sys_adjustment_list = SysPaymentAdjustments::select(
         'bi_doc_number',
@@ -125,12 +133,6 @@ db::raw('IFNULL(max(s.doc_date), "") as s_doc_date')
 })
     ->values();   
 
-    
-        $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($purchase_invoice->pluck('vendors'),$company_id,$as_of_date);
-        $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($purchase_invoice->pluck('vendors'),$company_id);
-        $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($purchase_invoice->pluck('vendors'),$company_id);
-        $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($purchase_invoice->pluck('vendors'),$company_id);        
-        $opb_balance_amount = SysHelper::get_supplier_opening_balance($purchase_invoice->pluck('vendors'),$as_of_date,$company_id);
         $viewSupport = $this->loadPiAdjustmentViewData();
         extract($viewSupport);
 
@@ -211,6 +213,14 @@ return view('backEnd.outstanding.pi_adjustment_report', compact('purchase_invoic
                 $purchase_invoice = $this->applyPayableOutstandingValues($purchase_invoice, $company_id, $as_of_date);
                 
                 $sys_payment_terms_list = DB::table('sys_payment_terms')->get();
+                $candidateAccountIds = $account_id != "" ? collect([$account_id]) : $accounts->pluck('id');
+
+                $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($candidateAccountIds,$company_id,$as_of_date);
+                $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($candidateAccountIds,$company_id);
+                $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($candidateAccountIds,$company_id);
+                $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($candidateAccountIds,$company_id);
+                $opb_balance_amount = SysHelper::get_supplier_opening_balance($candidateAccountIds,$as_of_date,$company_id);
+                $purchase_invoice = $this->appendUnadjustedOnlyPurchaseInvoiceRows($purchase_invoice, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $as_of_date);
 
         $sys_adjustment_list = SysPaymentAdjustments::select(
         'bi_doc_number',
@@ -249,12 +259,6 @@ db::raw('IFNULL(max(s.doc_date), "") as s_doc_date')
 })
     ->values();   
 
-    
-        $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted($purchase_invoice->pluck('vendors'),$company_id,$as_of_date);
-        $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($purchase_invoice->pluck('vendors'),$company_id);
-        $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($purchase_invoice->pluck('vendors'),$company_id);
-        $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($purchase_invoice->pluck('vendors'),$company_id);        
-        $opb_balance_amount = SysHelper::get_supplier_opening_balance($purchase_invoice->pluck('vendors'),$as_of_date,$company_id);
         $viewSupport = $this->loadPiAdjustmentViewData();
         extract($viewSupport);
 
@@ -293,6 +297,52 @@ return view('backEnd.outstanding.pi_adjustment_report', compact('purchase_invoic
     private function piAdjustmentMapKey($accountId, $docNo)
     {
         return (string) $accountId . '|' . (string) $docNo;
+    }
+
+    private function appendUnadjustedOnlyPurchaseInvoiceRows($purchaseInvoice, $accounts, $listOfUnadjusted, $listOfUnadjustedJvToJv, $asOfDate)
+    {
+        $purchaseInvoice = collect($purchaseInvoice);
+        $renderedAccountIds = $purchaseInvoice->pluck('vendors')->filter()->unique()->values();
+        $unadjustedAccountIds = collect($listOfUnadjusted)->pluck('account_id')
+            ->merge(collect($listOfUnadjustedJvToJv)->pluck('account_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $missingAccounts = collect($accounts)
+            ->whereIn('id', $unadjustedAccountIds)
+            ->whereNotIn('id', $renderedAccountIds);
+
+        foreach ($missingAccounts as $account) {
+            $purchaseInvoice->push((object) [
+                'id' => 0,
+                'doc_number' => '__unadjusted_only_' . $account->id,
+                'doc_date' => $asOfDate ?: date('Y-m-d'),
+                'lpo_number' => '',
+                'deal_id' => '',
+                'amount' => 0,
+                'imported_paid' => 0,
+                'salesman_name' => '',
+                'payment_terms' => null,
+                'vendors' => $account->id,
+                'account_code' => $account->account_code,
+                'account_name' => $account->account_name,
+                'account_id' => $account->id,
+                'transaction_type' => 'unadjusted_placeholder',
+                'due_date' => null,
+                'imported_sales_person' => '',
+                'payable_credit_amount' => 0,
+                'payable_debit_amount' => 0,
+                'payable_adjustments' => 0,
+                'payable_balance' => 0,
+                'payable_ageing_balance' => 0,
+                'payable_visible' => false,
+            ]);
+        }
+
+        return $purchaseInvoice->sortBy(function ($row) {
+            return strtolower((string) ($row->account_name ?? '')) . '|' . (string) ($row->doc_date ?? '');
+        })->values();
     }
 
     private function buildPayableAdjustmentTransactions($companyId, $asOfDate, $accountId = '', $fromDate = '', $toDate = '')

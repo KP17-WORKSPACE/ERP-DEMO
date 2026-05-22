@@ -105,6 +105,14 @@ if(!$_POST){
     $as_of_date = $this->siAdjustmentAsOfDate($till_date);
     $sales_invoice = $this->applyReceivableOutstandingValues($sales_invoice, $company_id, $as_of_date);
     $sys_payment_terms_list = DB::table('sys_payment_terms')->get();
+    $candidateAccountIds = $accounts->pluck('id');
+
+    $list_of_unadjusted = SysHelper::get_list_of_unadjusted($candidateAccountIds,$company_id,$as_of_date);
+    $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv($candidateAccountIds,$company_id);
+    $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc($candidateAccountIds,$company_id);
+    $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc($candidateAccountIds,$company_id);
+    $opb_balance_amount = SysHelper::get_customer_opening_balance($candidateAccountIds,$as_of_date,$company_id);
+    $sales_invoice = $this->appendUnadjustedOnlySalesInvoiceRows($sales_invoice, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $as_of_date);
 
     $sys_adjustment_list = SysReceiptAdjustments::select(
         'bi_doc_number',
@@ -143,12 +151,6 @@ db::raw('IFNULL(max(s.doc_date), "") as s_doc_date')
 })
     ->values();   
 
-    
-        $list_of_unadjusted = SysHelper::get_list_of_unadjusted($sales_invoice->pluck('customer'),$company_id,$as_of_date);
-        $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv($sales_invoice->pluck('customer'),$company_id);
-        $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc($sales_invoice->pluck('customer'),$company_id);
-        $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc($sales_invoice->pluck('customer'),$company_id);        
-        $opb_balance_amount = SysHelper::get_customer_opening_balance($sales_invoice->pluck('customer'),$as_of_date,$company_id);
         $viewSupport = $this->loadSiAdjustmentViewData();
         extract($viewSupport);
 
@@ -260,6 +262,14 @@ $sales_invoice = $query->where('sys_sales_invoice.status', 1)
     $as_of_date = $this->siAdjustmentAsOfDate($to_date);
     $sales_invoice = $this->applyReceivableOutstandingValues($sales_invoice, $company_id, $as_of_date);
     $sys_payment_terms_list = DB::table('sys_payment_terms')->get();
+    $candidateAccountIds = $account_id != "" ? collect([$account_id]) : $accounts->pluck('id');
+
+    $list_of_unadjusted = SysHelper::get_list_of_unadjusted($candidateAccountIds,$company_id,$as_of_date);
+    $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv($candidateAccountIds,$company_id);
+    $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc($candidateAccountIds,$company_id);
+    $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc($candidateAccountIds,$company_id);
+    $opb_balance_amount = SysHelper::get_customer_opening_balance($candidateAccountIds,$as_of_date,$company_id);
+    $sales_invoice = $this->appendUnadjustedOnlySalesInvoiceRows($sales_invoice, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $as_of_date);
 
     $sys_adjustment_list = SysReceiptAdjustments::select(
         'bi_doc_number',
@@ -298,12 +308,6 @@ db::raw('IFNULL(max(s.doc_date), "") as s_doc_date')
 })
     ->values();   
 
-    
-        $list_of_unadjusted = SysHelper::get_list_of_unadjusted($sales_invoice->pluck('customer'),$company_id,$as_of_date);
-        $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv($sales_invoice->pluck('customer'),$company_id);
-        $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc($sales_invoice->pluck('customer'),$company_id);
-        $list_of_adjusted_pdc = SysHelper::get_list_of_adjusted_pdc($sales_invoice->pluck('customer'),$company_id);        
-        $opb_balance_amount = SysHelper::get_customer_opening_balance($sales_invoice->pluck('customer'),$as_of_date,$company_id);
         $viewSupport = $this->loadSiAdjustmentViewData();
         extract($viewSupport);
 
@@ -342,6 +346,49 @@ return view('backEnd.outstanding.si_adjustment_report', compact('sales_invoice',
     private function siAdjustmentMapKey($accountId, $docNo)
     {
         return (string) $accountId . '|' . (string) $docNo;
+    }
+
+    private function appendUnadjustedOnlySalesInvoiceRows($salesInvoice, $accounts, $listOfUnadjusted, $listOfUnadjustedJvToJv, $asOfDate)
+    {
+        $salesInvoice = collect($salesInvoice);
+        $renderedAccountIds = $salesInvoice->pluck('customer')->filter()->unique()->values();
+        $unadjustedAccountIds = collect($listOfUnadjusted)->pluck('account_id')
+            ->merge(collect($listOfUnadjustedJvToJv)->pluck('account_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $missingAccounts = collect($accounts)
+            ->whereIn('id', $unadjustedAccountIds)
+            ->whereNotIn('id', $renderedAccountIds);
+
+        foreach ($missingAccounts as $account) {
+            $salesInvoice->push((object) [
+                'id' => 0,
+                'doc_number' => '__unadjusted_only_' . $account->id,
+                'doc_date' => $asOfDate ?: date('Y-m-d'),
+                'lpo_number' => '',
+                'deal_id' => '',
+                'amount' => 0,
+                'sales_man' => null,
+                'payment_terms' => null,
+                'customer' => $account->id,
+                'account_code' => $account->account_code,
+                'account_name' => $account->account_name,
+                'account_id' => $account->id,
+                'transaction_type' => 'unadjusted_placeholder',
+                'receivable_debit_amount' => 0,
+                'receivable_credit_amount' => 0,
+                'receivable_adjustments' => 0,
+                'receivable_balance' => 0,
+                'receivable_ageing_balance' => 0,
+                'receivable_visible' => false,
+            ]);
+        }
+
+        return $salesInvoice->sortBy(function ($row) {
+            return strtolower((string) ($row->account_name ?? '')) . '|' . (string) ($row->doc_date ?? '');
+        })->values();
     }
 
     private function applyReceivableOutstandingValues($salesInvoice, $companyId, $asOfDate)
