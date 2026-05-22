@@ -904,6 +904,9 @@ function check_total(id, amount) {
                          $k=0;
                           $row_count_1 = 0;  // count rows for this account
                          foreach ($data as $dt){
+                            if (($dt->transaction_type ?? '') == 'unadjusted_placeholder') {
+                                continue;
+                            }
                             if (isset($dt->transaction_type) && $dt->transaction_type == 'opbinvoice') {
                                 $opbFilterDet = $opbinvoice_map->get($dt->transaction_no);
                                 $DueData = @App\SysHelper::get_due_date_invoice_opbinvoice(
@@ -973,10 +976,14 @@ function check_total(id, amount) {
                         $grand_total_balance=0;
                         $gtot1=0;$gtot2=0;$gtot3=0;$gtot4=0;
                         $gtot_finance=0;
+                        $payment = collect();
+                        $realData = collect($data)->reject(function ($row) {
+                            return ($row->transaction_type ?? '') == 'unadjusted_placeholder';
+                        })->values();
                         @endphp
-                        @if (count($data)>0)
+                        @if (count($realData)>0)
                         @php $sum_b=0; @endphp
-                        @foreach ($data as $dt)
+                        @foreach ($realData as $dt)
                         
                         @php
                         $adjustments = 0; $receipt_date=''; $doc_number=''; $cheque_number=''; $bank_name=''; $bi_amount=0; $bi_amount2=0; $bi_amount3=0; $bi_amount4=0; $paid=0;
@@ -1276,7 +1283,7 @@ function check_total(id, amount) {
                             
                         @endforeach
                         @endif
-                    @if (count($data) > 0)
+                    @if (count($realData) > 0)
                     <tr>
                         <td colspan="6"></td>
                         <td class="text-end"><b><?php echo @App\SysHelper::com_curr_format($grand_credit_amount,2,'.',',') ?></b></td>
