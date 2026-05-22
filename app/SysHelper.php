@@ -8684,14 +8684,109 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
 //payable outatsnding start
 
-public static function get_list_of_payable_unadjusted($account_ids,$company,$till_date = null)
+    /**
+     * Same total as payableoutstanding.blade.php footer "Amount" for invoice rows.
+     */
+    protected static function sumPayableOutstandingInvoiceAmountTotal($accountId, $companyId, $tillDate = null)
+    {
+        $till = $tillDate ? (self::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+
+        $rows = DB::table('sys_chartofaccounts_transaction')
+            ->select(
+                'transaction_no',
+                'transaction_type',
+                DB::raw('SUM(debit_amount) as debit_amount'),
+                DB::raw('SUM(credit_amount) as credit_amount')
+            )
+            ->where('account_id', $accountId)
+            ->where('company_id', $companyId)
+            ->where('status', 1)
+            ->whereIn('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice'])
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
+            ->groupBy(
+                'transaction_date',
+                'transaction_id',
+                'transaction_no',
+                'transaction_type',
+                DB::raw("CASE WHEN transaction_type = 'salesinvoice' THEN id ELSE 0 END")
+            )
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return 0.0;
+        }
+
+        $total = 0.0;
+        foreach ($rows as $dt) {
+            $credit = (float) ($dt->credit_amount ?? 0);
+            $debit = (float) ($dt->debit_amount ?? 0);
+            if ($credit > 0) {
+                $total += $credit;
+            }
+            if ($debit > 0) {
+                $total -= $debit;
+            }
+        }
+
+        return $total;
+    }
+
+    /**
+     * Split supplier OPB-{id} into separate debit and credit unadjusted lines.
+     */
+    protected static function expand_payable_opb_unadjusted_rows($rows, array $invoiceAmountTotalsByAccount = [])
+    {
+        $out = collect();
+        foreach ($rows as $r) {
+            $docNo = $r->doc_number ?? '';
+            // Suppliers are identified by subgroup2=Suppliers elsewhere; chartofaccounts.group is not consistent.
+            // Treat any OPB-{n} openingbalance as expandable in payable context.
+            $isPayableOpb = ($r->transaction_type ?? '') === 'openingbalance'
+                && preg_match('/^OPB-\d+$/', $docNo);
+
+            if (!$isPayableOpb) {
+                $out->push($r);
+                continue;
+            }
+
+            $invNet = (float) ($invoiceAmountTotalsByAccount[$r->account_id] ?? 0);
+            $adj = (float) ($r->adj_amount ?? 0);
+            $creditAmt = (float) ($r->credit_amount ?? 0);
+            $debitAmt = (float) ($r->debit_amount ?? 0);
+
+            if ($debitAmt > 0) {
+                $debitRow = (object) (array) $r;
+                $debitRow->amount = -$debitAmt;
+                $debitRow->adj_amount = 0;
+                $debitRow->remarks = 'Debit amount : ' . self::com_curr_format($debitAmt, 2, '.', ',');
+                $out->push($debitRow);
+            }
+
+            if ($creditAmt > 0) {
+                $netCredit = $creditAmt - $invNet;
+                if ($netCredit > $adj + 0.0001) {
+                    $creditRow = (object) (array) $r;
+                    $creditRow->amount = $netCredit;
+                    $creditRow->adj_amount = $adj;
+                    $creditRow->remarks = 'Credit amount : ' . self::com_curr_format($creditAmt, 2, '.', ',')
+                        . ' (Invoices amount : ' . self::com_curr_format($invNet, 2, '.', ',') . ')';
+                    $out->push($creditRow);
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    public static function get_list_of_payable_unadjusted($account_ids,$company,$till_date = null)
     {
         try {           
                 $till = $till_date ? (self::normalizeToYmd($till_date) ?: $till_date) : date('Y-m-d');
                 $removed_payment = db::table('sys_payment_adjustments_jv')->where('company_id',$company)->where('status',1)->pluck('payment_no');
 
                 $unadjested_payment = DB::table('sys_chartofaccounts_transaction as t')->select('t.account_id','c.account_name',
-                    't.transaction_no as doc_number','t.transaction_date as doc_date','t.remarks',DB::raw('t.debit_amount-t.credit_amount AS amount'),
+                    't.transaction_no as doc_number','t.transaction_date as doc_date','t.remarks','t.transaction_type',
+                    't.debit_amount','t.credit_amount','c.group as account_group',DB::raw('t.debit_amount-t.credit_amount AS amount'),
                     DB::raw('COALESCE(SUM(ra.bi_paid), 0) AS adj_amount'))
                 ->leftJoin('sys_chartofaccounts as c', 'c.id', '=', 't.account_id')
                 ->leftJoin('sys_payment_adjustments as ra', function ($join) {
@@ -8710,11 +8805,22 @@ public static function get_list_of_payable_unadjusted($account_ids,$company,$til
                         ->orWhereNotIn('sys_payment.payment_through', [3]);
                 })
                 ->whereNotIn('t.transaction_no', $removed_payment)
-                ->groupBy('t.account_id','t.transaction_no','t.transaction_date','t.remarks',DB::raw('t.debit_amount-t.credit_amount'))
-                ->havingRaw('amount > COALESCE(SUM(ra.bi_paid), 0)')
+                ->groupBy('t.account_id','t.transaction_no','t.transaction_date','t.remarks','t.debit_amount','t.credit_amount','t.transaction_type','c.group')
+                ->havingRaw('(
+                    (t.transaction_type = \'openingbalance\' AND t.transaction_no REGEXP \'^OPB-[0-9]+$\' AND (IFNULL(t.credit_amount,0) > 0 OR IFNULL(t.debit_amount,0) > 0))
+                    OR
+                    (NOT (t.transaction_type = \'openingbalance\' AND t.transaction_no REGEXP \'^OPB-[0-9]+$\') AND (t.debit_amount - t.credit_amount) > COALESCE(SUM(ra.bi_paid), 0))
+                )')
                 ->orderby('t.transaction_date','asc')
                 ->get();
-                return $unadjested_payment;
+
+                $invoiceAmountTotalsByAccount = [];
+                $accountIds = collect($account_ids)->merge($unadjested_payment->pluck('account_id'))->unique()->filter();
+                foreach ($accountIds as $accountId) {
+                    $invoiceAmountTotalsByAccount[$accountId] = self::sumPayableOutstandingInvoiceAmountTotal($accountId, $company, $till_date);
+                }
+
+                return self::expand_payable_opb_unadjusted_rows($unadjested_payment, $invoiceAmountTotalsByAccount);
 
         } catch (\Throwable $th) {
             return $th;
