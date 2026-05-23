@@ -389,34 +389,43 @@
                                     <input type="text" id="act_srn_adj_amount" value="{{ $srn_adj_amount }}" hidden/>
                                     <input type="text" id="srn_adj_amount" value="{{ $srn_adj_amount }}" hidden />
 
-                                    <table class="table table-hover form-item-table" cellspacing="0" width="100%">
+                                    <table class="table table-hover form-item-table" cellspacing="0" width="100%" id="table_adjestment">
                                         <thead>
                                             <tr>
-                                                <th style="width:100px;">@lang('Doc No')</th>
-                                                <th style="width:100px;">@lang('Doc Date')</th>
-                                                <th style="width:100px;">@lang('LPO NO')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
+                                                <th style="width:120px;" class="text-center">@lang('Deal ID')</th>
                                                 <th style="width:100px;" class="text-end">@lang('Total')</th>
-                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
                                                 <th style="width:100px;" class="text-end">@lang('Paid')</th>
-                                                <th style="width:200px;" class="text-center">@lang('Narration')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:200px;" class="text-start">@lang('Narration')</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @php $i=0; @endphp
+                                            @php
+                                                $i=0;
+                                                $viewDataAdjustments = \App\SysSalesReturnAdjestment::where('srn_no', $sr->doc_number)->where('status', 1)->get();
+                                            @endphp
                                             @if (count($srn_adjestment)>0)
                                                 @foreach ($srn_adjestment as $dt)
                                                     @php
+                                                        $current_doc_adjustment = $viewDataAdjustments->where('siv_no', $dt->doc_number)->sum('paid_amount');
                                                         $paid_amount = empty($dt->total_paid_amount) ? 0 : $dt->total_paid_amount;
-                                                        $balance_amount = abs($dt->total_amount - $paid_amount);
+                                                        $balance_amount = max($dt->total_amount - $paid_amount, 0);
+                                                        $previous_paid_amount = max($paid_amount - $current_doc_adjustment, 0);
                                                     @endphp
-                                                    @if($balance_amount > 0)
-                                                        <tr>
-                                                            <td style="width:100px;"><input type="text" class="form-control" name="adj_siv_no[]" id="adj_siv_no_{{ $i }}" value="{{ $dt->doc_number }}" readonly /></td>
-                                                            <td style="width:100px;"><input type="text" class="form-control" name="adj_doc_date[]" id="adj_doc_date_{{ $i }}" value="{{ date('d/m/Y', strtotime($dt->doc_date)) }}" readonly /></td>
-                                                            <td style="width:100px;"><input type="text" class="form-control" name="lpo_number[]" id="lpo_number_{{ $i }}" value="{{ $dt->lpo_number }}" readonly /></td>
-                                                            <td style="width:100px;"><input type="text" class="form-control text-end" name="adj_total[]" id="adj_total_{{ $i }}" value="{{ $dt->total_amount }}" readonly /></td>
-                                                            <td style="width:100px;"><input type="text" class="form-control text-end" name="adj_balance[]" id="adj_balance_{{ $i }}" value="{{ $balance_amount }}" readonly /></td>
-                                                            <td style="width:100px;"><input type="text" class="form-control text-end class_adj_paid" name="adj_paid[]" id="adj_paid_{{ $i }}" value="" onchange="get_set_amount({{ $i }})" onclick="set_adjestment({{ $i }})" /></td>
+                                                    @if($balance_amount > 0 || $current_doc_adjustment > 0)
+                                                        <tr class="js-sr-adj-row" data-row="{{ $i }}">
+                                                            <td style="width:100px;" class="text-center">{{ $dt->doc_number }}<input type="hidden" name="adj_siv_no[]" id="adj_siv_no_{{ $i }}" value="{{ $dt->doc_number }}" readonly /></td>
+                                                            <td style="width:100px;" class="text-center">{{ @App\SysHelper::normalizeToDmy($dt->doc_date) }}<input type="hidden" name="adj_doc_date[]" id="adj_doc_date_{{ $i }}" value="{{ @App\SysHelper::normalizeToDmy($dt->doc_date) }}" readonly /></td>
+                                                            <td style="width:100px;" class="text-center">{{ $dt->lpo_number }}<input type="hidden" name="lpo_number[]" id="lpo_number_{{ $i }}" value="{{ $dt->lpo_number }}" readonly /></td>
+                                                            <td style="width:120px;" class="text-center">{{ empty($dt->deal_id) ? '' : App\SysHelper::get_code_from_dealid($dt->deal_id) }}<input type="hidden" id="deal_id_{{ $i }}" value="{{ empty($dt->deal_id) ? '' : App\SysHelper::get_code_from_dealid($dt->deal_id) }}" readonly /></td>
+                                                            <td style="width:100px;" class="text-end">{{ @App\SysHelper::com_curr_format($dt->total_amount,2,'.',',') }}<input type="hidden" name="adj_total[]" id="adj_total_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($dt->total_amount,2,'.',',') }}" readonly /></td>
+                                                            <td style="width:100px;" class="text-end">{{ @App\SysHelper::com_curr_format($previous_paid_amount,2,'.',',') }}<input type="hidden" class="js-sr-adj-previous-paid" id="adj_previous_paid_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($previous_paid_amount,2,'.',',') }}" readonly /></td>
+                                                            <td style="width:100px;" class="text-end"><span id="adj_balance_display_{{ $i }}">{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}</span><input type="hidden" name="adj_balance[]" id="adj_balance_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}" data-actual-balance="{{ $balance_amount }}" readonly /></td>
+                                                            <td style="width:100px;"><input type="text" class="form-control text-end class_adj_paid" name="adj_paid[]" id="adj_paid_{{ $i }}" value="{{ $current_doc_adjustment > 0 ? @App\SysHelper::com_curr_format($current_doc_adjustment,2,'.',',') : @App\SysHelper::com_curr_format(0,2,'.',',') }}" data-current-amount="{{ $current_doc_adjustment }}" onclick="get_set_amount({{ $i }})" /></td>
                                                             <td style="width:100px;"><input type="text" class="form-control" name="narration[]" id="narration_{{ $i }}" value="{{ $dt->narration }}" /></td>
                                                         </tr>
                                                         @php $i++; @endphp
@@ -429,9 +438,11 @@
                                                 <th></th>
                                                 <th></th>
                                                 <th></th>
-                                                <th><label id="footer_total" /></th>
-                                                <th><label id="footer_balance" /></th>
-                                                <th><label id="footer_paid" /></th>
+                                                <th></th>
+                                                <th class="text-end"><label id="footer_total" /></th>
+                                                <th class="text-end"><label id="footer_paid" /></th>
+                                                <th class="text-end"><label id="footer_balance" /></th>
+                                                <th class="text-end"><label id="footer_adjustment" /></th>
                                                 <th></th>
                                             </tr>
                                         </tfoot>
@@ -441,20 +452,104 @@
                         </div>
 
                         <script>
+                            function parseSrAdjustmentAmount(value) {
+                                var amount = parseFloat(String(value || '0').replace(/,/g, ''));
+                                return isNaN(amount) ? 0 : amount;
+                            }
+
+                            function formatSrAdjustmentAmount(value) {
+                                if (typeof formatAmount === 'function') {
+                                    return formatAmount(parseSrAdjustmentAmount(value));
+                                }
+
+                                return parseSrAdjustmentAmount(value).toLocaleString('en-US', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
+                            }
+
+                            function getSrAdjustmentRowBalance(id) {
+                                var $balance = $('#adj_balance_' + id);
+                                if ($balance.data('actual-balance') === undefined) {
+                                    $balance.data('actual-balance', parseSrAdjustmentAmount($balance.val()));
+                                }
+                                return parseSrAdjustmentAmount($balance.data('actual-balance'));
+                            }
+
+                            function getSrAdjustmentCurrentAmount(id) {
+                                return parseSrAdjustmentAmount($('#adj_paid_' + id).data('current-amount'));
+                            }
+
+                            function updateSrAdjustmentTotals() {
+                                var total = 0;
+                                var balance = 0;
+                                var paid = 0;
+                                var adjustment = 0;
+
+                                $('#table_adjestment tbody tr').each(function () {
+                                    total += parseSrAdjustmentAmount($(this).find('input[name="adj_total[]"]').val());
+                                    balance += parseSrAdjustmentAmount($(this).find('input[name="adj_balance[]"]').val());
+                                    paid += parseSrAdjustmentAmount($(this).find('.js-sr-adj-previous-paid').val());
+                                    adjustment += parseSrAdjustmentAmount($(this).find('input[name="adj_paid[]"]').val());
+                                });
+
+                                $('#footer_total').text(formatSrAdjustmentAmount(total));
+                                $('#footer_paid').text(formatSrAdjustmentAmount(paid));
+                                $('#footer_balance').text(formatSrAdjustmentAmount(balance));
+                                $('#footer_adjustment').text(formatSrAdjustmentAmount(adjustment));
+                            }
+
+                            $(document).on('click', '#table_adjestment tbody tr.js-sr-adj-row', function (event) {
+                                if ($(event.target).is('input, textarea, select, button, a, label')) {
+                                    return;
+                                }
+
+                                var id = $(this).data('row');
+                                get_set_amount(id);
+                                $('#adj_paid_' + id).trigger('focus');
+                            });
+
+                            $(document).on('input', '#table_adjestment .class_adj_paid', function () {
+                                var id = ($(this).attr('id') || '').replace('adj_paid_', '');
+                                var paid = parseSrAdjustmentAmount($(this).val());
+                                var available = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
+
+                                if (paid > available) {
+                                    paid = available;
+                                    $(this).val(formatSrAdjustmentAmount(paid));
+                                }
+
+                                $('#adj_balance_' + id).val(formatSrAdjustmentAmount(Math.max(available - paid, 0)));
+                                $('#adj_balance_display_' + id).text(formatSrAdjustmentAmount(Math.max(available - paid, 0)));
+                                updateSrAdjustmentTotals();
+                            });
+
+                            $(document).on('blur', '#table_adjestment .class_adj_paid', function () {
+                                $(this).val(formatSrAdjustmentAmount($(this).val()));
+                                updateSrAdjustmentTotals();
+                            });
+
                             function get_set_amount(id) {
+                                if (id === undefined || id === null || id === '') {
+                                    updateSrAdjustmentTotals();
+                                    return;
+                                }
+
                                 set_adjestment(id);
-                                var adj_total = Number($('#adj_total_'+id).val());
-                                var adj_paid = Number($('#adj_paid_'+id).val());
-                                $('#adj_balance_'+id).val(adj_total - adj_paid);
+                                var adj_total = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
+                                var adj_paid = parseSrAdjustmentAmount($('#adj_paid_'+id).val());
+                                $('#adj_balance_'+id).val(formatSrAdjustmentAmount(Math.max(adj_total - adj_paid, 0)));
+                                $('#adj_balance_display_'+id).text(formatSrAdjustmentAmount(Math.max(adj_total - adj_paid, 0)));
+                                updateSrAdjustmentTotals();
                             }
 
                             function set_adjestment(id){
-                                var sum = Number($('#act_srn_adj_amount').val());
+                                var sum = parseSrAdjustmentAmount($('#act_srn_adj_amount').val());
                                 var numItems = $('.class_adj_paid').length;
                                 var adj=0;
                                 for(var i=0; i < numItems; i++){
                                     if(i!=id){
-                                        adj +=  Number($('#adj_paid_'+i).val());
+                                        adj += parseSrAdjustmentAmount($('#adj_paid_'+i).val());
                                     }
                                 }
                                 var adj2 = sum - adj;
@@ -464,18 +559,22 @@
                                 }
                                 else { $('#srn_adj_amount').val(0); }
 
-                                var adj3 = Number($('#srn_adj_amount').val());
+                                var adj3 = parseSrAdjustmentAmount($('#srn_adj_amount').val());
 
                                 if(adj3 > 0){
-                                    var adj_total = Number($('#adj_balance_'+id).val());
+                                    var adj_total = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
                                     if(adj3 >= adj_total){
-                                        $('#adj_paid_'+id).val(adj_total);
+                                        $('#adj_paid_'+id).val(formatSrAdjustmentAmount(adj_total));
                                     }
                                     else{
-                                        $('#adj_paid_'+id).val(adj3);
+                                        $('#adj_paid_'+id).val(formatSrAdjustmentAmount(adj3));
                                     }
+                                } else {
+                                    $('#adj_paid_'+id).val(formatSrAdjustmentAmount(0));
                                 }
                             }
+
+                            updateSrAdjustmentTotals();
                         </script>
 
                         <div class="modal-footer justify-content-center">

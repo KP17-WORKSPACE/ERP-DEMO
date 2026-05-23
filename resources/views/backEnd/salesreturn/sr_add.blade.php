@@ -44,6 +44,7 @@
                                                 </option>
                                                 @endforeach --}}
                                             </select>
+                                            <input type="hidden" id="selected_customer_id" value="">
                                             </div>
                                         </div>
                                         <div class="col-2">
@@ -1542,6 +1543,17 @@ $(document).ready(function () {
     // Initial init
     initAccountSelect2('.js-account-select');
 
+    $(document).on('select2:select change', '#customer', function (event) {
+        var customerId = $(this).val();
+
+        if (!customerId && event.params && event.params.data && event.params.data.id) {
+            customerId = event.params.data.id;
+        }
+
+        $('#selected_customer_id, #adj_customer_id').val(customerId || '');
+        $(this).attr('data-selected-customer-id', customerId || '');
+    });
+
     // Re-initialize on focus (if needed for dynamically added fields)
     $(document).on('focus', '.js-account-select', function () {
         if (!$(this).hasClass("select2-hidden-accessible")) {
@@ -1880,15 +1892,49 @@ $(document).ready(function () {
             }
         });
     }
+    function getSrAdjustmentCustomerId() {
+        var customerId = $('#customer').val()
+            || $('#selected_customer_id').val()
+            || $('#adj_customer_id').val()
+            || $('#customer').attr('data-selected-customer-id');
+
+        if (!customerId && $('#customer').data('select2')) {
+            var selectedCustomer = $('#customer').select2('data');
+            if (selectedCustomer.length > 0) {
+                customerId = selectedCustomer[0].id;
+            }
+        }
+
+        if (!customerId) {
+            var selectedOptionValue = $('#customer option:selected').val();
+            customerId = selectedOptionValue || '';
+        }
+
+        $('#selected_customer_id, #adj_customer_id').val(customerId || '');
+
+        return customerId || '';
+    }
+
     function get_adjestments_add(id){
         $("#loading_bg").css("display", "block");
         var action = "{{ URL::to('get-sales-return-adjestment-list-add') }}";
+        var customerId = id || getSrAdjustmentCustomerId();
+        $('#adj_customer_id').val(customerId);
+
+        if (!customerId) {
+            $("#loading_bg").css("display", "none");
+            alert('Please select customer before adjustment.');
+            return;
+        }
+
         $.ajax({
             url: action,
             type: "get",
             data: {
                 _token: '{{ csrf_token() }}',
-                id: id,
+                id: customerId,
+                customer: customerId,
+                customer_id: customerId,
             },
             cache: false,
             success: function(dataResult) {
@@ -1903,18 +1949,19 @@ $(document).ready(function () {
                     if(len > 0){
                         for(var i=0; i<len; i++){
 
-                            var paid_amount = dataResult['data'][i].total_paid_amount;
-                            if(paid_amount == null){paid_amount=0;}
-                            var balance_amount = dataResult['data'][i].total_amount-Number(paid_amount);
+                            var paid_amount = parseSrAdjustmentAmount(dataResult['data'][i].total_paid_amount);
+                            var total_amount = parseSrAdjustmentAmount(dataResult['data'][i].total_amount);
+                            var balance_amount = total_amount - paid_amount;
                             if(balance_amount >0){
-                                tblrow += "<tr>";
-                                tblrow += "<td><input type='text' class='form-control' name='adj_siv_no[]' id='adj_siv_no_"+ j +"' value='"+ dataResult['data'][i].doc_number +"' readonly /></td>";
-                                tblrow += "<td><input type='text' class='form-control' name='adj_doc_date[]' id='adj_doc_date_"+ j +"' value='"+ dataResult['data'][i].doc_date +"' readonly /></td>";
-                                tblrow += "<td><input type='text' class='form-control' name='adj_lpo_number[]' id='adj_lpo_number_"+ j +"' value='"+ dataResult['data'][i].lpo_number +"' readonly /></td>";                            
-                                tblrow += "<td><input type='text' class='form-control' name='adj_total[]' id='adj_total_"+ j +"' value='"+ dataResult['data'][i].total_amount +"' readonly /></td>";
-                                tblrow += "<td><input type='text' class='form-control' name='adj_balance[]' id='adj_balance_"+ j +"' value='"+ balance_amount +"' readonly /></td>";
-                                tblrow += "<td><input type='text' class='form-control class_adj_paid' name='adj_paid[]' id='adj_paid_"+ j +"' value='0' onclick='get_set_amount("+ j +")' required /></td>";
-                                tblrow += "<td><input type='text' class='form-control' name='adj_narration[]' id='adj_narration_"+ j +"' value='"+ dataResult['data'][i].narration+"' /></td>";
+                                tblrow += "<tr class='js-sr-adj-row' data-row='"+ j +"'>";
+                                tblrow += "<td class='text-center'>"+ escapeSrAdjustmentValue(dataResult['data'][i].doc_number) +"<input type='hidden' name='adj_siv_no[]' id='adj_siv_no_"+ j +"' value='"+ escapeSrAdjustmentValue(dataResult['data'][i].doc_number) +"' readonly /></td>";
+                                tblrow += "<td class='text-center'>"+ formatSrAdjustmentDate(dataResult['data'][i].doc_date) +"<input type='hidden' name='adj_doc_date[]' id='adj_doc_date_"+ j +"' value='"+ formatSrAdjustmentDate(dataResult['data'][i].doc_date) +"' readonly /></td>";
+                                tblrow += "<td class='text-center'>"+ escapeSrAdjustmentValue(dataResult['data'][i].lpo_number) +"<input type='hidden' name='adj_lpo_number[]' id='adj_lpo_number_"+ j +"' value='"+ escapeSrAdjustmentValue(dataResult['data'][i].lpo_number) +"' readonly /></td>";
+                                tblrow += "<td class='text-end'>"+ formatSrAdjustmentAmount(total_amount) +"<input type='hidden' name='adj_total[]' id='adj_total_"+ j +"' value='"+ formatSrAdjustmentAmount(total_amount) +"' readonly /></td>";
+                                tblrow += "<td class='text-end'>"+ formatSrAdjustmentAmount(paid_amount) +"<input type='hidden' class='js-sr-adj-previous-paid' id='adj_previous_paid_"+ j +"' value='"+ formatSrAdjustmentAmount(paid_amount) +"' readonly /></td>";
+                                tblrow += "<td class='text-end'><span id='adj_balance_display_"+ j +"'>"+ formatSrAdjustmentAmount(balance_amount) +"</span><input type='hidden' name='adj_balance[]' id='adj_balance_"+ j +"' value='"+ formatSrAdjustmentAmount(balance_amount) +"' data-actual-balance='"+ balance_amount +"' readonly /></td>";
+                                tblrow += "<td><input type='text' class='form-control text-end class_adj_paid' name='adj_paid[]' id='adj_paid_"+ j +"' value='"+ formatSrAdjustmentAmount(0) +"' data-current-amount='0' onclick='get_set_amount("+ j +")' required /></td>";
+                                tblrow += "<td><input type='text' class='form-control' name='adj_narration[]' id='adj_narration_"+ j +"' value='"+ escapeSrAdjustmentValue(dataResult['data'][i].narration)+"' /></td>";
                                 tblrow += "</tr>";
                                 j++;
                             }
@@ -1923,6 +1970,7 @@ $(document).ready(function () {
                         
                         $('#table_adjestment tbody').empty();
                         $("#table_adjestment tbody").append(tblrow); 
+                        updateSrAdjustmentTotals();
 
                     }
                     else{
@@ -1938,8 +1986,15 @@ $(document).ready(function () {
         $("#loading_bg").css("display", "block");
         var action = "{{ URL::to('sales-return-add-adjestment3') }}";
 
-        var id = $('#customer').val();
+        var id = getSrAdjustmentCustomerId();
+        $('#adj_customer_id').val(id);
         var adj_srn_no = $('#adj_srn_no').val();
+
+        if (!id) {
+            $("#loading_bg").css("display", "none");
+            alert('Please select customer before adjustment.');
+            return;
+        }
 
         var adj_doc_date = [];
         $('input[name="adj_doc_date[]"]').each(function() { adj_doc_date.push($(this).val()); });
@@ -1968,6 +2023,8 @@ $(document).ready(function () {
             data: {
                 _token: '{{ csrf_token() }}',
                 id:id,
+                customer: id,
+                customer_id: id,
                 adj_srn_no: adj_srn_no,
                 adj_doc_date: adj_doc_date,
                 doc_date: $('#doc_date').val(),
@@ -1991,24 +2048,28 @@ $(document).ready(function () {
                     if(len > 0){
                         for(var i=0; i<len; i++){
 
-                            var paid_amount = dataResult['data'][i].paid_amount;
-                            if(paid_amount == null){paid_amount=0;}
-                            var balance_amount = dataResult['data'][i].total_amount-Number(paid_amount);
+                            var paid_amount = parseSrAdjustmentAmount(dataResult['data'][i].paid_amount);
+                            var total_amount = parseSrAdjustmentAmount(dataResult['data'][i].total_amount);
+                            var balance_amount = total_amount - paid_amount;
+                            var current_amount = paid_amount;
+                            var previous_paid_amount = Math.max(paid_amount - current_amount, 0);
 
-                            tblrow += "<tr>";
-                            tblrow += "<td><input type='text' class='form-control' name='adj_siv_no[]' id='adj_siv_no_"+ i +"' value='"+ dataResult['data'][i].doc_number +"' readonly /></td>";
-                            tblrow += "<td><input type='text' class='form-control' name='adj_doc_date[]' id='adj_doc_date_"+ i +"' value='"+ dataResult['data'][i].doc_date +"' readonly /></td>";
-                            tblrow += "<td><input type='text' class='form-control' name='adj_lpo_number[]' id='adj_lpo_number_"+ i +"' value='"+ dataResult['data'][i].lpo_number +"' readonly /></td>";                            
-                            tblrow += "<td><input type='text' class='form-control' name='adj_total[]' id='adj_total_"+ i +"' value='"+ dataResult['data'][i].total_amount +"' readonly /></td>";
-                            tblrow += "<td><input type='text' class='form-control class_adj_paid' name='adj_paid[]' id='adj_paid_"+ i +"' value='"+ paid_amount +"' onclick='get_set_amount("+ i +")' required /></td>";
-                            tblrow += "<td><input type='text' class='form-control' name='adj_balance[]' id='adj_balance_"+ i +"' value='"+ balance_amount +"' readonly /></td>";
-                            tblrow += "<td><input type='text' class='form-control' name='adj_narration[]' id='adj_narration_"+ i +"' value='"+ dataResult['data'][i].narration+"' /></td>";
+                            tblrow += "<tr class='js-sr-adj-row' data-row='"+ i +"'>";
+                            tblrow += "<td class='text-center'>"+ escapeSrAdjustmentValue(dataResult['data'][i].doc_number) +"<input type='hidden' name='adj_siv_no[]' id='adj_siv_no_"+ i +"' value='"+ escapeSrAdjustmentValue(dataResult['data'][i].doc_number) +"' readonly /></td>";
+                            tblrow += "<td class='text-center'>"+ formatSrAdjustmentDate(dataResult['data'][i].doc_date) +"<input type='hidden' name='adj_doc_date[]' id='adj_doc_date_"+ i +"' value='"+ formatSrAdjustmentDate(dataResult['data'][i].doc_date) +"' readonly /></td>";
+                            tblrow += "<td class='text-center'>"+ escapeSrAdjustmentValue(dataResult['data'][i].lpo_number) +"<input type='hidden' name='adj_lpo_number[]' id='adj_lpo_number_"+ i +"' value='"+ escapeSrAdjustmentValue(dataResult['data'][i].lpo_number) +"' readonly /></td>";
+                            tblrow += "<td class='text-end'>"+ formatSrAdjustmentAmount(total_amount) +"<input type='hidden' name='adj_total[]' id='adj_total_"+ i +"' value='"+ formatSrAdjustmentAmount(total_amount) +"' readonly /></td>";
+                            tblrow += "<td class='text-end'>"+ formatSrAdjustmentAmount(previous_paid_amount) +"<input type='hidden' class='js-sr-adj-previous-paid' id='adj_previous_paid_"+ i +"' value='"+ formatSrAdjustmentAmount(previous_paid_amount) +"' readonly /></td>";
+                            tblrow += "<td class='text-end'><span id='adj_balance_display_"+ i +"'>"+ formatSrAdjustmentAmount(balance_amount) +"</span><input type='hidden' name='adj_balance[]' id='adj_balance_"+ i +"' value='"+ formatSrAdjustmentAmount(balance_amount) +"' data-actual-balance='"+ balance_amount +"' readonly /></td>";
+                            tblrow += "<td><input type='text' class='form-control text-end class_adj_paid' name='adj_paid[]' id='adj_paid_"+ i +"' value='"+ formatSrAdjustmentAmount(current_amount) +"' data-current-amount='"+ current_amount +"' onclick='get_set_amount("+ i +")' required /></td>";
+                            tblrow += "<td><input type='text' class='form-control' name='adj_narration[]' id='adj_narration_"+ i +"' value='"+ escapeSrAdjustmentValue(dataResult['data'][i].narration)+"' /></td>";
                             tblrow += "</tr>";
 
                         }
                         
                         $('#table_adjestment tbody').empty();
                         $("#table_adjestment tbody").append(tblrow); 
+                        updateSrAdjustmentTotals();
                         alert('Adjustment Added Successfully');
                         $('#adj_popup_win').modal('hide');
 
@@ -2068,9 +2129,14 @@ $(document).ready(function () {
 <script>
         function add_set_adjestment() {
             
-            var csid = $('#customer').val();
-            console.log("12121212",csid);
+            var csid = getSrAdjustmentCustomerId();
             $('#adj_srn_no').val($('#doc_number').val());
+            $('#adj_customer_id').val(csid);
+
+            if (!csid) {
+                alert('Please select customer before adjustment.');
+                return;
+            }
 
             var amt = $('#lbl_total_totalamount').text();
             
@@ -2093,6 +2159,7 @@ $(document).ready(function () {
                 </div>
                 <div class="modal-body m-0 p-3">
                     <input type="hidden" name="adj_srn_no" id="adj_srn_no">
+                    <input type="hidden" name="adj_customer_id" id="adj_customer_id">
                     <div class="card-body" style="height: 420px; overflow-y: scroll;">
                         <div class="row">
                             <div class="col-lg-12">
@@ -2109,13 +2176,14 @@ $(document).ready(function () {
                                                 <th style="width:100px;">@lang('Paid')</th>
                                                 <th style="width:100px;">@lang('Balance')</th> --}}
 
-                                                <th style="width:100px;">@lang('Doc No')</th>
-                                                <th style="width:100px;">@lang('Doc Date')</th>
-                                                <th style="width:100px;">@lang('LPO NO')</th>
-                                                <th style="width:100px;">@lang('Total')</th>
-                                                <th style="width:100px;">@lang('Balance')</th>
-                                                <th style="width:100px;">@lang('Paid')</th>
-                                                <th style="width:100px;">@lang('Narration')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Total')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Paid')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:200px;" class="text-start">@lang('Narration')</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -2126,9 +2194,10 @@ $(document).ready(function () {
                                                 <th></th>
                                                 <th></th>
                                                 <th></th>
-                                                <th><label id="footer_total" /></th>
-                                                <th><label id="footer_balance" /></th>
-                                                <th><label id="footer_paid" /></th>
+                                                <th class="text-end"><label id="footer_total" /></th>
+                                                <th class="text-end"><label id="footer_paid" /></th>
+                                                <th class="text-end"><label id="footer_balance" /></th>
+                                                <th class="text-end"><label id="footer_adjustment" /></th>
                                                 <th></th>
                                             </tr>
                                         </tfoot>
@@ -2138,21 +2207,133 @@ $(document).ready(function () {
                         </div>
 
                         <script>
+                            function parseSrAdjustmentAmount(value) {
+                                var amount = parseFloat(String(value || '0').replace(/,/g, ''));
+                                return isNaN(amount) ? 0 : amount;
+                            }
+
+                            function formatSrAdjustmentAmount(value) {
+                                if (typeof formatAmount === 'function') {
+                                    return formatAmount(parseSrAdjustmentAmount(value));
+                                }
+
+                                return parseSrAdjustmentAmount(value).toLocaleString('en-US', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                });
+                            }
+
+                            function escapeSrAdjustmentValue(value) {
+                                if (typeof escapeErpHtml === 'function') {
+                                    return escapeErpHtml(value);
+                                }
+
+                                return String(value || '')
+                                    .replace(/&/g, '&amp;')
+                                    .replace(/"/g, '&quot;')
+                                    .replace(/'/g, '&#039;')
+                                    .replace(/</g, '&lt;')
+                                    .replace(/>/g, '&gt;');
+                            }
+
+                            function formatSrAdjustmentDate(value) {
+                                if (!value) {
+                                    return '';
+                                }
+
+                                var dateValue = String(value).split(' ')[0];
+                                var parts = dateValue.split('-');
+
+                                if (parts.length === 3 && parts[0].length === 4) {
+                                    return escapeSrAdjustmentValue(parts[2] + '/' + parts[1] + '/' + parts[0]);
+                                }
+
+                                return escapeSrAdjustmentValue(dateValue);
+                            }
+
+                            function getSrAdjustmentRowBalance(id) {
+                                var $balance = $('#adj_balance_' + id);
+                                if ($balance.data('actual-balance') === undefined) {
+                                    $balance.data('actual-balance', parseSrAdjustmentAmount($balance.val()));
+                                }
+                                return parseSrAdjustmentAmount($balance.data('actual-balance'));
+                            }
+
+                            function getSrAdjustmentCurrentAmount(id) {
+                                return parseSrAdjustmentAmount($('#adj_paid_' + id).data('current-amount'));
+                            }
+
+                            function updateSrAdjustmentTotals() {
+                                var total = 0;
+                                var balance = 0;
+                                var paid = 0;
+                                var adjustment = 0;
+
+                                $('#table_adjestment tbody tr').each(function () {
+                                    total += parseSrAdjustmentAmount($(this).find('input[name="adj_total[]"]').val());
+                                    balance += parseSrAdjustmentAmount($(this).find('input[name="adj_balance[]"]').val());
+                                    paid += parseSrAdjustmentAmount($(this).find('.js-sr-adj-previous-paid').val());
+                                    adjustment += parseSrAdjustmentAmount($(this).find('input[name="adj_paid[]"]').val());
+                                });
+
+                                $('#footer_total').text(formatSrAdjustmentAmount(total));
+                                $('#footer_paid').text(formatSrAdjustmentAmount(paid));
+                                $('#footer_balance').text(formatSrAdjustmentAmount(balance));
+                                $('#footer_adjustment').text(formatSrAdjustmentAmount(adjustment));
+                            }
+
+                            $(document).on('click', '#table_adjestment tbody tr.js-sr-adj-row', function (event) {
+                                if ($(event.target).is('input, textarea, select, button, a, label')) {
+                                    return;
+                                }
+
+                                var id = $(this).data('row');
+                                get_set_amount(id);
+                                $('#adj_paid_' + id).trigger('focus');
+                            });
+
+                            $(document).on('input', '#table_adjestment .class_adj_paid', function () {
+                                var id = ($(this).attr('id') || '').replace('adj_paid_', '');
+                                var paid = parseSrAdjustmentAmount($(this).val());
+                                var available = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
+
+                                if (paid > available) {
+                                    paid = available;
+                                    $(this).val(formatSrAdjustmentAmount(paid));
+                                }
+
+                                $('#adj_balance_' + id).val(formatSrAdjustmentAmount(Math.max(available - paid, 0)));
+                                $('#adj_balance_display_' + id).text(formatSrAdjustmentAmount(Math.max(available - paid, 0)));
+                                updateSrAdjustmentTotals();
+                            });
+
+                            $(document).on('blur', '#table_adjestment .class_adj_paid', function () {
+                                $(this).val(formatSrAdjustmentAmount($(this).val()));
+                                updateSrAdjustmentTotals();
+                            });
+
                             function get_set_amount(id)
                             {
+                                if (id === undefined || id === null || id === '') {
+                                    updateSrAdjustmentTotals();
+                                    return;
+                                }
+
                                 set_adjestment(id);
-                                var adj_total = Number($('#adj_balance_'+id).val());
-                                var adj_paid = Number($('#adj_paid_'+id).val());
-                                $('#adj_balance_'+id).val(adj_total - adj_paid);
+                                var adj_total = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
+                                var adj_paid = parseSrAdjustmentAmount($('#adj_paid_'+id).val());
+                                $('#adj_balance_'+id).val(formatSrAdjustmentAmount(Math.max(adj_total - adj_paid, 0)));
+                                $('#adj_balance_display_'+id).text(formatSrAdjustmentAmount(Math.max(adj_total - adj_paid, 0)));
+                                updateSrAdjustmentTotals();
                             }
 
                             function set_adjestment(id){
-                                var sum = $('#act_srn_adj_amount').val();
+                                var sum = parseSrAdjustmentAmount($('#act_srn_adj_amount').val());
                                 var numItems = $('.class_adj_paid').length;
                                 var adj=0;
                                 for(i=0; i < numItems; i++){
                                     if(i!=id){
-                                        adj +=  Number($('#adj_paid_'+i).val());
+                                        adj += parseSrAdjustmentAmount($('#adj_paid_'+i).val());
                                     }
                                 }
 
@@ -2163,16 +2344,18 @@ $(document).ready(function () {
                                 }
                                 else { $('#srn_adj_amount').val(0); }
 
-                                var adj3 = $('#srn_adj_amount').val();
+                                var adj3 = parseSrAdjustmentAmount($('#srn_adj_amount').val());
 
                                 if(adj3 > 0){
-                                    var adj_total = Number($('#adj_balance_'+id).val());
+                                    var adj_total = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
                                     if(adj3 >= adj_total){
-                                        $('#adj_paid_'+id).val(adj_total);
+                                        $('#adj_paid_'+id).val(formatSrAdjustmentAmount(adj_total));
                                     }
                                     else{
-                                        $('#adj_paid_'+id).val(adj3);
+                                        $('#adj_paid_'+id).val(formatSrAdjustmentAmount(adj3));
                                     }
+                                } else {
+                                    $('#adj_paid_'+id).val(formatSrAdjustmentAmount(0));
                                 }
                             }
 
