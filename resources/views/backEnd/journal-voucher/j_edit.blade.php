@@ -170,7 +170,7 @@
                                             <td><input type="text" class="form-control text-center" name="sort_id[]" value="{{ $roid }}" /></td>
                                             <td class="noborder">
                                                 <select class="form-control" name="account_id[]">
-                                                    <option value="{{ @$editDataList[$roid-1]->account_id }}">
+                                                    <option value="{{ @$editDataList[$roid-1]->account_id }}" data-group="{{ @$editDataList[$roid-1]->accounts->group }}">
                                                         
                                                             @if($showCode)
                                                                     {{ @$editDataList[$roid-1]->accounts->account_name }} ({{ @$editDataList[$roid-1]->accounts->account_code }})
@@ -325,79 +325,169 @@
 });
 
 
-        function activate_button() {        
+    window.activate_button = function () {
         $("#addCtrlJournalVoucherAdjestEdit").prop("disabled", false);
-        }
-    
-  // Run cr_popup_fun only once (no repeated bindings)
-  $(document).on('keypress', 'input[name="amount_dr[]"], input[name="amount_cr[]"]', function (e) {
-    var key = e.which;
-    if (key === 13) {
-        var $row = $(this).closest('tr'); // current row
+    };
 
-        var br_account_id = $row.find('[name="account_id[]"]').val();
+    function parseJournalAmount(value) {
+        return parseFloat(String(value || '').replace(/,/g, '')) || 0;
+    }
+
+    var blockJournalEnterSubmit = false;
+    var journalAmountSelector = 'input[name="amount_dr[]"], input[name="amount_cr[]"]';
+
+    document.addEventListener('keydown', function (event) {
+        var isEnter = event.key === 'Enter' || event.which === 13 || event.keyCode === 13;
+        if (!isEnter || !event.target.matches(journalAmountSelector)) {
+            return;
+        }
+
+        blockJournalEnterSubmit = true;
+        event.preventDefault();
+
+        setTimeout(function () {
+            blockJournalEnterSubmit = false;
+        }, 500);
+    }, true);
+
+    document.addEventListener('keypress', function (event) {
+        var isEnter = event.key === 'Enter' || event.which === 13 || event.keyCode === 13;
+        if (!isEnter || !event.target.matches(journalAmountSelector)) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+    }, true);
+
+    $('#journalvoucher-create-form').on('submit', function (e) {
+        if (blockJournalEnterSubmit) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
+
+    $('#journalvoucher-create-form').on('keydown', 'input[name="amount_dr[]"], input[name="amount_cr[]"]', function (e) {
+        if (e.key !== 'Enter' && e.which !== 13) {
+            return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        var $row = $(this).closest('tr');
+        var $accountSelect = $row.find('select[name="account_id[]"]');
+        var br_account_id = $accountSelect.val();
+
+        if (!br_account_id) {
+            return false;
+        }
 
         $('#br_account_id').val(br_account_id);
 
-        var acc_name = $row.find('[name="account_id[]"] option:selected').text();
-        var acc_type = 0;
+        var selectedOption = $accountSelect.find('option:selected');
+        var selectedData = [];
+        if ($accountSelect.hasClass('select2-hidden-accessible')) {
+            selectedData = $accountSelect.select2('data') || [];
+        }
 
-        if (acc_name.indexOf('SUP') > -1) {
+        var selectedAccount = selectedData.length ? selectedData[0] : {};
+        var accountGroupRaw = selectedAccount.group;
+        if (accountGroupRaw === undefined || accountGroupRaw === null || accountGroupRaw === '') {
+            accountGroupRaw = selectedOption.data('group');
+        }
+        var accountGroup = parseInt(accountGroupRaw, 10);
+
+        var acc_name = selectedOption.text();
+        var acc_type = 0;
+        var amountDr = parseJournalAmount($row.find('input[name="amount_dr[]"]').val());
+        var amountCr = parseJournalAmount($row.find('input[name="amount_cr[]"]').val());
+
+        if (accountGroup === 2 || acc_name.indexOf('SUP') > -1) {
             $('#account_type').val('SUP');
-            $('#add_url').val('payables-outstanding-store-temp');
-            $('#delete_url').val('payables-outstanding-store-temp-delete');
+            $('#add_url').val('journalvoucher-get-adjestment-list-edit-sup');
+            $('#delete_url').val('journalvoucher-get-adjestment-list-edit-sup');
             acc_type = 1;
-            if ($row.find('input[name="amount_cr[]"]').val() > 0) {
+
+            if (amountCr > 0) {
                 acc_type = 4;
             }
         }
 
-        if (acc_name.indexOf('CUS') > -1) {
+        if (accountGroup === 1 || acc_name.indexOf('CUS') > -1) {
             $('#account_type').val('CUS');
-            $('#add_url').val('receivable-outstanding-store-temp');
-            $('#delete_url').val('receivable-outstanding-store-temp-delete');
+            $('#add_url').val('journalvoucher-get-adjestment-list-edit-cus');
+            $('#delete_url').val('journalvoucher-get-adjestment-list-edit-cus');
             acc_type = 2;
-            if ($row.find('input[name="amount_dr[]"]').val() > 0) {
+
+            if (amountDr > 0) {
                 acc_type = 3;
             }
         }
 
-        var br_account = $row.find('input[name="amount_cr[]"]').val();
-        if (br_account === "") {
-            br_account = $row.find('input[name="amount_dr[]"]').val();
-        }
+        var br_account = amountCr > 0 ? amountCr : amountDr;
 
-        $('#bi_cheque_amount').val(br_account).focus();
+        setBillWiseEnteredAmount(br_account);
+        $('#bi_cheque_amount').focus();
 
         if (acc_type == 1 || acc_type == 2) {
-            $("#addCtrlJournalVoucherAdjestEdit").click().prop("disabled", true);
+            $("#addCtrlJournalVoucherAdjestEdit")
+                .prop("disabled", false)
+                .trigger("click")
+                .prop("disabled", true);
         }
+
         if (acc_type == 3) {
-            $("#btnModalAdjustment").click();
-            $('#adj_siv_amount').val($row.find('input[name="amount_dr[]"]').val());
+            $("#btnModalAdjustment").trigger("click");
+            $('#adj_siv_amount').val(amountDr);
             $('#adj_account_id').val(br_account_id);
-            $('#adj_account_id_amount').val($row.find('input[name="amount_dr[]"]').val());
+            $('#adj_account_id_amount').val(amountDr);
             get_customer_adjustment_list(br_account_id);
         }
+
         if (acc_type == 4) {
-            $("#btnModalPaymentAdjustment").click();
-            $('#adj_siv_amount').val($row.find('input[name="amount_cr[]"]').val());
+            $("#btnModalPaymentAdjustment").trigger("click");
+            $('#adj_siv_amount').val(amountCr);
             $('#adj_account_id').val(br_account_id);
-            $('#adj_account_id_amount').val($row.find('input[name="amount_cr[]"]').val());
+            $('#adj_account_id_amount').val(amountCr);
             get_supplier_adjustment_list(br_account_id);
         }
 
         return false;
-    }
-});
+    });
 
-  // Prevent form submission on Enter for all fields EXCEPT amount[]
-  $('#journalvoucher-create-form').on('keypress', function (e) {
-    if (e.which === 13 && !$(e.target).is('input[name="amount_dr[]"]') && !$(e.target).is('input[name="amount_cr[]"]')) {
-      e.preventDefault();
-      return false;
-    }
-  });
+    $('#journalvoucher-create-form').on('keypress keyup', 'input[name="amount_dr[]"], input[name="amount_cr[]"]', function (e) {
+        var isEnter = e.key === 'Enter' || e.which === 13 || e.keyCode === 13;
+        if (!isEnter) {
+            return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return false;
+    });
+
+    $('#journalvoucher-create-form').on('keydown keypress keyup', function (e) {
+        var isEnter = e.key === 'Enter' || e.which === 13 || e.keyCode === 13;
+        if (!isEnter) {
+            return;
+        }
+
+        var isAmountInput =
+            $(e.target).is('input[name="amount_dr[]"]') ||
+            $(e.target).is('input[name="amount_cr[]"]');
+
+        if (isAmountInput && e.type === 'keydown') {
+            return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    });
 </script>
 
 
@@ -476,7 +566,8 @@ $(document).ready(function () {
                             }
                             return {
                                 id: item.id,
-                                text: text
+                                text: text,
+                                group: item.group
                             };
                         })
                     };
@@ -491,6 +582,7 @@ $(document).ready(function () {
         $(selector).on('select2:select', function (e) {
             var selectedData = e.params.data;
             var $row = $(this).closest('tr'); // find the closest row
+            $(this).find('option:selected').attr('data-group', selectedData.group || '');
                 $row.find('input[name="amount_dr[]"]').focus();
 
             // Set values using "name" attribute selectors inside the same row
@@ -621,16 +713,23 @@ function get_customer_adjustment_list(id){
                     }
                     if(len > 0){
                         for(var i=0; i<len; i++){
-                            //var amt = dataResult['data'][i].amount - dataResult['data'][i].adj_amount;
-                            var amt = (dataResult['data'][i].amount - dataResult['data'][i].adj_amount).toFixed(@json(session('logged_session_data.decimal_point'))).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                            getSelectedRows +="<tr>\
+                            var availableRaw = parseAdjustNumber(dataResult['data'][i].amount) - parseAdjustNumber(dataResult['data'][i].adj_amount);
+                            if (isNaN(availableRaw)) {
+                                availableRaw = 0;
+                            }
+                            var availableFormatted = (availableRaw).toFixed(@json(session('logged_session_data.decimal_point'))).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                            var removedAmountRaw = dataResult['data'][i].removed_amount;
+                            if (removedAmountRaw === null || removedAmountRaw === undefined || removedAmountRaw === '') {
+                                removedAmountRaw = 0;
+                            }
+                            getSelectedRows +="<tr class='js-adj-row' data-doc='"+dataResult['data'][i].doc_number+"' data-amt='"+availableRaw+"'>\
                                 <td class='border'>"+dataResult['data'][i].doc_date+"</td>\
                                 <td class='border'>"+dataResult['data'][i].doc_number+"</td>\
-                                <td class='border text-right'>"+amt+"</td>\
+                                <td class='border text-right'>"+availableFormatted+"</td>\
                                 <td class='border'>"+dataResult['data'][i].remarks+"</td>\
-                                <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+dataResult['data'][i].doc_number+"' class='form-control text-right' onclick=set_adjust('"+dataResult['data'][i].amount+"','"+dataResult['data'][i].doc_number+"') value="+dataResult['data'][i].removed_amount+" /></td>\
+                                <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+dataResult['data'][i].doc_number+"' class='form-control text-right' onclick=\"set_adjust('"+availableRaw+"','"+dataResult['data'][i].doc_number+"')\" value=\""+removedAmountRaw+"\" /></td>\
                                 <input type='hidden' name='receiptno[]' value='"+dataResult['data'][i].doc_number+"'/>\
-                                <input type='hidden' name='set_amt_act[]' value='"+amt+"'/>\
+                                <input type='hidden' name='set_amt_act[]' value='"+availableFormatted+"'/>\
                                 </tr>";
                         }
 
@@ -664,15 +763,23 @@ function get_customer_adjustment_list(id){
                     }
                     if(len > 0){
                         for(var i=0; i<len; i++){
-                            var amt = (dataResult['data'][i].amount - dataResult['data'][i].adj_amount).toFixed(@json(session('logged_session_data.decimal_point'))).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                            getSelectedRows +="<tr>\
+                            var availableRaw = parseAdjustNumber(dataResult['data'][i].amount) - parseAdjustNumber(dataResult['data'][i].adj_amount);
+                            if (isNaN(availableRaw)) {
+                                availableRaw = 0;
+                            }
+                            var availableFormatted = (availableRaw).toFixed(@json(session('logged_session_data.decimal_point'))).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                            var removedAmountRaw = dataResult['data'][i].removed_amount;
+                            if (removedAmountRaw === null || removedAmountRaw === undefined || removedAmountRaw === '') {
+                                removedAmountRaw = 0;
+                            }
+                            getSelectedRows +="<tr class='js-adj-row' data-doc='"+dataResult['data'][i].doc_number+"' data-amt='"+availableRaw+"'>\
                                 <td class='border'>"+dataResult['data'][i].doc_date+"</td>\
                                 <td class='border'>"+dataResult['data'][i].doc_number+"</td>\
-                                <td class='border text-right'>"+amt+"</td>\
+                                <td class='border text-right'>"+availableFormatted+"</td>\
                                 <td class='border'>"+dataResult['data'][i].remarks+"</td>\
-                                <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+dataResult['data'][i].doc_number+"' class='form-control text-right' onclick=set_adjust('"+dataResult['data'][i].amount+"','"+dataResult['data'][i].doc_number+"') value="+dataResult['data'][i].removed_amount+" /></td>\
+                                <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+dataResult['data'][i].doc_number+"' class='form-control text-right' onclick=\"set_adjust('"+availableRaw+"','"+dataResult['data'][i].doc_number+"')\" value=\""+removedAmountRaw+"\" /></td>\
                                 <input type='hidden' name='paymentno[]' value='"+dataResult['data'][i].doc_number+"'/>\
-                                <input type='hidden' name='set_amt_act[]' value='"+amt+"'/>\
+                                <input type='hidden' name='set_amt_act[]' value='"+availableFormatted+"'/>\
                                 </tr>";
                                 
                         }
@@ -777,13 +884,39 @@ function get_customer_adjustment_list(id){
     }
 </script>
 <script>
+function parseAdjustNumber(value) {
+    if (value === null || value === undefined) {
+        return 0;
+    }
+    if (typeof value === 'number') {
+        return value;
+    }
+    return parseFloat(String(value).replace(/,/g, '')) || 0;
+}
+
+$(document).on('click', '#table_jv_receipt_list tbody tr.js-adj-row, #table_jv_payment_list tbody tr.js-adj-row', function (e) {
+    // If user clicks inside the input, let the input handler run.
+    if ($(e.target).is('input, textarea, select, button, a, label')) {
+        return;
+    }
+
+    var doc = $(this).data('doc');
+    var amt = $(this).data('amt');
+    if (!doc) {
+        return;
+    }
+
+    set_adjust(amt, doc);
+    $(this).find("input[id^='set_amt_']").trigger('focus');
+});
+
 function set_adjust(amt,id) {
-    let maxAdjustable = parseFloat($("input[name='adj_siv_amount']").val());
+    let maxAdjustable = parseAdjustNumber($("input[name='adj_siv_amount']").val());
     let currentAdjusted = 0;
 
     // Sum up all currently adjusted values
     $("input[id^='set_amt_']").each(function () {
-        let val = parseFloat($(this).val());
+        let val = parseAdjustNumber($(this).val());
         if (!isNaN(val)) {
             currentAdjusted += val;
         }
@@ -797,7 +930,7 @@ function set_adjust(amt,id) {
     }
 
     // Check how much is available for this line
-    let adjustAmount = parseFloat(amt);
+    let adjustAmount = parseAdjustNumber(amt);
     if (adjustAmount > remaining) {
         adjustAmount = remaining;
     }
@@ -825,7 +958,9 @@ function set_adjust(amt,id) {
                     <input type="hidden" name="bi_currency2" value="{{ $editData->currency }}" />
                     <input type="hidden" name="doc_number2" value="{{ $editData->doc_number }}" />                        
                     <input type="hidden" name="transaction_type2" value="@if($editData->mode==1) cashreceipt @else bankreceipt @endif" />
+                    <input type="hidden" name="account_type" id="account_type" value="" />
                     <input type="hidden" name="add_url" id="add_url" value="" />
+                    <input type="hidden" name="delete_url" id="delete_url" value="" />
                     <div class="container-fluid">
                         <div class="row">
                             <div class="col-lg-4 mb-20">
@@ -857,17 +992,17 @@ function set_adjust(amt,id) {
                    
                            
                                 <div class="equipment comon-status  mt-4">
-                                        <table class="table table-hover form-item-table" cellspacing="0" width="100%" id="crListBankBookAdjest">
+                                        <table class="table table-hover" cellspacing="0" width="100%" id="crListBankBookAdjest">
                                             <thead>
                                                 <tr>
-                                                    <th style="width:100px;">@lang('Doc No')</th>
-                                                    <th style="width:100px;">@lang('Doc Date')</th>
-                                                    <th style="width:100px;">@lang('LPO NO')</th>
-                                                    <th style="width:100px;">@lang('Total')</th>
-                                                    <th style="width:100px;">@lang('Paid')</th>
-                                                    <th style="width:100px;">@lang('Balance')</th>
-                                                    <th style="width:100px;">@lang('Adjustment')</th>
-                                                    <th style="width:100px;">@lang('Narration')</th>
+                                         <th style="width:100px;" class="text-center">@lang('Doc No')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Total')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Paid')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:100px;" class="text-start">@lang('Narration')</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -887,10 +1022,10 @@ function set_adjust(amt,id) {
                                                     <th></th>
                                                     <th></th>
                                                     <th></th>
-                                                    <th><label id="footer_total" /></th>
-                                                    <th><label id="footer_paid" /></th>
-                                                    <th><label id="footer_balance" /></th>
-                                                    <th><label id="footer_adjustment" /></th>
+                                                    <th class="text-end"><label id="footer_total" /></th>
+                                                    <th class="text-end"><label id="footer_paid" /></th>
+                                                    <th class="text-end"><label id="footer_balance" /></th>
+                                                    <th class="text-end"><label id="footer_adjustment" /></th>
                                                     <th></th>
                                                 </tr>
                                             </tfoot>
@@ -1001,101 +1136,27 @@ function set_adjust(amt,id) {
 
                             function get_set_amount(id)
                             {
-                                var form_amt = Number($('#bi_cheque_amount').val());
-                                var bal_amt = Number($('#bi_balance_'+id).val());
+                                var form_amt = parseErpAmount($('#bi_cheque_amount').val());
+                                var bal_amt = parseErpAmount($('#bi_balance_' + id).val());
+                                var current_amt = parseErpAmount($('#bi_amount_' + id).val());
+                                var other_adjusted = 0;
 
-                                var bi_amount = Number($('#bi_amount_'+id).val());
-
-                                var adjested_sum = 0;
-                                $(".tot_amt").each(function () {
-                                    adjested_sum += +$(this).val();
+                                $('.tot_amt').not('#bi_amount_' + id).each(function () {
+                                    other_adjusted += parseErpAmount($(this).val());
                                 });
-                                $('#bi_amount_adjusted').val(Number(adjested_sum));
-                                $('#bi_balance_adjest').val(Number(form_amt)-Number(adjested_sum));                                
 
-                                if($('#bi_balance_adjest').val()==""){
-                                    $('#bi_balance_adjest').val(form_amt);
+                                var remaining = form_amt - other_adjusted;
+                                if (remaining < 0) {
+                                    remaining = 0;
                                 }
-                                var amt = Number($('#bi_balance_adjest').val());
-                                var pending = Number($('#bi_balance_to_adjust').val());
 
-                                if(amt > 0 && amt != "" && pending > 0){
-                                    if(amt == bal_amt) {
-                                        //alert("1.if(amt == bal_amt)");
-
-                                        $('#bi_amount_'+id).val(amt);
-                                        var adjusted = Number($('#bi_amount_adjusted').val());
-                                        var balance_adjust = Number($('#bi_balance_to_adjust').val());
-                                        $('#bi_amount_adjusted').val(adjusted+amt);
-                                        $('#bi_balance_to_adjust').val(balance_adjust-(adjusted+amt));
-                                        var extra = Number($('#bi_extra_amount').val());
-
-                                        if(form_amt >= (adjusted+amt))
-                                        {
-                                            $('#bi_extra_amount').val(form_amt - (adjusted+amt));
-                                        }
-                                        else{
-                                            $('#bi_extra_amount').val((adjusted+amt) - form_amt);
-                                        }
-
-                                        $('#bi_balance_adjest').val(0);
-                                    } else if(amt > bal_amt) {
-                                        //alert("2.else if(amt > bal_amt)");
-
-                                        $('#bi_amount_'+id).val(bal_amt);
-                                        var adjusted = Number($('#bi_amount_adjusted').val());
-                                        var balance_adjust = Number($('#bi_balance_to_adjust').val());
-                                        $('#bi_amount_adjusted').val(adjusted+bal_amt);
-                                        $('#bi_balance_to_adjust').val(balance_adjust-bal_amt);
-                                        var extra = Number($('#bi_extra_amount').val());
-                                        
-                                        if(form_amt >= (adjusted+bal_amt))
-                                        {
-                                            $('#bi_extra_amount').val(form_amt - (adjusted+bal_amt));
-                                        }
-                                        else{
-                                            $('#bi_extra_amount').val((adjusted+bal_amt) - form_amt);
-                                        }
-
-                                        if(amt >= bal_amt){
-                                            $('#bi_balance_adjest').val(amt - bal_amt);
-                                        } else {
-                                            $('#bi_balance_adjest').val(bal_amt - amt);
-                                        }
-                                    } else if(amt < bal_amt) {
-                                        //alert("3.else if(amt < bal_amt)");
-
-                                        $('#bi_amount_'+id).val(amt);
-                                        var adjusted = Number($('#bi_amount_adjusted').val());
-                                        var balance_adjust = Number($('#bi_balance_to_adjust').val());
-                                        $('#bi_amount_adjusted').val(adjusted+amt);
-                                        $('#bi_balance_to_adjust').val(balance_adjust- amt);
-                                        var extra = Number($('#bi_extra_amount').val());
-                                        
-                                        if(form_amt >= (adjusted+amt))
-                                        {
-                                            $('#bi_extra_amount').val(form_amt - (adjusted+amt));
-                                        }
-                                        else{
-                                            $('#bi_extra_amount').val((adjusted+amt) - form_amt);
-                                        }
-                                        
-                                        $('#bi_balance_adjest').val(0);
-                                    }
-                                    else {
-                                        //alert("4.else");
-
-                                        $('#bi_amount_'+id).val(0);
-                                        $('#bi_balance_adjest').val(0);
-                                    }
-                                    
-                                        var num_tot_amt = $('.tot_amt').length;
-                                        var n = 0;
-                                        for(i=1; i<=num_tot_amt; i++){
-                                            if($('#bi_amount_'+i).val() !=""){
-                                                n += Number($('#bi_amount_'+i).val()); } }
-                                        $('#footer_adjustment').text(n);
+                                var amount_to_set = bal_amt + current_amt;
+                                if (amount_to_set > remaining) {
+                                    amount_to_set = remaining;
                                 }
+
+                                $('#bi_amount_' + id).val(formatAmount(amount_to_set));
+                                updateBillWiseAdjustmentTotals();
                             }
                         </script>
 
@@ -1473,7 +1534,6 @@ function set_adjust(amt,id) {
         $("#loading_bg").css("display", "none");
     }
 </script>
-
 
 
 
