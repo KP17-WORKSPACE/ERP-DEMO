@@ -7805,7 +7805,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
         $returnPaid = DB::table('sys_sales_return as r')
             ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', '=', 'r.doc_number')
             ->where('r.customer', $accountId)
-            ->whereIn('ra.srn_no', $trnNos)
+            ->whereIn('ra.siv_no', $trnNos)
             ->where('r.status', 1)
             ->select('ra.siv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
             ->groupBy('ra.siv_no')
@@ -7829,7 +7829,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 + (float) ($opbReceiptPaid[$dt->transaction_no] ?? 0)
                 + (float) ($dt->credit_amount ?? 0)
                 - (float) ($jvPaymentPaid[$dt->transaction_no] ?? 0)
-                - (float) ($returnPaid[$dt->transaction_no] ?? 0);
+                + (float) ($returnPaid[$dt->transaction_no] ?? 0);
 
             if ((float) $dt->debit_amount != $paid) {
                 $total += (float) $dt->debit_amount;
@@ -7937,7 +7937,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
         $returnPaid = DB::table('sys_sales_return as r')
             ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', '=', 'r.doc_number')
             ->where('r.customer', $accountId)
-            ->whereIn('ra.srn_no', $trnNos)
+            ->whereIn('ra.siv_no', $trnNos)
             ->where('r.company_id', $companyId)
             ->where('r.status', 1)
             ->select('ra.siv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
@@ -7965,7 +7965,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 + (float) ($jvReceiptPaid[$dt->transaction_no] ?? 0)
                 + (float) ($opbReceiptPaid[$dt->transaction_no] ?? 0)
                 - (float) ($jvPaymentPaid[$dt->transaction_no] ?? 0)
-                - (float) ($returnPaid[$dt->transaction_no] ?? 0);
+                + (float) ($returnPaid[$dt->transaction_no] ?? 0);
 
             if (($dt->transaction_type ?? '') === 'opbinvoice') {
                 $paid += (float) ($dt->credit_amount ?? 0);
@@ -8055,7 +8055,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 if (isset($p->adj_amount)) {
                     $amt -= (float) $p->adj_amount;
                 }
-                $sumB -= $amt;
+                $sumB += ((float) ($p->credit_amount ?? 0) > (float) ($p->debit_amount ?? 0)) ? -abs($amt) : $amt;
             }
         }
 
@@ -8064,7 +8064,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
         }
         if ($unadjustedJvToJv) {
             foreach ($unadjustedJvToJv->where('account_id', $accountId) as $p) {
-                $sumB -= (float) ($p->amount ?? 0) - (float) ($p->amount2 ?? 0);
+                $sumB += (float) ($p->amount2 ?? 0) - (float) ($p->amount ?? 0);
             }
         }
 
