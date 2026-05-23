@@ -630,6 +630,7 @@ function get_set_amount(id) {
     if (id !== undefined && id !== null && String(id) !== '') {
         var bal_amt = Number(($('#bi_balance_' + id).val() || '0').replace(/,/g, '')) || 0;
         var cur_val = Number(($('#bi_amount_'  + id).val() || '0').replace(/,/g, '')) || 0;
+        var current_doc_adjustment = Number(($('#bi_amount_' + id).data('current-amount') || '0').toString().replace(/,/g, '')) || 0;
 
         // Sum of all OTHER rows (excluding the current row)
         var other_sum = 0;
@@ -641,7 +642,7 @@ function get_set_amount(id) {
         });
 
         // Maximum this row is allowed: capped by row balance AND remaining cheque amount
-        var cap = Math.min(bal_amt, Math.max(0, form_amt - other_sum));
+        var cap = Math.min(bal_amt + current_doc_adjustment, Math.max(0, form_amt - other_sum));
 
         // Only clamp if user typed more than allowed — auto-fill is handled by the click handler
         if (cur_val > cap) {
@@ -710,6 +711,7 @@ $(document).on('click', '.tot_amt', function () {
     var idx = idMatch[1];
     var form_amt = Number(($('#bi_cheque_amount').val() || '0').replace(/,/g, '')) || 0;
     var bal_amt  = Number(($('#bi_balance_' + idx).val() || '0').replace(/,/g, '')) || 0;
+    var current_doc_adjustment = Number(($('#bi_amount_' + idx).data('current-amount') || '0').toString().replace(/,/g, '')) || 0;
     var other_sum = 0;
     $('.tot_amt').each(function () {
         if ($(this).attr('id') !== 'bi_amount_' + idx) {
@@ -717,7 +719,7 @@ $(document).on('click', '.tot_amt', function () {
             other_sum += isNaN(v) ? 0 : v;
         }
     });
-    var cap = Math.min(bal_amt, Math.max(0, form_amt - other_sum));
+    var cap = Math.min(bal_amt + current_doc_adjustment, Math.max(0, form_amt - other_sum));
     if (cap > 0) {
         $(this).val(formatAmount(cap));
         get_set_amount(idx);
