@@ -1348,7 +1348,7 @@ class SysReceiptController extends Controller
             if ($bi_amount != 0) {
                 $paid = 0;
             }
-            if ($item->balance > 0) {
+            if ($item->balance > 0 || $bi_amount > 0) {
                 $searchData[] = [
                     'deal_id' => SysHelper::get_salesinvoice_deal_code($item->doc_number),
                     'doc_number' => $item->doc_number,

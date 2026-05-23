@@ -653,7 +653,7 @@ class SysReceivableOutstandingController extends Controller
                 $sra->bi_extra_amount = str_replace(',', '', $request->bi_extra_amount);
                 $sra->bi_doc_no = $request->bi_doc_no;
                 $sra->bi_doc_number = $request->bi_doc_number;
-                $sra->bi_doc_date = date('Y-m-d', strtotime($request->bi_doc_date));
+                $sra->bi_doc_date = SysHelper::normalizeToYmd($request->bi_doc_date);
                 $sra->bi_lpo_no = $request->bi_lpo_no;
                 $sra->bi_total = str_replace(',', '', $request->bi_total);
                 $sra->bi_paid = str_replace(',', '', $request->bi_amount);
