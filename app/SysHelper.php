@@ -8405,6 +8405,23 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 return null;
             }         
                 $company = (int) $company;
+                $receiptAdjustedSql = "(SELECT COALESCE(SUM(ra.bi_paid),0)
+                    FROM sys_receipt_adjustments ra
+                    WHERE ra.company_id = {$company}
+                      AND ra.status = 1
+                      AND ra.account_id = t.account_id
+                      AND ra.bi_doc_number = t.transaction_no)";
+                $salesReturnAdjustedSql = "(SELECT COALESCE(SUM(sr.paid_amount),0)
+                    FROM sys_sales_return_adjestment sr
+                    WHERE sr.srn_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci)";
+                $billwiseJvAdjustedSql = "(SELECT COALESCE(SUM(ra.bi_paid),0)
+                    FROM sys_receipt_adjustments ra
+                    INNER JOIN sys_journalvoucher j ON j.doc_number = ra.bi_doc_number AND j.company_id = ra.company_id
+                    WHERE ra.company_id = {$company}
+                      AND ra.status = 1
+                      AND j.status = 1
+                      AND ra.account_id = t.account_id
+                      AND ra.bi_doc_no = t.transaction_no)";
                 $jvAdjustedSql = "(SELECT COALESCE(SUM(jv.amount),0)
                     FROM sys_receipt_adjustments_jv jv
                     INNER JOIN sys_journalvoucher j ON j.doc_number = jv.jv_id AND j.company_id = jv.company_id
@@ -8413,7 +8430,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND j.status = 1
                       AND jv.account_id = t.account_id
                       AND jv.receipt_no = t.transaction_no)";
-                $totalAdjustedSql = "COALESCE(SUM(ra.bi_paid), 0) + COALESCE(SUM(sr.paid_amount), 0) + COALESCE({$jvAdjustedSql}, 0)";
+                $totalAdjustedSql = "COALESCE({$receiptAdjustedSql}, 0) + COALESCE({$salesReturnAdjustedSql}, 0) + COALESCE({$billwiseJvAdjustedSql}, 0) + COALESCE({$jvAdjustedSql}, 0)";
 
                 $unadjested_receipt = DB::table('sys_chartofaccounts_transaction as t')->select(
                     't.account_id',
@@ -8429,13 +8446,6 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                     DB::raw("{$totalAdjustedSql} AS adj_amount")
                 )
                 ->leftJoin('sys_chartofaccounts as c', 'c.id', '=', 't.account_id')
-                ->leftJoin('sys_receipt_adjustments as ra', function ($join) {
-                        $join->on('ra.bi_doc_number', '=', 't.transaction_no')
-                            ->whereColumn('ra.account_id', '=', 't.account_id');
-                    })
-                ->leftJoin('sys_sales_return_adjestment as sr', function ($join) {
-                    $join->on(DB::raw("sr.srn_no COLLATE utf8mb4_general_ci"), '=', DB::raw("t.transaction_no COLLATE utf8mb4_general_ci"));
-                })
                 ->leftJoin('sys_receipt', 'sys_receipt.doc_number', '=', 't.transaction_no')
                 ->whereIn('t.account_id', $account_ids)
                 ->where('t.company_id', $company)
@@ -8672,6 +8682,23 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 $otherJvFilter = $currentJvNo !== '' ? " AND jv.jv_id <> '{$currentJvNo}'" : '';
                 $currentJvFilter = $currentJvNo !== '' ? " AND jv.jv_id = '{$currentJvNo}'" : " AND 1 = 0";
 
+                $receiptAdjustedSql = "(SELECT COALESCE(SUM(ra.bi_paid),0)
+                    FROM sys_receipt_adjustments ra
+                    WHERE ra.company_id = {$company}
+                      AND ra.status = 1
+                      AND ra.account_id = t.account_id
+                      AND ra.bi_doc_number = t.transaction_no)";
+                $salesReturnAdjustedSql = "(SELECT COALESCE(SUM(sr.paid_amount),0)
+                    FROM sys_sales_return_adjestment sr
+                    WHERE sr.srn_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci)";
+                $billwiseJvAdjustedSql = "(SELECT COALESCE(SUM(ra.bi_paid),0)
+                    FROM sys_receipt_adjustments ra
+                    INNER JOIN sys_journalvoucher j ON j.doc_number = ra.bi_doc_number AND j.company_id = ra.company_id
+                    WHERE ra.company_id = {$company}
+                      AND ra.status = 1
+                      AND j.status = 1
+                      AND ra.account_id = t.account_id
+                      AND ra.bi_doc_no = t.transaction_no)";
                 $jvOtherAdjustedSql = "(SELECT COALESCE(SUM(jv.amount),0)
                     FROM sys_receipt_adjustments_jv jv
                     INNER JOIN sys_journalvoucher j ON j.doc_number = jv.jv_id AND j.company_id = jv.company_id
@@ -8688,7 +8715,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND j.status = 1
                       AND jv.account_id = t.account_id
                       AND jv.receipt_no = t.transaction_no{$currentJvFilter})";
-                $totalAdjustedSql = "COALESCE(SUM(ra.bi_paid), 0) + COALESCE(SUM(sr.paid_amount), 0) + COALESCE({$jvOtherAdjustedSql}, 0)";
+                $totalAdjustedSql = "COALESCE({$receiptAdjustedSql}, 0) + COALESCE({$salesReturnAdjustedSql}, 0) + COALESCE({$billwiseJvAdjustedSql}, 0) + COALESCE({$jvOtherAdjustedSql}, 0)";
 
                 $unadjested_receipt = DB::table('sys_chartofaccounts_transaction as t')->select(
                     't.account_id',
@@ -8703,13 +8730,6 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                     DB::raw("COALESCE({$jvCurrentAdjustedSql}, 0) AS removed_amount")
                 )
                 ->leftJoin('sys_chartofaccounts as c', 'c.id', '=', 't.account_id')
-                ->leftJoin('sys_receipt_adjustments as ra', function ($join) {
-                        $join->on('ra.bi_doc_number', '=', 't.transaction_no')
-                            ->whereColumn('ra.account_id', '=', 't.account_id');
-                    })
-                ->leftJoin('sys_sales_return_adjestment as sr', function ($join) {
-                    $join->on(DB::raw("sr.srn_no COLLATE utf8mb4_general_ci"), '=', DB::raw("t.transaction_no COLLATE utf8mb4_general_ci"));
-                })
                 ->leftJoin('sys_receipt', 'sys_receipt.doc_number', '=', 't.transaction_no')
                 ->whereIn('t.account_id', $account_ids)
                 ->where('t.company_id', $company)
