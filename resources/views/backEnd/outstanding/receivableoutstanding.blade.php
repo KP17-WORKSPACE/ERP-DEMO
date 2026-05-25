@@ -1065,7 +1065,8 @@ function check_total(id, amount) {
                             if (isset($dt->transaction_type) && $dt->transaction_type == 'opbinvoice') {
                                 $opb_import_paid = (float) ($dt->credit_amount ?? 0);
                             }
-                            $paid += ($adjustments + $bi_amount + $bi_amount2 + $bi_amount6 + $opb_import_paid) - ($bi_amount3 + $bi_amount4);
+                            $jvInvoiceAdjustment = ((float)($dt->debit_amount ?? 0) > 0) ? $bi_amount2 : 0;
+                            $paid += ($adjustments + $bi_amount + $jvInvoiceAdjustment + $bi_amount4 + $bi_amount6 + $opb_import_paid) - $bi_amount3;
                             
                             
                             $deal_id="";
@@ -1359,6 +1360,19 @@ function check_total(id, amount) {
 
                   <?php $unadj_list_jv_to_jv = !empty($list_of_unadjusted_jv_to_jv) ? $list_of_unadjusted_jv_to_jv->where('account_id',$aname->id) : []; ?>
                   @php
+                      $unadj_list = collect($unadj_list)
+                          ->filter(function ($row) {
+                              $remaining = (float) ($row->amount ?? 0) - (float) ($row->adj_amount ?? 0);
+                              $isOpeningBalanceCredit = ($row->transaction_type ?? '') === 'openingbalance'
+                                  && (float) ($row->amount ?? 0) < 0;
+
+                              if ($isOpeningBalanceCredit) {
+                                  return round(abs($remaining), 2) > 0.00;
+                              }
+
+                              return round($remaining, 2) > 0.00;
+                          })
+                          ->values();
                       $existingUnadjDocNos = collect($unadj_list)->pluck('doc_number')->filter()->unique();
                       $unadj_list_jv_to_jv = collect($unadj_list_jv_to_jv)
                           ->groupBy('doc_number')
@@ -1370,13 +1384,16 @@ function check_total(id, amount) {
                               $first->amount2 = collect($rows)->sum(function ($row) {
                                   return (float) ($row->amount2 ?? 0);
                               });
+                              $first->adj_amount = collect($rows)->sum(function ($row) {
+                                  return (float) ($row->adj_amount ?? 0);
+                              });
                               return $first;
                           })
                           ->filter(function ($row) use ($existingUnadjDocNos) {
                               if ($existingUnadjDocNos->contains($row->doc_number ?? null)) {
                                   return false;
                               }
-                              return round((float) (($row->amount ?? 0) - ($row->amount2 ?? 0)), 2) != 0.00;
+                              return round((float) (($row->amount ?? 0) - ($row->amount2 ?? 0) - ($row->adj_amount ?? 0)), 2) > 0.00;
                           })
                           ->values();
                   @endphp
@@ -1564,11 +1581,12 @@ function check_total(id, amount) {
                             <th class="text-center" style="width:6%">Doc Date</th>
                             <th class="text-center" style="width:7%">Receipt No</th>
                             <th class="text-end" style="width:11%">Amount</th>
-                            <th class="text-start" style="width:73%">Remarks</th>
+                            <th class="text-end" style="width:9%">Adjustment</th>
+                            <th class="text-start" style="width:64%">Remarks</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @php $unadjSum = 0; @endphp
+                        @php $unadjSum = 0; $unadjAdjustedSum = 0; @endphp
                         @if (count($unadj_list)>0)
                         @foreach ($unadj_list as $p)
                           @php
@@ -1624,13 +1642,15 @@ function check_total(id, amount) {
                                 </td>
                             @endif
                             @php
-                                $unadjustedBalance = (float)($p->amount ?? 0) - (float)($p->adj_amount ?? 0);
+                                $unadjustedAdjustment = (float)($p->adj_amount ?? 0);
+                                $unadjustedBalance = (float)($p->amount ?? 0) - $unadjustedAdjustment;
                                 if ((float)($p->credit_amount ?? 0) > (float)($p->debit_amount ?? 0)) {
                                     $unadjustedBalance = -abs($unadjustedBalance);
                                 }
                             @endphp
-                            @php $unadjSum += $unadjustedBalance; @endphp
+                            @php $unadjSum += $unadjustedBalance; $unadjAdjustedSum += $unadjustedAdjustment; @endphp
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalance,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustment,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
                                 set_total_lessmore({{ $aname->id }},{{ $unadjustedBalance }})
@@ -1658,9 +1678,11 @@ function check_total(id, amount) {
                                     {{ $docNumber }}
                                 </td>
                             @endif
-                            @php $unadjustedBalanceJv = (float)($p->amount ?? 0) - (float)($p->amount2 ?? 0); @endphp
-                            @php $unadjSum += $unadjustedBalanceJv; @endphp
+                            @php $unadjustedAdjustmentJv = (float)($p->amount2 ?? 0) + (float)($p->adj_amount ?? 0); @endphp
+                            @php $unadjustedBalanceJv = (float)($p->amount ?? 0) - $unadjustedAdjustmentJv; @endphp
+                            @php $unadjSum += $unadjustedBalanceJv; $unadjAdjustedSum += $unadjustedAdjustmentJv; @endphp
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalanceJv,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustmentJv,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
                                 set_total_lessmore({{ $aname->id }},{{ $unadjustedBalanceJv }})
@@ -1674,6 +1696,7 @@ function check_total(id, amount) {
                             <td class=""></td>
                             <td class=""></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjSum,2,'.',',') }}</b></td>
+                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAdjustedSum,2,'.',',') }}</b></td>
                             <td class=""></td>
                         </tr>
 
