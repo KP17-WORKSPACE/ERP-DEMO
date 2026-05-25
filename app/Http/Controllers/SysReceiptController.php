@@ -1301,8 +1301,18 @@ class SysReceiptController extends Controller
             // if(!empty($searchData)){
             // 	return json_encode($searchData);
             // }
+            $positiveUnadjusted = SysHelper::get_positive_receivable_unadjusted_for_billwise($request->account_id, $company_id);
+            $invoiceDocNumbers = collect($searchData)->pluck('doc_number')->filter()->unique();
+            $positiveUnadjusted = collect($positiveUnadjusted)
+                ->reject(function ($row) use ($invoiceDocNumbers) {
+                    return $invoiceDocNumbers->contains($row->doc_number);
+                })
+                ->values();
 
-            return response()->json($searchData);
+            return response()->json([
+                'invoices' => $searchData,
+                'positive_unadjusted' => $positiveUnadjusted,
+            ]);
 
 
         } catch (\Throwable $th) {
@@ -1362,8 +1372,23 @@ class SysReceiptController extends Controller
                 ];
             }
         }
+        $currentAdjustedByDoc = $adjestData
+            ->groupBy('bi_doc_no')
+            ->map(function ($group) {
+                return (float) $group->sum('bi_paid');
+            });
+        $positiveUnadjusted = SysHelper::get_positive_receivable_unadjusted_for_billwise($request->account_id, $company_id, $currentAdjustedByDoc);
+        $invoiceDocNumbers = collect($searchData)->pluck('doc_number')->filter()->unique();
+        $positiveUnadjusted = collect($positiveUnadjusted)
+            ->reject(function ($row) use ($invoiceDocNumbers) {
+                return $invoiceDocNumbers->contains($row->doc_number);
+            })
+            ->values();
 
-        return response()->json($searchData);
+        return response()->json([
+            'invoices' => $searchData,
+            'positive_unadjusted' => $positiveUnadjusted,
+        ]);
     }
 
     public function delete($id)

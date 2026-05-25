@@ -477,10 +477,21 @@ class SysSalesReturnController extends Controller
             $srn_adjestment = $srn_adjestment->sortByDesc('doc_date');
             $srn_adjestment = $srn_adjestment->values()->all(); // Optional: make it a plain array
 
+            $positiveUnadjusted = SysHelper::get_positive_receivable_unadjusted_for_billwise($request->id, session('logged_session_data.company_id'));
+            $invoiceDocNumbers = collect($srn_adjestment)->pluck('doc_number')->filter()->unique();
+            $positiveUnadjusted = collect($positiveUnadjusted)
+                ->reject(function ($row) use ($invoiceDocNumbers) {
+                    return $invoiceDocNumbers->contains($row->doc_number);
+                })
+                ->values()->all();
+
 
             //$docno = SysDeliveryNote::select('doc_number')->where('id',$request->id)->first();
             //$ret = SysSalesReturnAdjestment::select('srn_no','dln_no','siv_no','doc_date','total_amount','paid_amount','balance_amount')->where('dln_no',$docno->doc_number)->get();
-            return json_encode(array('data' => $srn_adjestment));
+            return json_encode([
+                'data' => $srn_adjestment,
+                'positive_unadjusted' => $positiveUnadjusted,
+            ]);
 
         } catch (\Exception $e) {
             $ret = 'ERROR';
@@ -1186,6 +1197,18 @@ class SysSalesReturnController extends Controller
 
 
             $editDataAdjustments = SysSalesReturnAdjestment::where('srn_no', $edit->doc_number)->where('status', 1)->get();
+            $currentAdjustedByDoc = $editDataAdjustments
+                ->groupBy('siv_no')
+                ->map(function ($group) {
+                    return (float) $group->sum('paid_amount');
+                });
+            $srn_positive_unadjusted = SysHelper::get_positive_receivable_unadjusted_for_billwise($edit->customer, $company_id, $currentAdjustedByDoc);
+            $invoiceDocNumbers = collect($srn_adjestment)->pluck('doc_number')->filter()->unique();
+            $srn_positive_unadjusted = collect($srn_positive_unadjusted)
+                ->reject(function ($row) use ($invoiceDocNumbers) {
+                    return $invoiceDocNumbers->contains($row->doc_number);
+                })
+                ->values()->all();
 
             //return $srn_adjestment;
 
@@ -1199,7 +1222,7 @@ class SysSalesReturnController extends Controller
             $query->orderby('doc_number', 'desc');
             $salesreturn = $query->paginate(50);
 
-            return compact('currency', 'currencylist2', 'customer', 'customs_freight_account', 'items', 'paymentterms', 'company', 'customertype', 'saletype', 'staff', 'countries', 'states', 'supplier', 'edit', 'edit_list', 'invoice_amount', 'srn_adjestment', 'edit_list_srl', 'editDataAdjustments', 'salesreturn');
+            return compact('currency', 'currencylist2', 'customer', 'customs_freight_account', 'items', 'paymentterms', 'company', 'customertype', 'saletype', 'staff', 'countries', 'states', 'supplier', 'edit', 'edit_list', 'invoice_amount', 'srn_adjestment', 'srn_positive_unadjusted', 'edit_list_srl', 'editDataAdjustments', 'salesreturn');
             // return view('backEnd.salesreturn.salesreturnedit', compact('currency','currencylist2', 'customer', 'customs_freight_account', 'items', 'paymentterms','company','customertype','saletype','staff','countries','states','supplier','edit','edit_list','invoice_amount','srn_adjestment','edit_list_srl','editDataAdjustments','salesreturn'));
 
         } catch (\Exception $e) {

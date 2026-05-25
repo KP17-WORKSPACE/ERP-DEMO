@@ -1016,10 +1016,10 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
         try {
             $company_id = session('logged_session_data.company_id');
             if($request->account_type==""){}
+            $searchData = [];
             
             $opb2 = SysChartofAccountsTransaction::wherein('transaction_type',['openingbalance11111','opbinvoice'])->where('account_id',$request->account_id)->where('company_id',$company_id)->get();
             $items2 = DB::select("CALL get_bank_receipt_adjestments($request->account_id,$company_id)");
-            $searchData2 = [];
 
             if(count($opb2)>0){
             foreach($opb2 as $dt){
@@ -1046,10 +1046,18 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
                     'balance' => $item->balance,
                 ];
             }
+            $positiveUnadjusted = SysHelper::get_positive_receivable_unadjusted_for_billwise($request->account_id, $company_id);
+            $invoiceDocNumbers = collect($searchData)->pluck('doc_number')->filter()->unique();
+            $positiveUnadjusted = collect($positiveUnadjusted)
+                ->reject(function ($row) use ($invoiceDocNumbers) {
+                    return $invoiceDocNumbers->contains($row->doc_number);
+                })
+                ->values();
 
-            if(!empty($searchData)){
-                return json_encode($searchData);
-            }
+            return response()->json([
+                'invoices' => $searchData,
+                'positive_unadjusted' => $positiveUnadjusted,
+            ]);
         } catch (\Throwable $th) {
             return json_encode($th);
         }
@@ -1212,10 +1220,23 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
                 ];
             }
 		}
+        $currentAdjustedByDoc = $adjestData
+            ->groupBy('bi_doc_no')
+            ->map(function ($group) {
+                return (float) $group->sum('bi_paid');
+            });
+        $positiveUnadjusted = SysHelper::get_positive_receivable_unadjusted_for_billwise($request->account_id, $company_id, $currentAdjustedByDoc);
+        $invoiceDocNumbers = collect($searchData)->pluck('doc_number')->filter()->unique();
+        $positiveUnadjusted = collect($positiveUnadjusted)
+            ->reject(function ($row) use ($invoiceDocNumbers) {
+                return $invoiceDocNumbers->contains($row->doc_number);
+            })
+            ->values();
 
-		if(!empty($searchData)){
-			return json_encode($searchData);
-        }
+        return response()->json([
+            'invoices' => $searchData,
+            'positive_unadjusted' => $positiveUnadjusted,
+        ]);
     }
 
     public function get_adjestment_list_edit_sup(Request $request)
@@ -1397,6 +1418,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
              $set_amt = $request->input('set_amt');
              $receiptno = $request->input('receiptno');
              $set_amt_act = $request->input('set_amt_act');
+             $data = [];
 
             DB::table('sys_receipt_adjustments_jv')->where(['account_id' => $request->account_id,'company_id' => session('logged_session_data.company_id'),'cart_id' => session('logged_session_data.cart_id'),'status' => 3,'jv_id' => "nill"])->delete();
 
@@ -1435,6 +1457,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
              $set_amt = $request->input('set_amt');
              $receiptno = $request->input('receiptno');
              $set_amt_act = $request->input('set_amt_act');
+             $data = [];
 
             DB::table('sys_receipt_adjustments_jv')->where(['account_id' => $request->account_id,'company_id' => session('logged_session_data.company_id'),'jv_id' => $request->jv_id])->delete();
 
@@ -1506,6 +1529,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
              $set_amt = $request->input('set_amt');
              $paymentno = $request->input('paymentno');
              $set_amt_act = $request->input('set_amt_act');
+             $data = [];
 
             DB::table('sys_payment_adjustments_jv')->where(['account_id' => $request->account_id,'company_id' => session('logged_session_data.company_id'),'cart_id' => session('logged_session_data.cart_id'),'status' => 3,'jv_id' => "nill"])->delete();
 
@@ -1544,6 +1568,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
              $set_amt = $request->input('set_amt');
              $paymentno = $request->input('paymentno');
              $set_amt_act = $request->input('set_amt_act');
+             $data = [];
 
             DB::table('sys_payment_adjustments_jv')->where(['account_id' => $request->account_id,'company_id' => session('logged_session_data.company_id'),'jv_id' => $request->jv_id])->delete();
 
