@@ -1032,22 +1032,28 @@ function set_adjust(amt,id) {
                                             </tfoot>
                                         </table>
                                 </div>
-                                <div class="equipment comon-status mt-3">
-                                    <h6 class="mb-2">Positive Unadjusted Balance</h6>
+                                <div class="equipment comon-status mt-3" id="billWisePositiveUnadjustedSection" style="display:none;">
+                                    <h6 class="mb-2"> Unadjusted Balance</h6>
                                     <table class="table table-hover" cellspacing="0" width="100%" id="crListBankBookAdjestUnadjusted">
                                         <thead>
                                             <tr>
-                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
-                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
-                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
-                                                <th style="width:100px;" class="text-end">@lang('Total')</th>
-                                                <th style="width:100px;" class="text-end">@lang('Paid')</th>
-                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
-                                                <th style="width:100px;" class="text-end">@lang('Adjustment')</th>
-                                                <th style="width:100px;" class="text-start">@lang('Narration')</th>
+                                                <th style="width:90px;" class="text-center">@lang('Deal ID')</th>
+                                                <th style="width:50px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:80px;" class="text-center">@lang('Receipt No')</th>
+                                                <th style="width:80px;" class="text-end">@lang('Amount')</th>
+                                                <th style="width:80px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:200px;" class="text-center">@lang('Remarks')</th>
                                             </tr>
                                         </thead>
                                         <tbody></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="3" class="text-end">@lang('Total')</th>
+                                                <th class="text-end"><label id="footer_unadjusted_amount">0.00</label></th>
+                                                <th class="text-end"><label id="footer_unadjusted_adjustment">0.00</label></th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                            
@@ -1155,27 +1161,13 @@ function set_adjust(amt,id) {
 
                             function get_set_amount(id)
                             {
-                                var form_amt = parseErpAmount($('#bi_cheque_amount').val());
-                                var bal_amt = parseErpAmount($('#bi_balance_' + id).val());
-                                var current_amt = parseErpAmount($('#bi_amount_' + id).val());
-                                var other_adjusted = 0;
-
-                                $('.tot_amt').not('#bi_amount_' + id).each(function () {
-                                    other_adjusted += parseErpAmount($(this).val());
-                                });
-
-                                var remaining = form_amt - other_adjusted;
-                                if (remaining < 0) {
-                                    remaining = 0;
+                                if (typeof autoFillBillWiseAdjustmentInput === 'function') {
+                                    autoFillBillWiseAdjustmentInput(id);
+                                    return;
                                 }
-
-                                var amount_to_set = bal_amt + current_amt;
-                                if (amount_to_set > remaining) {
-                                    amount_to_set = remaining;
+                                if (typeof updateBillWiseAdjustmentTotals === 'function') {
+                                    updateBillWiseAdjustmentTotals();
                                 }
-
-                                $('#bi_amount_' + id).val(formatAmount(amount_to_set));
-                                updateBillWiseAdjustmentTotals();
                             }
                         </script>
 

@@ -1079,22 +1079,28 @@ $(document).ready(function () {
                                         </tfoot>
                                     </table>
                                 </div>
-                                <div class="equipment comon-status row mt-3 d-block">
-                                    <h6 class="mb-2">Positive Unadjusted Balance</h6>
+                                <div class="equipment comon-status row mt-3 d-block" id="billWisePositiveUnadjustedSection" style="display:none;">
+                                    <h6 class="mb-2"> Unadjusted Balance</h6>
                                     <table class="table table-hover data-table-bill" id="crListBankBookAdjestUnadjusted">
                                         <thead>
                                             <tr>
-                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Deal ID')</th>
                                                 <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
-                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
-                                                <th style="width:100px;" class="text-end">@lang('Total')</th>
-                                                <th style="width:100px;" class="text-end">@lang('Paid')</th>
-                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
-                                                <th style="width:100px;" class="text-end">@lang('Adjustment')</th>
-                                                <th style="width:100px;" class="text-start">@lang('Narration')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Receipt No')</th>
+                                                <th style="width:120px;" class="text-end">@lang('Amount')</th>
+                                                <th style="width:120px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:100px;" class="text-start">@lang('Remarks')</th>
                                             </tr>
                                         </thead>
                                         <tbody></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="3" class="text-end">@lang('Total')</th>
+                                                <th class="text-end"><label id="footer_unadjusted_amount">0.00</label></th>
+                                                <th class="text-end"><label id="footer_unadjusted_adjustment">0.00</label></th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                             </div>
@@ -1122,66 +1128,13 @@ function setTextAmount(selector, value) {
 }
 
 function get_set_amount(id) {
-    var form_amt = parseAmount($('#bi_cheque_amount').val());
-    var bal_amt = parseAmount($('#bi_balance_' + id).val());
-
-    var adjusted_sum = 0;
-
-    $('.tot_amt').each(function () {
-        adjusted_sum += parseAmount($(this).val());
-    });
-
-    var current_balance = form_amt - adjusted_sum;
-
-    if (current_balance < 0) {
-        current_balance = 0;
+    if (typeof autoFillBillWiseAdjustmentInput === 'function') {
+        autoFillBillWiseAdjustmentInput(id);
+        return;
     }
-
-    setAmount('#bi_amount_adjusted', adjusted_sum);
-    setAmount('#bi_balance_adjest', current_balance);
-    setAmount('#bi_balance_to_adjust', current_balance);
-
-    var amt = current_balance;
-
-    if (amt > 0) {
-        if (amt >= bal_amt) {
-            setAmount('#bi_amount_' + id, bal_amt);
-            setAmount('#bi_balance_adjest', amt - bal_amt);
-            setAmount('#bi_balance_to_adjust', amt - bal_amt);
-        } else {
-            setAmount('#bi_amount_' + id, amt);
-            setAmount('#bi_balance_adjest', 0);
-            setAmount('#bi_balance_to_adjust', 0);
-        }
-    } else {
-        setAmount('#bi_amount_' + id, 0);
-        setAmount('#bi_balance_adjest', 0);
-        setAmount('#bi_balance_to_adjust', 0);
+    if (typeof updateBillWiseAdjustmentTotals === 'function') {
+        updateBillWiseAdjustmentTotals();
     }
-
-    var final_adjusted_sum = 0;
-
-    $('.tot_amt').each(function () {
-        final_adjusted_sum += parseAmount($(this).val());
-    });
-
-    var final_balance = form_amt - final_adjusted_sum;
-
-    if (final_balance < 0) {
-        final_balance = 0;
-    }
-
-    setAmount('#bi_amount_adjusted', final_adjusted_sum);
-    setAmount('#bi_balance_adjest', final_balance);
-    setAmount('#bi_balance_to_adjust', final_balance);
-
-    if (form_amt >= final_adjusted_sum) {
-        setAmount('#bi_extra_amount', form_amt - final_adjusted_sum);
-    } else {
-        setAmount('#bi_extra_amount', final_adjusted_sum - form_amt);
-    }
-
-    setTextAmount('#footer_adjustment', final_adjusted_sum);
 }
 </script>
 
