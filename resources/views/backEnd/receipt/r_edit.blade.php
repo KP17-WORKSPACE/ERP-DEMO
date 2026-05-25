@@ -639,6 +639,25 @@ $(document).ready(function() {
                                         </tfoot>
                                     </table>
                                 </div>
+                                <div class="equipment comon-status mt-3 d-block">
+                                    <h6 class="mb-2">Positive Unadjusted Balance</h6>
+                                    <table class="table table-hover form-item-table data-table-bill" cellspacing="0" width="100%" id="crListBankBookAdjestUnadjusted">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:100px;" class="text-center">@lang('Deal')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Total')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Paid')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Balance')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Adjustment')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Narration')</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
                            
 
                          <script>
