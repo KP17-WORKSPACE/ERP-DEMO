@@ -702,6 +702,7 @@ function get_customer_adjustment_list(id){
             data: {
                 _token: '{{ csrf_token() }}',
                 id: id,
+                jv_id: $("input[name='doc_number2']").val(),
             },
             cache: false,
             success: function(dataResult) {
@@ -1030,6 +1031,24 @@ function set_adjust(amt,id) {
                                                 </tr>
                                             </tfoot>
                                         </table>
+                                </div>
+                                <div class="equipment comon-status mt-3">
+                                    <h6 class="mb-2">Positive Unadjusted Balance</h6>
+                                    <table class="table table-hover" cellspacing="0" width="100%" id="crListBankBookAdjestUnadjusted">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Total')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Paid')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:100px;" class="text-start">@lang('Narration')</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
                                 </div>
                            
 

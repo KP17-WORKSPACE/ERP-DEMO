@@ -1007,7 +1007,7 @@ $(document).ready(function () {
                     <input type="hidden" id="delete_url">
                     <div class="container-fluid">
                         <div class="row">
-                            <div class="col-lg-4 mb-20">
+                            <div class="col mb-20">
                                 <div class="input-effect">
                                     <label id="txt_bi_cheque_amount">@lang('Cash Amount') <span>*</span></label>
                                     <input class="primary-input form-control" type="text" id="bi_cheque_amount" name="bi_cheque_amount" value="0" >
@@ -1015,7 +1015,7 @@ $(document).ready(function () {
                                     <span class="modal_input_validation_2 red_alert"></span>                                    
                                 </div>
                             </div>
-                            <div class="col-lg-4 mb-20">
+                            <div class="col mb-20">
                                 <div class="input-effect">
                                     <label>  @lang('Amount Adjusted') <span>*</span> </label>
                                     <input class="primary-input form-control" type="text" id="bi_amount_adjusted" name="bi_amount_adjusted" value="0" >
@@ -1026,7 +1026,7 @@ $(document).ready(function () {
 
                                 </div>
                             </div>
-                            <div class="col-lg-4 mb-20">
+                            <div class="col mb-20">
                                 <div class="input-effect">
                                     <label>  @lang('Balance to Adjust') <span>*</span> </label>
                                     <input class="primary-input form-control" type="text" id="bi_extra_amount" name="bi_extra_amount" value="0" >                                    
@@ -1036,12 +1036,20 @@ $(document).ready(function () {
                                     <span class="modal_input_validation_2 red_alert"></span>                                    
                                 </div>
                             </div>
+
+                            
+                            <div class="col mb-20">
+                                        <div class="input-effect">
+                                            <label>  @lang('Search in table') </label>
+                                            <input class="primary-input form-control" type="text" id="tableSearchBill" name="tableSearchBill" value="" >                                       
+                                        </div>
+                                    </div>
                         </div>
 
                         <div class="row">
                             <div class="col-lg-12 mt-2">
                                 <div class="equipment comon-status row mt-40 d-block">
-                                    <table class="table table-hover crListBankBookAdjest" id="long-list">
+                                    <table class="table table-hover data-table-bill crListBankBookAdjest" id="long-list">
                                         <thead>
                                             <tr>
                                                 <th style="width:100px;" class="text-center">@lang('Doc No')</th>
@@ -1069,6 +1077,24 @@ $(document).ready(function () {
                                                 <th></th>
                                             </tr>
                                         </tfoot>
+                                    </table>
+                                </div>
+                                <div class="equipment comon-status row mt-3 d-block">
+                                    <h6 class="mb-2">Positive Unadjusted Balance</h6>
+                                    <table class="table table-hover data-table-bill" id="crListBankBookAdjestUnadjusted">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Total')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Paid')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:100px;" class="text-start">@lang('Narration')</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
                                     </table>
                                 </div>
                             </div>
