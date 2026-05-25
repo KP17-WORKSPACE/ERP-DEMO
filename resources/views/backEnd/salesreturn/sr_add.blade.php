@@ -1939,45 +1939,63 @@ $(document).ready(function () {
             cache: false,
             success: function(dataResult) {
                 var dataResult = JSON.parse(dataResult);
-                var len = 0;
-                var len = 0;
-                var j=0;
-                var tblrow="";
-                    if(dataResult['data'] != null){
-                        len = dataResult['data'].length;
+                var invoiceRows = Array.isArray(dataResult['data']) ? dataResult['data'] : [];
+                var unadjustedRows = Array.isArray(dataResult['positive_unadjusted']) ? dataResult['positive_unadjusted'] : [];
+                var j = 0;
+                var invoiceHtml = "";
+                var unadjustedHtml = "";
+
+                for (var i = 0; i < invoiceRows.length; i++) {
+                    var invoiceRow = invoiceRows[i];
+                    var paid_amount = parseSrAdjustmentAmount(invoiceRow.total_paid_amount);
+                    var total_amount = parseSrAdjustmentAmount(invoiceRow.total_amount);
+                    var balance_amount = total_amount - paid_amount;
+                    if (balance_amount <= 0) {
+                        continue;
                     }
-                    if(len > 0){
-                        for(var i=0; i<len; i++){
 
-                            var paid_amount = parseSrAdjustmentAmount(dataResult['data'][i].total_paid_amount);
-                            var total_amount = parseSrAdjustmentAmount(dataResult['data'][i].total_amount);
-                            var balance_amount = total_amount - paid_amount;
-                            if(balance_amount >0){
-                                tblrow += "<tr class='js-sr-adj-row' data-row='"+ j +"'>";
-                                tblrow += "<td class='text-center'>"+ escapeSrAdjustmentValue(dataResult['data'][i].doc_number) +"<input type='hidden' name='adj_siv_no[]' id='adj_siv_no_"+ j +"' value='"+ escapeSrAdjustmentValue(dataResult['data'][i].doc_number) +"' readonly /></td>";
-                                tblrow += "<td class='text-center'>"+ formatSrAdjustmentDate(dataResult['data'][i].doc_date) +"<input type='hidden' name='adj_doc_date[]' id='adj_doc_date_"+ j +"' value='"+ formatSrAdjustmentDate(dataResult['data'][i].doc_date) +"' readonly /></td>";
-                                tblrow += "<td class='text-center'>"+ escapeSrAdjustmentValue(dataResult['data'][i].lpo_number) +"<input type='hidden' name='adj_lpo_number[]' id='adj_lpo_number_"+ j +"' value='"+ escapeSrAdjustmentValue(dataResult['data'][i].lpo_number) +"' readonly /></td>";
-                                tblrow += "<td class='text-end'>"+ formatSrAdjustmentAmount(total_amount) +"<input type='hidden' name='adj_total[]' id='adj_total_"+ j +"' value='"+ formatSrAdjustmentAmount(total_amount) +"' readonly /></td>";
-                                tblrow += "<td class='text-end'>"+ formatSrAdjustmentAmount(paid_amount) +"<input type='hidden' class='js-sr-adj-previous-paid' id='adj_previous_paid_"+ j +"' value='"+ formatSrAdjustmentAmount(paid_amount) +"' readonly /></td>";
-                                tblrow += "<td class='text-end'><span id='adj_balance_display_"+ j +"'>"+ formatSrAdjustmentAmount(balance_amount) +"</span><input type='hidden' name='adj_balance[]' id='adj_balance_"+ j +"' value='"+ formatSrAdjustmentAmount(balance_amount) +"' data-actual-balance='"+ balance_amount +"' readonly /></td>";
-                                tblrow += "<td><input type='text' class='form-control text-end class_adj_paid' name='adj_paid[]' id='adj_paid_"+ j +"' value='"+ formatSrAdjustmentAmount(0) +"' data-current-amount='0' onclick='get_set_amount("+ j +")' required /></td>";
-                                tblrow += "<td><input type='text' class='form-control' name='adj_narration[]' id='adj_narration_"+ j +"' value='"+ escapeSrAdjustmentValue(dataResult['data'][i].narration)+"' /></td>";
-                                tblrow += "</tr>";
-                                j++;
-                            }
+                    invoiceHtml += "<tr class='js-sr-adj-row' data-row='"+ j +"'>";
+                    invoiceHtml += "<td class='text-center'>"+ escapeSrAdjustmentValue(invoiceRow.doc_number) +"<input type='hidden' name='adj_siv_no[]' id='adj_siv_no_"+ j +"' value='"+ escapeSrAdjustmentValue(invoiceRow.doc_number) +"' readonly /></td>";
+                    invoiceHtml += "<td class='text-center'>"+ formatSrAdjustmentDate(invoiceRow.doc_date) +"<input type='hidden' name='adj_doc_date[]' id='adj_doc_date_"+ j +"' value='"+ formatSrAdjustmentDate(invoiceRow.doc_date) +"' readonly /></td>";
+                    invoiceHtml += "<td class='text-center'>"+ escapeSrAdjustmentValue(invoiceRow.lpo_number) +"<input type='hidden' name='adj_lpo_number[]' id='adj_lpo_number_"+ j +"' value='"+ escapeSrAdjustmentValue(invoiceRow.lpo_number) +"' readonly /></td>";
+                    invoiceHtml += "<td class='text-end'>"+ formatSrAdjustmentAmount(total_amount) +"<input type='hidden' name='adj_total[]' id='adj_total_"+ j +"' value='"+ formatSrAdjustmentAmount(total_amount) +"' readonly /></td>";
+                    invoiceHtml += "<td class='text-end'>"+ formatSrAdjustmentAmount(paid_amount) +"<input type='hidden' class='js-sr-adj-previous-paid' id='adj_previous_paid_"+ j +"' value='"+ formatSrAdjustmentAmount(paid_amount) +"' readonly /></td>";
+                    invoiceHtml += "<td class='text-end'><span id='adj_balance_display_"+ j +"'>"+ formatSrAdjustmentAmount(balance_amount) +"</span><input type='hidden' name='adj_balance[]' id='adj_balance_"+ j +"' value='"+ formatSrAdjustmentAmount(balance_amount) +"' data-actual-balance='"+ balance_amount +"' readonly /></td>";
+                    invoiceHtml += "<td><input type='text' class='form-control text-end class_adj_paid' name='adj_paid[]' id='adj_paid_"+ j +"' value='"+ formatSrAdjustmentAmount(0) +"' data-current-amount='0' onclick='get_set_amount("+ j +")' required /></td>";
+                    invoiceHtml += "<td><input type='text' class='form-control' name='adj_narration[]' id='adj_narration_"+ j +"' value='"+ escapeSrAdjustmentValue(invoiceRow.narration)+"' /></td>";
+                    invoiceHtml += "</tr>";
+                    j++;
+                }
 
-                        }
-                        
-                        $('#table_adjestment tbody').empty();
-                        $("#table_adjestment tbody").append(tblrow); 
-                        updateSrAdjustmentTotals();
+                for (var k = 0; k < unadjustedRows.length; k++) {
+                    var unadjustedRow = unadjustedRows[k];
+                    var unadjustedPaid = parseSrAdjustmentAmount(unadjustedRow.paid);
+                    var unadjustedTotal = parseSrAdjustmentAmount(unadjustedRow.total);
+                    var unadjustedBalance = parseSrAdjustmentAmount(unadjustedRow.balance);
+                    var unadjustedCurrent = parseSrAdjustmentAmount(unadjustedRow.bi_amount);
+                    var rowCurrentValue = unadjustedCurrent > 0 ? unadjustedCurrent : 0;
 
-                    }
-                    else{
-                        $('#table_adjestment tbody').empty();
+                    unadjustedHtml += "<tr class='js-sr-adj-row' data-row='"+ j +"'>";
+                    unadjustedHtml += "<td class='text-center'>"+ escapeSrAdjustmentValue(unadjustedRow.doc_number) +"<input type='hidden' name='adj_siv_no[]' id='adj_siv_no_"+ j +"' value='"+ escapeSrAdjustmentValue(unadjustedRow.doc_number) +"' readonly /></td>";
+                    unadjustedHtml += "<td class='text-center'>"+ formatSrAdjustmentDate(unadjustedRow.doc_date) +"<input type='hidden' name='adj_doc_date[]' id='adj_doc_date_"+ j +"' value='"+ formatSrAdjustmentDate(unadjustedRow.doc_date) +"' readonly /></td>";
+                    unadjustedHtml += "<td class='text-center'>"+ escapeSrAdjustmentValue(unadjustedRow.lpo_number) +"<input type='hidden' name='adj_lpo_number[]' id='adj_lpo_number_"+ j +"' value='"+ escapeSrAdjustmentValue(unadjustedRow.lpo_number) +"' readonly /></td>";
+                    unadjustedHtml += "<td class='text-end'>"+ formatSrAdjustmentAmount(unadjustedTotal) +"<input type='hidden' name='adj_total[]' id='adj_total_"+ j +"' value='"+ formatSrAdjustmentAmount(unadjustedTotal) +"' readonly /></td>";
+                    unadjustedHtml += "<td class='text-end'>"+ formatSrAdjustmentAmount(unadjustedPaid) +"<input type='hidden' class='js-sr-adj-previous-paid' id='adj_previous_paid_"+ j +"' value='"+ formatSrAdjustmentAmount(unadjustedPaid) +"' readonly /></td>";
+                    unadjustedHtml += "<td class='text-end'><span id='adj_balance_display_"+ j +"'>"+ formatSrAdjustmentAmount(unadjustedBalance) +"</span><input type='hidden' name='adj_balance[]' id='adj_balance_"+ j +"' value='"+ formatSrAdjustmentAmount(unadjustedBalance) +"' data-actual-balance='"+ unadjustedBalance +"' readonly /></td>";
+                    unadjustedHtml += "<td><input type='text' class='form-control text-end class_adj_paid' name='adj_paid[]' id='adj_paid_"+ j +"' value='"+ formatSrAdjustmentAmount(rowCurrentValue) +"' data-current-amount='"+ rowCurrentValue +"' onclick='get_set_amount("+ j +")' required /></td>";
+                    unadjustedHtml += "<td><input type='text' class='form-control' name='adj_narration[]' id='adj_narration_"+ j +"' value='"+ escapeSrAdjustmentValue(unadjustedRow.remarks || '')+"' /></td>";
+                    unadjustedHtml += "</tr>";
+                    j++;
+                }
 
-                    }
-                    $("#loading_bg").css("display", "none");
+                $('#table_adjestment tbody').empty().append(invoiceHtml);
+                if (unadjustedHtml !== "") {
+                    $('#table_adjestment_unadjusted tbody').empty().append(unadjustedHtml);
+                } else {
+                    $('#table_adjestment_unadjusted tbody').empty().append("<tr class='text-muted'><td colspan='8' class='text-center'>No positive unadjusted balance found</td></tr>");
+                }
+                updateSrAdjustmentTotals();
+                $("#loading_bg").css("display", "none");
             }
         });
     }
@@ -2202,6 +2220,22 @@ $(document).ready(function () {
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    <h6 class="mt-3 mb-2">Positive Unadjusted Balance</h6>
+                                    <table class="table table-hover form-item-table" cellspacing="0" width="100%" id="table_adjestment_unadjusted">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Total')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Paid')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:200px;" class="text-start">@lang('Narration')</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -2269,7 +2303,7 @@ $(document).ready(function () {
                                 var paid = 0;
                                 var adjustment = 0;
 
-                                $('#table_adjestment tbody tr').each(function () {
+                                $('#table_adjestment tbody tr, #table_adjestment_unadjusted tbody tr').each(function () {
                                     total += parseSrAdjustmentAmount($(this).find('input[name="adj_total[]"]').val());
                                     balance += parseSrAdjustmentAmount($(this).find('input[name="adj_balance[]"]').val());
                                     paid += parseSrAdjustmentAmount($(this).find('.js-sr-adj-previous-paid').val());
@@ -2282,7 +2316,7 @@ $(document).ready(function () {
                                 $('#footer_adjustment').text(formatSrAdjustmentAmount(adjustment));
                             }
 
-                            $(document).on('click', '#table_adjestment tbody tr.js-sr-adj-row', function (event) {
+                            $(document).on('click', '#table_adjestment tbody tr.js-sr-adj-row, #table_adjestment_unadjusted tbody tr.js-sr-adj-row', function (event) {
                                 if ($(event.target).is('input, textarea, select, button, a, label')) {
                                     return;
                                 }
@@ -2292,7 +2326,7 @@ $(document).ready(function () {
                                 $('#adj_paid_' + id).trigger('focus');
                             });
 
-                            $(document).on('input', '#table_adjestment .class_adj_paid', function () {
+                            $(document).on('input', '#table_adjestment .class_adj_paid, #table_adjestment_unadjusted .class_adj_paid', function () {
                                 var id = ($(this).attr('id') || '').replace('adj_paid_', '');
                                 var paid = parseSrAdjustmentAmount($(this).val());
                                 var available = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
@@ -2307,7 +2341,7 @@ $(document).ready(function () {
                                 updateSrAdjustmentTotals();
                             });
 
-                            $(document).on('blur', '#table_adjestment .class_adj_paid', function () {
+                            $(document).on('blur', '#table_adjestment .class_adj_paid, #table_adjestment_unadjusted .class_adj_paid', function () {
                                 $(this).val(formatSrAdjustmentAmount($(this).val()));
                                 updateSrAdjustmentTotals();
                             });

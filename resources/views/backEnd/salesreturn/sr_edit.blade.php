@@ -2148,6 +2148,53 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    <h6 class="mt-3 mb-2">Positive Unadjusted Balance</h6>
+                                    <table class="table table-hover form-item-table" cellspacing="0" width="100%" id="table_adjestment_unadjusted">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
+                                                <th style="width:120px;" class="text-center">@lang('Deal ID')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Total')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Paid')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Balance')</th>
+                                                <th style="width:100px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:200px;" class="text-start">@lang('Narration')</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @if (!empty($srn_positive_unadjusted) && count($srn_positive_unadjusted) > 0)
+                                            @foreach ($srn_positive_unadjusted as $dt)
+                                            @php
+                                                $current_doc_adjustment = $editDataAdjustments->where('siv_no', $dt->doc_number)->sum('paid_amount');
+                                                $paid_amount = (float) ($dt->paid ?? 0);
+                                                $total_amount = (float) ($dt->total ?? 0);
+                                                $balance_amount = (float) ($dt->balance ?? 0);
+                                                $previous_paid_amount = max($paid_amount, 0);
+                                            @endphp
+                                            @if($balance_amount > 0 || $current_doc_adjustment > 0)
+                                            <tr class="js-sr-adj-row" data-row="{{ $i }}">
+                                                <td style="width:100px;" class="text-center">{{ $dt->doc_number }}<input type="hidden" name="adj_siv_no[]" id="adj_siv_no_{{ $i }}" value="{{ $dt->doc_number }}" readonly /></td>
+                                                <td style="width:100px;" class="text-center">{{ @App\SysHelper::normalizeToDmy($dt->doc_date) }}<input type="hidden" name="adj_doc_date[]" id="adj_doc_date_{{ $i }}" value="{{ @App\SysHelper::normalizeToDmy($dt->doc_date) }}" readonly /></td>
+                                                <td style="width:100px;" class="text-center">{{ $dt->lpo_number }}<input type="hidden" name="lpo_number[]" id="lpo_number_{{ $i }}" value="{{ $dt->lpo_number }}" readonly /></td>
+                                                <td style="width:120px;" class="text-center">{{ empty($dt->deal_id) ? '' : App\SysHelper::get_code_from_dealid($dt->deal_id) }}<input type="hidden" id="deal_id_{{ $i }}" value="{{ empty($dt->deal_id) ? '' : App\SysHelper::get_code_from_dealid($dt->deal_id) }}" readonly /></td>
+                                                <td style="width:100px;" class="text-end">{{ @App\SysHelper::com_curr_format($total_amount,2,'.',',') }}<input type="hidden" name="adj_total[]" id="adj_total_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($total_amount,2,'.',',') }}" readonly /></td>
+                                                <td style="width:100px;" class="text-end">{{ @App\SysHelper::com_curr_format($previous_paid_amount,2,'.',',') }}<input type="hidden" class="js-sr-adj-previous-paid" id="adj_previous_paid_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($previous_paid_amount,2,'.',',') }}" readonly /></td>
+                                                <td style="width:100px;" class="text-end"><span id="adj_balance_display_{{ $i }}">{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}</span><input type="hidden" name="adj_balance[]" id="adj_balance_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}" data-actual-balance="{{ $balance_amount }}" readonly /></td>
+                                                <td style="width:100px;"><input type="text" class="form-control text-end class_adj_paid" name="adj_paid[]" id="adj_paid_{{ $i }}" value="{{ $current_doc_adjustment > 0 ? @App\SysHelper::com_curr_format($current_doc_adjustment,2,'.',',') : @App\SysHelper::com_curr_format(0,2,'.',',') }}" data-current-amount="{{ $current_doc_adjustment }}" onclick="get_set_amount({{ $i }})"  /></td>
+                                                <td style="width:100px;"><input type="text" class="form-control" name="narration[]" id="narration_{{ $i }}" value="{{ $dt->remarks ?? '' }}" /></td>
+                                            </tr>
+                                            @php $i++; @endphp
+                                            @endif
+                                            @endforeach
+                                            @else
+                                            <tr>
+                                                <td colspan="9" class="text-center text-muted">No positive unadjusted balance found</td>
+                                            </tr>
+                                            @endif
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
