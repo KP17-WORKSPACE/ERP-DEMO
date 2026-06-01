@@ -1076,6 +1076,8 @@ function check_total(id, amount) {
                             $deal_track_id=0;
                             $payment_terms="";
                             $duedate="";
+                            $isOpeningBalanceRow = in_array((string) ($dt->transaction_type ?? ''), ['opbinvoice', 'openingbalance', 'openingbalance111'])
+                                || \Illuminate\Support\Str::startsWith((string) ($dt->transaction_no ?? ''), 'OPB');
                             //$deal = @App\SysHelper::get_deal_detail_for_receivable_outstanding($dt->transaction_no);
                             $deal = @App\SysHelper::get_deal_track_detail_for_receivable_outstanding($dt->transaction_no);
                             $lpono = @App\SysHelper::get_sales_invoice_details($dt->transaction_no);
@@ -1089,7 +1091,6 @@ function check_total(id, amount) {
                                 $opbDet = $opbinvoice_map->get($dt->transaction_no);
                                 if ($opbDet) {
                                     $lpo_no = $opbDet->po_no ?? '';
-                                    $deal_code = $opbDet->deal_id ?? '';
                                     $payment_terms = $opbDet->payment_terms ?? '';
                                     $duedate = $opbDet->due_date ?? '';
                                     if (!empty($opbDet->sales_person)) {
@@ -1100,6 +1101,10 @@ function check_total(id, amount) {
                                 if(isset($lpono) && $lpono != ""){
                                     $lpo_no=$lpono->lpo_number;
                                 }
+                            }
+                            if ($isOpeningBalanceRow) {
+                                $deal_code = '';
+                                $deal_track_id = 0;
                             }
                         @endphp
 
@@ -1141,15 +1146,15 @@ function check_total(id, amount) {
                             @php
                                  $row_count_1++;
                             @endphp
-                                @if ($dt->transaction_type=="opbinvoice")
-                                {{ $deal_code }}
-                                
+                                @if ($isOpeningBalanceRow)
+                                    -
                                 @else
-                                <a href="{{url('crm-deal-track-approval-list/'.$deal_track_id)}}" target="_blank">{{ $deal_code }}</a><input type="hidden" id="inv_e_deal_code_{{ $dt->transaction_no }}" value="{{ $deal_code }}" /></td>
+                                    <a href="{{url('crm-deal-track-approval-list/'.$deal_track_id)}}" target="_blank">{{ $deal_code }}</a><input type="hidden" id="inv_e_deal_code_{{ $dt->transaction_no }}" value="{{ $deal_code }}" />
                                 @endif
+                        </td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($dt->transaction_date)) }}<input type="hidden" id="inv_e_doc_date_{{ $dt->transaction_no }}" value="{{ date('d/m/Y', strtotime($dt->transaction_date)) }}" /></td>
                             <td class="text-center">
-                                @if ($dt->transaction_type=="opbinvoice")
+                                @if ($isOpeningBalanceRow)
                                 {{ $dt->transaction_no }}
                                 @else
                                 <a href="{{url('get-url-sales-invoice/'.$dt->transaction_no)}}" target="_blank">{{ $dt->transaction_no }}</a><input type="hidden" id="inv_e_doc_no_{{ $dt->transaction_no }}" value="{{ $dt->transaction_no }}" /></td>
@@ -1591,6 +1596,7 @@ function check_total(id, amount) {
                         @foreach ($unadj_list as $p)
                           @php
                                 $docNumber = $p->doc_number;
+                                $deal_id = null;
                             @endphp
                             @if(Illuminate\Support\Str::contains($docNumber, ['BR', 'CR']))
                                @php
@@ -1614,12 +1620,14 @@ function check_total(id, amount) {
                                 @endphp
                             @endif
                         <tr>
-                            <td class="text-center"> @if (@App\SysHelper::get_code_from_dealid($deal_id)!= 'Without Deal')
-                                 
-                                    <a href="{{url('crm-deal-track-approval-list/'.$deal_id)}}" target="_blank">{{ @App\SysHelper::get_code_from_dealid($deal_id) }}</a>
+                            <td class="text-center">
+                                @php $dealCode = $deal_id ? @App\SysHelper::get_code_from_dealid($deal_id) : ''; @endphp
+                                @if ($deal_id && $dealCode != 'Without Deal')
+                                    <a href="{{url('crm-deal-track-approval-list/'.$deal_id)}}" target="_blank">{{ $dealCode }}</a>
                                 @else
-                                   {{@App\SysHelper::get_code_from_dealid($deal_id)}}
-                                @endif</td>
+                                    -
+                                @endif
+                            </td>
                             <td class="">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
                             @php
                                 $docNumber = $p->doc_number;
