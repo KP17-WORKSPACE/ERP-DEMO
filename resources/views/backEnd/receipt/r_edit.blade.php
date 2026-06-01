@@ -639,23 +639,28 @@ $(document).ready(function() {
                                         </tfoot>
                                     </table>
                                 </div>
-                                <div class="equipment comon-status mt-3 d-block">
-                                    <h6 class="mb-2">Positive Unadjusted Balance</h6>
+                                <div class="equipment comon-status mt-3 d-block" id="billWisePositiveUnadjustedSection" style="display:none;">
+                                    <h6 class="mb-2"> Unadjusted Balance</h6>
                                     <table class="table table-hover form-item-table data-table-bill" cellspacing="0" width="100%" id="crListBankBookAdjestUnadjusted">
                                         <thead>
                                             <tr>
-                                                <th style="width:100px;" class="text-center">@lang('Deal')</th>
-                                                <th style="width:100px;" class="text-center">@lang('Doc No')</th>
-                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
-                                                <th style="width:100px;" class="text-center">@lang('LPO NO')</th>
-                                                <th style="width:100px;" class="text-center">@lang('Total')</th>
-                                                <th style="width:100px;" class="text-center">@lang('Paid')</th>
-                                                <th style="width:100px;" class="text-center">@lang('Balance')</th>
-                                                <th style="width:100px;" class="text-center">@lang('Adjustment')</th>
-                                                <th style="width:100px;" class="text-center">@lang('Narration')</th>
+                                                <th style="width:90px;" class="text-center">@lang('Deal ID')</th>
+                                                <th style="width:50px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:80px;" class="text-center">@lang('Receipt No')</th>
+                                                <th style="width:80px;" class="text-end">@lang('Amount')</th>
+                                                <th style="width:80px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:200px;" class="text-center">@lang('Remarks')</th>
                                             </tr>
                                         </thead>
                                         <tbody></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="3" class="text-end">@lang('Total')</th>
+                                                <th class="text-end"><label id="footer_unadjusted_amount">0.00</label></th>
+                                                <th class="text-end"><label id="footer_unadjusted_adjustment">0.00</label></th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                            
@@ -702,16 +707,19 @@ function get_set_amount(id) {
     $('#bi_balance_to_adjust').val(formatAmount(remaining_balance));
     $('#bi_extra_amount').val(formatAmount(remaining_balance));
 
-    // Footer total
-    var num_tot_amt = $('.tot_amt').length;
+    // Normal invoice table footer should not include positive unadjusted rows.
     var total = 0;
-    for (var i = 1; i <= num_tot_amt; i++) {
-        var v = Number(($('#bi_amount_' + i).val() || '0').replace(/,/g, ''));
+    $('#crListBankBookAdjest tbody .tot_amt').each(function () {
+        var v = Number(($(this).val() || '0').replace(/,/g, ''));
         total += isNaN(v) ? 0 : v;
-    }
+    });
     $('#footer_adjustment').text(formatAmount(total));
+    if (typeof updatePositiveUnadjustedTotals === 'function') {
+        updatePositiveUnadjustedTotals();
+    }
 
     // Remarks: collect doc numbers for all rows that have an amount
+    var num_tot_amt = $('.tot_amt').length;
     var docs = [];
     for (var i = 1; i <= num_tot_amt; i++) {
         var v = Number(($('#bi_amount_' + i).val() || '0').replace(/,/g, ''));
