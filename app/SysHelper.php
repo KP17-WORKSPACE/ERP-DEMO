@@ -8411,6 +8411,12 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND ra.status = 1
                       AND ra.account_id = t.account_id
                       AND ra.bi_doc_number = t.transaction_no)";
+                $billwiseReceiptAdjustedSql = "(SELECT COALESCE(SUM(ra.bi_paid),0)
+                    FROM sys_receipt_adjustments ra
+                    WHERE ra.company_id = {$company}
+                      AND ra.status = 1
+                      AND ra.account_id = t.account_id
+                      AND ra.bi_doc_no = t.transaction_no)";
                 $salesReturnAdjustedSql = "(SELECT COALESCE(SUM(sr.paid_amount),0)
                     FROM sys_sales_return_adjestment sr
                     WHERE sr.srn_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci)";
@@ -8430,7 +8436,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND j.status = 1
                       AND jv.account_id = t.account_id
                       AND jv.receipt_no = t.transaction_no)";
-                $totalAdjustedSql = "COALESCE({$receiptAdjustedSql}, 0) + COALESCE({$salesReturnAdjustedSql}, 0) + COALESCE({$billwiseJvAdjustedSql}, 0) + COALESCE({$jvAdjustedSql}, 0)";
+                $totalAdjustedSql = "COALESCE({$receiptAdjustedSql}, 0) + COALESCE({$billwiseReceiptAdjustedSql}, 0) + COALESCE({$salesReturnAdjustedSql}, 0) + COALESCE({$billwiseJvAdjustedSql}, 0) + COALESCE({$jvAdjustedSql}, 0)";
 
                 $unadjested_receipt = DB::table('sys_chartofaccounts_transaction as t')->select(
                     't.account_id',
