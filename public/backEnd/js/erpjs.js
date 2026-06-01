@@ -15,7 +15,7 @@ function get_format_time(time) {
     if(time==null){
         return "--";
     }
-    // Split the time string into hours, minutes, and seconds
+    // Split the time string into hours, minutes, and seconds 
     var timeParts = time.split(':');
     var hours = parseInt(timeParts[0], 10);
     var minutes = timeParts[1];
@@ -102,7 +102,7 @@ function setBillWiseEnteredAmount(amount, adjustedAmount) {
     var enteredAmount = parseErpAmount(amount);
     var displayAmount = formatAmount(enteredAmount);
     var displayAdjusted = formatAmount(adjustedAmount === undefined ? 0 : parseErpAmount(adjustedAmount));
-
+ 
     $('#bi_cheque_amount').val(displayAmount);
     $('#bi_amount_adjusted').val(displayAdjusted);
     $('#bi_extra_amount').val(displayAmount);
@@ -487,7 +487,7 @@ $(document).on("click", "#addCtrlBankBookAdjest", function(event) {
             console.log(response);
             var parsedResponse = normalizeBillWiseResponse(response);
             var invoices = parsedResponse.invoices || [];
-            var positiveUnadjusted = parsedResponse.positive_unadjusted || [];
+            var positiveUnadjusted = filterBillWisePositiveUnadjustedRows(parsedResponse.positive_unadjusted || [], invoices);
             var tr = "";
             var unadjTr = "";
 
@@ -502,6 +502,7 @@ $(document).on("click", "#addCtrlBankBookAdjest", function(event) {
                        </tr>';
                 $('#crListBankBookAdjest tbody').empty().append(tr);
                 $('#crListBankBookAdjestUnadjusted tbody').empty();
+                togglePositiveUnadjustedSection(false);
                 $("#addCtrlBankBookAdjest").prop("disabled", false);
                 return;
             }
@@ -537,25 +538,29 @@ $(document).on("click", "#addCtrlBankBookAdjest", function(event) {
             $.each(positiveUnadjusted, function(key, value) {
                 var dealId = escapeErpHtml(value.deal_id || '');
                 var docNumber = escapeErpHtml(value.doc_number || '');
-                var lpoNumber = escapeErpHtml(value.lpo_number || '');
                 var total = parseErpAmount(value.total);
                 var paid = parseErpAmount(value.paid);
-                var balance = parseErpAmount(value.balance);
+                var balance = parseErpAmount(value._display_balance !== undefined ? value._display_balance : value.balance);
+                var maxAdjust = parseErpAmount(value._max_adjust !== undefined ? value._max_adjust : balance);
+                var currentAmount = parseErpAmount(value._current_amount !== undefined ? value._current_amount : value.bi_amount);
                 var narration = escapeErpHtml(value.remarks || '');
                 var docHref = getBillWiseDocHref(url, value.doc_number, false);
-                var dealHtml = dealId ? '&nbsp;&nbsp;<a target="_blank" href="' + url + '/get-url-deal/' + dealId + '">' + dealId + '</a>' : '-';
+                var dealCode = escapeErpHtml(value.deal_code || value.deal_id || '');
+                var dealHtml = dealCode && dealCode !== 'Without Deal' ? '<a target="_blank" href="' + url + '/get-url-deal/' + dealCode + '">' + dealCode + '</a>' : (dealCode || '-');
                 var docLabel = docHref ? '<a target="_blank" href="' + docHref + '">' + docNumber + '</a>' : docNumber;
 
                 unadjTr += '<tr>\
-                        <td class="text-center">' + dealHtml + '<input value="' + dealId + '" class="form-control text-center" type="hidden" id="bi_deal_id_' + i + '" name="bi_deal_id[]" autocomplete="off" readonly></td>\
-                        <td class="text-center">' + docLabel + '<input value="' + docNumber + '" class="form-control text-center row_ctrl" type="hidden" id="bi_doc_no_' + i + '" name="bi_doc_no[]" autocomplete="off" readonly></td>\
-                        <td class="text-center">' + get_format_date(value.doc_date) + ' <input value="' + (value.doc_date || '') + '" class="form-control text-center" type="hidden" id="bi_doc_date_' + i + '" name="bi_doc_date[]" autocomplete="off" readonly><input value="' + get_format_date(value.doc_date) + '" class="form-control text-center" type="hidden" autocomplete="off" readonly></td>\
-                        <td class="text-center">' + lpoNumber + '<input value="' + lpoNumber + '" class="form-control text-center" type="hidden" id="bi_lpo_no_' + i + '" name="bi_lpo_no[]" autocomplete="off" readonly></td>\
-                        <td class="text-end">' + formatAmount(total) + '<input value="' + formatAmount(total) + '" class="form-control text-end" type="hidden" id="bi_total_' + i + '" name="bi_total[]" autocomplete="off" min="0" readonly></td>\
-                        <td class="text-end">' + formatAmount(paid) + '<input value="' + formatAmount(paid) + '" class="form-control text-end" type="hidden" id="bi_paid_' + i + '" name="bi_paid[]" autocomplete="off" min="0" onchange="BankBookAdjestBalance(' + i + ')" readonly></td>\
-                        <td class="text-end">' + formatAmount(balance) + '<input value="' + formatAmount(balance) + '" class="form-control text-end" type="hidden" id="bi_balance_' + i + '" name="bi_balance[]" autocomplete="off" min="0" readonly></td>\
-                        <td><input value="" class="form-control tot_amt text-end" type="decimal" step="any" id="bi_amount_' + i + '" name="bi_amount[]" autocomplete="off" min="0" onclick="get_set_amount(' + i + ')"></td>\
-                        <td><input value="' + narration + '" class="form-control" type="text" id="bi_narration_' + i + '" name="bi_narration[]" autocomplete="off"></td>\
+                        <td class="text-center">' + dealHtml + '<input value="' + dealId + '" type="hidden" id="bi_deal_id_' + i + '" name="bi_deal_id[]"></td>\
+                        <td class="text-center">' + get_format_date(value.doc_date) + '<input value="' + (value.doc_date || '') + '" type="hidden" id="bi_doc_date_' + i + '" name="bi_doc_date[]"></td>\
+                        <td class="text-center">' + docLabel + '<input value="' + docNumber + '" class="row_ctrl" type="hidden" id="bi_doc_no_' + i + '" name="bi_doc_no[]"></td>\
+                        <td class="text-end">\
+                            ' + formatAmount(balance) + '\
+                            <input value="' + formatAmount(total) + '" type="hidden" id="bi_total_' + i + '" name="bi_total[]">\
+                            <input value="' + formatAmount(paid) + '" type="hidden" id="bi_paid_' + i + '" name="bi_paid[]">\
+                            <input value="' + formatAmount(balance) + '" type="hidden" id="bi_balance_' + i + '" name="bi_balance[]">\
+                        </td>\
+                        <td><input value="' + formatAmount(currentAmount) + '" data-current-amount="' + currentAmount + '" data-max-adjust="' + maxAdjust + '" class="form-control border-0 form-control-sm tot_amt text-end" type="text" step="any" id="bi_amount_' + i + '" name="bi_amount[]" autocomplete="off" min="0" onclick="get_set_amount(' + i + ')"></td>\
+                        <td><input value="' + narration + '" class="form-control form-control-sm border-0" type="text" id="bi_narration_' + i + '" name="bi_narration[]" autocomplete="off"><input value="" type="hidden" id="bi_lpo_no_' + i + '" name="bi_lpo_no[]"></td>\
                     </tr>';
                 i++;
             });
@@ -568,8 +573,10 @@ $(document).on("click", "#addCtrlBankBookAdjest", function(event) {
             $('#crListBankBookAdjest tbody').empty().append(tr);
             if (positiveUnadjusted.length > 0) {
                 $('#crListBankBookAdjestUnadjusted tbody').empty().append(unadjTr);
+                togglePositiveUnadjustedSection(true);
             } else {
-                $('#crListBankBookAdjestUnadjusted tbody').empty().append('<tr class="text-muted"><td colspan="10" class="text-center">No positive unadjusted balance found</td></tr>');
+                $('#crListBankBookAdjestUnadjusted tbody').empty();
+                togglePositiveUnadjustedSection(false);
             }
             $("#addCtrlBankBookAdjest").prop("disabled", false);
 
@@ -584,6 +591,7 @@ $(document).on("click", "#addCtrlBankBookAdjest", function(event) {
         error: function(XMLHttpRequest, textStatus, errorThrown) {
             $('#crListBankBookAdjest tbody').empty();
             $('#crListBankBookAdjestUnadjusted tbody').empty();
+            togglePositiveUnadjustedSection(false);
         }
     }); // get the product data
 });
@@ -612,7 +620,7 @@ $(document).on("click", "#addCtrlBankBookAdjestEdit", function(event) {
             console.log(response);
             var parsedResponse = normalizeBillWiseResponse(response);
             var invoices = parsedResponse.invoices || [];
-            var positiveUnadjusted = parsedResponse.positive_unadjusted || [];
+            var positiveUnadjusted = filterBillWisePositiveUnadjustedRows(parsedResponse.positive_unadjusted || [], invoices);
             var tr = "";
             var unadjTr = "";
 
@@ -627,6 +635,7 @@ $(document).on("click", "#addCtrlBankBookAdjestEdit", function(event) {
                        </tr>';
                 $('#crListBankBookAdjest tbody').empty().append(tr);
                 $('#crListBankBookAdjestUnadjusted tbody').empty();
+                togglePositiveUnadjustedSection(false);
                 $("#addCtrlBankBookAdjestEdit").prop("disabled", false);
                 return;
             }
@@ -663,26 +672,29 @@ $(document).on("click", "#addCtrlBankBookAdjestEdit", function(event) {
             $.each(positiveUnadjusted, function(key, value) {
                 var dealId = escapeErpHtml(value.deal_id || '');
                 var docNumber = escapeErpHtml(value.doc_number || '');
-                var lpoNumber = escapeErpHtml(value.lpo_number || '');
                 var total = parseErpAmount(value.total);
                 var paid = parseErpAmount(value.paid);
-                var balance = parseErpAmount(value.balance);
-                var existingAmount = parseErpAmount(value.bi_amount);
+                var balance = parseErpAmount(value._display_balance !== undefined ? value._display_balance : value.balance);
+                var maxAdjust = parseErpAmount(value._max_adjust !== undefined ? value._max_adjust : balance);
+                var existingAmount = parseErpAmount(value._current_amount !== undefined ? value._current_amount : value.bi_amount);
                 var narration = escapeErpHtml(value.remarks || '');
                 var docHref = getBillWiseDocHref(url, value.doc_number, false);
-                var dealHtml = dealId ? '&nbsp;&nbsp;<a target="_blank" href="' + url + '/get-url-deal/' + dealId + '">' + dealId + '</a>' : '-';
+                var dealCode = escapeErpHtml(value.deal_code || value.deal_id || '');
+                var dealHtml = dealCode && dealCode !== 'Without Deal' ? '<a target="_blank" href="' + url + '/get-url-deal/' + dealCode + '">' + dealCode + '</a>' : (dealCode || '-');
                 var docLabel = docHref ? '<a target="_blank" href="' + docHref + '">' + docNumber + '</a>' : docNumber;
 
                 unadjTr += '<tr>\
-                        <td class="text-center">' + dealHtml + '<input value="' + dealId + '" class="form-control text-center" type="hidden" id="bi_deal_id_' + i + '" name="bi_deal_id[]" autocomplete="off" readonly></td>\
-                        <td class="text-center">' + docLabel + '<input value="' + docNumber + '" class="form-control text-center row_ctrl" type="hidden" id="bi_doc_no_' + i + '" name="bi_doc_no[]" autocomplete="off" readonly></td>\
-                        <td class="text-center">' + get_format_date(value.doc_date) + '<input value="' + (value.doc_date || '') + '" class="form-control text-center" type="hidden" id="bi_doc_date_' + i + '" name="bi_doc_date[]" autocomplete="off" readonly><input value="' + get_format_date(value.doc_date) + '" class="form-control text-center" type="hidden" autocomplete="off" readonly></td>\
-                        <td class="text-center">' + lpoNumber + '<input value="' + lpoNumber + '" class="form-control" type="hidden" id="bi_lpo_no_' + i + '" name="bi_lpo_no[]" autocomplete="off" readonly></td>\
-                        <td class="text-end">' + formatAmount(total) + '<input value="' + formatAmount(total) + '" class="form-control" type="hidden" id="bi_total_' + i + '" name="bi_total[]" autocomplete="off" min="0" readonly></td>\
-                        <td class="text-end">' + formatAmount(paid) + '<input value="' + formatAmount(paid) + '" class="form-control" type="hidden" id="bi_paid_' + i + '" name="bi_paid[]" autocomplete="off" min="0" onchange="BankBookAdjestBalance(' + i + ')" readonly></td>\
-                        <td class="text-end">' + formatAmount(balance) + '<input value="' + formatAmount(balance) + '" class="form-control" type="hidden" id="bi_balance_' + i + '" name="bi_balance[]" autocomplete="off" min="0" readonly></td>\
-                        <td><input value="'+ formatAmount(existingAmount) +'" data-current-amount="' + existingAmount + '" class="form-control tot_amt text-end" step="any" type="decimal" id="bi_amount_' + i + '" name="bi_amount[]" autocomplete="off" min="0" onclick="get_set_amount(' + i + ')"></td>\
-                        <td><input value="' + narration + '" class="form-control" type="text" id="bi_narration_' + i + '" name="bi_narration[]" autocomplete="off"></td>\
+                        <td class="text-center">' + dealHtml + '<input value="' + dealId + '" type="hidden" id="bi_deal_id_' + i + '" name="bi_deal_id[]"></td>\
+                        <td class="text-center">' + get_format_date(value.doc_date) + '<input value="' + (value.doc_date || '') + '" type="hidden" id="bi_doc_date_' + i + '" name="bi_doc_date[]"></td>\
+                        <td class="text-center">' + docLabel + '<input value="' + docNumber + '" class="row_ctrl" type="hidden" id="bi_doc_no_' + i + '" name="bi_doc_no[]"></td>\
+                        <td class="text-end">\
+                            ' + formatAmount(balance) + '\
+                            <input value="' + formatAmount(total) + '" type="hidden" id="bi_total_' + i + '" name="bi_total[]">\
+                            <input value="' + formatAmount(paid) + '" type="hidden" id="bi_paid_' + i + '" name="bi_paid[]">\
+                            <input value="' + formatAmount(balance) + '" type="hidden" id="bi_balance_' + i + '" name="bi_balance[]">\
+                        </td>\
+                        <td><input value="'+ formatAmount(existingAmount) +'" data-current-amount="' + existingAmount + '" data-max-adjust="' + maxAdjust + '" class="form-control form-control-sm tot_amt text-end border-0" step="any" type="text" id="bi_amount_' + i + '" name="bi_amount[]" autocomplete="off" min="0" onclick="get_set_amount(' + i + ')"></td>\
+                        <td><input value="' + narration + '" class="form-control form-control-sm border-0" type="text" id="bi_narration_' + i + '" name="bi_narration[]" autocomplete="off"><input value="" type="hidden" id="bi_lpo_no_' + i + '" name="bi_lpo_no[]"></td>\
                     </tr>';
                 i++;
             });
@@ -695,8 +707,10 @@ $(document).on("click", "#addCtrlBankBookAdjestEdit", function(event) {
             $('#crListBankBookAdjest tbody').empty().append(tr);
             if (positiveUnadjusted.length > 0) {
                 $('#crListBankBookAdjestUnadjusted tbody').empty().append(unadjTr);
+                togglePositiveUnadjustedSection(true);
             } else {
-                $('#crListBankBookAdjestUnadjusted tbody').empty().append('<tr class="text-muted"><td colspan="10" class="text-center">No positive unadjusted balance found</td></tr>');
+                $('#crListBankBookAdjestUnadjusted tbody').empty();
+                togglePositiveUnadjustedSection(false);
             }
             $("#addCtrlBankBookAdjestEdit").prop("disabled", false);
 
@@ -708,6 +722,7 @@ $(document).on("click", "#addCtrlBankBookAdjestEdit", function(event) {
         error: function(XMLHttpRequest, textStatus, errorThrown) {
             $('#crListBankBookAdjest tbody').empty();
             $('#crListBankBookAdjestUnadjusted tbody').empty();
+            togglePositiveUnadjustedSection(false);
         }
     }); // get the product data
 });
