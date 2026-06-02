@@ -1086,32 +1086,33 @@ function check_total(id, amount) {
                             }
                            
                         @endphp
-                        <?php 
-                        if($dt->credit_amount != $paid){
-                            $grand_credit_amount+=$dt->credit_amount;
-                            $grand_paid+=$paid;
-                            $grand_balance+=$dt->credit_amount-abs($paid);
-                            //$grand_total_balance+=$b;
-                        }                        
-                        if(($dt->debit_amount)>0){
-                            $grand_credit_amount-=$dt->debit_amount;
-                        }
-
-                        ?>
                         <?php $is_hide=0; 
                         if(str_contains($dt->transaction_no,'PR')){
-                        if($dt->debit_amount >= $paid){
-
-                        $is_hide=1;
-                        }} ?>
+                            if($dt->debit_amount >= $paid){
+                                $is_hide=1;
+                            }
+                        } ?>
 
                          @if(((@App\SysHelper::com_curr_format($dt->credit_amount,2,'.','') != @App\SysHelper::com_curr_format($paid,2,'.','')) || (@App\SysHelper::com_curr_format($dt->debit_amount,2,'.',''))>0) && $is_hide == 0)
                         @php
-                            $row_count_1++;
+                            // Only accumulate totals for rows that will be displayed
                             $rowAmount = (float) ($dt->credit_amount ?? 0);
                             if (isset($dt->transaction_type) && $dt->transaction_type == 'opbinvoice' && ($dt->debit_amount ?? 0) > 0) {
                                 $rowAmount = (float) $dt->credit_amount - (float) $dt->debit_amount;
                             }
+                            
+                            // Accumulate grand totals for displayed rows
+                            if (str_contains($dt->transaction_no, 'PR')) {
+                                $grand_credit_amount += $dt->debit_amount;
+                                $grand_paid += $paid;
+                                $grand_balance += $dt->debit_amount - abs($paid);
+                            } else {
+                                $grand_credit_amount += $dt->credit_amount;
+                                $grand_paid += $paid;
+                                $grand_balance += $dt->credit_amount - abs($paid);
+                            }
+                            
+                            $row_count_1++;
                             $paidExOpb = $paid - $opb_import_paid;
                             $paidDisplayParts = [];
                             if (abs($paidExOpb) >= 0.005) {
@@ -1172,17 +1173,23 @@ function check_total(id, amount) {
                                 @endphp
                             </td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($b,2,'.',',') }}</td>
-                            @php $sum_b += $dt->credit_amount-abs($paid); $all_total += $dt->credit_amount-abs($paid); @endphp
-                            <input type="hidden" class="inv_e_total" value="{{ $dt->credit_amount-abs($paid) }}" />
+                            @php 
+                                $rowBalance = $dt->credit_amount - abs($paid);
+                                if (str_contains($dt->transaction_no, 'PR')) {
+                                    $rowBalance = $dt->debit_amount - abs($paid);
+                                    $sum_b += $dt->debit_amount - abs($paid);
+                                    $all_total += $dt->debit_amount - abs($paid);
+                                } else {
+                                    $sum_b += $dt->credit_amount - abs($paid);
+                                    $all_total += $dt->credit_amount - abs($paid);
+                                }
+                            @endphp
+                            <input type="hidden" class="inv_e_total" value="{{ $rowBalance }}" />
                             <script>
                                 set_total({{ $aname->id }},{{ $sum_b }});
                             </script>
 
                             @php
-                                $rowBalance = $dt->credit_amount - abs($paid);
-                                if (str_contains($dt->transaction_no, 'PR')) {
-                                    $rowBalance = $dt->debit_amount - abs($paid);
-                                }
                                 $invoiceDate = $dt->transaction_date;
                                 $paymentTermRow = null;
                                 $effectivePaymentTerm = null;
