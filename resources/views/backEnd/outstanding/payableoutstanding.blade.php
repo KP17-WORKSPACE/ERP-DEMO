@@ -1327,7 +1327,7 @@ function check_total(id, amount) {
                   
                   <?php $pdc = $list_of_adjusted_pdc->where('account_id',$aname->id); ?>
                  <?php $pdc2 = $list_of_unadjusted_pdc->where('account_id',$aname->id); ?>
-                  @if (count($pdc)>0)
+                  @if (count($pdc)>0 || count($pdc2)>0)
                   <br>
                   <b>List of PDC:-</b>
                   <table class="table sub_table table-hover" id="long-list" style="border: solid 1px #e3e6f0; width:100%; table-layout:fixed;">
@@ -1349,14 +1349,30 @@ function check_total(id, amount) {
                     <tbody>
                          @php
                             $row_count_2 = 0;
+                            $pdcRenderedDocs = [];
+                            $pdcSumAmount = 0;
+                            $pdcSumAdjusted = 0;
                         @endphp
                         @foreach ($pdc as $p)
                         @php
                             $row_count_2++;
+                            $pdcDocKey = (string) ($p->doc_number ?? '');
+                        @endphp
+                        @if(in_array($pdcDocKey, $pdcRenderedDocs, true))
+                            @continue
+                        @endif
+                        @php
+                            $pdcRenderedDocs[] = $pdcDocKey;
+                            $pdcGrossAmount = (float) ($p->amount ?? 0);
+                            $pdcAdjustedAmount = (float) ($p->adj_amount ?? 0);
+                            $pdcRemainingAmount = max($pdcGrossAmount - $pdcAdjustedAmount, 0);
+                            $pdcDisplayAmount = $pdcRemainingAmount > 0 ? -abs($pdcRemainingAmount) : 0;
+                            $pdcSumAmount += $pdcDisplayAmount;
+                            $pdcSumAdjusted += $pdcAdjustedAmount;
                         @endphp
                          @php
                             if($p->doc_number){
-                               $deal_id = @App\SysReceipt::where('doc_number',$p->doc_number)->pluck('deal_id')->first();
+                               $deal_id = @App\SysPayment::where('doc_number',$p->doc_number)->pluck('deal_id')->first();
                             }
                         @endphp
                         <tr id="row_pdc_paid_{{ $p->doc_number }}">
@@ -1368,9 +1384,9 @@ function check_total(id, amount) {
                                 @endif</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
                             <td class="text-center"><a href="{{url('get-url-payment/' . $p->doc_number)}}" target="_blank">{{ $p->doc_number }}</a></td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($p->amount,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcDisplayAmount,2,'.',',') }}</td>
                               <td class="text-end">
-                                {{ @App\SysHelper::com_curr_format(@$p->adj_amount,2,'.',',') }}
+                                {{ @App\SysHelper::com_curr_format($pdcAdjustedAmount,2,'.',',') }}
                             </td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->cheque_date)) }}</td>
                             <td class="text-center">{{ $p->cheque_number }}</td>
@@ -1383,7 +1399,7 @@ function check_total(id, amount) {
                             <td class="text-center"><a class="text-danger text-center" id="btn_pdc_received_{{ $p->doc_number }}" onclick="pdc_update('{{ $p->doc_number }}','{{ @App\SysHelper::normalizeToDmy($p->payment_date) }}',3)"><i class="ico icon-outline-pen-new-square" style="font-size: 16px" aria-hidden="true"></i></a></td>
                             
                             <script>
-                                set_total_addmore({{ $aname->id }},{{ $p->adj_amount }})
+                                set_total_addmore({{ $aname->id }},{{ $pdcDisplayAmount }})
                             </script>
                         </tr>
                         <tr style="display: none;" id="row_det_{{ $p->doc_number }}">
@@ -1413,10 +1429,23 @@ function check_total(id, amount) {
                          @foreach ($pdc2 as $p)
                            @php
                             $row_count_2++;
+                            $pdcDocKey = (string) ($p->doc_number ?? '');
+                        @endphp
+                        @if(in_array($pdcDocKey, $pdcRenderedDocs, true))
+                            @continue
+                        @endif
+                        @php
+                            $pdcRenderedDocs[] = $pdcDocKey;
+                            $pdcGrossAmount = (float) ($p->amount ?? 0);
+                            $pdcAdjustedAmount = (float) ($p->adj_amount ?? 0);
+                            $pdcRemainingAmount = max($pdcGrossAmount - $pdcAdjustedAmount, 0);
+                            $pdcDisplayAmount = $pdcRemainingAmount > 0 ? -abs($pdcRemainingAmount) : 0;
+                            $pdcSumAmount += $pdcDisplayAmount;
+                            $pdcSumAdjusted += $pdcAdjustedAmount;
                         @endphp
                           @php
                             if($p->doc_number){
-                               $deal_id = @App\SysReceipt::where('doc_number',$p->doc_number)->pluck('deal_id')->first();
+                               $deal_id = @App\SysPayment::where('doc_number',$p->doc_number)->pluck('deal_id')->first();
                             }
                         @endphp
                         <tr id="row_pdc_paid_{{ $p->doc_number }}">
@@ -1430,23 +1459,21 @@ function check_total(id, amount) {
                             </td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
                             <td class="text-center"><a href="{{url('get-url-payment/' . $p->doc_number)}}" target="_blank">{{ $p->doc_number }}</a></td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($p->amount - $p->adj_amount,2,'.',',') }}</td>
-                            <td class="text-end">0.00</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcDisplayAmount,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcAdjustedAmount,2,'.',',') }}</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->cheque_date)) }}</td>
                             <td class="text-center">{{ $p->cheque_number }}</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->payment_date)) }}</td>
                             <td class="">-</td>
                             <td class="">{{ $p->remarks }}</td>
                             <td class="text-center"><a class="text-danger text-center" id="btn_pdc_received_{{ $p->doc_number }}" onclick="pdc_update('{{ $p->doc_number }}','{{ @App\SysHelper::normalizeToDmy($p->payment_date) }}',2)"><i class="ico icon-outline-pen-new-square" style="font-size: 16px" aria-hidden="true"></i></a></td>
+                            <script>
+                                set_total_addmore({{ $aname->id }},{{ $pdcDisplayAmount }})
+                            </script>
                         </tr>
                         @endforeach
 
                          {{-- add totals row for PDC --}}
-                  @php
-                      $pdcCount = count($pdc) + count($pdc2);
-                      $pdcSumAmount = $pdc->sum('amount') + $pdc2->sum('amount');
-                      $pdcSumAdjusted = $pdc->sum('adj_amount') + $pdc2->sum('adj_amount');
-                  @endphp
                  
                       <tr>
                         <td class="text-center font-weight-bold"></td>
@@ -1486,21 +1513,24 @@ function check_total(id, amount) {
                             <th class="text-center" style="width:6%">Doc Date</th>
                             <th class="text-center" style="width:6%">Payment No</th>
                             <th class="text-end" style="width:7%">Amount</th>
-                            <th class="text-start" style="width:80%">Remarks</th>
+                            <th class="text-end" style="width:7%">Adjustment</th>
+                            <th class="text-start" style="width:73%">Remarks</th>
                         </tr>
                     </thead>
                     <tbody>
+                        @php $unadjSum = 0; $unadjAdjustedSum = 0; @endphp
                         @if (count($unadj_list)>0)
                         @foreach ($unadj_list as $p)
                            @php
                                 $docNumber = $p->doc_number;
+                                $deal_id = null;
                             @endphp
                             @if(Illuminate\Support\Str::contains($docNumber, ['BP', 'CP']))
                                @php
                                     if($p->doc_number){
-                                    $deal_id = @App\SysPayment::where('doc_number',$p->doc_number)->pluck('deal_id')->first();
-                                    }
-                                @endphp
+                                     $deal_id = @App\SysPayment::where('doc_number',$p->doc_number)->pluck('deal_id')->first();
+                                     }
+                                 @endphp
                                
                             @elseif(Illuminate\Support\Str::contains($docNumber, ['JV']))
                              @php
@@ -1545,10 +1575,26 @@ function check_total(id, amount) {
                                     {{ $docNumber }}
                                 </td>
                             @endif
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($p->amount - $p->adj_amount,2,'.',',') }}</td>
+                            @php
+                                $unadjustedAdjustment = (float)($p->adj_amount ?? 0);
+                                $unadjustedBalance = (float)($p->amount ?? 0) - $unadjustedAdjustment;
+                                $isPayableCreditDoc = in_array(($p->transaction_type ?? ''), ['bankpayment', 'cashpayment', 'purchasereturn'])
+                                    || Illuminate\Support\Str::contains($docNumber, ['BP', 'CP', 'PR']);
+                                if ($isPayableCreditDoc) {
+                                    $unadjustedBalance = -abs($unadjustedBalance);
+                                }
+                                $unadjSum += $unadjustedBalance;
+                                $unadjAdjustedSum += $unadjustedAdjustment;
+                            @endphp
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalance,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustment,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
-                                set_total_lessmore({{ $aname->id }},{{ $p->amount - $p->adj_amount }})
+                                @if($isPayableCreditDoc)
+                                    set_total_addmore({{ $aname->id }},{{ $unadjustedBalance }})
+                                @else
+                                    set_total_lessmore({{ $aname->id }},{{ $unadjustedBalance }})
+                                @endif
                             </script>
                         </tr>
                         @endforeach
@@ -1584,33 +1630,28 @@ function check_total(id, amount) {
                                     {{ $docNumber }}
                                 </td>
                             @endif
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($p->amount - $p->amount2,2,'.',',') }}</td>
+                            @php
+                                $unadjustedAdjustmentJv = (float)($p->amount2 ?? 0) + (float)($p->adj_amount ?? 0);
+                                $unadjustedBalanceJv = (float)($p->amount ?? 0) - $unadjustedAdjustmentJv;
+                                $unadjSum += $unadjustedBalanceJv;
+                                $unadjAdjustedSum += $unadjustedAdjustmentJv;
+                            @endphp
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalanceJv,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustmentJv,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
-                                set_total_lessmore({{ $aname->id }},{{ $p->amount - $p->amount2 }})
+                                set_total_lessmore({{ $aname->id }},{{ $unadjustedBalanceJv }})
                             </script>
                         </tr>
                         @endforeach
                         @endif                       
 
-                    @php
-                        $unadjAll = collect($unadj_list)->merge($unadj_list_jv_to_jv);
-                        $unadjSum = $unadjAll->sum(function($p){
-                            $amt = $p->amount;
-                            if(isset($p->adj_amount)){
-                                $amt -= $p->adj_amount;
-                            }
-                            if(isset($p->amount2)){
-                                $amt -= $p->amount2;
-                            }
-                            return $amt;
-                        });
-                    @endphp
                     <tr class="">
                         <td class="text-center font-weight-bold"></td>
                         <td class=""></td>
                         <td class=""></td>
                         <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjSum,2,'.',',') }}</b></td>
+                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAdjustedSum,2,'.',',') }}</b></td>
                         <td class=""></td>
                     </tr>
   </tbody>
