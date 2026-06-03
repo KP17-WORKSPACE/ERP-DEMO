@@ -169,12 +169,16 @@ class SysPayablesOutstandingController extends Controller
                 $ageing = $request->ageing;
                 $account_id = $request->account_id;
 
+                if (!$request->exists('account_id')) {
+                    $account_id = ["view_all_supp"];
+                }
 
-                if ($request->account_id) {
-                    if (count($request->account_id) > 0) {
+                if ($account_id) {
+                    $accountIdValues = $account_id instanceof \Illuminate\Support\Collection ? $account_id->toArray() : (array) $account_id;
+                    if (count($accountIdValues) > 0) {
 
 
-                        if (is_array($account_id) && in_array("view_all_supp", $account_id)) {
+                        if (in_array("view_all_supp", $accountIdValues)) {
                             $is_view_all_supp = true;
 
                             $account_id = $accounts_select->pluck('id');

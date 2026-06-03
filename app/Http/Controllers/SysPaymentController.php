@@ -23,7 +23,6 @@ use App\SysPaymentCheque;
 use App\SysPurchaseInvoice;
 use App\SysReceipt;
 use App\SysReceiptAdjustments;
-use App\SysReceiptAdjustmentsTemp;
 use App\SysReceiptMode;
 use App\SysSalesInvoice;
 use App\SysSalesInvoiceCFCharges;
@@ -555,7 +554,7 @@ class SysPaymentController extends Controller
                     $py->payment_mode = $request->payment_mode_bank;
                     $py->payment_through = $request->payment_through;
                 }
-                if ($request->filled('cheque_date')) {
+                if ($request->mode == 2 && $request->payment_through == 3 && $request->filled('cheque_date')) {
                     $py->cheque_date = Carbon::createFromFormat('d/m/Y', $request->cheque_date)->format('Y-m-d');
 
                 }
@@ -563,13 +562,24 @@ class SysPaymentController extends Controller
                     $py->cheque_number = $request->cheque_number;
                     $py->chequebook_id = $request->chequebook;
                     $py->cheque_status = $request->cheque_status;
+                    $py->pdc_removed_os = 1;
 
 
+                }
+                if (!($request->mode == 2 && $request->payment_through == 3)) {
+                    $py->cheque_date = null;
+                    $py->cheque_number = null;
+                    $py->chequebook_id = null;
+                    $py->cheque_status = null;
+                    $py->pdc_removed_os = null;
                 }
 
                 $py->no_days = $request->payment_days;
                 $py->currency = $request->currency;
                 $py->payment_date = Carbon::createFromFormat('d/m/Y', $request->payment_date)->format('Y-m-d');
+                if (!($request->mode == 2 && $request->payment_through == 3)) {
+                    $py->payment_date = $py->doc_date;
+                }
                 $py->narration = $request->narration;
                 // $py->cheque_id = $request->cheque_id;
                 $py->status = 1;
@@ -667,8 +677,8 @@ class SysPaymentController extends Controller
                     }
 
                     SysPaymentAdjustments::insert($temp_data);
-                    SysReceiptAdjustmentsTemp::where('process_id', $request->process_id)->delete();
-                    SysReceiptAdjustmentsTemp::where('created_by', Auth::user()->id)->delete();
+                    SysPaymentAdjustmentsTemp::where('process_id', $request->process_id)->delete();
+                    SysPaymentAdjustmentsTemp::where('created_by', Auth::user()->id)->delete();
                 }
 
 
@@ -901,23 +911,35 @@ class SysPaymentController extends Controller
                 $py->payment_mode = $request->payment_mode_bank;
                 $py->payment_through = $request->payment_through;
             }
-            $py->payment_through = $request->payment_through;
-            if ($request->filled('cheque_date')) {
+            $py->payment_through = $request->mode == 1 ? 1 : $request->payment_through;
+            if ($request->mode == 2 && $request->payment_through == 3 && $request->filled('cheque_date')) {
                 $py->cheque_date = SysHelper::normalizeToYmd($request->cheque_date);
             }
             if ($request->mode == 2 && $request->payment_through == 3) {
                 $py->cheque_number = $request->cheque_number;
                 $py->chequebook_id = $request->chequebook;
                 $py->cheque_status = $request->cheque_status;
+                $py->pdc_removed_os = 1;
 
 
+            } else {
+                $py->cheque_date = null;
+                $py->cheque_number = null;
+                $py->chequebook_id = null;
+                $py->cheque_status = null;
+                $py->cheque_id = null;
+                $py->pdc_removed_os = null;
             }
             $py->no_days = $request->payment_days;
             $py->currency = $request->currency;
-            if ($py->payment_date != SysHelper::normalizeToYmd($request->payment_date)) {
+            $normalizedPaymentDate = SysHelper::normalizeToYmd($request->payment_date);
+            if (!($request->mode == 2 && $request->payment_through == 3)) {
+                $normalizedPaymentDate = SysHelper::normalizeToYmd($request->doc_date);
+            }
+            if ($request->mode == 2 && $request->payment_through == 3 && $py->payment_date != $normalizedPaymentDate) {
                 $py->pdc_removed_os = 1;
             }
-            $py->payment_date = SysHelper::normalizeToYmd($request->payment_date);
+            $py->payment_date = $normalizedPaymentDate;
             $py->narration = $request->narration;
             $py->status = 1;
             $py->updated_by = Auth::user()->id;
@@ -2280,12 +2302,22 @@ class SysPaymentController extends Controller
                     $py->chequebook_id = $request->chequebook;
                     $py->cheque_status = $request->cheque_status;
                     $py->cheque_date = SysHelper::normalizeToYmd($request->cheque_date);
+                    $py->pdc_removed_os = 1;
+                } else {
+                    $py->cheque_date = null;
+                    $py->cheque_number = null;
+                    $py->chequebook_id = null;
+                    $py->cheque_status = null;
+                    $py->pdc_removed_os = null;
                 }
 
 
 
                 $py->currency = $request->currency;
                 $py->payment_date = Carbon::createFromFormat('d/m/Y', $request->payment_date)->format('Y-m-d');
+                if (!($request->mode == 2 && $request->payment_through == 3)) {
+                    $py->payment_date = $py->doc_date;
+                }
                 $py->narration = $request->narration;
                 $py->no_days = $request->payment_days;
                 // $py->cheque_id = $request->cheque_id;
@@ -2370,8 +2402,8 @@ class SysPaymentController extends Controller
                         ];
                     }
                     SysPaymentAdjustments::insert($temp_data);
-                    SysReceiptAdjustmentsTemp::where('process_id', $request->process_id)->delete();
-                    SysReceiptAdjustmentsTemp::where('created_by', Auth::user()->id)->delete();
+                    SysPaymentAdjustmentsTemp::where('process_id', $request->process_id)->delete();
+                    SysPaymentAdjustmentsTemp::where('created_by', Auth::user()->id)->delete();
                 }
 
                 // Persist temporary attachments from dealtrack add form (sys_payment_id = 0) to saved payment
