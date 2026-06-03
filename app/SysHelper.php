@@ -8297,7 +8297,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
         }
 
         if ($unadjustedList === null) {
-            $unadjustedList = self::get_list_of_payable_unadjusted([$accountId], $companyId);
+            $unadjustedList = self::get_list_of_payable_unadjusted([$accountId], $companyId, $tillDate);
         }
         if ($unadjustedList) {
             foreach ($unadjustedList->where('account_id', $accountId) as $p) {
@@ -8945,38 +8945,67 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
     public static function get_list_of_payable_unadjusted($account_ids,$company,$till_date = null)
     {
-        try {           
+        try {
+                if ($account_ids === null || (is_array($account_ids) && count($account_ids) === 0) || ($account_ids instanceof \Illuminate\Support\Collection && $account_ids->isEmpty())) {
+                    return collect([]);
+                }
+
+                $company = (int) $company;
                 $till = $till_date ? (self::normalizeToYmd($till_date) ?: $till_date) : date('Y-m-d');
                 $removed_payment = db::table('sys_payment_adjustments_jv')->where('company_id',$company)->where('status',1)->pluck('payment_no');
 
+                $paymentAdjustedSql = "(SELECT COALESCE(SUM(pa.bi_paid),0)
+                    FROM sys_payment_adjustments pa
+                    WHERE pa.company_id = {$company}
+                      AND pa.status = 1
+                      AND pa.account_id = t.account_id
+                      AND pa.bi_doc_number COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci)";
+                $purchaseReturnAdjustedSql = "(SELECT COALESCE(SUM(pra.paid_amount),0)
+                    FROM sys_purchase_return_adjestment pra
+                    INNER JOIN sys_purchase_return prh
+                        ON prh.doc_number COLLATE utf8mb4_general_ci = pra.pri_no COLLATE utf8mb4_general_ci
+                    WHERE pra.status = 1
+                      AND prh.status = 1
+                      AND prh.company_id = {$company}
+                      AND prh.vendors = t.account_id
+                      AND pra.pri_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci)";
+                $totalAdjustedSql = "COALESCE({$paymentAdjustedSql},0) + COALESCE({$purchaseReturnAdjustedSql},0)";
+                $remainingSourceSql = "CASE
+                    WHEN t.transaction_type IN ('bankpayment','cashpayment','purchasereturn')
+                        THEN ABS(IFNULL(t.debit_amount,0) - IFNULL(t.credit_amount,0))
+                    ELSE IFNULL(t.debit_amount,0) - IFNULL(t.credit_amount,0)
+                END";
+                $payableUnadjustedDateSql = "CASE
+                    WHEN t.transaction_type IN ('bankpayment','cashpayment')
+                        AND (sys_payment.payment_through IS NULL OR sys_payment.payment_through <> 3)
+                        THEN COALESCE(sys_payment.doc_date, t.transaction_date)
+                    ELSE t.transaction_date
+                END";
+
                 $unadjested_payment = DB::table('sys_chartofaccounts_transaction as t')->select('t.account_id','c.account_name',
-                    't.transaction_no as doc_number','t.transaction_date as doc_date','t.remarks','t.transaction_type',
-                    't.debit_amount','t.credit_amount','c.group as account_group',DB::raw('t.debit_amount-t.credit_amount AS amount'),
-                    DB::raw('COALESCE(SUM(ra.bi_paid), 0) AS adj_amount'))
+                    't.transaction_no as doc_number',DB::raw("{$payableUnadjustedDateSql} AS doc_date"),'t.remarks','t.transaction_type',
+                    't.debit_amount','t.credit_amount','c.group as account_group',DB::raw("{$remainingSourceSql} AS amount"),
+                    DB::raw("{$totalAdjustedSql} AS adj_amount"))
                 ->leftJoin('sys_chartofaccounts as c', 'c.id', '=', 't.account_id')
-                ->leftJoin('sys_payment_adjustments as ra', function ($join) {
-                        $join->on('ra.bi_doc_number', '=', 't.transaction_no')
-                            ->whereColumn('ra.account_id', '=', 't.account_id');
-                    })
                 ->leftJoin('sys_payment', 'sys_payment.doc_number', '=', 't.transaction_no')
-                //->leftJoin('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 't.transaction_no')
                 ->whereIn('t.account_id', $account_ids)
                 ->where('t.company_id', $company)
                 ->where('t.status', 1)
                 ->wherein('t.transaction_type',['openingbalance','journalvoucher','bankpayment','cashpayment','purchasereturn'])
-                ->whereRaw("DATE_FORMAT(t.transaction_date, '%Y-%m-%d') <= ?", [$till])
+                ->whereRaw("DATE_FORMAT({$payableUnadjustedDateSql}, '%Y-%m-%d') <= ?", [$till])
                 ->where(function ($query) {
-                    $query->whereNull('sys_payment.payment_through')
+                    $query->where('t.transaction_type', 'cashpayment')
+                        ->orWhereNull('sys_payment.payment_through')
                         ->orWhereNotIn('sys_payment.payment_through', [3]);
                 })
                 ->whereNotIn('t.transaction_no', $removed_payment)
-                ->groupBy('t.account_id','t.transaction_no','t.transaction_date','t.remarks','t.debit_amount','t.credit_amount','t.transaction_type','c.group')
+                ->groupBy('t.account_id','c.account_name','t.transaction_no','t.transaction_date','sys_payment.doc_date','sys_payment.payment_through','t.remarks','t.debit_amount','t.credit_amount','t.transaction_type','c.group')
                 ->havingRaw('(
                     (t.transaction_type = \'openingbalance\' AND t.transaction_no REGEXP \'^OPB-[0-9]+$\' AND (IFNULL(t.credit_amount,0) > 0 OR IFNULL(t.debit_amount,0) > 0))
                     OR
-                    (NOT (t.transaction_type = \'openingbalance\' AND t.transaction_no REGEXP \'^OPB-[0-9]+$\') AND (t.debit_amount - t.credit_amount) > COALESCE(SUM(ra.bi_paid), 0))
+                    (NOT (t.transaction_type = \'openingbalance\' AND t.transaction_no REGEXP \'^OPB-[0-9]+$\') AND ('.$remainingSourceSql.') > ('.$totalAdjustedSql.'))
                 )')
-                ->orderby('t.transaction_date','asc')
+                ->orderByRaw("{$payableUnadjustedDateSql} asc")
                 ->get();
 
                 $invoiceAmountTotalsByAccount = [];
@@ -8988,7 +9017,12 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 return self::expand_payable_opb_unadjusted_rows($unadjested_payment, $invoiceAmountTotalsByAccount);
 
         } catch (\Throwable $th) {
-            return $th;
+            \Log::error('Payable unadjusted list query failed', [
+                'company_id' => $company,
+                'account_ids' => $account_ids,
+                'error' => $th->getMessage(),
+            ]);
+            return collect([]);
         }
     }
 
@@ -9092,11 +9126,13 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 })
             ->leftJoin('sys_payment', 'sys_payment.doc_number', '=', 't.transaction_no')
             //->leftJoin('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 't.transaction_no')
-            ->whereNotIn('sys_payment.pdc_removed_os', [2])
+            ->where(function ($query) {
+                $query->whereNull('sys_payment.pdc_removed_os')
+                    ->orWhere('sys_payment.pdc_removed_os', '!=', 2);
+            })
             ->whereIn('t.account_id', $account_ids)
             ->where('t.company_id', $company)
             ->wherein('t.status', [1,3])
-            ->where('sys_payment.pdc_removed_os', '!=' ,2)
             ->wherein('t.transaction_type',['bankpayment'])
             ->where(function ($query) {
                 $query->whereNull('sys_payment.payment_through')
@@ -9121,7 +9157,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             $removed_payment = db::table('sys_payment_adjustments_jv')->where('company_id',$company)->where('status',1)->pluck('payment_no');
 
             $unadjested_payment = DB::table('sys_chartofaccounts_transaction as t')->select('t.account_id','c.account_name',
-                't.transaction_no as doc_number','t.transaction_date as doc_date','t.remarks','sys_payment.cheque_date','sys_payment.cheque_number','sys_payment.payment_date','t.credit_amount AS amount',
+                't.transaction_no as doc_number','t.transaction_date as doc_date','t.remarks','sys_payment.cheque_date','sys_payment.cheque_number','sys_payment.payment_date','t.debit_amount AS amount',
                 DB::raw('COALESCE(SUM(ra.bi_paid), 0) AS adj_amount'),DB::raw('GROUP_CONCAT(ra.bi_doc_no) as bi_doc_no'))
             ->leftJoin('sys_chartofaccounts as c', 'c.id', '=', 't.account_id')
             ->leftJoin('sys_payment_adjustments as ra', function ($join) {
@@ -9130,8 +9166,10 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 })
             ->leftJoin('sys_payment', 'sys_payment.doc_number', '=', 't.transaction_no')
             //->leftJoin('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 't.transaction_no')
-            ->whereNotIn('sys_payment.pdc_removed_os', [3])
-            ->where('sys_payment.pdc_removed_os',1)
+            ->where(function ($query) {
+                $query->whereNull('sys_payment.pdc_removed_os')
+                    ->orWhere('sys_payment.pdc_removed_os', 1);
+            })
             ->whereIn('t.account_id', $account_ids)
             ->where('t.company_id', $company)
             ->wherein('t.status', [1,3])
@@ -9141,7 +9179,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                     ->orWhereIn('sys_payment.payment_through', [3]);
             })
             ->whereNotIn('t.transaction_no', $removed_payment)
-            ->groupBy('t.account_id','t.transaction_no','t.credit_amount','t.transaction_date','t.remarks')
+            ->groupBy('t.account_id','t.transaction_no','t.debit_amount','t.transaction_date','t.remarks')
             ->havingRaw('0 < COALESCE(SUM(ra.bi_paid), 0)')
             ->orderby('t.transaction_date','asc')
             ->get();
