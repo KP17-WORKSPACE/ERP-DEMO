@@ -16,6 +16,33 @@
            
             <input type="hidden" name="cheque_id" id="cheque_id" value="">
 
+<script>
+    function paymentAdd2SetDateValue(id, value) {
+        var input = document.getElementById(id);
+        if (!input || !value) {
+            return;
+        }
+        if (input._flatpickr) {
+            input._flatpickr.setDate(value, true);
+        } else {
+            input.value = value;
+        }
+    }
+
+    function paymentAdd2IsChequePayment() {
+        var mode = document.getElementById('mode');
+        var paymentThrough = document.getElementById('payment_through');
+        return mode && paymentThrough
+            && mode.value === '2'
+            && (paymentThrough.value === '2' || paymentThrough.value === '3');
+    }
+
+    function paymentAdd2SetPaymentDateFromDoc() {
+        var docDate = document.getElementById('doc_date');
+        paymentAdd2SetDateValue('payment_date', docDate ? docDate.value : '');
+    }
+</script>
+
 <?php
     //$invno_cash=@App\SysHelper::get_new_maxid_2('sys_payment','cash','id');
     //$invno_bank=@App\SysHelper::get_new_maxid_2('sys_payment','bank','id');
@@ -168,6 +195,7 @@
 
                             $('#doc_number').val($('#cash_doc_number').val()).trigger('change');
                             $('#btn_submit').text('Add Cash Payment');
+                            paymentAdd2SetPaymentDateFromDoc();
                         } else if (mode == 2) {
                             $('#payment_mode_cash').prop('required', false);
                             $('#payment_mode_bank').prop('required', true);
@@ -415,7 +443,6 @@
                                 var modeEl = document.getElementById('mode');
                                 var currentMode = modeEl ? String(modeEl.value) : '';
                                 var bankSel = document.querySelector('select[name="payment_mode_bank"]');
-                                console.log('[debug] payment_through change', paymentthrough, 'mode', currentMode, 'bank', bankSel ? bankSel.value : '');
 
                                 var chequeFieldIds = ['div_cheque_date', 'div_cheque_number', 'div_payment_days', 'div_cheque_status'];
                                 var chequeInputIds = ['cheque_number', 'payment_days', 'cheque_date'];
@@ -427,6 +454,7 @@
                                     var cbl = document.getElementById('chequebook_label'); if (cbl) cbl.style.display = 'none';
                                     var ac = document.getElementById('addCheque'); if (ac) ac.style.display = 'none';
                                     var acb = document.getElementById('add_cheque_btn'); if (acb) acb.style.display = 'none';
+                                    paymentAdd2SetPaymentDateFromDoc();
                                 }
 
                                 // Only show cheque fields when mode is Bank (2) AND payment_through is Cheque/CDC Cheque
@@ -465,7 +493,9 @@
                                     var year = currentDate.getFullYear();
                                     var formattedDate = day + "/" + month + "/" + year;
                                     document.getElementById('cheque_date').value = formattedDate;
-                                    document.getElementById('payment_date').value = formattedDate;
+                                    if (paymentAdd2IsChequePayment()) {
+                                        document.getElementById('payment_date').value = formattedDate;
+                                    }
                                 }
                             </script>
                         </div>
@@ -481,6 +511,9 @@
                                             name="cheque_date" value="{{ @$value }}">
                                         <script>
                                             document.getElementById('cheque_date').addEventListener('change', function () {
+                                                if (!paymentAdd2IsChequePayment()) {
+                                                    return;
+                                                }
                                                 document.getElementById('payment_date').value = this.value;
                                                 document.getElementById('payment_date').focus();
                                             });

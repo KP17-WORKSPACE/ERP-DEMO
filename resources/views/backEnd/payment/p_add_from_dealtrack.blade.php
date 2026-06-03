@@ -88,6 +88,20 @@
                             </div>
                            <script>
                                 // delegated handler — works when element is added/hidden dynamically
+                                var dealtrackImmediatePaymentDate = @json(\Carbon\Carbon::now()->format('d/m/Y'));
+
+                                function setDealtrackPaymentDate(value) {
+                                    var paymentInput = document.getElementById('payment_date');
+                                    if (!paymentInput || !value) {
+                                        return;
+                                    }
+                                    if (paymentInput._flatpickr) {
+                                        paymentInput._flatpickr.setDate(value, true);
+                                    } else {
+                                        paymentInput.value = value;
+                                    }
+                                }
+
                                 $(document).on('change', '#payment_through', function() {
                                     var paymentthrough = String($(this).val());
 
@@ -100,6 +114,7 @@
                                         $('#addCheque').hide();
                                         $('#add_cheque_btn').hide();
                                         $('#bill_wise_heading').text('@lang("Bank Transfer Amount")');
+                                        setDealtrackPaymentDate(dealtrackImmediatePaymentDate);
                                         return;
                                     }
 
@@ -110,6 +125,7 @@
                                         $('#addCheque').show();
                                         $('#bill_wise_heading').text('@lang("Cheque Amount")');
                                         $('#add_cheque_btn').show();
+                                        setDealtrackPaymentDate($('#cheque_date').val());
                                         var bankSel = document.querySelector('select[name="payment_mode_bank"]');
                                         if (typeof fetchNextAvailableCheque === 'function' && bankSel && bankSel.value) {
                                             fetchNextAvailableCheque(bankSel.value);
@@ -123,6 +139,7 @@
                                     $('#chequebook').val('');
                                     $('#chequebook_label').hide();
                                     $('#addCheque').hide();
+                                    setDealtrackPaymentDate(dealtrackImmediatePaymentDate);
                                 });
 
                                 // ensure UI correct on initial load
@@ -150,6 +167,7 @@
 
                                     var mode = $('#mode').val();
                                     if (mode == 1) {
+                                        setDealtrackPaymentDate(dealtrackImmediatePaymentDate);
                                         $('#payment_mode_cash').prop('required', true);
                                         $('#payment_mode_bank').prop('required', false);
                                         $('#payment_mode_cash').css("display", "block");
@@ -322,12 +340,16 @@
     }
 
     // Format as dd/mm/yyyy
-    $value = $defaultDate->format('d/m/Y');
+    $chequeDateValue = $defaultDate->format('d/m/Y');
+    $paymentDateValue = \Carbon\Carbon::now()->format('d/m/Y');
 @endphp
                                             <input class="form-control date-picker" id="cheque_date" type="text"
-                                                name="cheque_date" value="{{ @$value }}">
+                                                name="cheque_date" value="{{ @$chequeDateValue }}">
                                             <script>
                                                 document.getElementById('cheque_date').addEventListener('change', function () {
+                                                    if ($('#mode').val() != '2' || !['2', '3'].includes(String($('#payment_through').val()))) {
+                                                        return;
+                                                    }
                                                     var pd = document.getElementById('payment_date');
                                                     if (pd) pd.value = this.value;
                                                 });
@@ -366,7 +388,7 @@
                                     <label> @lang('Payment Date') <span>*</span> </label>
                                     
                                     <input class="form-control" type="text" id="payment_date"
-                                        name="payment_date" value="{{ @$value }}" required>
+                                        name="payment_date" value="{{ @$paymentDateValue }}" required>
                                 </div>
                             </div>
                             <div class="col mb-4">
@@ -1299,10 +1321,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 chequeInput.value = formattedDate;
             }
 
-            if (paymentPicker) {
-                paymentPicker.setDate(formattedDate, true);
-            } else if (paymentInput) {
-                paymentInput.value = formattedDate;
+            const modeInput = document.getElementById('mode');
+            const paymentThroughInput = document.getElementById('payment_through');
+            const isChequePayment = modeInput && paymentThroughInput
+                && modeInput.value === '2'
+                && (paymentThroughInput.value === '2' || paymentThroughInput.value === '3');
+
+            if (isChequePayment) {
+                if (paymentPicker) {
+                    paymentPicker.setDate(formattedDate, true);
+                } else if (paymentInput) {
+                    paymentInput.value = formattedDate;
+                }
             }
 
         });

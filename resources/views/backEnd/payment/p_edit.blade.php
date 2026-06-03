@@ -11,6 +11,33 @@
             <input type="hidden" name="cheque_id" id="cheque_id" value="{{ isset($editData) ? $editData->cheque_id : 0 }}">
             <input type="hidden" name="url" id="url" value="{{URL::to('/')}}">
             <input type="hidden" name="date_of_joining" id="date_of_joining" value="{{date('Y-m-d')}}">
+
+            <script>
+                function paymentEditSetDateValue(id, value) {
+                    var input = document.getElementById(id);
+                    if (!input || !value) {
+                        return;
+                    }
+                    if (input._flatpickr) {
+                        input._flatpickr.setDate(value, true);
+                    } else {
+                        input.value = value;
+                    }
+                }
+
+                function paymentEditIsChequePayment() {
+                    var mode = document.getElementById('mode');
+                    var paymentThrough = document.getElementById('payment_through');
+                    return mode && paymentThrough
+                        && mode.value === '2'
+                        && (paymentThrough.value === '2' || paymentThrough.value === '3');
+                }
+
+                function paymentEditSetPaymentDateFromDoc() {
+                    var docDate = document.getElementById('doc_date');
+                    paymentEditSetDateValue('payment_date', docDate ? docDate.value : '');
+                }
+            </script>
             
 
 
@@ -80,6 +107,7 @@
                                                     $('#div_payment_through').css("display", "none");
                                                     $('#doc_number').val($('#cash_doc_number').val());
                                                     $('#btn_submit').text('Update Cash Payment');
+                                                    paymentEditSetPaymentDateFromDoc();
 
                                                     $('#bill_wise_heading').text('@lang("Cash Amount")');
 
@@ -207,6 +235,7 @@
                                                     $('#cheque_number').prop('required', false);
                                                     $('#cheque_date').prop('required', false);
                                                     $('#bill_wise_heading').text('@lang("Bank Transfer Amount")');
+                                                    paymentEditSetPaymentDateFromDoc();
                                                     return;
                                                 }
 
@@ -317,6 +346,7 @@
             $('#cheque_number').prop('required', false);
             $('#cheque_date').prop('required', false);
             $('#bill_wise_heading').text('@lang("Bank Transfer Amount")');
+            paymentEditSetPaymentDateFromDoc();
 
         }
         if (paymentthrough == 2 || paymentthrough == 3) {
@@ -452,7 +482,9 @@
                                         currentDate.setDate(currentDate.getDate() + daysToAdd);
                                         var formattedDate = currentDate.toISOString().split('T')[0];
                                         $('#cheque_date').val(formattedDate);
-                                        $('#payment_date').val(formattedDate);
+                                        if (paymentEditIsChequePayment()) {
+                                            $('#payment_date').val(formattedDate);
+                                        }
                                     }
                                 </script>
                             </div>
