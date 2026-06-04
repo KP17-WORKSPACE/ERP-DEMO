@@ -134,7 +134,7 @@ class SysPayablesOutstandingController extends Controller
                             $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($accounts->pluck('id'), $com_id);
                             $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($accounts->pluck('id'), $com_id);
 
-                            $opb_balance_amount = SysHelper::get_supplier_opening_balance($accounts->pluck('id'), $till_date, $com_id);
+                            $opb_balance_amount = SysHelper::get_supplier_opening_balance($accounts->pluck('id'), $this->supplierOpeningBalanceCutoffDate($till_date), $com_id);
 
                             /*$pdc_list = SysPayment::select('doc_date','doc_number','payment_mode','cat.account_id','cat.debit_amount','cat.credit_amount','cheque_date','cheque_number','payment_date','cat.remarks', DB::raw('GROUP_CONCAT(adj.bi_doc_no) as bi_doc_no'))
                             ->join('sys_chartofaccounts_transaction as cat','cat.transaction_no','sys_payment.doc_number')
@@ -325,7 +325,7 @@ class SysPayablesOutstandingController extends Controller
                 $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($account_id, $com_id);
                 $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($account_id, $com_id);
                 $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($account_id, $com_id);
-                $opb_balance_amount = SysHelper::get_supplier_opening_balance($account_id, date('Y-m-d'), $com_id);
+                $opb_balance_amount = SysHelper::get_supplier_opening_balance($account_id, $this->supplierOpeningBalanceCutoffDate($till_date), $com_id);
                 $data_all = $this->appendUnadjustedOnlyPayableAccounts($data_all, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $till_date);
 
 
@@ -890,7 +890,7 @@ class SysPayablesOutstandingController extends Controller
                 ? SysHelper::get_list_of_payable_unadjusted_jv_to_jv($accountIdsForUnadj, $com_id)
                 : collect([]);
             $opb_balance_amount = $accountIdsForUnadj->isNotEmpty()
-                ? SysHelper::get_supplier_opening_balance($accountIdsForUnadj, $till_date, $com_id)
+                ? SysHelper::get_supplier_opening_balance($accountIdsForUnadj, $this->supplierOpeningBalanceCutoffDate($till_date), $com_id)
                 : collect([]);
 
             $osViewData = $this->loadPayableOutstandingViewData($com_id);
@@ -927,6 +927,13 @@ class SysPayablesOutstandingController extends Controller
             DB::raw("{$accountIdExpression} as account_id"),
             DB::raw('MAX(transaction_type) as transaction_type'),
         ];
+    }
+
+    private function supplierOpeningBalanceCutoffDate($tillDate)
+    {
+        $normalizedTillDate = SysHelper::normalizeToYmd($tillDate) ?: date('Y-m-d');
+
+        return date('Y-m-d', strtotime($normalizedTillDate . ' +1 day'));
     }
 
     private function appendUnadjustedOnlyPayableAccounts($dataAll, $accounts, $listOfUnadjusted, $listOfUnadjustedJvToJv, $tillDate)
