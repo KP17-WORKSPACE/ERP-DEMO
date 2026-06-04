@@ -760,7 +760,10 @@ function check_total(id, amount) {
     let totText = $('#sum_' + id).text();
     let currentTotal = formatAmountToNumber(totText);
     let additionalAmount = formatAmountToNumber(amount);
-    if(currentTotal != additionalAmount){
+    let decimalPlaces = parseInt(@json(session('logged_session_data.decimal_point')), 10);
+    decimalPlaces = isNaN(decimalPlaces) ? 2 : decimalPlaces;
+    let tolerance = Math.pow(10, -decimalPlaces) / 2;
+    if(Math.abs(currentTotal - additionalAmount) > tolerance){
         $('#sum_' + id).css('color', 'red');
     }
 
@@ -1580,6 +1583,8 @@ function check_total(id, amount) {
                                 $unadjustedBalance = (float)($p->amount ?? 0) - $unadjustedAdjustment;
                                 $isPayableCreditDoc = in_array(($p->transaction_type ?? ''), ['bankpayment', 'cashpayment', 'purchasereturn'])
                                     || Illuminate\Support\Str::contains($docNumber, ['BP', 'CP', 'PR']);
+                                $isPayableOpeningBalanceSplit = ($p->transaction_type ?? '') === 'openingbalance'
+                                    && preg_match('/^OPB-\d+$/', (string) $docNumber);
                                 if ($isPayableCreditDoc) {
                                     $unadjustedBalance = -abs($unadjustedBalance);
                                 }
@@ -1590,7 +1595,7 @@ function check_total(id, amount) {
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustment,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
-                                @if($isPayableCreditDoc)
+                                @if($isPayableCreditDoc || $isPayableOpeningBalanceSplit)
                                     set_total_addmore({{ $aname->id }},{{ $unadjustedBalance }})
                                 @else
                                     set_total_lessmore({{ $aname->id }},{{ $unadjustedBalance }})
