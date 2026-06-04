@@ -28,7 +28,7 @@
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="{{url('purchase-return/'.$edit->id.'/delete')}}"><i class="ico icon-outline-trash-bin-minimalistic text-danger"></i> Cancel PR</a></li>
                     <li><a class="dropdown-item" href="{{url('purchase-return/'.$edit->id.'/download')}}"><i class="ico icon-outline-document-medicine text-success"></i> Download</a></li>
-                    <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#adjustmentModal"><i class="ico icon-outline-calculator-minimalistic text-warning"></i> Adjustment</button></li>
+                    <li><button type="button" class="dropdown-item" onclick="get_adjustment_list()" data-bs-toggle="modal" data-bs-target="#adjustmentModal"><i class="ico icon-outline-calculator-minimalistic text-warning"></i> Adjustment</button></li>
                 </ul>
             </div>
         </div>
@@ -1070,8 +1070,9 @@ foreach ($customer_reference_list as $company) {
                                         <th>Doc Date</th>
                                         <th>PIV No</th>
                                         <th class="text-end">Total</th>
-                                        <th class="text-end">Paid</th>
+                                        <th class="text-end">Adjusted</th>
                                         <th class="text-end">Balance</th>
+                                        <th class="text-end">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1088,8 +1089,9 @@ foreach ($customer_reference_list as $company) {
                                                 <td style="width:100px;"><input type="text" class="form-control" name="adj_doc_date[]" id="adj_doc_date_{{ $i }}" value="{{ date('d/m/Y', strtotime($dt->doc_date)) }}" readonly /></td>
                                                 <td style="width:100px;"><input type="text" class="form-control" name="adj_pi_no[]" id="adj_pi_no_{{ $i }}" value="{{ $dt->piv_no }}" readonly /></td>
                                                 <td style="width:100px;"><input type="text" class="form-control text-end" name="adj_total[]" id="adj_total_{{ $i }}" value="{{ $dt->total_amount }}" readonly /></td>
-                                                <td style="width:100px;"><input type="text" class="form-control text-end class_adj_paid" name="adj_paid[]" id="adj_paid_{{ $i }}" value="{{ $paid_amount }}" onchange="get_set_amount()" onclick="set_adjestment({{ $i }})" required /></td>
+                                                <td style="width:100px;"><input type="text" class="form-control text-end" name="adj_adjusted[]" id="adj_adjusted_{{ $i }}" value="0" readonly /></td>
                                                 <td style="width:100px;"><input type="text" class="form-control text-end" name="adj_balance[]" id="adj_balance_{{ $i }}" value="{{ $balance_amount }}" readonly /></td>
+                                                <td style="width:100px;"><input type="text" class="form-control text-end class_adj_paid" name="adj_paid[]" id="adj_paid_{{ $i }}" value="{{ $paid_amount }}" data-manual="0" onchange="get_set_amount({{ $i }})" onclick="set_adjestment({{ $i }}); get_set_amount({{ $i }}); this.select();" required /></td>
                                             </tr>
                                             @php $i++; @endphp
                                             @endforeach
@@ -1099,8 +1101,9 @@ foreach ($customer_reference_list as $company) {
                                                 <td style="width:100px;"><input type="text" class="form-control" name="adj_pi_no" value="{{ $edit->pi_number }}" readonly /></td>
                                                 <td style="width:100px;"><input type="text" class="form-control" name="adj_lpo_no" value="{{ $edit->lpo_number }}" readonly /></td>
                                                 <td style="width:100px;"><input type="text" class="form-control text-end" name="adj_total" id="adj_total" value="{{ $invoice_amount }}" readonly /></td>
-                                                <td style="width:100px;"><input type="text" class="form-control text-end class_adj_paid" name="adj_paid" id="adj_paid" value="" onchange="get_set_amount()" required /></td>
+                                                <td style="width:100px;"><input type="text" class="form-control text-end" name="adj_adjusted" id="adj_adjusted" value="0" readonly /></td>
                                                 <td style="width:100px;"><input type="text" class="form-control text-end" name="adj_balance" id="adj_balance" value="" readonly /></td>
+                                                <td style="width:100px;"><input type="text" class="form-control text-end class_adj_paid" name="adj_paid" id="adj_paid" value="" data-manual="0" onchange="get_set_amount()" onclick="this.select();" required /></td>
                                             </tr>
                                             @endif
                                 </tbody>
@@ -1111,6 +1114,7 @@ foreach ($customer_reference_list as $company) {
                                                 <th class="text-end"><label id="footer_total"></label></th>
                                                 <th class="text-end"><label id="footer_paid"></label></th>
                                                 <th class="text-end"><label id="footer_balance"></label></th>
+                                                <th class="text-end"><label id="footer_amount"></label></th>
                                             </tr>
                                         </tfoot>
                             </table>
@@ -1129,23 +1133,108 @@ foreach ($customer_reference_list as $company) {
             </div>
         </div>
         <script>
-                            function get_set_amount(id)
+                            function prAdjustmentParseAmount(value) {
+                                if (typeof parseErpAmount === 'function') {
+                                    return parseErpAmount(value);
+                                }
+                                var parsed = parseFloat(String(value || '0').replace(/,/g, ''));
+                                return isNaN(parsed) ? 0 : parsed;
+                            }
+
+                            function prAdjustmentFormatAmount(value) {
+                                if (typeof formatAmount === 'function') {
+                                    return formatAmount(value);
+                                }
+                                return prAdjustmentParseAmount(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            }
+
+                            function get_adjustment_list() {
+                                $("#loading_bg").css("display", "block");
+                                $.ajax({
+                                    url: "{{ URL::to('get-purchase-return-adjestment-list-add') }}",
+                                    type: "get",
+                                    data: {
+                                        _token: '{{ csrf_token() }}',
+                                        id: $('#vendors').val(),
+                                        doc_number: $('#doc_number').val(),
+                                        doc_date: $('#doc_date').val(),
+                                    },
+                                    cache: false,
+                                    success: function(dataResult) {
+                                        var dataResult = JSON.parse(dataResult);
+                                        var rows = Array.isArray(dataResult['data']) ? dataResult['data'] : [];
+                                        var tblrow = "";
+
+                                        for (var i = 0; i < rows.length; i++) {
+                                            var row = rows[i];
+                                            var adjustedAmount = prAdjustmentParseAmount(row.paid_amount);
+                                            var currentAmount = prAdjustmentParseAmount(row.current_amount);
+                                            var totalAmount = prAdjustmentParseAmount(row.total_amount);
+                                            var balanceAmount = prAdjustmentParseAmount(row.balance_amount);
+                                            var rowMax = balanceAmount + currentAmount;
+
+                                            tblrow += "<tr>";
+                                            tblrow += "<td><input type='text' class='form-control' name='adj_doc_date[]' id='adj_doc_date_" + i + "' value='" + get_format_date(row.doc_date) + "' readonly /></td>";
+                                            tblrow += "<td><input type='text' class='form-control' name='adj_pi_no[]' id='adj_pi_no_" + i + "' value='" + row.doc_number + "' readonly /></td>";
+                                            tblrow += "<td class='text-end'><input type='text' class='form-control text-end' name='adj_total[]' id='adj_total_" + i + "' value='" + prAdjustmentFormatAmount(totalAmount) + "' readonly /></td>";
+                                            tblrow += "<td class='text-end'><input type='text' class='form-control text-end' name='adj_adjusted[]' id='adj_adjusted_" + i + "' value='" + prAdjustmentFormatAmount(adjustedAmount) + "' readonly /></td>";
+                                            tblrow += "<td class='text-end'><input type='text' class='form-control text-end' name='adj_balance[]' id='adj_balance_" + i + "' value='" + prAdjustmentFormatAmount(balanceAmount) + "' readonly /></td>";
+                                            tblrow += "<td class='text-end'><input type='text' class='form-control class_adj_paid text-end' name='adj_paid[]' id='adj_paid_" + i + "' value='" + prAdjustmentFormatAmount(currentAmount) + "' data-max-adjust='" + rowMax + "' data-manual='0' onchange='get_set_amount(" + i + ")' onclick='set_adjestment(" + i + "); get_set_amount(" + i + "); this.select();' required /></td>";
+                                            tblrow += "</tr>";
+                                        }
+
+                                        $('#table_adjestment tbody').empty().append(tblrow);
+                                        updateAdjustmentTotals();
+                                        $("#loading_bg").css("display", "none");
+                                    },
+                                    error: function(xhr) {
+                                        console.log(xhr.responseText);
+                                        $('#table_adjestment tbody').empty();
+                                        updateAdjustmentTotals();
+                                        $("#loading_bg").css("display", "none");
+                                    }
+                                });
+                            }
+
+                            function get_set_amount(id, shouldFormat)
                             {
-                                set_adjestment(id);
-                                var adj_total = Number($('#adj_total_'+id).val() || 0);
-                                var adj_paid = Number($('#adj_paid_'+id).val() || 0);
-                                $('#adj_balance_'+id).val(adj_total - adj_paid);
+                                shouldFormat = shouldFormat !== false;
+                                if (id === undefined || id === null || $('#adj_paid_'+id).length === 0) {
+                                    updateAdjustmentTotals();
+                                    return;
+                                }
+
+                                var baseBalance = prAdjustmentParseAmount($('#adj_paid_'+id).data('max-adjust'));
+                                var adj_paid = prAdjustmentParseAmount($('#adj_paid_'+id).val());
+                                if (!isFinite(baseBalance) || baseBalance <= 0) {
+                                    baseBalance = prAdjustmentParseAmount($('#adj_balance_'+id).val()) + adj_paid;
+                                }
+                                if (adj_paid < 0) {
+                                    adj_paid = 0;
+                                }
+                                if (baseBalance > 0 && adj_paid > baseBalance) {
+                                    adj_paid = baseBalance;
+                                    shouldFormat = true;
+                                }
+                                $('#adj_paid_'+id).val(shouldFormat ? prAdjustmentFormatAmount(adj_paid) : adj_paid);
+                                $('#adj_balance_'+id).val(prAdjustmentFormatAmount(baseBalance - adj_paid));
 
                                 updateAdjustmentTotals();
                             }
 
                             function set_adjestment(id){
-                                var sum = Number($('#act_pri_adj_amount').val() || 0);
+                                var $input = $('#adj_paid_'+id);
+                                if ($input.data('manual') == 1) {
+                                    updateAdjustmentTotals();
+                                    return;
+                                }
+
+                                var sum = prAdjustmentParseAmount($('#act_pri_adj_amount').val());
                                 var numItems = $('.class_adj_paid').length;
                                 var adj=0;
                                 for(i=0; i < numItems; i++){
                                     if(i!=id){
-                                        adj +=  Number($('#adj_paid_'+i).val() || 0);
+                                        adj +=  prAdjustmentParseAmount($('#adj_paid_'+i).val());
                                     }
                                 }
 
@@ -1156,15 +1245,18 @@ foreach ($customer_reference_list as $company) {
                                 }
                                 else { $('#pri_adj_amount').val(0); }
 
-                                var adj3 = Number($('#pri_adj_amount').val() || 0);
+                                var adj3 = prAdjustmentParseAmount($('#pri_adj_amount').val());
 
                                 if(adj3 > 0){
-                                    var adj_total = Number($('#adj_balance_'+id).val() || 0);
+                                    var adj_total = prAdjustmentParseAmount($('#adj_paid_'+id).data('max-adjust'));
+                                    if (!isFinite(adj_total) || adj_total <= 0) {
+                                        adj_total = prAdjustmentParseAmount($('#adj_balance_'+id).val()) + prAdjustmentParseAmount($('#adj_paid_'+id).val());
+                                    }
                                     if(adj3 >= adj_total){
-                                        $('#adj_paid_'+id).val(adj_total);
+                                        $('#adj_paid_'+id).val(prAdjustmentFormatAmount(adj_total));
                                     }
                                     else{
-                                        $('#adj_paid_'+id).val(adj3);
+                                        $('#adj_paid_'+id).val(prAdjustmentFormatAmount(adj3));
                                     }
                                 }
 
@@ -1175,25 +1267,43 @@ foreach ($customer_reference_list as $company) {
                                 var total = 0;
                                 var paid = 0;
                                 var balance = 0;
+                                var amount = 0;
 
                                 $('#table_adjestment tbody tr').each(function() {
-                                    var rowTotal = Number($(this).find('input[name="adj_total[]"]').val() || $(this).find('input[name="adj_total"]').val() || 0);
-                                    var rowPaid = Number($(this).find('input[name="adj_paid[]"]').val() || $(this).find('input[name="adj_paid"]').val() || 0);
-                                    var rowBalance = Number($(this).find('input[name="adj_balance[]"]').val() || $(this).find('input[name="adj_balance"]').val() || 0);
+                                    var rowTotal = prAdjustmentParseAmount($(this).find('input[name="adj_total[]"]').val() || $(this).find('input[name="adj_total"]').val());
+                                    var rowPaid = prAdjustmentParseAmount($(this).find('input[name="adj_adjusted[]"]').val() || $(this).find('input[name="adj_adjusted"]').val());
+                                    var rowBalance = prAdjustmentParseAmount($(this).find('input[name="adj_balance[]"]').val() || $(this).find('input[name="adj_balance"]').val());
+                                    var rowAmount = prAdjustmentParseAmount($(this).find('input[name="adj_paid[]"]').val() || $(this).find('input[name="adj_paid"]').val());
 
                                     total += rowTotal;
                                     paid += rowPaid;
                                     balance += rowBalance;
+                                    amount += rowAmount;
                                 });
 
-                                $('#footer_total').text(total.toFixed(2));
-                                $('#footer_paid').text(paid.toFixed(2));
-                                $('#footer_balance').text(balance.toFixed(2));
+                                $('#footer_total').text(prAdjustmentFormatAmount(total));
+                                $('#footer_paid').text(prAdjustmentFormatAmount(paid));
+                                $('#footer_balance').text(prAdjustmentFormatAmount(balance));
+                                $('#footer_amount').text(prAdjustmentFormatAmount(amount));
                             }
 
-                            // Recalculate footer totals when paid field loses focus, without altering balance values.
+                            $(document).on('input', '.class_adj_paid', function() {
+                                $(this).data('manual', 1);
+                                var rawId = ($(this).attr('id') || '').replace('adj_paid_', '');
+                                if (rawId !== '' && !isNaN(rawId)) {
+                                    get_set_amount(parseInt(rawId, 10), false);
+                                } else {
+                                    updateAdjustmentTotals();
+                                }
+                            });
+
                             $(document).on('blur', '.class_adj_paid', function() {
-                                updateAdjustmentTotals();
+                                var rawId = ($(this).attr('id') || '').replace('adj_paid_', '');
+                                if (rawId !== '' && !isNaN(rawId)) {
+                                    get_set_amount(parseInt(rawId, 10));
+                                } else {
+                                    updateAdjustmentTotals();
+                                }
                             });
 
                             $(document).ready(function() {
