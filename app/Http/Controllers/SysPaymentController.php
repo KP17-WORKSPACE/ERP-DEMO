@@ -1100,125 +1100,355 @@ class SysPaymentController extends Controller
     //     }
     // }
 
+    private function paymentBillWiseAdjustmentSums($accountId, $companyId, $docNumbers, $excludePaymentDoc = null)
+    {
+        $docNumbers = collect($docNumbers)->filter()->unique()->values();
+        if ($docNumbers->isEmpty()) {
+            return collect([]);
+        }
+
+        $query = SysPaymentAdjustments::select('bi_doc_no', DB::raw('SUM(bi_paid) as paid'))
+            ->where('account_id', $accountId)
+            ->where('status', 1)
+            ->whereIn('bi_doc_no', $docNumbers);
+
+        $query->where(function ($q) use ($companyId) {
+            $q->where('company_id', $companyId)->orWhereNull('company_id');
+        });
+
+        if ($excludePaymentDoc) {
+            $query->where('bi_doc_number', '<>', $excludePaymentDoc);
+        }
+
+        return $query->groupBy('bi_doc_no')->pluck('paid', 'bi_doc_no');
+    }
+
+    private function paymentBillWiseCurrentAdjustmentSums($accountId, $companyId, $paymentDoc, $docNumbers)
+    {
+        if (!$paymentDoc) {
+            return collect([]);
+        }
+
+        $docNumbers = collect($docNumbers)->filter()->unique()->values();
+        if ($docNumbers->isEmpty()) {
+            return collect([]);
+        }
+
+        return SysPaymentAdjustments::select('bi_doc_no', DB::raw('SUM(bi_paid) as paid'))
+            ->where('account_id', $accountId)
+            ->where('bi_doc_number', $paymentDoc)
+            ->where('status', 1)
+            ->whereIn('bi_doc_no', $docNumbers)
+            ->where(function ($q) use ($companyId) {
+                $q->where('company_id', $companyId)->orWhereNull('company_id');
+            })
+            ->groupBy('bi_doc_no')
+            ->pluck('paid', 'bi_doc_no');
+    }
+
+    private function payableBillWiseInvoiceAmountTotal($accountId, $companyId, $tillDate = null)
+    {
+        $till = $tillDate ? (SysHelper::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+
+        $rows = SysChartofAccountsTransaction::select(
+                'transaction_date',
+                'transaction_id',
+                'transaction_no',
+                'transaction_type',
+                DB::raw('SUM(debit_amount) as debit_amount'),
+                DB::raw('SUM(credit_amount) as credit_amount')
+            )
+            ->where('account_id', $accountId)
+            ->where('company_id', $companyId)
+            ->where('status', 1)
+            ->whereIn('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice'])
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
+            ->groupBy(
+                'transaction_date',
+                'transaction_id',
+                'transaction_no',
+                'transaction_type',
+                DB::raw("CASE WHEN transaction_type = 'salesinvoice' THEN id ELSE 0 END")
+            )
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return 0.0;
+        }
+
+        $trnNos = $rows->pluck('transaction_no')->unique()->values();
+
+        $prPaid = DB::table('sys_purchase_return_adjestment')
+            ->select('piv_no', DB::raw('SUM(paid_amount) as paid_amount'))
+            ->whereIn('piv_no', $trnNos)
+            ->groupBy('piv_no')
+            ->pluck('paid_amount', 'piv_no');
+
+        $paymentPaid = DB::table('sys_payment as p')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'p.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->where('p.company_id', $companyId)
+            ->where('p.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvPaymentPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'j.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvReceiptPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'j.doc_number')
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $returnPaid = DB::table('sys_purchase_return as r')
+            ->join('sys_purchase_return_adjestment as ra', 'ra.pri_no', '=', 'r.doc_number')
+            ->where('r.vendors', $accountId)
+            ->whereIn('ra.pri_no', $trnNos)
+            ->where('r.company_id', $companyId)
+            ->where('r.status', 1)
+            ->select('ra.piv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
+            ->groupBy('ra.piv_no')
+            ->pluck('paid_amount', 'piv_no');
+
+        $total = 0.0;
+        foreach ($rows as $row) {
+            $credit = (float) ($row->credit_amount ?? 0);
+            $debit = (float) ($row->debit_amount ?? 0);
+            $docNo = (string) ($row->transaction_no ?? '');
+            $opbImportPaid = ($row->transaction_type ?? '') === 'opbinvoice' ? $debit : 0.0;
+            $paid = (float) ($prPaid[$docNo] ?? 0)
+                + (float) ($paymentPaid[$docNo] ?? 0)
+                + (float) ($jvPaymentPaid[$docNo] ?? 0)
+                + $opbImportPaid
+                - ((float) ($jvReceiptPaid[$docNo] ?? 0) - (float) ($returnPaid[$docNo] ?? 0));
+
+            $isHiddenPurchaseReturn = str_contains($docNo, 'PR') && round($debit, 2) >= round($paid, 2);
+            if (!((round($credit, 2) != round($paid, 2)) || ($debit > 0)) || $isHiddenPurchaseReturn) {
+                continue;
+            }
+
+            if (str_contains($docNo, 'PR')) {
+                $total -= $debit;
+                continue;
+            }
+
+            if (($row->transaction_type ?? '') === 'opbinvoice' && $debit > 0) {
+                $total += $credit - $debit;
+            } else {
+                $total += $credit;
+            }
+        }
+
+        return round($total, 2);
+    }
+
+    private function paymentBillWisePurchaseInvoiceRows($accountId, $companyId, $includeFullyPaid = false, $currentPaymentDoc = null, $tillDate = null)
+    {
+        $till = $tillDate ? (SysHelper::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+
+        $items = DB::table('sys_purchase_invoice as pi')
+            ->join('sys_purchase_invoice_items as pii', 'pi.id', '=', 'pii.pi_id')
+            ->leftJoin('sys_crm_deals as d', 'd.id', '=', 'pi.deal_id')
+            ->where('pi.vendors', $accountId)
+            ->where('pi.company_id', $companyId)
+            ->where('pi.status', 1)
+            ->whereRaw("DATE_FORMAT(pi.pi_date, '%Y-%m-%d') <= ?", [$till])
+            ->select(
+                'pi.doc_number',
+                'pi.bill_number',
+                'd.id as deal_id',
+                'd.code as deal_code',
+                'pi.pi_date as doc_date',
+                'pi.lpo_number',
+                'pi.lpo_date',
+                DB::raw('ROUND(SUM(pii.taxableamount + pii.vatamount), 2) as total')
+            )
+            ->groupBy('pi.id', 'pi.doc_number', 'pi.bill_number', 'd.id', 'd.code', 'pi.pi_date', 'pi.lpo_number', 'pi.lpo_date')
+            ->get();
+
+        $docNumbers = $items->pluck('doc_number');
+        $paidByDoc = $this->paymentBillWiseAdjustmentSums($accountId, $companyId, $docNumbers, $currentPaymentDoc);
+        $currentByDoc = $this->paymentBillWiseCurrentAdjustmentSums($accountId, $companyId, $currentPaymentDoc, $docNumbers);
+
+        $rows = [];
+        foreach ($items as $item) {
+            $docNo = $item->doc_number;
+            $total = round((float) ($item->total ?? 0), 2);
+            $paid = round((float) ($paidByDoc[$docNo] ?? 0), 2);
+            $biAmount = round((float) ($currentByDoc[$docNo] ?? 0), 2);
+            $balance = round($total - $paid, 2);
+
+            if ($balance <= 0 && $biAmount <= 0) {
+                continue;
+            }
+
+            if (!$includeFullyPaid && $balance <= 0) {
+                continue;
+            }
+
+            $rows[] = [
+                'transaction_type' => 'purchaseinvoice',
+                'deal_id' => $item->deal_id,
+                'deal_code' => $item->deal_code,
+                'doc_number' => $docNo,
+                'doc_date' => $item->doc_date,
+                'lpo_number' => $item->lpo_number,
+                'bill_number' => $item->bill_number,
+                'lpo_date' => $item->lpo_date,
+                'total' => $total,
+                'paid' => $paid,
+                'bi_amount' => $biAmount,
+                'balance' => $balance,
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function paymentBillWiseOpeningBalanceRows($accountId, $companyId, $includeFullyPaid = false, $currentPaymentDoc = null, $tillDate = null)
+    {
+        $till = $tillDate ? (SysHelper::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+
+        $opbRows = SysChartofAccountsTransaction::select(
+                'transaction_no',
+                'transaction_date',
+                'transaction_type',
+                DB::raw('SUM(debit_amount) as debit_amount'),
+                DB::raw('SUM(credit_amount) as credit_amount')
+            )
+            ->whereIn('transaction_type', ['openingbalance', 'opbinvoice'])
+            ->where('account_id', $accountId)
+            ->where('status', 1)
+            ->where('company_id', $companyId)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
+            ->groupBy('transaction_no', 'transaction_date', 'transaction_type')
+            ->get();
+
+        if ($opbRows->isEmpty()) {
+            return [];
+        }
+
+        $docNumbers = $opbRows->pluck('transaction_no');
+        $paidByDoc = $this->paymentBillWiseAdjustmentSums($accountId, $companyId, $docNumbers, $currentPaymentDoc);
+        $currentByDoc = $this->paymentBillWiseCurrentAdjustmentSums($accountId, $companyId, $currentPaymentDoc, $docNumbers);
+        $invoiceAmountTotal = $this->payableBillWiseInvoiceAmountTotal($accountId, $companyId, $till);
+
+        $opbDetailMap = DB::table('sys_chartofaccounts_transaction_invoice_detail as d')
+            ->join('sys_chartofaccounts_transaction as t', 't.id', '=', 'd.trn_id')
+            ->where('t.company_id', $companyId)
+            ->where('t.transaction_type', 'opbinvoice')
+            ->whereIn('d.transaction_no', $docNumbers)
+            ->select('d.*')
+            ->get()
+            ->keyBy('transaction_no');
+
+        $rows = [];
+        foreach ($opbRows as $opb) {
+            $docNo = $opb->transaction_no;
+            $debit = (float) ($opb->debit_amount ?? 0);
+            $credit = (float) ($opb->credit_amount ?? 0);
+            $type = $opb->transaction_type ?? '';
+            $isPayableOpeningBalanceSplit = $type === 'openingbalance'
+                && preg_match('/^OPB-\d+$/', (string) $docNo);
+
+            if ($type === 'opbinvoice') {
+                $total = round($credit - $debit, 2);
+            } elseif ($isPayableOpeningBalanceSplit && $credit > 0) {
+                $total = round($credit - $invoiceAmountTotal, 2);
+                if ($total < 0) {
+                    $total = round($credit, 2);
+                }
+            } else {
+                $total = round($credit - $debit, 2);
+            }
+
+            $paid = round((float) ($paidByDoc[$docNo] ?? 0), 2);
+            $biAmount = round((float) ($currentByDoc[$docNo] ?? 0), 2);
+            $balance = round($total - $paid, 2);
+
+            if (($total <= 0 || $balance <= 0) && $biAmount <= 0) {
+                continue;
+            }
+
+            if (!$includeFullyPaid && $balance <= 0) {
+                continue;
+            }
+
+            $detail = $opbDetailMap->get($docNo);
+            $dealCode = trim((string) ($detail->deal_id ?? ''));
+            $dealId = $dealCode !== '' ? SysHelper::get_dealid_from_code($dealCode) : null;
+            if ($dealId === '0') {
+                $dealId = null;
+            }
+
+            $rows[] = [
+                'transaction_type' => $type,
+                'deal_id' => $dealId,
+                'deal_code' => $dealCode,
+                'doc_number' => $docNo,
+                'doc_date' => $opb->transaction_date,
+                'lpo_number' => $detail->po_no ?? '',
+                'bill_number' => $detail->bill_no ?? '',
+                'lpo_date' => '',
+                'total' => $total,
+                'paid' => $paid,
+                'bi_amount' => $biAmount,
+                'balance' => $balance,
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function paymentBillWisePayableRows($accountId, $companyId, $includeFullyPaid = false, $currentPaymentDoc = null, $tillDate = null)
+    {
+        $accountId = (int) $accountId;
+        $companyId = (int) $companyId;
+
+        if ($accountId <= 0 || $companyId <= 0) {
+            return [];
+        }
+
+        $till = $tillDate ? (SysHelper::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+
+        return array_merge(
+            $this->paymentBillWiseOpeningBalanceRows($accountId, $companyId, $includeFullyPaid, $currentPaymentDoc, $till),
+            $this->paymentBillWisePurchaseInvoiceRows($accountId, $companyId, $includeFullyPaid, $currentPaymentDoc, $till)
+        );
+    }
+
     public function getpybalancelist(Request $request)
     {
         $company_id = session('logged_session_data.company_id');
-        $opb = SysChartofAccountsTransaction::wherein('transaction_type', ['openingbalance', 'opbinvoice'])->where('account_id', $request->account_id)->where('status', 1)->where('company_id', $company_id)->get();
-        $items = DB::select("CALL get_bank_payment_adjestments($request->account_id,$company_id)");
+        $tillDate = SysHelper::normalizeToYmd($request->doc_date) ?: date('Y-m-d');
 
-
-
-        //$siv_charges = SysSalesInvoiceCFCharges::where('');
-
-        // $items = SysSalesInvoice::select('sys_sales_invoice.doc_number', 'sys_sales_invoice.si_date', 'sys_sales_invoice.lpo_number','sys_sales_invoice.lpo_date', DB::raw('SUM(sys_sales_invoice_items.taxableamount) as amount'))
-        // ->join('sys_sales_invoice_items', 'sys_sales_invoice.id', '=', 'sys_sales_invoice_items.si_id')
-        // ->where('sys_sales_invoice.customer',$request->cr_account_id)
-        // ->groupBy('sys_sales_invoice.id')
-        // ->groupBy('sys_sales_invoice.doc_number')
-        // ->groupBy('sys_sales_invoice.si_date')
-        // ->groupBy('sys_sales_invoice.lpo_number')
-        // ->groupBy('sys_sales_invoice.lpo_date')
-        // ->get();
-
-        //$items = SysCustSuppl::select('id','name')->where('catid',1)->get();
-
-
-
-        $searchData = [];
-
-        if (count($opb) > 0) {
-            foreach ($opb as $dt) {
-                $paid = SysPaymentAdjustments::where('bi_doc_no', $dt->transaction_no)->sum('bi_paid');
-                $searchData[] = [
-                    'deal_code' => null,
-                    'deal_id' => null,
-                    'doc_number' => $dt->transaction_no,
-                    'doc_date' => $dt->transaction_date,
-                    'lpo_number' => '',
-                    'bill_number' => '',
-                    'lpo_date' => '',
-                    'total' => abs($dt->debit_amount - $dt->credit_amount),
-                    'paid' => $paid,
-                    'balance' => abs($dt->debit_amount - $dt->credit_amount) - $paid,
-                ];
-            }
-        }
-
-        foreach ($items as $item) {
-            $searchData[] = [
-                'deal_id'    => $item->deal_id    ?? null,
-                'deal_code'  => $item->deal_code  ?? null,
-                'doc_number' => $item->doc_number ?? null,
-                'doc_date'   => $item->doc_date   ?? null,
-                'lpo_number' => $item->lpo_number ?? null,
-                'bill_number'=> $item->bill_number?? null,
-                'lpo_date'   => $item->lpo_date   ?? null,
-                'total'      => $item->total       ?? 0,
-                'paid'       => $item->paid        ?? 0,
-                'balance'    => $item->balance     ?? 0,
-            ];
-        }
-
-        // Always return JSON (empty array when no data) to avoid client-side parse errors
-        return response()->json($searchData);
+        return response()->json(
+            $this->paymentBillWisePayableRows($request->account_id, $company_id, false, null, $tillDate)
+        );
     }
+
     public function getpybalancelistedit(Request $request)
     {
         $company_id = session('logged_session_data.company_id');
-        $opb = SysChartofAccountsTransaction::wherein('transaction_type', ['openingbalance', 'opbinvoice'])->where('account_id', $request->account_id)->where('status', 1)->where('company_id', $company_id)->get();
-        $items = DB::select("CALL get_bank_payment_adjestments_edit($request->account_id,$company_id)");
+        $tillDate = SysHelper::normalizeToYmd($request->doc_date) ?: date('Y-m-d');
 
-
-        $searchData = [];
-
-        $adjestData = SysPaymentAdjustments::where('bi_doc_number', $request->doc_number)->get();
-
-        if (count($opb) > 0) {
-            foreach ($opb as $dt) {
-                $paid = SysPaymentAdjustments::where('bi_doc_no', $dt->transaction_no)->sum('bi_paid');
-                $bi_amount = $adjestData->where('bi_doc_no', $dt->transaction_no)->sum('bi_paid');
-                if ($bi_amount != 0) {
-                    $paid = 0;
-                }
-                $searchData[] = [
-                    'deal_code' => null,
-                    'deal_id' => null,
-                    'doc_number' => $dt->transaction_no,
-                    'doc_date' => $dt->transaction_date,
-                    'lpo_number' => '',
-                    'bill_number' => '',
-                    'lpo_date' => '',
-                    'total' => abs($dt->debit_amount - $dt->credit_amount),
-                    'paid' => $paid,
-                    'bi_amount' => $bi_amount,
-                    'balance' => abs($dt->debit_amount - $dt->credit_amount) - $paid,
-                ];
-            }
-        }
-
-        foreach ($items as $item) {
-            $paid = $item->paid ?? 0;
-            $bi_amount = $adjestData->where('bi_doc_no', $item->doc_number ?? null)->sum('bi_paid');
-            if ($bi_amount != 0) {
-                $paid = 0;
-            }
-            $searchData[] = [
-                'deal_id'    => $item->deal_id    ?? null,
-                'deal_code'  => $item->deal_code  ?? null,
-                'doc_number' => $item->doc_number ?? null,
-                'doc_date'   => $item->doc_date   ?? null,
-                'lpo_number' => $item->lpo_number ?? null,
-                'bill_number'=> $item->bill_number?? null,
-                'lpo_date'   => $item->lpo_date   ?? null,
-                'total'      => $item->total       ?? 0,
-                'paid'       => $item->paid        ?? 0,
-                'bi_amount'  => $bi_amount,
-                'balance'    => $item->balance     ?? 0,
-            ];
-        }
-
-        // Always return JSON (empty array when no data) to avoid client-side parse errors
-        return response()->json($searchData);
+        return response()->json(
+            $this->paymentBillWisePayableRows($request->account_id, $company_id, true, $request->doc_number, $tillDate)
+        );
     }
 
     public function delete($id)
