@@ -1011,6 +1011,7 @@ $(document).on("click", "#addRowPY", function(event) {
 $(document).on("click", "#addCtrlPaymentAdjest", function(event) {
     var url = $('#url').val();
     var br_account_id = $('#br_account_id').val();
+    var doc_date = $('#doc_date').val();
     
     var i = 1;
     var outstamount = 0;
@@ -1023,7 +1024,7 @@ $(document).on("click", "#addCtrlPaymentAdjest", function(event) {
     $.ajax({
         url: url + '/' + 'get-py-balancelist',
         type: 'GET',
-        data: { account_id: br_account_id },
+        data: { account_id: br_account_id, doc_date: doc_date },
         dataType: 'json',
         success: function(response) {
             console.log("get list",response);
@@ -1111,6 +1112,7 @@ $(document).on("click", "#addCtrlPaymentAdjestEdit", function(event) {
     var url = $('#url').val();
     var br_account_id = $('#br_account_id').val();
     var doc_number = $('#doc_number').val();    
+    var doc_date = $('#doc_date').val();
     var i = 1;
     var outstamount = 0;
 
@@ -1122,7 +1124,7 @@ $(document).on("click", "#addCtrlPaymentAdjestEdit", function(event) {
     $.ajax({
         url: url + '/' + 'get-py-balancelist-edit',
         type: 'GET',
-        data: { account_id: br_account_id,doc_number: doc_number },
+        data: { account_id: br_account_id, doc_number: doc_number, doc_date: doc_date },
         dataType: 'json',
         success: function(response) {
             console.log(response);
