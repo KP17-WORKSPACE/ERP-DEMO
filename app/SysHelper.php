@@ -9041,7 +9041,14 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                     WHERE pa.company_id = {$company}
                       AND pa.status = 1
                       AND pa.account_id = t.account_id
-                      AND pa.bi_doc_number COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci)";
+                      AND (
+                        pa.bi_doc_number COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci
+                        OR (
+                            t.transaction_type = 'openingbalance'
+                            AND t.transaction_no REGEXP '^OPB-[0-9]+$'
+                            AND pa.bi_doc_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci
+                        )
+                      ))";
                 $purchaseReturnAdjustedSql = "(SELECT COALESCE(SUM(pra.paid_amount),0)
                     FROM sys_purchase_return_adjestment pra
                     INNER JOIN sys_purchase_return prh
