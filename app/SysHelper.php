@@ -8305,7 +8305,21 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 if (isset($p->adj_amount)) {
                     $amt -= (float) $p->adj_amount;
                 }
-                $sumB -= $amt;
+                $docNo = (string) ($p->doc_number ?? '');
+                $isPayableCreditDoc = in_array(($p->transaction_type ?? ''), ['bankpayment', 'cashpayment', 'purchasereturn'], true)
+                    || str_contains($docNo, 'BP')
+                    || str_contains($docNo, 'CP')
+                    || str_contains($docNo, 'PR');
+                $isPayableOpeningBalanceSplit = ($p->transaction_type ?? '') === 'openingbalance'
+                    && preg_match('/^OPB-\d+$/', $docNo);
+
+                if ($isPayableOpeningBalanceSplit) {
+                    $sumB += $amt;
+                } elseif ($isPayableCreditDoc) {
+                    $sumB -= abs($amt);
+                } else {
+                    $sumB -= $amt;
+                }
             }
         }
 
@@ -8850,7 +8864,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 //payable outatsnding start
 
     /**
-     * Same total as payableoutstanding.blade.php footer "Amount" for invoice rows.
+     * Same total as payableoutstanding.blade.php "Amount" column for invoice rows.
      */
     protected static function sumPayableOutstandingInvoiceAmountTotal($accountId, $companyId, $tillDate = null)
     {
@@ -8858,6 +8872,8 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
         $rows = DB::table('sys_chartofaccounts_transaction')
             ->select(
+                'transaction_date',
+                'transaction_id',
                 'transaction_no',
                 'transaction_type',
                 DB::raw('SUM(debit_amount) as debit_amount'),
@@ -8881,15 +8897,77 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             return 0.0;
         }
 
+        $trnNos = $rows->pluck('transaction_no')->unique()->values();
+
+        $prPaid = DB::table('sys_purchase_return_adjestment')
+            ->select('piv_no', DB::raw('SUM(paid_amount) as paid_amount'))
+            ->whereIn('piv_no', $trnNos)
+            ->groupBy('piv_no')
+            ->pluck('paid_amount', 'piv_no');
+
+        $paymentPaid = DB::table('sys_payment as p')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'p.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->where('p.company_id', $companyId)
+            ->where('p.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvPaymentPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'j.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvReceiptPaid = DB::table('sys_journalvoucher as j')
+            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'j.doc_number')
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $returnPaid = DB::table('sys_purchase_return as r')
+            ->join('sys_purchase_return_adjestment as ra', 'ra.pri_no', '=', 'r.doc_number')
+            ->where('r.vendors', $accountId)
+            ->whereIn('ra.pri_no', $trnNos)
+            ->where('r.company_id', $companyId)
+            ->where('r.status', 1)
+            ->select('ra.piv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
+            ->groupBy('ra.piv_no')
+            ->pluck('paid_amount', 'piv_no');
+
         $total = 0.0;
         foreach ($rows as $dt) {
             $credit = (float) ($dt->credit_amount ?? 0);
             $debit = (float) ($dt->debit_amount ?? 0);
-            if ($credit > 0) {
-                $total += $credit;
-            }
-            if ($debit > 0) {
-                $total -= $debit;
+            $trnNo = (string) ($dt->transaction_no ?? '');
+            $opbImportPaid = ($dt->transaction_type ?? '') === 'opbinvoice' ? $debit : 0.0;
+            $paid = (float) ($prPaid[$trnNo] ?? 0)
+                + (float) ($paymentPaid[$trnNo] ?? 0)
+                + (float) ($jvPaymentPaid[$trnNo] ?? 0)
+                + $opbImportPaid
+                - ((float) ($jvReceiptPaid[$trnNo] ?? 0) - (float) ($returnPaid[$trnNo] ?? 0));
+
+            $isHiddenPurchaseReturn = str_contains($trnNo, 'PR') && round($debit, 2) >= round($paid, 2);
+            if (((round($credit, 2) != round($paid, 2)) || ($debit > 0)) && !$isHiddenPurchaseReturn) {
+                if (str_contains($trnNo, 'PR')) {
+                    $total -= $debit;
+                } else {
+                    $rowAmount = $credit;
+                    if (($dt->transaction_type ?? '') === 'opbinvoice' && $debit > 0) {
+                        $rowAmount = $credit - $debit;
+                    }
+                    $total += $rowAmount;
+                }
             }
         }
 
@@ -8929,12 +9007,16 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
             if ($creditAmt > 0) {
                 $netCredit = $creditAmt - $invNet;
-                if ($netCredit > $adj + 0.0001) {
+                if ($netCredit < 0) {
+                    $netCredit = $creditAmt;
+                }
+                $effectiveInvoiceAmount = $creditAmt - $netCredit;
+                if (abs($netCredit - $adj) > 0.0001) {
                     $creditRow = (object) (array) $r;
                     $creditRow->amount = $netCredit;
                     $creditRow->adj_amount = $adj;
                     $creditRow->remarks = 'Credit amount : ' . self::com_curr_format($creditAmt, 2, '.', ',')
-                        . ' (Invoices amount : ' . self::com_curr_format($invNet, 2, '.', ',') . ')';
+                        . ' (Invoices amount : ' . self::com_curr_format($effectiveInvoiceAmount, 2, '.', ',') . ')';
                     $out->push($creditRow);
                 }
             }
