@@ -9057,7 +9057,14 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND prh.status = 1
                       AND prh.company_id = {$company}
                       AND prh.vendors = t.account_id
-                      AND pra.pri_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci)";
+                      AND (
+                        pra.pri_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci
+                        OR (
+                            t.transaction_type = 'openingbalance'
+                            AND t.transaction_no REGEXP '^OPB-[0-9]+$'
+                            AND pra.piv_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci
+                        )
+                      ))";
                 $totalAdjustedSql = "COALESCE({$paymentAdjustedSql},0) + COALESCE({$purchaseReturnAdjustedSql},0)";
                 $remainingSourceSql = "CASE
                     WHEN t.transaction_type IN ('bankpayment','cashpayment','purchasereturn')
