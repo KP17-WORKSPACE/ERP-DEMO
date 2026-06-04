@@ -387,24 +387,300 @@ class SysPurchaseReturnController extends Controller
         }
     }
 
+    private function prAdjustmentNumber($value)
+    {
+        return round((float) str_replace(',', '', (string) $value), 2);
+    }
+
+    private function prAdjustmentSums($accountId, $companyId, $docNumbers, $excludePrDoc = null)
+    {
+        $docNumbers = collect($docNumbers)->filter()->unique()->values();
+        if ($docNumbers->isEmpty()) {
+            return collect([]);
+        }
+
+        $query = SysPurchaseReturnAdjestment::select('piv_no', DB::raw('SUM(paid_amount) as paid_amount'))
+            ->whereIn('piv_no', $docNumbers)
+            ->where('status', 1);
+
+        if ($excludePrDoc) {
+            $query->where('pri_no', '<>', $excludePrDoc);
+        }
+
+        return $query->groupBy('piv_no')->pluck('paid_amount', 'piv_no');
+    }
+
+    private function prCurrentAdjustmentSums($docNumbers, $currentPrDoc = null)
+    {
+        if (!$currentPrDoc) {
+            return collect([]);
+        }
+
+        $docNumbers = collect($docNumbers)->filter()->unique()->values();
+        if ($docNumbers->isEmpty()) {
+            return collect([]);
+        }
+
+        return SysPurchaseReturnAdjestment::select('piv_no', DB::raw('SUM(paid_amount) as paid_amount'))
+            ->where('pri_no', $currentPrDoc)
+            ->whereIn('piv_no', $docNumbers)
+            ->whereIn('status', [1, 5])
+            ->groupBy('piv_no')
+            ->pluck('paid_amount', 'piv_no');
+    }
+
+    private function prPaymentAdjustmentSums($accountId, $companyId, $docNumbers)
+    {
+        $docNumbers = collect($docNumbers)->filter()->unique()->values();
+        if ($docNumbers->isEmpty()) {
+            return [
+                'payment' => collect([]),
+                'jv_payment' => collect([]),
+                'jv_receipt' => collect([]),
+            ];
+        }
+
+        $payment = DB::table('sys_payment as p')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'p.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $docNumbers)
+            ->where('p.company_id', $companyId)
+            ->where('p.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvPayment = DB::table('sys_journalvoucher as j')
+            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'j.doc_number')
+            ->where('pa.account_id', $accountId)
+            ->whereIn('pa.bi_doc_no', $docNumbers)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
+            ->groupBy('pa.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        $jvReceipt = DB::table('sys_journalvoucher as j')
+            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'j.doc_number')
+            ->where('ra.account_id', $accountId)
+            ->whereIn('ra.bi_doc_no', $docNumbers)
+            ->where('j.company_id', $companyId)
+            ->where('j.status', 1)
+            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
+            ->groupBy('ra.bi_doc_no')
+            ->pluck('bi_amount', 'bi_doc_no');
+
+        return [
+            'payment' => $payment,
+            'jv_payment' => $jvPayment,
+            'jv_receipt' => $jvReceipt,
+        ];
+    }
+
+    private function prPayableInvoiceAmountTotal($accountId, $companyId, $tillDate = null)
+    {
+        $till = $tillDate ? (SysHelper::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+
+        $rows = SysChartofAccountsTransaction::select(
+                'transaction_date',
+                'transaction_id',
+                'transaction_no',
+                'transaction_type',
+                DB::raw('SUM(debit_amount) as debit_amount'),
+                DB::raw('SUM(credit_amount) as credit_amount')
+            )
+            ->where('account_id', $accountId)
+            ->where('company_id', $companyId)
+            ->where('status', 1)
+            ->whereIn('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice'])
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
+            ->groupBy(
+                'transaction_date',
+                'transaction_id',
+                'transaction_no',
+                'transaction_type',
+                DB::raw("CASE WHEN transaction_type = 'salesinvoice' THEN id ELSE 0 END")
+            )
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return 0.0;
+        }
+
+        $docNumbers = $rows->pluck('transaction_no');
+        $returnPaid = $this->prAdjustmentSums($accountId, $companyId, $docNumbers);
+        $paymentPaid = $this->prPaymentAdjustmentSums($accountId, $companyId, $docNumbers);
+
+        $total = 0.0;
+        foreach ($rows as $row) {
+            $docNo = (string) ($row->transaction_no ?? '');
+            $credit = (float) ($row->credit_amount ?? 0);
+            $debit = (float) ($row->debit_amount ?? 0);
+            $opbImportPaid = ($row->transaction_type ?? '') === 'opbinvoice' ? $debit : 0.0;
+            $paid = (float) ($returnPaid[$docNo] ?? 0)
+                + (float) ($paymentPaid['payment'][$docNo] ?? 0)
+                + (float) ($paymentPaid['jv_payment'][$docNo] ?? 0)
+                + $opbImportPaid
+                - (float) ($paymentPaid['jv_receipt'][$docNo] ?? 0);
+
+            $isHiddenPurchaseReturn = str_contains($docNo, 'PR') && round($debit, 2) >= round($paid, 2);
+            if (!((round($credit, 2) != round($paid, 2)) || ($debit > 0)) || $isHiddenPurchaseReturn) {
+                continue;
+            }
+
+            if (str_contains($docNo, 'PR')) {
+                $total -= $debit;
+            } elseif (($row->transaction_type ?? '') === 'opbinvoice' && $debit > 0) {
+                $total += $credit - $debit;
+            } else {
+                $total += $credit;
+            }
+        }
+
+        return round($total, 2);
+    }
+
+    private function prBillWiseRows($accountId, $companyId, $tillDate = null, $currentPrDoc = null)
+    {
+        $accountId = (int) $accountId;
+        $companyId = (int) $companyId;
+        if ($accountId <= 0 || $companyId <= 0) {
+            return [];
+        }
+
+        $till = $tillDate ? (SysHelper::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
+        $rows = [];
+
+        $invoiceRows = DB::table('sys_purchase_invoice as pi')
+            ->join('sys_purchase_invoice_items as pii', 'pi.id', '=', 'pii.pi_id')
+            ->where('pi.vendors', $accountId)
+            ->where('pi.company_id', $companyId)
+            ->where('pi.status', 1)
+            ->whereRaw("DATE_FORMAT(pi.pi_date, '%Y-%m-%d') <= ?", [$till])
+            ->select(
+                'pi.doc_number',
+                'pi.pi_date as doc_date',
+                DB::raw('ROUND(SUM(pii.taxableamount + pii.vatamount), 2) as total_amount')
+            )
+            ->groupBy('pi.id', 'pi.doc_number', 'pi.pi_date')
+            ->get();
+
+        $opbRows = SysChartofAccountsTransaction::select(
+                'transaction_no as doc_number',
+                'transaction_date as doc_date',
+                'transaction_type',
+                DB::raw('SUM(debit_amount) as debit_amount'),
+                DB::raw('SUM(credit_amount) as credit_amount')
+            )
+            ->whereIn('transaction_type', ['openingbalance', 'opbinvoice'])
+            ->where('account_id', $accountId)
+            ->where('status', 1)
+            ->where('company_id', $companyId)
+            ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
+            ->groupBy('transaction_no', 'transaction_date', 'transaction_type')
+            ->get();
+
+        $docNumbers = $invoiceRows->pluck('doc_number')->merge($opbRows->pluck('doc_number'))->unique()->values();
+        $returnPaid = $this->prAdjustmentSums($accountId, $companyId, $docNumbers, $currentPrDoc);
+        $currentReturn = $this->prCurrentAdjustmentSums($docNumbers, $currentPrDoc);
+        $paymentPaid = $this->prPaymentAdjustmentSums($accountId, $companyId, $docNumbers);
+        $invoiceAmountTotal = $this->prPayableInvoiceAmountTotal($accountId, $companyId, $till);
+
+        foreach ($opbRows as $opb) {
+            $docNo = (string) ($opb->doc_number ?? '');
+            $credit = (float) ($opb->credit_amount ?? 0);
+            $debit = (float) ($opb->debit_amount ?? 0);
+            $type = $opb->transaction_type ?? '';
+            $isPayableOpb = $type === 'openingbalance' && preg_match('/^OPB-\d+$/', $docNo);
+
+            if ($type === 'opbinvoice') {
+                $total = round($credit - $debit, 2);
+            } elseif ($isPayableOpb && $credit > 0) {
+                $total = round($credit - $invoiceAmountTotal, 2);
+                if ($total < 0) {
+                    $total = round($credit, 2);
+                }
+            } else {
+                $total = round($credit - $debit, 2);
+            }
+
+            $paid = round(
+                (float) ($returnPaid[$docNo] ?? 0)
+                + (float) ($paymentPaid['payment'][$docNo] ?? 0)
+                + (float) ($paymentPaid['jv_payment'][$docNo] ?? 0)
+                - (float) ($paymentPaid['jv_receipt'][$docNo] ?? 0),
+                2
+            );
+            $current = round((float) ($currentReturn[$docNo] ?? 0), 2);
+            $balance = round($total - $paid, 2);
+
+            if (($total <= 0 || $balance <= 0) && $current <= 0) {
+                continue;
+            }
+
+            $rows[] = [
+                'doc_number' => $docNo,
+                'doc_date' => $opb->doc_date,
+                'total_amount' => $total,
+                'paid_amount' => $paid,
+                'balance_amount' => $balance,
+                'current_amount' => $current,
+                'transaction_type' => $type,
+            ];
+        }
+
+        foreach ($invoiceRows as $invoice) {
+            $docNo = (string) ($invoice->doc_number ?? '');
+            $total = round((float) ($invoice->total_amount ?? 0), 2);
+            $paid = round(
+                (float) ($returnPaid[$docNo] ?? 0)
+                + (float) ($paymentPaid['payment'][$docNo] ?? 0)
+                + (float) ($paymentPaid['jv_payment'][$docNo] ?? 0)
+                - (float) ($paymentPaid['jv_receipt'][$docNo] ?? 0),
+                2
+            );
+            $current = round((float) ($currentReturn[$docNo] ?? 0), 2);
+            $balance = round($total - $paid, 2);
+
+            if ($balance <= 0 && $current <= 0) {
+                continue;
+            }
+
+            $rows[] = [
+                'doc_number' => $docNo,
+                'doc_date' => $invoice->doc_date,
+                'total_amount' => $total,
+                'paid_amount' => $paid,
+                'balance_amount' => $balance,
+                'current_amount' => $current,
+                'transaction_type' => 'purchaseinvoice',
+            ];
+        }
+
+        return $rows;
+    }
+
     public function purchasereturnadd_adjestment(Request $request)
     {
         //return $request->all();
         try {
-            if (count($request->adj_paid) > 0) {
-                for ($i = 0; $i < count($request->adj_paid); $i++) {
-                    SysPurchaseReturnAdjestment::where(['pri_no' => $request->adj_pri_no])->delete(); //, 'piv_no' => $request->adj_pi_no[$i]
-                }
-                for ($i = 0; $i < count($request->adj_paid); $i++) {
-                    if ($request->adj_paid[$i] != "" && $request->adj_paid[$i] != 0) {
+            $adjPaid = array_values((array) ($request->adj_paid ?? []));
+            $adjPiNo = array_values((array) ($request->adj_pi_no ?? []));
+            $adjTotal = array_values((array) ($request->adj_total ?? []));
+            if (count($adjPaid) > 0) {
+                SysPurchaseReturnAdjestment::where(['pri_no' => $request->adj_pri_no])->delete();
+                for ($i = 0; $i < count($adjPaid); $i++) {
+                    $paidAmount = $this->prAdjustmentNumber($adjPaid[$i] ?? 0);
+                    if ($paidAmount != 0) {
+                        $totalAmount = $this->prAdjustmentNumber($adjTotal[$i] ?? 0);
                         $data = [
                             'pri_no' => $request->adj_pri_no,
                             'lpo_no' => $request->edit_adj_lpo_no,
-                            'piv_no' => $request->adj_pi_no[$i],
+                            'piv_no' => $adjPiNo[$i] ?? '',
                             'doc_date' => date('Y-m-d', strtotime($request->edit_adj_doc_date)),
-                            'total_amount' => $request->adj_total[$i],
-                            'paid_amount' => $request->adj_paid[$i],
-                            'balance_amount' => $request->adj_total[$i] - $request->adj_paid[$i],
+                            'total_amount' => $totalAmount,
+                            'paid_amount' => $paidAmount,
+                            'balance_amount' => $totalAmount - $paidAmount,
                             'status' => 1,
                             'created_by' => Auth::user()->id,
                         ];
@@ -436,15 +712,10 @@ class SysPurchaseReturnController extends Controller
     public function adjestment_list_add(Request $request)
     {
         try {
-            $pri_adjestment = SysPurchaseInvoice::select('sys_purchase_invoice.doc_number as doc_number', 'sys_purchase_invoice.pi_date as doc_date', 'cat.credit_amount as total_amount', DB::raw('sum(adj.paid_amount) as paid_amount'), 'adj.status as adj_status')
-                ->join('sys_chartofaccounts_transaction as cat', 'cat.transaction_no', 'sys_purchase_invoice.doc_number')
-                ->leftjoin('sys_purchase_return_adjestment as adj', 'adj.piv_no', 'sys_purchase_invoice.doc_number')
-                ->where('sys_purchase_invoice.vendors', $request->id)
-                ->where('account_id', $request->id)->where('cat.company_id', session('logged_session_data.company_id'))
-                ->groupby('sys_purchase_invoice.doc_number', 'sys_purchase_invoice.pi_date', 'cat.credit_amount', 'adj.status')
-                ->orderby('sys_purchase_invoice.doc_number', 'asc')
-                ->get();
-            return json_encode(array('data' => $pri_adjestment));
+            $companyId = session('logged_session_data.company_id');
+            $tillDate = SysHelper::normalizeToYmd($request->doc_date) ?: date('Y-m-d');
+            $rows = $this->prBillWiseRows($request->id, $companyId, $tillDate, $request->doc_number);
+            return json_encode(array('data' => $rows));
         } catch (\Exception $e) {
             $ret = 'ERROR';
             return json_encode(array('data' => $ret));
@@ -479,26 +750,26 @@ class SysPurchaseReturnController extends Controller
     {
         try {
 
-            if (count($request->adj_paid) > 0) {
-                for ($i = 0; $i < count($request->adj_paid); $i++) {
-                    SysPurchaseReturnAdjestment::where(['pri_no' => $request->adj_pri_no])->delete();
-                }
-                $adj_doc_date = $request->adj_doc_date;
-                $adj_pi_no = $request->adj_pi_no;
-                $adj_total = $request->adj_total;
-                $adj_paid = $request->adj_paid;
-                $adj_balance = $request->adj_balance;
+            $adjPaid = array_values((array) ($request->adj_paid ?? []));
+            if (count($adjPaid) > 0) {
+                SysPurchaseReturnAdjestment::where(['pri_no' => $request->adj_pri_no])->delete();
+                $adj_doc_date = array_values((array) ($request->adj_doc_date ?? []));
+                $adj_pi_no = array_values((array) ($request->adj_pi_no ?? []));
+                $adj_total = array_values((array) ($request->adj_total ?? []));
+                $adj_balance = array_values((array) ($request->adj_balance ?? []));
 
-                for ($i = 0; $i < count($request->adj_paid); $i++) {
-                    if ($adj_paid[$i] != "" && $adj_paid[$i] != 0) {
+                for ($i = 0; $i < count($adjPaid); $i++) {
+                    $paidAmount = $this->prAdjustmentNumber($adjPaid[$i] ?? 0);
+                    if ($paidAmount != 0) {
+                        $totalAmount = $this->prAdjustmentNumber($adj_total[$i] ?? 0);
                         $data = [
                             'pri_no' => $request->adj_pri_no,
                             'lpo_no' => $request->adj_lpo_no,
                             'piv_no' => $adj_pi_no[$i],
-                            'doc_date' => date('Y-m-d', strtotime($request->doc_date)),
-                            'total_amount' => $adj_total[$i],
-                            'paid_amount' => $adj_paid[$i],
-                            'balance_amount' => $adj_total[$i] - $adj_paid[$i],
+                            'doc_date' => SysHelper::normalizeToYmd($request->doc_date) ?: date('Y-m-d'),
+                            'total_amount' => $totalAmount,
+                            'paid_amount' => $paidAmount,
+                            'balance_amount' => $this->prAdjustmentNumber($adj_balance[$i] ?? ($totalAmount - $paidAmount)),
                             'status' => 5,
                             'created_by' => Auth::user()->id,
                         ];
@@ -507,15 +778,10 @@ class SysPurchaseReturnController extends Controller
                 }
             }
 
-            $pri_adjestment = SysPurchaseInvoice::select('sys_purchase_invoice.doc_number as doc_number', 'sys_purchase_invoice.pi_date as doc_date', 'cat.credit_amount as total_amount', DB::raw('sum(adj.paid_amount) as paid_amount'))
-                ->join('sys_chartofaccounts_transaction as cat', 'cat.transaction_no', 'sys_purchase_invoice.doc_number')
-                ->leftjoin('sys_purchase_return_adjestment as adj', 'adj.piv_no', 'sys_purchase_invoice.doc_number')
-                ->where('sys_purchase_invoice.vendors', $request->id)
-                ->where('account_id', $request->id)->where('cat.company_id', session('logged_session_data.company_id'))
-                ->groupby('sys_purchase_invoice.doc_number', 'sys_purchase_invoice.pi_date', 'cat.credit_amount')
-                ->orderby('sys_purchase_invoice.doc_number', 'asc')
-                ->get();
-            return json_encode(array('data' => $pri_adjestment));
+            $companyId = session('logged_session_data.company_id');
+            $tillDate = SysHelper::normalizeToYmd($request->doc_date) ?: date('Y-m-d');
+            $rows = $this->prBillWiseRows($request->id, $companyId, $tillDate, $request->adj_pri_no);
+            return json_encode(array('data' => $rows));
         } catch (\Exception $e) {
             //$ret = 'ERROR';
             $ret = $e;
