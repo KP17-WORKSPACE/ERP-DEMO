@@ -395,7 +395,13 @@ class SysReceivableOutstandingController extends Controller
                 $opb_balance_amount = SysHelper::get_customer_opening_balance($accounts->pluck('id'), date('Y-m-d', strtotime('+1 day')), $com_id);
             }
 
-            $data_adjestment_all = DB::table('sys_sales_return_adjestment')->select('srn_no', DB::raw('sum(paid_amount) as paid_amount'))->groupby('srn_no');
+            $data_adjestment_all = DB::table('sys_sales_return_adjestment as ra')
+                ->join('sys_sales_return as r', 'ra.srn_no', 'r.doc_number')
+                ->where('r.company_id', $com_id)
+                ->where('r.status', 1)
+                ->where('ra.status', 1)
+                ->select('ra.srn_no', DB::raw('sum(ra.paid_amount) as paid_amount'))
+                ->groupby('ra.srn_no');
 
             $data_receipt_all = DB::table('sys_receipt as r')->select('ra.bi_doc_no', 'r.doc_number', 'ra.bi_amount', 'r.receipt_through', 'r.receipt_date', 'r.cheque_number', 'r.cheque_bank_name', 'ra.account_id')->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
             //return $data_receipt_all->get();
@@ -410,7 +416,7 @@ class SysReceivableOutstandingController extends Controller
                 ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', 'j.doc_number')->where('j.company_id', $com_id)->where('j.status', 1);
 
             $data_return_all = DB::table('sys_sales_return as r')->select('ra.siv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date', 'r.customer', 'ra.srn_no')
-                ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
+                ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1)->where('ra.status', 1);
 
             $viewSupport = $this->loadReceivableOutstandingViewData($com_id);
             extract($viewSupport);
@@ -1036,7 +1042,13 @@ class SysReceivableOutstandingController extends Controller
                 }
             }
 
-            $data_adjestment_all = DB::table('sys_sales_return_adjestment')->select('srn_no', DB::raw('sum(paid_amount) as paid_amount'))->groupby('srn_no');
+            $data_adjestment_all = DB::table('sys_sales_return_adjestment as ra')
+                ->join('sys_sales_return as r', 'ra.srn_no', 'r.doc_number')
+                ->where('r.company_id', $com_id)
+                ->where('r.status', 1)
+                ->where('ra.status', 1)
+                ->select('ra.srn_no', DB::raw('sum(ra.paid_amount) as paid_amount'))
+                ->groupby('ra.srn_no');
 
             $data_receipt_all = DB::table('sys_receipt as r')->select('ra.bi_doc_no', 'r.doc_number', 'ra.bi_amount', 'r.receipt_through', 'r.receipt_date', 'r.cheque_number', 'r.cheque_bank_name', 'ra.account_id')->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
             //return $data_receipt_all->get();
@@ -1051,7 +1063,7 @@ class SysReceivableOutstandingController extends Controller
                 ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', 'j.doc_number')->where('j.company_id', $com_id)->where('j.status', 1);
 
             $data_return_all = DB::table('sys_sales_return as r')->select('ra.siv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date', 'r.customer', 'ra.srn_no')
-                ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
+                ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1)->where('ra.status', 1);
 
             $accountIdsForUnadj = collect($data_all)->map(function ($chunk) {
                 return count($chunk) > 0 ? $chunk[0]->account_id : null;
@@ -1351,7 +1363,13 @@ class SysReceivableOutstandingController extends Controller
                 $opb_balance_amount = SysHelper::get_customer_opening_balance($accounts->pluck('id'), date('Y-m-d', strtotime('+1 day')), $com_id);
             }
 
-            $data_adjestment_all = DB::table('sys_sales_return_adjestment')->select('srn_no', DB::raw('sum(paid_amount) as paid_amount'))->groupby('srn_no');
+            $data_adjestment_all = DB::table('sys_sales_return_adjestment as ra')
+                ->join('sys_sales_return as r', 'ra.srn_no', 'r.doc_number')
+                ->where('r.company_id', $com_id)
+                ->where('r.status', 1)
+                ->where('ra.status', 1)
+                ->select('ra.srn_no', DB::raw('sum(ra.paid_amount) as paid_amount'))
+                ->groupby('ra.srn_no');
 
             $data_receipt_all = DB::table('sys_receipt as r')->select('ra.bi_doc_no', 'r.doc_number', 'ra.bi_amount', 'r.receipt_through', 'r.receipt_date', 'r.cheque_number', 'r.cheque_bank_name', 'ra.account_id')->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
             //return $data_receipt_all->get();
@@ -1366,7 +1384,7 @@ class SysReceivableOutstandingController extends Controller
                 ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', 'j.doc_number')->where('j.company_id', $com_id)->where('j.status', 1);
 
             $data_return_all = DB::table('sys_sales_return as r')->select('ra.siv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date', 'r.customer', 'ra.srn_no')
-                ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1);
+                ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1)->where('ra.status', 1);
 
             $viewSupport = $this->loadReceivableOutstandingViewData($com_id);
             extract($viewSupport);
