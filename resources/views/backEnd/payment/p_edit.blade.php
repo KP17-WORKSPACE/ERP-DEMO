@@ -836,7 +836,7 @@ $(document).ready(function() {
 
                               
 
-                                <div class="row mt-3">
+                        <div class="row mt-3">
                             <div class="col-lg-12">
                                 <div class="equipment comon-status row mt-40 d-block">
                                     <table class="table table-hover form-item-table data-table-bill" cellspacing="0" width="100%" id="crListBankBookAdjest">
@@ -874,6 +874,34 @@ $(document).ready(function() {
                                 </div>
                             </div>
                         </div>
+                        <div class="row mt-3" id="billWisePositiveUnadjustedSection" style="display:none;">
+                            <div class="col-lg-12">
+                                <div class="equipment comon-status row d-block">
+                                    <h6 class="mb-2">Unadjusted Balance</h6>
+                                    <table class="table table-hover form-item-table data-table-bill" cellspacing="0" width="100%" id="crListBankBookAdjestUnadjusted">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:100px;" class="text-center">@lang('Deal ID')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Doc Date')</th>
+                                                <th style="width:100px;" class="text-center">@lang('Payment No')</th>
+                                                <th style="width:120px;" class="text-end">@lang('Amount')</th>
+                                                <th style="width:120px;" class="text-end">@lang('Adjustment')</th>
+                                                <th style="width:100px;" class="text-start">@lang('Remarks')</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="3" class="text-end">@lang('Total')</th>
+                                                <th class="text-end"><label id="footer_unadjusted_amount">0.00</label></th>
+                                                <th class="text-end"><label id="footer_unadjusted_adjustment">0.00</label></th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
 
                          <script>
 
@@ -883,6 +911,7 @@ function get_set_amount(id) {
     if (id !== undefined && id !== null && String(id) !== '') {
         var bal_amt = Number(($('#bi_balance_' + id).val() || '0').replace(/,/g, '')) || 0;
         var cur_val = Number(($('#bi_amount_' + id).val() || '0').replace(/,/g, '')) || 0;
+        var current_doc_adjustment = Number(($('#bi_amount_' + id).data('current-amount') || '0').toString().replace(/,/g, '')) || 0;
 
         var other_sum = 0;
         $('.tot_amt').each(function () {
@@ -892,7 +921,10 @@ function get_set_amount(id) {
             }
         });
 
-        var cap = Math.min(bal_amt, Math.max(0, form_amt - other_sum));
+        var cap = Math.min(
+            Number(($('#bi_amount_' + id).data('max-adjust') || (bal_amt + current_doc_adjustment)).toString().replace(/,/g, '')) || (bal_amt + current_doc_adjustment),
+            Math.max(0, form_amt - other_sum)
+        );
         if (cur_val > cap) {
             $('#bi_amount_' + id).val(formatAmount(cap));
         }
@@ -904,19 +936,23 @@ function get_set_amount(id) {
         adjusted_sum += isNaN(v) ? 0 : v;
     });
 
+    var remaining_balance = Math.max(0, form_amt - adjusted_sum);
     $('#bi_amount_adjusted').val(formatAmount(adjusted_sum));
-    $('#bi_balance_adjest').val(formatAmount(Math.max(0, form_amt - adjusted_sum)));
-    $('#bi_extra_amount').val(formatAmount(Math.max(0, adjusted_sum - form_amt)));
-    $('#bi_balance_to_adjust').val(formatAmount(form_amt - adjusted_sum));
+    $('#bi_balance_adjest').val(formatAmount(remaining_balance));
+    $('#bi_extra_amount').val(formatAmount(remaining_balance));
+    $('#bi_balance_to_adjust').val(formatAmount(remaining_balance));
+
+    var total = 0;
+    $('#crListBankBookAdjest tbody .tot_amt').each(function () {
+        var v = Number(($(this).val() || '0').replace(/,/g, ''));
+        total += isNaN(v) ? 0 : v;
+    });
+    $('#footer_adjustment').text(formatAmount(total));
+    if (typeof updatePositiveUnadjustedTotals === 'function') {
+        updatePositiveUnadjustedTotals();
+    }
 
     var num_tot_amt = $('.tot_amt').length;
-    var total = 0;
-    for (var i = 1; i <= num_tot_amt; i++) {
-        var v = Number(($('#bi_amount_' + i).val() || '0').replace(/,/g, ''));
-        total += isNaN(v) ? 0 : v;
-    }
-    $('#footer_adjustment').text(formatAmount(total));
-
     var docs = [];
     for (var i = 1; i <= num_tot_amt; i++) {
         var v = Number(($('#bi_amount_' + i).val() || '0').replace(/,/g, ''));
@@ -955,6 +991,7 @@ $(document).on('click', '.tot_amt', function () {
     var idx = idMatch[1];
     var form_amt = Number(($('#bi_cheque_amount').val() || '0').replace(/,/g, '')) || 0;
     var bal_amt = Number(($('#bi_balance_' + idx).val() || '0').replace(/,/g, '')) || 0;
+    var current_doc_adjustment = Number(($('#bi_amount_' + idx).data('current-amount') || '0').toString().replace(/,/g, '')) || 0;
     var other_sum = 0;
     $('.tot_amt').each(function () {
         if ($(this).attr('id') !== 'bi_amount_' + idx) {
@@ -962,7 +999,10 @@ $(document).on('click', '.tot_amt', function () {
             other_sum += isNaN(v) ? 0 : v;
         }
     });
-    var cap = Math.min(bal_amt, Math.max(0, form_amt - other_sum));
+    var cap = Math.min(
+        Number(($('#bi_amount_' + idx).data('max-adjust') || (bal_amt + current_doc_adjustment)).toString().replace(/,/g, '')) || (bal_amt + current_doc_adjustment),
+        Math.max(0, form_amt - other_sum)
+    );
     if (cap > 0) {
         $(this).val(formatAmount(cap));
         get_set_amount(idx);
