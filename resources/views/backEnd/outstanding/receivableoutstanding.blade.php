@@ -1652,7 +1652,10 @@ function check_total(id, amount) {
                             @php
                                 $unadjustedAdjustment = (float)($p->adj_amount ?? 0);
                                 $unadjustedBalance = (float)($p->amount ?? 0) - $unadjustedAdjustment;
-                                if ((float)($p->credit_amount ?? 0) > (float)($p->debit_amount ?? 0)) {
+                                $isReceivableOpeningDebit = ($p->transaction_type ?? '') === 'openingbalance'
+                                    && preg_match('/^OPB-\d+$/', (string) ($p->doc_number ?? ''))
+                                    && (float) ($p->amount ?? 0) > 0;
+                                if (!$isReceivableOpeningDebit && (float)($p->credit_amount ?? 0) > (float)($p->debit_amount ?? 0)) {
                                     $unadjustedBalance = -abs($unadjustedBalance);
                                 }
                             @endphp
@@ -1661,7 +1664,11 @@ function check_total(id, amount) {
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustment,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
-                                set_total_lessmore({{ $aname->id }},{{ $unadjustedBalance }})
+                                @if($isReceivableOpeningDebit)
+                                    set_total_addmore({{ $aname->id }},{{ $unadjustedBalance }})
+                                @else
+                                    set_total_lessmore({{ $aname->id }},{{ $unadjustedBalance }})
+                                @endif
                             </script>
                         </tr>
                         @endforeach
