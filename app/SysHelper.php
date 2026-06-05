@@ -7751,7 +7751,10 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
         $rows = DB::table('sys_chartofaccounts_transaction')
             ->select(
+                'transaction_date',
+                'transaction_id',
                 'transaction_no',
+                'transaction_type',
                 DB::raw('SUM(debit_amount) as debit_amount'),
                 DB::raw('SUM(credit_amount) as credit_amount')
             )
@@ -7760,7 +7763,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             ->where('status', 1)
             ->whereIn('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])
             ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
-            ->groupBy('transaction_date', 'transaction_id', 'transaction_no')
+            ->groupBy('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type')
             ->get();
 
         if ($rows->isEmpty()) {
@@ -7769,16 +7772,21 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
         $trnNos = $rows->pluck('transaction_no')->unique()->values();
 
-        $srnPaid = DB::table('sys_sales_return_adjestment')
-            ->select('srn_no', DB::raw('SUM(paid_amount) as paid_amount'))
-            ->whereIn('srn_no', $trnNos)
-            ->groupBy('srn_no')
+        $srnPaid = DB::table('sys_sales_return_adjestment as ra')
+            ->join('sys_sales_return as r', 'ra.srn_no', '=', 'r.doc_number')
+            ->select('ra.srn_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
+            ->whereIn('ra.srn_no', $trnNos)
+            ->where('r.company_id', $companyId)
+            ->where('r.status', 1)
+            ->where('ra.status', 1)
+            ->groupBy('ra.srn_no')
             ->pluck('paid_amount', 'srn_no');
 
         $receiptPaid = DB::table('sys_receipt as r')
             ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'r.doc_number')
             ->where('ra.account_id', $accountId)
             ->whereIn('ra.bi_doc_no', $trnNos)
+            ->where('r.company_id', $companyId)
             ->where('r.status', 1)
             ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
             ->groupBy('ra.bi_doc_no')
@@ -7788,7 +7796,9 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'j.doc_number')
             ->where('ra.account_id', $accountId)
             ->whereIn('ra.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
             ->where('j.status', 1)
+            ->where('ra.status', 1)
             ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
             ->groupBy('ra.bi_doc_no')
             ->pluck('bi_amount', 'bi_doc_no');
@@ -7797,6 +7807,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'j.doc_number')
             ->where('pa.account_id', $accountId)
             ->whereIn('pa.bi_doc_no', $trnNos)
+            ->where('j.company_id', $companyId)
             ->where('j.status', 1)
             ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
             ->groupBy('pa.bi_doc_no')
@@ -7806,7 +7817,9 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', '=', 'r.doc_number')
             ->where('r.customer', $accountId)
             ->whereIn('ra.siv_no', $trnNos)
+            ->where('r.company_id', $companyId)
             ->where('r.status', 1)
+            ->where('ra.status', 1)
             ->select('ra.siv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
             ->groupBy('ra.siv_no')
             ->pluck('paid_amount', 'siv_no');
@@ -7823,19 +7836,24 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
         $total = 0.0;
         foreach ($rows as $dt) {
-            $paid = (float) ($srnPaid[$dt->transaction_no] ?? 0)
-                + (float) ($receiptPaid[$dt->transaction_no] ?? 0)
-                + (float) ($jvReceiptPaid[$dt->transaction_no] ?? 0)
-                + (float) ($opbReceiptPaid[$dt->transaction_no] ?? 0)
-                + (float) ($dt->credit_amount ?? 0)
-                - (float) ($jvPaymentPaid[$dt->transaction_no] ?? 0)
-                + (float) ($returnPaid[$dt->transaction_no] ?? 0);
+            $debit = (float) ($dt->debit_amount ?? 0);
+            $credit = (float) ($dt->credit_amount ?? 0);
+            $trnNo = (string) ($dt->transaction_no ?? '');
+            $jvInvoiceAdjustment = $debit > 0 ? (float) ($jvReceiptPaid[$trnNo] ?? 0) : 0.0;
+            $opbImportPaid = ($dt->transaction_type ?? '') === 'opbinvoice' ? $credit : 0.0;
+            $paid = (float) ($srnPaid[$trnNo] ?? 0)
+                + (float) ($receiptPaid[$trnNo] ?? 0)
+                + $jvInvoiceAdjustment
+                + (float) ($returnPaid[$trnNo] ?? 0)
+                + (float) ($opbReceiptPaid[$trnNo] ?? 0)
+                + $opbImportPaid
+                - (float) ($jvPaymentPaid[$trnNo] ?? 0);
 
-            if ((float) $dt->debit_amount != $paid) {
-                $total += (float) $dt->debit_amount;
-            }
-            if ((float) $dt->credit_amount > 0) {
-                $total -= (float) $dt->credit_amount;
+            $isHiddenSalesReturn = str_contains($trnNo, 'SR') && round($credit, 2) >= round($paid, 2);
+            $isHiddenSalesInvoice = str_contains($trnNo, 'SI') && round(abs($debit), 2) == round(abs($paid), 2);
+            $showRow = ((round($debit, 2) != round($paid, 2)) || ($credit > 0)) && !$isHiddenSalesReturn && !$isHiddenSalesInvoice;
+            if ($showRow) {
+                $total += str_contains($trnNo, 'SR') ? -$credit : $debit;
             }
         }
 
