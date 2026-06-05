@@ -1394,13 +1394,247 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
         }
     }
 
+    private function jvAdjustmentNumber($value)
+    {
+        return round((float) str_replace(',', '', (string) $value), 2);
+    }
+
+    private function jvPayableUnadjustedRowsForCredit($accountId, $companyId, $currentJvDoc = null)
+    {
+        $rows = collect(SysHelper::get_list_of_payable_unadjusted([$accountId], $companyId) ?: []);
+        $rowsJv = collect(SysHelper::get_list_of_payable_unadjusted_jv_to_jv([$accountId], $companyId) ?: []);
+        $removedByDoc = collect([]);
+
+        if ($currentJvDoc) {
+            $removedByDoc = DB::table('sys_payment_adjustments_jv')
+                ->where('account_id', $accountId)
+                ->where('company_id', $companyId)
+                ->where('jv_id', $currentJvDoc)
+                ->where('status', 1)
+                ->select('payment_no', DB::raw('SUM(amount) as amount'))
+                ->groupBy('payment_no')
+                ->pluck('amount', 'payment_no');
+        }
+
+        $normalRows = $rows->map(function ($row) use ($removedByDoc) {
+            $docNumber = (string) ($row->doc_number ?? '');
+            $amount = (float) ($row->amount ?? 0);
+            $adjusted = (float) ($row->adj_amount ?? 0);
+            $balance = $amount - $adjusted;
+            $isPayableCreditDoc = in_array(($row->transaction_type ?? ''), ['bankpayment', 'cashpayment', 'purchasereturn'])
+                || preg_match('/^(BP|CP|PR)/i', $docNumber);
+            $isPayableOpeningBalanceSplit = ($row->transaction_type ?? '') === 'openingbalance'
+                && preg_match('/^OPB-\d+$/i', $docNumber);
+
+            if ($isPayableCreditDoc || $isPayableOpeningBalanceSplit) {
+                $balance = -abs($balance);
+            }
+
+            return $this->jvPayableNegativeRowToPositive($row, $balance, $removedByDoc->get($docNumber, 0));
+        })->filter();
+
+        $jvRows = $rowsJv->map(function ($row) use ($removedByDoc) {
+            $docNumber = (string) ($row->doc_number ?? '');
+            $adjusted = (float) ($row->amount2 ?? 0) + (float) ($row->adj_amount ?? 0);
+            $balance = (float) ($row->amount ?? 0) - $adjusted;
+
+            return $this->jvPayableNegativeRowToPositive($row, $balance, $removedByDoc->get($docNumber, 0));
+        })->filter();
+
+        $selectedRows = $this->jvSelectedPayableAdjustmentRows($accountId, $companyId, $currentJvDoc, $removedByDoc);
+
+        return $normalRows
+            ->concat($jvRows)
+            ->concat($selectedRows)
+            ->unique('doc_number')
+            ->values();
+    }
+
+    private function jvPayableNegativeRowToPositive($row, $balance, $removedAmount = 0)
+    {
+        $available = abs((float) $balance) + (float) $removedAmount;
+        if ($balance >= 0 && $removedAmount <= 0) {
+            return null;
+        }
+        if ($available <= 0) {
+            return null;
+        }
+
+        return (object) [
+            'account_id' => $row->account_id ?? null,
+            'account_name' => $row->account_name ?? '',
+            'doc_number' => $row->doc_number ?? '',
+            'doc_date' => $row->doc_date ?? '',
+            'remarks' => $row->remarks ?? '',
+            'amount' => $available,
+            'adj_amount' => 0,
+            'removed_amount' => (float) $removedAmount,
+        ];
+    }
+
+    private function jvSelectedPayableAdjustmentRows($accountId, $companyId, $currentJvDoc, $removedByDoc)
+    {
+        if (!$currentJvDoc || $removedByDoc->isEmpty()) {
+            return collect([]);
+        }
+
+        $selected = DB::table('sys_payment_adjustments_jv as jv')
+            ->where('jv.account_id', $accountId)
+            ->where('jv.company_id', $companyId)
+            ->where('jv.jv_id', $currentJvDoc)
+            ->where('jv.status', 1)
+            ->select(
+                'jv.account_id',
+                'jv.payment_no as doc_number',
+                DB::raw('SUM(jv.amount) as amount')
+            )
+            ->groupBy('jv.account_id', 'jv.payment_no')
+            ->get();
+
+        $details = DB::table('sys_chartofaccounts_transaction')
+            ->where('account_id', $accountId)
+            ->where('company_id', $companyId)
+            ->whereIn('transaction_no', $selected->pluck('doc_number')->filter()->values())
+            ->select('transaction_no', DB::raw('MIN(transaction_date) as doc_date'), DB::raw('MAX(remarks) as remarks'))
+            ->groupBy('transaction_no')
+            ->get()
+            ->keyBy('transaction_no');
+
+        return $selected->map(function ($row) use ($details) {
+                $detail = $details->get($row->doc_number);
+                return (object) [
+                    'account_id' => $row->account_id,
+                    'account_name' => '',
+                    'doc_number' => $row->doc_number,
+                    'doc_date' => $detail->doc_date ?? '',
+                    'remarks' => $detail->remarks ?? '',
+                    'amount' => (float) $row->amount,
+                    'adj_amount' => 0,
+                    'removed_amount' => (float) $row->amount,
+                ];
+            });
+    }
+
+    private function jvReceivableUnadjustedRowsForDebit($accountId, $companyId, $currentJvDoc = null)
+    {
+        $rows = collect(SysHelper::get_list_of_unadjusted([$accountId], $companyId) ?: []);
+        $rowsJv = collect(SysHelper::get_list_of_unadjusted_jv_to_jv([$accountId], $companyId) ?: []);
+        $removedByDoc = collect([]);
+
+        if ($currentJvDoc) {
+            $removedByDoc = DB::table('sys_receipt_adjustments_jv')
+                ->where('account_id', $accountId)
+                ->where('company_id', $companyId)
+                ->where('jv_id', $currentJvDoc)
+                ->where('status', 1)
+                ->select('receipt_no', DB::raw('SUM(amount) as amount'))
+                ->groupBy('receipt_no')
+                ->pluck('amount', 'receipt_no');
+        }
+
+        $normalRows = $rows->map(function ($row) use ($removedByDoc) {
+            $docNumber = (string) ($row->doc_number ?? '');
+            $balance = (float) ($row->amount ?? 0) - (float) ($row->adj_amount ?? 0);
+            $isReceivableCreditRow = (float) ($row->credit_amount ?? 0) > (float) ($row->debit_amount ?? 0)
+                || in_array(($row->transaction_type ?? ''), ['bankreceipt', 'cashreceipt', 'salesreturn'])
+                || preg_match('/^(BR|CR|SR)/i', $docNumber);
+
+            if ($isReceivableCreditRow) {
+                $balance = -abs($balance);
+            }
+
+            return $this->jvReceivableNegativeRowToPositive($row, $balance, $removedByDoc->get($docNumber, 0));
+        })->filter();
+
+        $jvRows = $rowsJv->map(function ($row) use ($removedByDoc) {
+            $docNumber = (string) ($row->doc_number ?? '');
+            $adjusted = (float) ($row->amount2 ?? 0) + (float) ($row->adj_amount ?? 0);
+            $creditBalance = (float) ($row->amount ?? 0) - $adjusted;
+            $balance = $creditBalance > 0 ? -abs($creditBalance) : $creditBalance;
+
+            return $this->jvReceivableNegativeRowToPositive($row, $balance, $removedByDoc->get($docNumber, 0));
+        })->filter();
+
+        $selectedRows = $this->jvSelectedReceivableAdjustmentRows($accountId, $companyId, $currentJvDoc, $removedByDoc);
+
+        return $normalRows
+            ->concat($jvRows)
+            ->concat($selectedRows)
+            ->unique('doc_number')
+            ->values();
+    }
+
+    private function jvReceivableNegativeRowToPositive($row, $balance, $removedAmount = 0)
+    {
+        $available = abs((float) $balance) + (float) $removedAmount;
+        if ($balance >= 0 && $removedAmount <= 0) {
+            return null;
+        }
+        if ($available <= 0) {
+            return null;
+        }
+
+        return (object) [
+            'account_id' => $row->account_id ?? null,
+            'account_name' => $row->account_name ?? '',
+            'doc_number' => $row->doc_number ?? '',
+            'doc_date' => $row->doc_date ?? '',
+            'remarks' => $row->remarks ?? '',
+            'amount' => $available,
+            'adj_amount' => 0,
+            'removed_amount' => (float) $removedAmount,
+        ];
+    }
+
+    private function jvSelectedReceivableAdjustmentRows($accountId, $companyId, $currentJvDoc, $removedByDoc)
+    {
+        if (!$currentJvDoc || $removedByDoc->isEmpty()) {
+            return collect([]);
+        }
+
+        $selected = DB::table('sys_receipt_adjustments_jv as jv')
+            ->where('jv.account_id', $accountId)
+            ->where('jv.company_id', $companyId)
+            ->where('jv.jv_id', $currentJvDoc)
+            ->where('jv.status', 1)
+            ->select(
+                'jv.account_id',
+                'jv.receipt_no as doc_number',
+                DB::raw('SUM(jv.amount) as amount')
+            )
+            ->groupBy('jv.account_id', 'jv.receipt_no')
+            ->get();
+
+        $details = DB::table('sys_chartofaccounts_transaction')
+            ->where('account_id', $accountId)
+            ->where('company_id', $companyId)
+            ->whereIn('transaction_no', $selected->pluck('doc_number')->filter()->values())
+            ->select('transaction_no', DB::raw('MIN(transaction_date) as doc_date'), DB::raw('MAX(remarks) as remarks'))
+            ->groupBy('transaction_no')
+            ->get()
+            ->keyBy('transaction_no');
+
+        return $selected->map(function ($row) use ($details) {
+                $detail = $details->get($row->doc_number);
+                return (object) [
+                    'account_id' => $row->account_id,
+                    'account_name' => '',
+                    'doc_number' => $row->doc_number,
+                    'doc_date' => $detail->doc_date ?? '',
+                    'remarks' => $detail->remarks ?? '',
+                    'amount' => (float) $row->amount,
+                    'adj_amount' => 0,
+                    'removed_amount' => (float) $row->amount,
+                ];
+            });
+    }
+
     //JV Receipt Start
     public function journalvoucher_get_receipt_adjestment_jv(Request $request)
     {
         try{
             $company_id = session('logged_session_data.company_id');            
-            
-            $list_of_unadjusted = SysHelper::get_list_of_unadjusted([$request->id],$company_id);
+            $list_of_unadjusted = $this->jvReceivableUnadjustedRowsForDebit($request->id, $company_id);
             
             $ret = $list_of_unadjusted;
             return json_encode(array('data'=>$ret));
@@ -1415,21 +1649,23 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
     {
         try{
             db::beginTransaction();
-             $set_amt = $request->input('set_amt');
-             $receiptno = $request->input('receiptno');
+             $set_amt = (array) $request->input('set_amt', []);
+             $receiptno = (array) $request->input('receiptno', []);
              $set_amt_act = $request->input('set_amt_act');
              $data = [];
+             $accountAmount = $this->jvAdjustmentNumber($request->account_amount);
 
             DB::table('sys_receipt_adjustments_jv')->where(['account_id' => $request->account_id,'company_id' => session('logged_session_data.company_id'),'cart_id' => session('logged_session_data.cart_id'),'status' => 3,'jv_id' => "nill"])->delete();
 
             for($i=0; $i < count($set_amt); $i++) {
-                if($set_amt[$i] != 0){
+                $amount = $this->jvAdjustmentNumber($set_amt[$i] ?? 0);
+                if($amount != 0){
                     $data[] = [
                         'account_id' => $request->account_id,
-                        'account_amount' => $request->account_amount,
+                        'account_amount' => $accountAmount,
                         'jv_id' => "nill",
-                        'receipt_no' => $receiptno[$i],
-                        'amount' => $set_amt[$i], 
+                        'receipt_no' => $receiptno[$i] ?? '',
+                        'amount' => $amount,
                         'status' => 3,
                         'created_by' => Auth::user()->id,
                         'created_at' => Carbon::now('+04:00'),
@@ -1454,21 +1690,23 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
     {
         try{
             db::beginTransaction();
-             $set_amt = $request->input('set_amt');
-             $receiptno = $request->input('receiptno');
+             $set_amt = (array) $request->input('set_amt', []);
+             $receiptno = (array) $request->input('receiptno', []);
              $set_amt_act = $request->input('set_amt_act');
              $data = [];
+             $accountAmount = $this->jvAdjustmentNumber($request->account_amount);
 
             DB::table('sys_receipt_adjustments_jv')->where(['account_id' => $request->account_id,'company_id' => session('logged_session_data.company_id'),'jv_id' => $request->jv_id])->delete();
 
             for($i=0; $i < count($set_amt); $i++) {
-                if($set_amt[$i] != 0){
+                $amount = $this->jvAdjustmentNumber($set_amt[$i] ?? 0);
+                if($amount != 0){
                     $data[] = [
                         'account_id' => $request->account_id,
-                        'account_amount' => $request->account_amount,
+                        'account_amount' => $accountAmount,
                         'jv_id' => $request->jv_id,
-                        'receipt_no' => $receiptno[$i],
-                        'amount' => $set_amt[$i], 
+                        'receipt_no' => $receiptno[$i] ?? '',
+                        'amount' => $amount,
                         'status' => 1,
                         'created_by' => Auth::user()->id,
                         'created_at' => Carbon::now('+04:00'),
@@ -1493,7 +1731,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
     {
         try{
             $company_id = session('logged_session_data.company_id');
-            $list_of_unadjusted = SysHelper::get_list_of_unadjusted_include_removed_jv([$request->id],$company_id);            
+            $list_of_unadjusted = $this->jvReceivableUnadjustedRowsForDebit($request->id, $company_id, $request->jv_id);
             $ret = $list_of_unadjusted;
             return json_encode(array('data'=>$ret));
 
@@ -1510,8 +1748,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
     {
         try{
             $company_id = session('logged_session_data.company_id');            
-            
-            $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted([$request->id],$company_id);
+            $list_of_unadjusted = $this->jvPayableUnadjustedRowsForCredit($request->id, $company_id);
             
             $ret = $list_of_unadjusted;
             return json_encode(array('data'=>$ret));
@@ -1526,21 +1763,23 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
     {
         try{
             db::beginTransaction();
-             $set_amt = $request->input('set_amt');
-             $paymentno = $request->input('paymentno');
+             $set_amt = (array) $request->input('set_amt', []);
+             $paymentno = (array) $request->input('paymentno', []);
              $set_amt_act = $request->input('set_amt_act');
              $data = [];
+             $accountAmount = $this->jvAdjustmentNumber($request->account_amount);
 
             DB::table('sys_payment_adjustments_jv')->where(['account_id' => $request->account_id,'company_id' => session('logged_session_data.company_id'),'cart_id' => session('logged_session_data.cart_id'),'status' => 3,'jv_id' => "nill"])->delete();
 
             for($i=0; $i < count($set_amt); $i++) {
-                if($set_amt[$i] != 0){
+                $amount = $this->jvAdjustmentNumber($set_amt[$i] ?? 0);
+                if($amount != 0){
                     $data[] = [
                         'account_id' => $request->account_id,
-                        'account_amount' => $request->account_amount,
+                        'account_amount' => $accountAmount,
                         'jv_id' => "nill",
-                        'payment_no' => $paymentno[$i],
-                        'amount' => $set_amt[$i], 
+                        'payment_no' => $paymentno[$i] ?? '',
+                        'amount' => $amount,
                         'status' => 3,
                         'created_by' => Auth::user()->id,
                         'created_at' => Carbon::now('+04:00'),
@@ -1565,21 +1804,23 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
     {
         try{
             db::beginTransaction();
-             $set_amt = $request->input('set_amt');
-             $paymentno = $request->input('paymentno');
+             $set_amt = (array) $request->input('set_amt', []);
+             $paymentno = (array) $request->input('paymentno', []);
              $set_amt_act = $request->input('set_amt_act');
              $data = [];
+             $accountAmount = $this->jvAdjustmentNumber($request->account_amount);
 
             DB::table('sys_payment_adjustments_jv')->where(['account_id' => $request->account_id,'company_id' => session('logged_session_data.company_id'),'jv_id' => $request->jv_id])->delete();
 
             for($i=0; $i < count($set_amt); $i++) {
-                if($set_amt[$i] != 0){
+                $amount = $this->jvAdjustmentNumber($set_amt[$i] ?? 0);
+                if($amount != 0){
                     $data[] = [
                         'account_id' => $request->account_id,
-                        'account_amount' => $request->account_amount,
+                        'account_amount' => $accountAmount,
                         'jv_id' => $request->jv_id,
-                        'payment_no' => $paymentno[$i],
-                        'amount' => $set_amt[$i], 
+                        'payment_no' => $paymentno[$i] ?? '',
+                        'amount' => $amount,
                         'status' => 1,
                         'created_by' => Auth::user()->id,
                         'created_at' => Carbon::now('+04:00'),
@@ -1604,7 +1845,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
     {
         try{
             $company_id = session('logged_session_data.company_id');
-            $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted_include_removed_jv([$request->id],$company_id);
+            $list_of_unadjusted = $this->jvPayableUnadjustedRowsForCredit($request->id, $company_id, $request->jv_id);
             $ret = $list_of_unadjusted;
             return json_encode(array('data'=>$ret));
 
