@@ -399,15 +399,20 @@ class SysPurchaseReturnController extends Controller
             return collect([]);
         }
 
-        $query = SysPurchaseReturnAdjestment::select('piv_no', DB::raw('SUM(paid_amount) as paid_amount'))
-            ->whereIn('piv_no', $docNumbers)
-            ->where('status', 1);
+        $query = SysPurchaseReturnAdjestment::from('sys_purchase_return_adjestment as pra')
+            ->join('sys_purchase_return as pr', 'pr.doc_number', '=', 'pra.pri_no')
+            ->select('pra.piv_no', DB::raw('SUM(pra.paid_amount) as paid_amount'))
+            ->where('pr.vendors', $accountId)
+            ->where('pr.company_id', $companyId)
+            ->where('pr.status', 1)
+            ->whereIn('pra.piv_no', $docNumbers)
+            ->where('pra.status', 1);
 
         if ($excludePrDoc) {
-            $query->where('pri_no', '<>', $excludePrDoc);
+            $query->where('pra.pri_no', '<>', $excludePrDoc);
         }
 
-        return $query->groupBy('piv_no')->pluck('paid_amount', 'piv_no');
+        return $query->groupBy('pra.piv_no')->pluck('paid_amount', 'piv_no');
     }
 
     private function prCurrentAdjustmentSums($docNumbers, $currentPrDoc = null)
@@ -507,9 +512,25 @@ class SysPurchaseReturnController extends Controller
             return 0.0;
         }
 
-        $docNumbers = $rows->pluck('transaction_no');
-        $returnPaid = $this->prAdjustmentSums($accountId, $companyId, $docNumbers);
-        $paymentPaid = $this->prPaymentAdjustmentSums($accountId, $companyId, $docNumbers);
+        $trnNos = $rows->pluck('transaction_no')->unique()->values();
+
+        $prPaid = DB::table('sys_purchase_return_adjestment')
+            ->select('piv_no', DB::raw('SUM(paid_amount) as paid_amount'))
+            ->whereIn('piv_no', $trnNos)
+            ->groupBy('piv_no')
+            ->pluck('paid_amount', 'piv_no');
+
+        $paymentPaid = $this->prPaymentAdjustmentSums($accountId, $companyId, $trnNos);
+
+        $returnPaid = DB::table('sys_purchase_return as r')
+            ->join('sys_purchase_return_adjestment as ra', 'ra.pri_no', '=', 'r.doc_number')
+            ->where('r.vendors', $accountId)
+            ->whereIn('ra.pri_no', $trnNos)
+            ->where('r.company_id', $companyId)
+            ->where('r.status', 1)
+            ->select('ra.piv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
+            ->groupBy('ra.piv_no')
+            ->pluck('paid_amount', 'piv_no');
 
         $total = 0.0;
         foreach ($rows as $row) {
@@ -517,11 +538,11 @@ class SysPurchaseReturnController extends Controller
             $credit = (float) ($row->credit_amount ?? 0);
             $debit = (float) ($row->debit_amount ?? 0);
             $opbImportPaid = ($row->transaction_type ?? '') === 'opbinvoice' ? $debit : 0.0;
-            $paid = (float) ($returnPaid[$docNo] ?? 0)
+            $paid = (float) ($prPaid[$docNo] ?? 0)
                 + (float) ($paymentPaid['payment'][$docNo] ?? 0)
                 + (float) ($paymentPaid['jv_payment'][$docNo] ?? 0)
                 + $opbImportPaid
-                - (float) ($paymentPaid['jv_receipt'][$docNo] ?? 0);
+                - ((float) ($paymentPaid['jv_receipt'][$docNo] ?? 0) - (float) ($returnPaid[$docNo] ?? 0));
 
             $isHiddenPurchaseReturn = str_contains($docNo, 'PR') && round($debit, 2) >= round($paid, 2);
             if (!((round($credit, 2) != round($paid, 2)) || ($debit > 0)) || $isHiddenPurchaseReturn) {

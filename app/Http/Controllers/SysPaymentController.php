@@ -1120,7 +1120,22 @@ class SysPaymentController extends Controller
             $query->where('bi_doc_number', '<>', $excludePaymentDoc);
         }
 
-        return $query->groupBy('bi_doc_no')->pluck('paid', 'bi_doc_no');
+        $paymentPaid = $query->groupBy('bi_doc_no')->pluck('paid', 'bi_doc_no');
+
+        $purchaseReturnPaid = DB::table('sys_purchase_return_adjestment as pra')
+            ->join('sys_purchase_return as pr', 'pr.doc_number', '=', 'pra.pri_no')
+            ->where('pr.vendors', $accountId)
+            ->where('pr.company_id', $companyId)
+            ->where('pr.status', 1)
+            ->where('pra.status', 1)
+            ->whereIn('pra.piv_no', $docNumbers)
+            ->select('pra.piv_no', DB::raw('SUM(pra.paid_amount) as paid'))
+            ->groupBy('pra.piv_no')
+            ->pluck('paid', 'piv_no');
+
+        return $paymentPaid->merge($purchaseReturnPaid)->map(function ($paid, $docNo) use ($paymentPaid, $purchaseReturnPaid) {
+            return (float) ($paymentPaid[$docNo] ?? 0) + (float) ($purchaseReturnPaid[$docNo] ?? 0);
+        });
     }
 
     private function paymentBillWiseCurrentAdjustmentSums($accountId, $companyId, $paymentDoc, $docNumbers)
