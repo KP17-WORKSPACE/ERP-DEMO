@@ -8642,6 +8642,155 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
         })->filter()->values();
     }
 
+    public static function get_positive_payable_unadjusted_for_billwise($accountId, $companyId, $currentAdjustedByDoc = [], $tillDate = null)
+    {
+        $accountId = (int) $accountId;
+        $companyId = (int) $companyId;
+
+        if ($accountId <= 0 || $companyId <= 0) {
+            return collect([]);
+        }
+
+        $rows = collect(self::get_list_of_payable_unadjusted([$accountId], $companyId, $tillDate) ?: []);
+        $rowsJv = collect(self::get_list_of_payable_unadjusted_jv_to_jv([$accountId], $companyId) ?: []);
+
+        if ($rows->isEmpty() && $rowsJv->isEmpty()) {
+            return collect([]);
+        }
+
+        $currentAdjustedByDoc = collect($currentAdjustedByDoc)
+            ->mapWithKeys(function ($amount, $docNo) {
+                return [(string) $docNo => (float) $amount];
+            });
+
+        $docNumbers = $rows->pluck('doc_number')
+            ->merge($rowsJv->pluck('doc_number'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $paymentDocs = [];
+        $jvDocs = [];
+        $prDocs = [];
+        $opbDocs = [];
+
+        foreach ($docNumbers as $docNo) {
+            $doc = (string) $docNo;
+            if (preg_match('/^(BP|CP)/i', $doc)) {
+                $paymentDocs[] = $doc;
+            } elseif (preg_match('/^JV/i', $doc)) {
+                $jvDocs[] = $doc;
+            } elseif (preg_match('/^PR/i', $doc)) {
+                $prDocs[] = $doc;
+            } elseif (preg_match('/^OPB-\d+$/i', $doc)) {
+                $opbDocs[] = $doc;
+            }
+        }
+
+        $dealIdMap = [];
+        if (!empty($paymentDocs)) {
+            $dealIdMap = array_merge($dealIdMap, SysPayment::whereIn('doc_number', $paymentDocs)->pluck('deal_id', 'doc_number')->toArray());
+        }
+        if (!empty($jvDocs)) {
+            $dealIdMap = array_merge($dealIdMap, SysJournalVoucher::whereIn('doc_number', $jvDocs)->pluck('deal_id', 'doc_number')->toArray());
+        }
+        if (!empty($prDocs)) {
+            $dealIdMap = array_merge($dealIdMap, SysPurchaseReturn::whereIn('doc_number', $prDocs)->pluck('deal_id', 'doc_number')->toArray());
+        }
+
+        $opbDealCodeMap = [];
+        if (!empty($opbDocs)) {
+            $opbDealCodeMap = DB::table('sys_chartofaccounts_transaction_invoice_detail')
+                ->whereIn('transaction_no', $opbDocs)
+                ->pluck('deal_id', 'transaction_no')
+                ->toArray();
+        }
+
+        $normalRows = $rows->map(function ($row) use ($dealIdMap, $opbDealCodeMap, $currentAdjustedByDoc) {
+            $docNumber = (string) ($row->doc_number ?? '');
+            $amount = (float) ($row->amount ?? 0);
+            $adjusted = (float) ($row->adj_amount ?? 0);
+            $currentAdjusted = (float) ($currentAdjustedByDoc->get($docNumber, 0));
+
+            $unadjustedBalance = $amount - $adjusted;
+            $isPayableCreditDoc = in_array(($row->transaction_type ?? ''), ['bankpayment', 'cashpayment', 'purchasereturn'])
+                || preg_match('/^(BP|CP|PR)/i', $docNumber);
+            $isPayableOpeningBalanceSplit = ($row->transaction_type ?? '') === 'openingbalance'
+                && preg_match('/^OPB-\d+$/i', $docNumber);
+
+            if ($isPayableCreditDoc || $isPayableOpeningBalanceSplit) {
+                $unadjustedBalance = -abs($unadjustedBalance);
+            }
+
+            if ($unadjustedBalance <= 0 && $currentAdjusted <= 0) {
+                return null;
+            }
+
+            $paidWithoutCurrent = max($adjusted - $currentAdjusted, 0);
+            $displayBalance = max($unadjustedBalance, 0);
+            $displayTotal = max(abs($amount), $displayBalance + $paidWithoutCurrent + $currentAdjusted);
+
+            $dealId = $dealIdMap[$docNumber] ?? null;
+            $dealCode = '';
+            if ($dealId) {
+                $dealCode = self::get_code_from_dealid($dealId);
+            } elseif (isset($opbDealCodeMap[$docNumber])) {
+                $dealCode = (string) $opbDealCodeMap[$docNumber];
+                $mappedDealId = self::get_dealid_from_code($dealCode);
+                if (!empty($mappedDealId) && $mappedDealId !== '0') {
+                    $dealId = $mappedDealId;
+                }
+            }
+
+            return (object) [
+                'deal_id' => $dealId,
+                'deal_code' => $dealCode,
+                'doc_number' => $docNumber,
+                'doc_date' => $row->doc_date ?? null,
+                'lpo_number' => '',
+                'total' => $displayTotal,
+                'paid' => $paidWithoutCurrent,
+                'balance' => $displayBalance,
+                'bi_amount' => $currentAdjusted,
+                'remarks' => $row->remarks ?? '',
+            ];
+        });
+
+        $jvRows = $rowsJv->map(function ($row) use ($dealIdMap, $currentAdjustedByDoc) {
+            $docNumber = (string) ($row->doc_number ?? '');
+            $amount = (float) ($row->amount ?? 0);
+            $amount2 = (float) ($row->amount2 ?? 0);
+            $adjusted = $amount2 + (float) ($row->adj_amount ?? 0);
+            $currentAdjusted = (float) ($currentAdjustedByDoc->get($docNumber, 0));
+            $balance = $amount - $adjusted;
+
+            if ($balance <= 0 && $currentAdjusted <= 0) {
+                return null;
+            }
+
+            $paidWithoutCurrent = max($adjusted - $currentAdjusted, 0);
+            $displayBalance = max($balance, 0);
+            $displayTotal = max(abs($amount), $displayBalance + $paidWithoutCurrent + $currentAdjusted);
+            $dealId = $dealIdMap[$docNumber] ?? null;
+            $dealCode = $dealId ? self::get_code_from_dealid($dealId) : '';
+
+            return (object) [
+                'deal_id' => $dealId,
+                'deal_code' => $dealCode,
+                'doc_number' => $docNumber,
+                'doc_date' => $row->doc_date ?? null,
+                'lpo_number' => '',
+                'total' => $displayTotal,
+                'paid' => $paidWithoutCurrent,
+                'balance' => $displayBalance,
+                'bi_amount' => $currentAdjusted,
+                'remarks' => $row->remarks ?? '',
+            ];
+        });
+
+        return $normalRows->concat($jvRows)->filter()->values();
+    }
+
     public static function get_list_of_unadjusted_jv_to_jv($account_ids,$company)
     {
         try {    
