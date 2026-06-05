@@ -33,11 +33,28 @@ function get_format_time(time) {
     return formattedTime;
 }
 function get_format_date(date) {
-    if(date==null){
+    if (date == null) {
         return "--";
     }
-    const dateStr = date;
+    const dateStr = String(date).trim();
+    if (dateStr === '') {
+        return '';
+    }
+
+    let match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+        return `${match[3]}/${match[2]}/${match[1]}`;
+    }
+
+    match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) {
+        return dateStr;
+    }
+
     const dateObj = new Date(dateStr);
+    if (isNaN(dateObj.getTime())) {
+        return dateStr;
+    }
 
     // Get day, month, and year
     const day = String(dateObj.getDate()).padStart(2, '0'); // Ensure 2 digits
@@ -803,7 +820,7 @@ $(document).on("click", "#addCtrlJournalVoucherAdjest", function(event) {
                 var total = parseErpAmount(value.total);
                 var paid = parseErpAmount(value.paid);
                 var balance = parseErpAmount(value.balance);
-                var date = value.doc_date ? value.doc_date.split('-').reverse().join('/') : '';
+                var date = value.doc_date ? get_format_date(value.doc_date) : '';
                 var docNumber = escapeErpHtml(value.doc_number || '');
                 var lpoNumber = escapeErpHtml(value.lpo_number || '');
                 if (balance > 0) {
@@ -830,7 +847,7 @@ $(document).on("click", "#addCtrlJournalVoucherAdjest", function(event) {
                 var paid = parseErpAmount(value.paid);
                 var balance = parseErpAmount(value._display_balance !== undefined ? value._display_balance : value.balance);
                 var maxAdjust = parseErpAmount(value._max_adjust !== undefined ? value._max_adjust : balance);
-                var date = value.doc_date ? value.doc_date.split('-').reverse().join('/') : '';
+                var date = value.doc_date ? get_format_date(value.doc_date) : '';
                 var docNumber = escapeErpHtml(value.doc_number || '');
                 var dealId = escapeErpHtml(value.deal_id || '');
                 var dealCode = escapeErpHtml(value.deal_code || value.deal_id || '');
