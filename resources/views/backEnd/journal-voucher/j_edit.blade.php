@@ -433,14 +433,13 @@
         $('#bi_cheque_amount').focus();
 
         if (acc_type == 1 || acc_type == 2) {
-            $("#addCtrlJournalVoucherAdjestEdit")
-                .prop("disabled", false)
-                .trigger("click")
-                .prop("disabled", true);
+            $("#addCtrlJournalVoucherAdjestEdit").prop("disabled", false);
+            openJvModal('#addCtrlJournalVoucherAdjestEdit', '#cr_popup_win');
+            $("#addCtrlJournalVoucherAdjestEdit").prop("disabled", true);
         }
 
         if (acc_type == 3) {
-            $("#btnModalAdjustment").trigger("click");
+            openJvModal('#btnModalAdjustment', '#ModalAdjustment');
             $('#adj_siv_amount').val(amountDr);
             $('#adj_account_id').val(br_account_id);
             $('#adj_account_id_amount').val(amountDr);
@@ -448,7 +447,7 @@
         }
 
         if (acc_type == 4) {
-            $("#btnModalPaymentAdjustment").trigger("click");
+            openJvModal('#btnPaymentModalAdjustment', '#ModalPaymentAdjustment');
             $('#adj_siv_amount').val(amountCr);
             $('#adj_account_id').val(br_account_id);
             $('#adj_account_id_amount').val(amountCr);
@@ -693,134 +692,139 @@ $(document).ready(function () {
 /*table row fill based on layout height*/
 </script>
 <script>
+var jvAdjustmentDecimals = parseInt(@json(session('logged_session_data.decimal_point')), 10) || 2;
+
+function parseAdjustNumber(value) {
+    if (value === null || value === undefined) {
+        return 0;
+    }
+    if (typeof value === 'number') {
+        return value;
+    }
+    return parseFloat(String(value).replace(/,/g, '')) || 0;
+}
+
+function formatAdjustNumber(value) {
+    return parseAdjustNumber(value).toLocaleString('en-US', {
+        minimumFractionDigits: jvAdjustmentDecimals,
+        maximumFractionDigits: jvAdjustmentDecimals
+    });
+}
+
+function escapeJvAdjustmentText(value) {
+    return (value || '').toString()
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function renderJvAdjustmentRows(rows, tableSelector, docInputName) {
+    var getSelectedRows = "";
+
+    $.each(rows || [], function(i, row) {
+        var availableRaw = parseAdjustNumber(row.amount) - parseAdjustNumber(row.adj_amount);
+        if (availableRaw < 0) {
+            availableRaw = 0;
+        }
+        var removedAmountRaw = parseAdjustNumber(row.removed_amount);
+        if (availableRaw <= 0 && removedAmountRaw <= 0) {
+            return true;
+        }
+        var inputId = tableSelector.replace('#', '') + '_set_amt_' + i;
+        var docNumber = escapeJvAdjustmentText(row.doc_number);
+        var docDate = typeof get_format_date === 'function' ? get_format_date(row.doc_date) : row.doc_date;
+
+        getSelectedRows += "<tr class='js-adj-row' data-input='" + inputId + "' data-amt='" + availableRaw + "'>\
+            <td class='border'>" + escapeJvAdjustmentText(docDate) + "</td>\
+            <td class='border'>" + docNumber + "</td>\
+            <td class='border text-right'>" + formatAdjustNumber(availableRaw) + "</td>\
+            <td class='border'>" + escapeJvAdjustmentText(row.remarks) + "</td>\
+            <td class='border text-right'><input type='text' name='set_amt[]' id='" + inputId + "' data-max-adjust='" + availableRaw + "' class='form-control text-right jv-adjustment-amount' onclick=\"set_adjust('" + availableRaw + "','" + inputId + "')\" value='" + (removedAmountRaw > 0 ? formatAdjustNumber(removedAmountRaw) : '') + "' /></td>\
+            <input type='hidden' name='" + docInputName + "[]' value='" + docNumber + "'/>\
+            <input type='hidden' name='set_amt_act[]' value='" + availableRaw + "'/>\
+        </tr>";
+    });
+
+    $(tableSelector + ' tbody').empty().append(getSelectedRows);
+    updateJvAdjustmentTotal($(tableSelector));
+}
+
+function collectJvAdjustmentInputs(tableSelector, docInputName) {
+    var set_amt = [];
+    var docNos = [];
+    var set_amt_act = [];
+
+    $(tableSelector).find('input[name="set_amt[]"]').each(function() {
+        set_amt.push($(this).val());
+    });
+    $(tableSelector).find('input[name="' + docInputName + '[]"]').each(function() {
+        docNos.push($(this).val());
+    });
+    $(tableSelector).find('input[name="set_amt_act[]"]').each(function() {
+        set_amt_act.push($(this).val());
+    });
+
+    return { set_amt: set_amt, docNos: docNos, set_amt_act: set_amt_act };
+}
+
 function get_customer_adjustment_list(id){
-        $("#loading_bg").css("display", "block");
-        var action = "{{ URL::to('get-receipt-adjustment-list-jv-edit') }}";
-        $.ajax({
-            url: action,
-            type: "GET",
-            data: {
-                _token: '{{ csrf_token() }}',
-                id: id,
-                jv_id: $("input[name='doc_number2']").val(),
-            },
-            cache: false,
-            success: function(dataResult) {
-                var dataResult = JSON.parse(dataResult);
-                var len = 0;
-                var getSelectedRows="";
-                    if(dataResult['data'] != null){
-                        len = dataResult['data'].length;
-                    }
-                    if(len > 0){
-                        for(var i=0; i<len; i++){
-                            var availableRaw = parseAdjustNumber(dataResult['data'][i].amount) - parseAdjustNumber(dataResult['data'][i].adj_amount);
-                            if (isNaN(availableRaw)) {
-                                availableRaw = 0;
-                            }
-                            var availableFormatted = (availableRaw).toFixed(@json(session('logged_session_data.decimal_point'))).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                            var removedAmountRaw = dataResult['data'][i].removed_amount;
-                            if (removedAmountRaw === null || removedAmountRaw === undefined || removedAmountRaw === '') {
-                                removedAmountRaw = 0;
-                            }
-                            getSelectedRows +="<tr class='js-adj-row' data-doc='"+dataResult['data'][i].doc_number+"' data-amt='"+availableRaw+"'>\
-                                <td class='border'>"+dataResult['data'][i].doc_date+"</td>\
-                                <td class='border'>"+dataResult['data'][i].doc_number+"</td>\
-                                <td class='border text-right'>"+availableFormatted+"</td>\
-                                <td class='border'>"+dataResult['data'][i].remarks+"</td>\
-                                <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+dataResult['data'][i].doc_number+"' class='form-control text-right' onclick=\"set_adjust('"+availableRaw+"','"+dataResult['data'][i].doc_number+"')\" value=\""+removedAmountRaw+"\" /></td>\
-                                <input type='hidden' name='receiptno[]' value='"+dataResult['data'][i].doc_number+"'/>\
-                                <input type='hidden' name='set_amt_act[]' value='"+availableFormatted+"'/>\
-                                </tr>";
-                        }
+    $("#loading_bg").css("display", "block");
+    $.ajax({
+        url: "{{ URL::to('get-receipt-adjustment-list-jv-edit') }}",
+        type: "GET",
+        data: {
+            _token: '{{ csrf_token() }}',
+            id: id,
+            jv_id: $("input[name='doc_number2']").val(),
+        },
+        cache: false,
+        success: function(dataResult) {
+            dataResult = JSON.parse(dataResult);
+            renderJvAdjustmentRows(dataResult['data'], '#table_jv_receipt_list', 'receiptno');
+        },
+        complete: function() {
+            $("#loading_bg").css("display", "none");
+        }
+    });
+}
 
-                        $('#table_jv_receipt_list tbody').empty();
-                        $("#table_jv_receipt_list tbody").append(getSelectedRows); 
-                    }
-                    else{
-                        $('#table_jv_receipt_list tbody').empty();
-                    }
-            }
-        });
-        $("#loading_bg").css("display", "none");
-    }
-    function get_supplier_adjustment_list(id){
-        $("#loading_bg").css("display", "block");
-        var action = "{{ URL::to('get-payment-adjustment-list-jv-edit') }}";
-        $.ajax({
-            url: action,
-            type: "GET",
-            data: {
-                _token: '{{ csrf_token() }}',
-                id: id,
-            },
-            cache: false,
-            success: function(dataResult) {
-                var dataResult = JSON.parse(dataResult);
-                var len = 0;
-                var getSelectedRows="";
-                    if(dataResult['data'] != null){
-                        len = dataResult['data'].length;
-                    }
-                    if(len > 0){
-                        for(var i=0; i<len; i++){
-                            var availableRaw = parseAdjustNumber(dataResult['data'][i].amount) - parseAdjustNumber(dataResult['data'][i].adj_amount);
-                            if (isNaN(availableRaw)) {
-                                availableRaw = 0;
-                            }
-                            var availableFormatted = (availableRaw).toFixed(@json(session('logged_session_data.decimal_point'))).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-                            var removedAmountRaw = dataResult['data'][i].removed_amount;
-                            if (removedAmountRaw === null || removedAmountRaw === undefined || removedAmountRaw === '') {
-                                removedAmountRaw = 0;
-                            }
-                            getSelectedRows +="<tr class='js-adj-row' data-doc='"+dataResult['data'][i].doc_number+"' data-amt='"+availableRaw+"'>\
-                                <td class='border'>"+dataResult['data'][i].doc_date+"</td>\
-                                <td class='border'>"+dataResult['data'][i].doc_number+"</td>\
-                                <td class='border text-right'>"+availableFormatted+"</td>\
-                                <td class='border'>"+dataResult['data'][i].remarks+"</td>\
-                                <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+dataResult['data'][i].doc_number+"' class='form-control text-right' onclick=\"set_adjust('"+availableRaw+"','"+dataResult['data'][i].doc_number+"')\" value=\""+removedAmountRaw+"\" /></td>\
-                                <input type='hidden' name='paymentno[]' value='"+dataResult['data'][i].doc_number+"'/>\
-                                <input type='hidden' name='set_amt_act[]' value='"+availableFormatted+"'/>\
-                                </tr>";
-                                
-                        }
-
-                        $('#table_jv_payment_list tbody').empty();
-                        $("#table_jv_payment_list tbody").append(getSelectedRows); 
-                    }
-                    else{
-                        $('#table_jv_payment_list tbody').empty();
-                    }
-            }
-        });
-        $("#loading_bg").css("display", "none");
-    }
+function get_supplier_adjustment_list(id){
+    $("#loading_bg").css("display", "block");
+    $.ajax({
+        url: "{{ URL::to('get-payment-adjustment-list-jv-edit') }}",
+        type: "GET",
+        data: {
+            _token: '{{ csrf_token() }}',
+            id: id,
+            jv_id: $("input[name='doc_number2']").val(),
+        },
+        cache: false,
+        success: function(dataResult) {
+            dataResult = JSON.parse(dataResult);
+            renderJvAdjustmentRows(dataResult['data'], '#table_jv_payment_list', 'paymentno');
+        },
+        complete: function() {
+            $("#loading_bg").css("display", "none");
+        }
+    });
+}
     function update_adjustment(){
         $("#loading_bg").css("display", "block");
 
         var action = "{{ URL::to('update-receipt-adjustment-list-jv') }}";
 
-        const set_amt = [];
-        document.querySelectorAll('input[name="set_amt[]"]').forEach(input => {
-            set_amt.push(input.value);
-        });
-        const receiptno = [];
-        document.querySelectorAll('input[name="receiptno[]"]').forEach(input => {
-            receiptno.push(input.value);
-        });
-        const set_amt_act = [];
-        document.querySelectorAll('input[name="set_amt_act[]"]').forEach(input => {
-            set_amt_act.push(input.value);
-        });
+        var payload = collectJvAdjustmentInputs('#table_jv_receipt_list', 'receiptno');
         $.ajax({
             url: action,
             type: "POST",
              data: {
                 _token: '{{ csrf_token() }}',
                 jv_id:$('#doc_number').val(),
-                set_amt: set_amt,
-                receiptno: receiptno,
-                set_amt_act: set_amt_act,
+                set_amt: payload.set_amt,
+                receiptno: payload.docNos,
+                set_amt_act: payload.set_amt_act,
                 account_id: $('#adj_account_id').val(),
                 account_amount: $('#adj_account_id_amount').val(),
             },
@@ -844,27 +848,16 @@ function get_customer_adjustment_list(id){
 
         var action = "{{ URL::to('update-payment-adjustment-list-jv') }}";
 
-        const set_amt = [];
-        document.querySelectorAll('input[name="set_amt[]"]').forEach(input => {
-            set_amt.push(input.value);
-        });
-        const paymentno = [];
-        document.querySelectorAll('input[name="paymentno[]"]').forEach(input => {
-            paymentno.push(input.value);
-        });
-        const set_amt_act = [];
-        document.querySelectorAll('input[name="set_amt_act[]"]').forEach(input => {
-            set_amt_act.push(input.value);
-        });
+        var payload = collectJvAdjustmentInputs('#table_jv_payment_list', 'paymentno');
         $.ajax({
             url: action,
             type: "POST",
              data: {
                 _token: '{{ csrf_token() }}',
                 jv_id:$('#doc_number').val(),
-                set_amt: set_amt,
-                paymentno: paymentno,
-                set_amt_act: set_amt_act,
+                set_amt: payload.set_amt,
+                paymentno: payload.docNos,
+                set_amt_act: payload.set_amt_act,
                 account_id: $('#adj_account_id').val(),
                 account_amount: $('#adj_account_id_amount').val(),
             },
@@ -883,64 +876,89 @@ function get_customer_adjustment_list(id){
         $('#ModalPaymentAdjustmentClose').click();
         $("#loading_bg").css("display", "none");
     }
-</script>
-<script>
-function parseAdjustNumber(value) {
-    if (value === null || value === undefined) {
-        return 0;
-    }
-    if (typeof value === 'number') {
-        return value;
-    }
-    return parseFloat(String(value).replace(/,/g, '')) || 0;
+function updateJvAdjustmentTotal($scope) {
+    var adjusted = 0;
+    var $inputs = $scope && $scope.length ? $scope.find("input[name='set_amt[]']") : $("input[name='set_amt[]']");
+
+    $inputs.each(function () {
+        adjusted += parseAdjustNumber($(this).val());
+    });
+    $("input[name='adj_siv_amount_adjusted']").val(formatAdjustNumber(adjusted));
 }
 
-$(document).on('click', '#table_jv_receipt_list tbody tr.js-adj-row, #table_jv_payment_list tbody tr.js-adj-row', function (e) {
-    // If user clicks inside the input, let the input handler run.
-    if ($(e.target).is('input, textarea, select, button, a, label')) {
-        return;
-    }
+function clampJvAdjustmentInput($input, shouldFormat) {
+    var $scope = $input.closest('table');
+    var maxAdjustable = parseAdjustNumber($("input[name='adj_siv_amount']").val());
+    var rowMax = parseAdjustNumber($input.data('max-adjust'));
+    var otherAdjusted = 0;
 
-    var doc = $(this).data('doc');
-    var amt = $(this).data('amt');
-    if (!doc) {
-        return;
-    }
-
-    set_adjust(amt, doc);
-    $(this).find("input[id^='set_amt_']").trigger('focus');
-});
-
-function set_adjust(amt,id) {
-    let maxAdjustable = parseAdjustNumber($("input[name='adj_siv_amount']").val());
-    let currentAdjusted = 0;
-
-    // Sum up all currently adjusted values
-    $("input[id^='set_amt_']").each(function () {
-        let val = parseAdjustNumber($(this).val());
-        if (!isNaN(val)) {
-            currentAdjusted += val;
-        }
+    $scope.find("input[name='set_amt[]']").not($input).each(function () {
+        otherAdjusted += parseAdjustNumber($(this).val());
     });
 
-    let remaining = maxAdjustable - currentAdjusted;
+    var remaining = Math.max(0, maxAdjustable - otherAdjusted);
+    var value = parseAdjustNumber($input.val());
+    value = Math.min(value, rowMax, remaining);
+    if (value < 0) {
+        value = 0;
+    }
+    $input.val(shouldFormat ? formatAdjustNumber(value) : value);
+    updateJvAdjustmentTotal($scope);
+}
 
+function set_adjust(amt,inputId) {
+    var $input = $('#' + inputId);
+    if (!$input.length) {
+        return;
+    }
+
+    var $scope = $input.closest('table');
+    var rowMax = parseAdjustNumber(amt);
+    var maxAdjustable = parseAdjustNumber($("input[name='adj_siv_amount']").val());
+    var otherAdjusted = 0;
+
+    $scope.find("input[name='set_amt[]']").not($input).each(function () {
+        otherAdjusted += parseAdjustNumber($(this).val());
+    });
+
+    var remaining = Math.max(0, maxAdjustable - otherAdjusted);
     if (remaining <= 0) {
         alert("No more amount left to adjust.");
         return;
     }
 
-    // Check how much is available for this line
-    let adjustAmount = parseAdjustNumber(amt);
-    if (adjustAmount > remaining) {
-        adjustAmount = remaining;
+    $input.val(formatAdjustNumber(Math.min(rowMax, remaining)));
+    updateJvAdjustmentTotal($scope);
+}
+
+function openJvModal(buttonSelector, modalSelector) {
+    var $button = $(buttonSelector);
+    if ($button.length) {
+        $button.trigger("click");
+        return;
     }
 
-    $('#set_amt_' + id).val(adjustAmount);
-
-    // Optional: update hidden adjusted total
-    $("input[name='adj_siv_amount_adjusted']").val(currentAdjusted + adjustAmount);
+    var modalElement = document.querySelector(modalSelector);
+    if (modalElement && window.bootstrap) {
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
+    }
 }
+
+$(document).on('click', '#table_jv_receipt_list tbody tr.js-adj-row, #table_jv_payment_list tbody tr.js-adj-row', function (e) {
+    if ($(e.target).is('input, textarea, select, button, a, label')) {
+        return;
+    }
+    set_adjust($(this).data('amt'), $(this).data('input'));
+    $('#' + $(this).data('input')).trigger('focus');
+});
+
+$(document).on('input', '.jv-adjustment-amount', function () {
+    clampJvAdjustmentInput($(this), false);
+});
+
+$(document).on('blur', '.jv-adjustment-amount', function () {
+    clampJvAdjustmentInput($(this), true);
+});
 </script>
 
 
@@ -949,11 +967,11 @@ function set_adjust(amt,id) {
 <div class="modal side-panel modal-draggable fade" id="cr_popup_win" data-bs-backdrop="false" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header m-0 p-0">
+                <div class="modal-header">
                     <h4 class="modal-title">Bill Wise Selection</h4>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="activate_button()"></button>
                 </div>
-                <div class="modal-body m-0 p-0">
+                <div class="modal-body">
                     <input type="hidden" id="br_account_id" name="br_account_id">
                     <input type="hidden" id="br_account_id_amount" name="br_account_id_amount">
                     <input type="hidden" name="bi_currency2" value="{{ $editData->currency }}" />
@@ -992,8 +1010,8 @@ function set_adjust(amt,id) {
 
                    
                            
-                                <div class="equipment comon-status  mt-4">
-                                        <table class="table table-hover" cellspacing="0" width="100%" id="crListBankBookAdjest">
+                                <div class="equipment comon-status mt-3">
+                                        <table class="table table-hover form-item-table crListBankBookAdjest" cellspacing="0" width="100%" id="crListBankBookAdjest" style="border: solid 1px #e3e6f0; width:100%;">
                                             <thead>
                                                 <tr>
                                          <th style="width:100px;" class="text-center">@lang('Doc No')</th>
@@ -1006,18 +1024,7 @@ function set_adjust(amt,id) {
                                                 <th style="width:100px;" class="text-start">@lang('Narration')</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td><input class="w-100 sstxtbx" type="number" step="any" id="bi_doc_no_{{$roid}}" name="bi_doc_no[]" autocomplete="off" min="0"></td>
-                                                    <td><input class="w-100 sstxtbx" type="number" step="any" id="bi_doc_date_{{$roid}}" name="bi_doc_date[]" autocomplete="off" min="0"></td>
-                                                    <td><input class="w-100 sstxtbx" type="number" step="any" id="bi_lpo_no_{{$roid}}" name="bi_lpo_no[]" autocomplete="off" min="0"></td>
-                                                    <td><input class="w-100 sstxtbx" type="number" step="any" id="bi_due_date_{{$roid}}" name="bi_due_date[]" autocomplete="off" min="0"></td>
-                                                    <td><input class="w-100 sstxtbx" type="number" step="any" id="bi_total_{{$roid}}" name="bi_total[]" autocomplete="off" min="0"></td>
-                                                    <td><input class="w-100 sstxtbx" type="number" step="any" id="bi_paid_{{$roid}}" name="bi_paid[]" autocomplete="off" min="0"></td>
-                                                    <td><input class="w-100 sstxtbx" type="number" step="any" id="bi_balance_{{$roid}}" name="bi_balance[]" autocomplete="off" min="0"></td>
-                                                    <td><input class="w-100 sstxtbx" type="number" step="any" id="bi_amount_{{$roid}}" name="bi_amount[]" autocomplete="off" min="0"></td>
-                                                </tr>
-                                            </tbody>
+                                            <tbody></tbody>
                                             <tfoot>
                                                 <tr>
                                                     <th></th>
@@ -1034,7 +1041,7 @@ function set_adjust(amt,id) {
                                 </div>
                                 <div class="equipment comon-status mt-3" id="billWisePositiveUnadjustedSection" style="display:none;">
                                     <h6 class="mb-2"> Unadjusted Balance</h6>
-                                    <table class="table table-hover" cellspacing="0" width="100%" id="crListBankBookAdjestUnadjusted">
+                                    <table class="table table-hover form-item-table" cellspacing="0" width="100%" id="crListBankBookAdjestUnadjusted" style="border: solid 1px #e3e6f0; width:100%;">
                                         <thead>
                                             <tr>
                                                 <th style="width:90px;" class="text-center">@lang('Deal ID')</th>
@@ -1067,12 +1074,12 @@ function set_adjust(amt,id) {
 
                             //     var bi_amount = Number($('#bi_amount_'+id).val());
 
-                            //     var adjested_sum = 0;
+                            //     var adjusted_sum = 0;
                             //     $(".tot_amt").each(function () {
-                            //         adjested_sum += +$(this).val();
+                            //         adjusted_sum += +$(this).val();
                             //     });
-                            //     $('#bi_amount_adjusted').val(Number(adjested_sum));
-                            //     $('#bi_balance_adjest').val(Number(form_amt)-Number(adjested_sum));                                
+                            //     $('#bi_amount_adjusted').val(Number(adjusted_sum));
+                            //     $('#bi_balance_adjest').val(Number(form_amt)-Number(adjusted_sum));
 
                             //     if($('#bi_balance_adjest').val()==""){
                             //         $('#bi_balance_adjest').val(form_amt);
@@ -1223,7 +1230,7 @@ function set_adjust(amt,id) {
                                         <th class="border">Receipt No</th>
                                         <th class="border text-right">Amount</th>
                                         <th class="border">Remarks</th>
-                                        <th class="border text-right">Adjusement</th>
+                                        <th class="border text-right">Adjustment</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1233,7 +1240,7 @@ function set_adjust(amt,id) {
                                     <tr>
                                         <th colspan="5" class="border text-right">
                         <button type="button" class="btn btn-light add-btn ms-2" onclick="update_adjustment()">
-							<i class="ico icon-outline-bookmark-opened text-success"></i> Add Adjusement
+							<i class="ico icon-outline-bookmark-opened text-success"></i> Add Adjustment
 						</button>
                                         </th>
                                     </tr>
@@ -1267,7 +1274,7 @@ function set_adjust(amt,id) {
                                         <th class="border">Payment No</th>
                                         <th class="border text-right">Amount</th>
                                         <th class="border">Remarks</th>
-                                        <th class="border text-right">Adjusement</th>
+                                        <th class="border text-right">Adjustment</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1276,8 +1283,8 @@ function set_adjust(amt,id) {
                                 <tfoot> 
                                     <tr>
                                         <th colspan="5" class="border text-right">
-                        <button type="button" class="btn btn-light add-btn ms-2" type="submit" onclick="update_payment_adjustment()">
-							<i class="ico icon-outline-bookmark-opened text-success"></i> Add Adjusement
+                        <button type="button" class="btn btn-light add-btn ms-2" onclick="update_payment_adjustment()">
+							<i class="ico icon-outline-bookmark-opened text-success"></i> Add Adjustment
 						</button>
                                         </th>
                                     </tr>
