@@ -8387,20 +8387,21 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 $creditRow = (object) (array) $r;
                 $creditRow->amount = -$creditAmt;
                 $creditRow->adj_amount = 0;
+                $creditRow->debit_amount = 0;
+                $creditRow->credit_amount = $creditAmt;
                 $creditRow->remarks = 'Credit amount : ' . self::com_curr_format($creditAmt, 2, '.', ',');
                 $out->push($creditRow);
             }
 
             if ($debitAmt > 0) {
-                $netDebit = $debitAmt - $invNet;
-                if ($netDebit < 0) {
-                    $netDebit = $debitAmt;
-                }
+                $netDebit = max($debitAmt - $invNet, 0);
                 $effectiveInvoiceAmount = $debitAmt - $netDebit;
                 if (abs($netDebit - $adj) > 0.0001) {
                     $debitRow = (object) (array) $r;
                     $debitRow->amount = $netDebit;
                     $debitRow->adj_amount = $adj;
+                    $debitRow->debit_amount = $netDebit;
+                    $debitRow->credit_amount = 0;
                     $debitRow->remarks = 'Debit amount : ' . self::com_curr_format($debitAmt, 2, '.', ',')
                         . ' (Invoices amount : ' . self::com_curr_format($effectiveInvoiceAmount, 2, '.', ',') . ')';
                     $out->push($debitRow);
