@@ -1435,20 +1435,52 @@ class SysPaymentController extends Controller
     {
         $company_id = session('logged_session_data.company_id');
         $tillDate = SysHelper::normalizeToYmd($request->doc_date) ?: date('Y-m-d');
+        $invoices = collect($this->paymentBillWisePayableRows($request->account_id, $company_id, false, null, $tillDate));
+        $positiveUnadjusted = SysHelper::get_positive_payable_unadjusted_for_billwise($request->account_id, $company_id, [], $tillDate);
+        $invoiceDocNumbers = $invoices->pluck('doc_number')->filter()->unique();
+        $positiveUnadjusted = collect($positiveUnadjusted)
+            ->reject(function ($row) use ($invoiceDocNumbers) {
+                return $invoiceDocNumbers->contains($row->doc_number);
+            })
+            ->values();
 
-        return response()->json(
-            $this->paymentBillWisePayableRows($request->account_id, $company_id, false, null, $tillDate)
-        );
+        return response()->json([
+            'invoices' => $invoices->values(),
+            'positive_unadjusted' => $positiveUnadjusted,
+        ]);
     }
 
     public function getpybalancelistedit(Request $request)
     {
         $company_id = session('logged_session_data.company_id');
         $tillDate = SysHelper::normalizeToYmd($request->doc_date) ?: date('Y-m-d');
-
-        return response()->json(
-            $this->paymentBillWisePayableRows($request->account_id, $company_id, true, $request->doc_number, $tillDate)
+        $invoices = collect($this->paymentBillWisePayableRows($request->account_id, $company_id, true, $request->doc_number, $tillDate));
+        $currentAdjustedByDoc = SysPaymentAdjustments::select('bi_doc_no', DB::raw('SUM(bi_paid) as paid'))
+            ->where('account_id', $request->account_id)
+            ->where('bi_doc_number', $request->doc_number)
+            ->where('status', 1)
+            ->where(function ($q) use ($company_id) {
+                $q->where('company_id', $company_id)->orWhereNull('company_id');
+            })
+            ->groupBy('bi_doc_no')
+            ->pluck('paid', 'bi_doc_no');
+        $positiveUnadjusted = SysHelper::get_positive_payable_unadjusted_for_billwise(
+            $request->account_id,
+            $company_id,
+            $currentAdjustedByDoc,
+            $tillDate
         );
+        $invoiceDocNumbers = $invoices->pluck('doc_number')->filter()->unique();
+        $positiveUnadjusted = collect($positiveUnadjusted)
+            ->reject(function ($row) use ($invoiceDocNumbers) {
+                return $invoiceDocNumbers->contains($row->doc_number);
+            })
+            ->values();
+
+        return response()->json([
+            'invoices' => $invoices->values(),
+            'positive_unadjusted' => $positiveUnadjusted,
+        ]);
     }
 
     public function delete($id)
