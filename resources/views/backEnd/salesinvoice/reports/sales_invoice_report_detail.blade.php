@@ -375,7 +375,7 @@
                                                     $sum_customer_balance += ($row->customer_balance ?? 0);
                                                 }
 
-                                                $drillFilters = ['report_group' => 'date_wise'];
+                                                $drillFilters = array_merge(request()->except('page'), ['report_group' => 'date_wise']);
                                                 if ($report_group === 'company_wise') {
                                                     $drillFilters['company'] = $row->company_id;
                                                 } elseif ($report_group === 'customer_wise') {
@@ -442,9 +442,9 @@
                                                 @if ($report_group === 'company_wise')
                                                     <td class="text-center">
                                                         <div class="d-inline-flex gap-1 flex-nowrap">
-                                                            <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.invoice.report.detail', ['report_group' => 'date_wise', 'scope_company_id' => $row->company_id]) }}">Date Wise</a>
-                                                            <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.invoice.report.detail', ['report_group' => 'customer_wise', 'scope_company_id' => $row->company_id]) }}">Customer Wise</a>
-                                                            <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.invoice.report.detail', ['report_group' => 'sales_person_wise', 'scope_company_id' => $row->company_id]) }}">Sales Person Wise</a>
+                                                            <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'date_wise', 'scope_company_id' => $row->company_id])) }}">Date Wise</a>
+                                                            <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'customer_wise', 'scope_company_id' => $row->company_id])) }}">Customer Wise</a>
+                                                            <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'sales_person_wise', 'scope_company_id' => $row->company_id])) }}">Sales Person Wise</a>
                                                         </div>
                                                     </td>
                                                 @endif
