@@ -26,19 +26,19 @@ $currentReportGroup = $report_group ?? 'date_wise';
                             <li class="dropend">
                                 <a class="dropdown-item dropdown-toggle report-submenu-trigger text-dark" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false">Sales Report</a>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.invoice.report.detail' && $currentReportGroup === 'company_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.invoice.report.detail', ['report_group' => 'company_wise']) }}">Company Wise</a></li>
-                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.invoice.report.detail' && $currentReportGroup === 'date_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.invoice.report.detail', ['report_group' => 'date_wise']) }}">Date Wise</a></li>
-                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.invoice.report.detail' && $currentReportGroup === 'customer_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.invoice.report.detail', ['report_group' => 'customer_wise']) }}">Customer Wise</a></li>
-                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.invoice.report.detail' && $currentReportGroup === 'sales_person_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.invoice.report.detail', ['report_group' => 'sales_person_wise']) }}">Sales Person Wise</a></li>
+                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.invoice.report.detail' && $currentReportGroup === 'company_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'company_wise'])) }}">Company Wise</a></li>
+                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.invoice.report.detail' && $currentReportGroup === 'date_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'date_wise'])) }}">Date Wise</a></li>
+                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.invoice.report.detail' && $currentReportGroup === 'customer_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'customer_wise'])) }}">Customer Wise</a></li>
+                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.invoice.report.detail' && $currentReportGroup === 'sales_person_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'sales_person_wise'])) }}">Sales Person Wise</a></li>
                                 </ul>
                             </li>
                             <li class="dropend">
                                 <a class="dropdown-item dropdown-toggle report-submenu-trigger text-dark" href="javascript:void(0);" data-bs-toggle="dropdown" aria-expanded="false">Sales Return Report</a>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.return.report.detail' && $currentReportGroup === 'company_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.return.report.detail', ['report_group' => 'company_wise']) }}">Company Wise</a></li>
-                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.return.report.detail' && $currentReportGroup === 'date_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.return.report.detail', ['report_group' => 'date_wise']) }}">Date Wise</a></li>
-                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.return.report.detail' && $currentReportGroup === 'customer_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.return.report.detail', ['report_group' => 'customer_wise']) }}">Customer Wise</a></li>
-                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.return.report.detail' && $currentReportGroup === 'sales_person_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.return.report.detail', ['report_group' => 'sales_person_wise']) }}">Sales Person Wise</a></li>
+                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.return.report.detail' && $currentReportGroup === 'company_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'company_wise'])) }}">Company Wise</a></li>
+                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.return.report.detail' && $currentReportGroup === 'date_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'date_wise'])) }}">Date Wise</a></li>
+                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.return.report.detail' && $currentReportGroup === 'customer_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'customer_wise'])) }}">Customer Wise</a></li>
+                                    <li><a class="dropdown-item {{ $currentRouteName === 'sales.return.report.detail' && $currentReportGroup === 'sales_person_wise' ? 'text-success fw-bold' : 'text-dark' }}" href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'sales_person_wise'])) }}">Sales Person Wise</a></li>
                                 </ul>
                             </li>
                             @include('backEnd.partials.salesAgeingReportMenu')
@@ -278,7 +278,7 @@ $currentReportGroup = $report_group ?? 'date_wise';
                                             $rowGp = (float)($row->gp ?? 0);
                                             $rowGpPercent = isset($row->gp_percent) ? (float)$row->gp_percent : (($row->taxable ?? 0) != 0 ? (($rowGp / $row->taxable) * 100) : 0);
                                             $sum_gp += $rowGp;
-                                            $drillFilters = ['report_group' => 'date_wise'];
+                                            $drillFilters = array_merge(request()->except('page'), ['report_group' => 'date_wise']);
                                             if ($report_group === 'company_wise') { $drillFilters['company'] = $row->company_id; }
                                             elseif ($report_group === 'customer_wise') { $drillFilters['customer'] = $row->customer; if (!empty($scope_company_id)) { $drillFilters['company'] = $scope_company_id; } }
                                             else { $drillFilters['sales_person'] = $row->sales_man; if (!empty($scope_company_id)) { $drillFilters['company'] = $scope_company_id; } }
@@ -300,9 +300,9 @@ $currentReportGroup = $report_group ?? 'date_wise';
                                             @if ($report_group === 'company_wise')
                                                 <td class="text-center">
                                                     <div class="d-inline-flex gap-1 flex-nowrap">
-                                                        <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.return.report.detail', ['report_group' => 'date_wise', 'scope_company_id' => $row->company_id]) }}">Date Wise</a>
-                                                        <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.return.report.detail', ['report_group' => 'customer_wise', 'scope_company_id' => $row->company_id]) }}">Customer Wise</a>
-                                                        <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.return.report.detail', ['report_group' => 'sales_person_wise', 'scope_company_id' => $row->company_id]) }}">Sales Person Wise</a>
+                                                         <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'date_wise', 'scope_company_id' => $row->company_id])) }}">Date Wise</a>
+                                                         <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'customer_wise', 'scope_company_id' => $row->company_id])) }}">Customer Wise</a>
+                                                         <a class="btn btn-sm btn-light py-0 px-2 text-nowrap" href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'sales_person_wise', 'scope_company_id' => $row->company_id])) }}">Sales Person Wise</a>
                                                     </div>
                                                 </td>
                                             @endif
