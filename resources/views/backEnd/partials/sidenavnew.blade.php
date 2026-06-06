@@ -563,7 +563,7 @@
         <?php $crm = $permissions->wherein('module_link_id', [30, 31, 32, 33, 34, 61, 62]); ?>
         @if (count($crm->where('is_read', 1)) > 0 || Auth::user()->role_id == 1)
             <li
-                class="nav-item {{ @App\SysHelper::isMenuOpen(['inventory-report', 'inventory-brand-report', 'inventory-brand-wise-report', 'inventory-category-wise-report', 'inventory-subcategory-wise-report', 'inventory-company-wise-report', 'inventory-salesperson-wise-report', 'inventory-brand-report-detail', 'sales-invoice-report', 'sales-invoice-report-detail', 'generalledger', 'trial-balance', 'trading-account', 'profit-and-loss-account', 'balancesheet'], 'active show-subnav') }}">
+                class="nav-item {{ @App\SysHelper::isMenuOpen(['inventory-report', 'inventory-brand-report', 'inventory-brand-wise-report', 'inventory-category-wise-report', 'inventory-subcategory-wise-report', 'inventory-company-wise-report', 'inventory-salesperson-wise-report', 'inventory-brand-report-detail', 'sales-invoice-report', 'sales-invoice-report-detail', 'generalledger', 'trial-balance', 'trading-account', 'profit-and-loss-account', 'balancesheet','sales-perfomance-report'], 'active show-subnav') }}">
                 <div class="sub-menu-nav" data-subnav="subnavReports">
                     <!-- <i class="ico icon-outline-document-text"></i> -->
                     <img src="{{ asset('public/design') }}/assets/images/icons/report.png" height="24px"
@@ -589,6 +589,11 @@
                     <div class="sub-nav-item {{ @App\SysHelper::isActiveRoute('sales-invoice-report-detail') }}">
                         @if (count($crm->where('is_read', 1)->where('module_link_id', 61)) > 0 || Auth::user()->role_id == 1)
                             <a href="{{ url('sales-invoice-report-detail') }}" class="sub-nav-link">Sales Report</a>
+                        @endif
+                    </div>
+                      <div class="sub-nav-item {{ @App\SysHelper::isActiveRoute('sales-perfomance-report') }}">
+                        @if (count($crm->where('is_read', 1)->where('module_link_id', 61)) > 0 || Auth::user()->role_id == 1)
+                            <a href="{{ url('sales-perfomance-report') }}" class="sub-nav-link">Sales Perfomance Report</a>
                         @endif
                     </div>
                     <div class="sub-nav-item {{ @App\SysHelper::isActiveRoute('generalledger') }}">
