@@ -656,4 +656,493 @@ class SysSalesInvoiceReportDetailController extends Controller
         }
     }
 
+
+     public function salesreportcompany(Request $request)
+    {
+        try {
+            if (session('logged_session_data.company_id') != 1) {
+                return redirect('crm-deals-sales-report'); // Redirect if company_id is not 1
+            }
+            $ctrl_owner = '';
+            $filter_by = '';
+            $ctrl_company = session('logged_session_data.company_id');
+            $ctrl_company_list = [];
+            $ctrl_date = date('Y-m-01');
+            $ctrl_date2 = date("Y-m-t", strtotime($ctrl_date));
+            $ps_amc = "";
+            $ps_amc_deal_id = [];
+
+            $company = SysCompany::select('id', 'company_name')->orderby('sort_id', 'asc')->get();
+            if (Auth::user()->id == 36) {
+                $company = SysCompany::select('id', 'company_name')->where('id', 5)->orderby('sort_id', 'asc')->get();
+            }
+
+            if ($_POST) {
+                if ($request->company_id != 1) {
+                    //$query->where('company_id', $request->company_id);
+                    $ctrl_company_list = [$request->company_id];
+                    $ctrl_company = $request->company_id;
+                } else {
+                    if ($ctrl_company == 1 && (Auth::user()->role_id == 1 || Auth::user()->role_id == 2 || Auth::user()->role_id == 35)) {
+                        $ctrl_company_list = SysCompany::pluck('id');
+                    }
+                }
+
+                if ($request->date != "" && $request->filter_by == "") {
+                    $ctrl_date = SysHelper::normalizeToYmd($request->date);
+                }
+                if ($request->date != "" && $request->filter_by == "") {
+                    $ctrl_date = SysHelper::normalizeToYmd($request->date);
+                    if ($request->date2 != "") {
+                        $ctrl_date2 = SysHelper::normalizeToYmd($request->date2);
+                    }
+                }
+                if ($request->filter_by == "this_month") {
+                    $ctrl_date = date('Y-m-01');
+                    $ctrl_date2 = date("Y-m-t", strtotime($ctrl_date));
+                    $filter_by = 'this_month';
+                }
+                if ($request->filter_by == "today") {
+                    $ctrl_date = date('Y-m-d');
+                    $ctrl_date2 = date('Y-m-d');
+                    $filter_by = 'today';
+                }
+                if ($request->filter_by == "this_week") {
+                    $ctrl_date = date('Y-m-d', strtotime('-1 week sunday 00:00:00'));
+                    $ctrl_date2 = date('Y-m-d', strtotime('saturday 23:59:59'));
+                    $filter_by = 'this_week';
+                }
+                if ($request->filter_by == "last_week") {
+                    $ctrl_date = date('Y-m-d', strtotime('-2 week sunday 00:00:00'));
+                    $ctrl_date2 = date('Y-m-d', strtotime('-1 week saturday 23:59:59'));
+                    $filter_by = 'last_week';
+                }
+                if ($request->filter_by == "last_month") {
+                    $ctrl_date = date('Y-m-d', strtotime('first day of previous month'));
+                    $ctrl_date2 = date('Y-m-d', strtotime('last day of previous month'));
+                    $filter_by = 'last_month';
+                }
+                if ($request->filter_by == "this_quarter") {
+                    $q_date = SysHelper::get_quarter(date('m'));
+                    $ctrl_date = $q_date[0];
+                    $ctrl_date2 = $q_date[1];
+                    $filter_by = 'this_quarter';
+                }
+                if ($request->filter_by == "pre_quarter") {
+                    $q_date = SysHelper::get_pre_quarter(date('m'));
+                    $ctrl_date = $q_date[0];
+                    $ctrl_date2 = $q_date[1];
+                    $filter_by = 'pre_quarter';
+                }
+                if ($request->filter_by == "this_year") {
+                    $ctrl_date = date('Y-01-01');
+                    $ctrl_date2 = date('Y-12-31');
+                    $filter_by = 'this_year';
+                }
+                if ($request->filter_by == "last_year") {
+                    $ctrl_date = date("Y-01-01", strtotime("-1 year"));
+                    $ctrl_date2 = date("Y-12-31", strtotime("-1 year"));
+                    $filter_by = 'last_year';
+                }
+                if ($request->ps_amc == "ps") {
+                    $ps_amc = "ps";
+                    $ps_amc_deal_id = DB::table('sys_crm_deals')->select('sys_crm_deals.id')
+                        ->leftjoin('sys_crm_deal_track_approval_invoice', 'sys_crm_deal_track_approval_invoice.deal_id', 'sys_crm_deals.id')
+                        ->join('sys_crm_quote_items', 'sys_crm_quote_items.deal_id', 'sys_crm_deals.id')
+                        ->wherein('sys_crm_quote_items.product_id', [26328, 35710, 36223])
+                        ->where('sys_crm_deals.stage', 4)->pluck('sys_crm_deals.id');
+                }
+                if ($request->ps_amc == "amc") {
+                    $ps_amc = "amc";
+                    $ps_amc_deal_id = DB::table('sys_crm_deals')->select('sys_crm_deals.id')
+                        ->leftjoin('sys_crm_deal_track_approval_invoice', 'sys_crm_deal_track_approval_invoice.deal_id', 'sys_crm_deals.id')
+                        ->join('sys_crm_quote_items', 'sys_crm_quote_items.deal_id', 'sys_crm_deals.id')
+                        ->wherein('sys_crm_quote_items.product_id', [35657, 35716, 37892])
+                        ->where('sys_crm_deals.stage', 4)->pluck('sys_crm_deals.id');
+                }
+                if ($request->ps_amc == "ps_amc") {
+                    $ps_amc = "ps_amc";
+                    $ps_amc_deal_id = DB::table('sys_crm_deals')->select('sys_crm_deals.id')
+                        ->leftjoin('sys_crm_deal_track_approval_invoice', 'sys_crm_deal_track_approval_invoice.deal_id', 'sys_crm_deals.id')
+                        ->join('sys_crm_quote_items', 'sys_crm_quote_items.deal_id', 'sys_crm_deals.id')
+                        ->wherein('sys_crm_quote_items.product_id', [26328, 35710, 36223, 35657, 35716, 37892])
+                        ->where('sys_crm_deals.stage', 4)->pluck('sys_crm_deals.id');
+                }
+            } else {
+
+                if ($ctrl_company == 1 && (Auth::user()->role_id == 1 || Auth::user()->role_id == 2 || Auth::user()->role_id == 35)) {
+                    $ctrl_company_list = SysCompany::pluck('id');
+                } else {
+                    $ctrl_company_list = [$ctrl_company];
+                }
+            }
+
+            if (count($company) > 0) {
+                foreach ($company as $value) {
+                    $company = $value->id;
+                    $revenue = SysHelper::get_total_revenue_all_by_company($ctrl_date, $ctrl_date2, $company, $ps_amc_deal_id);
+                    if ($value->combind_user_id == "") {
+                        $target = SysHelper::calculateSalesTarget([0], $ctrl_date, $ctrl_date2, $filter_by, $company);
+                    } else {
+                        $target = SysHelper::calculateSalesTarget([0], $ctrl_date, $ctrl_date2, $filter_by, $company);
+                    }
+                    //return SysHelper::calculateSalesTarget([5800], '2025-01-01', '2025-02-01');
+
+                    if ($target['rev_amount'] == 0) {
+                        $tp = 0;
+                    } else {
+                        $tp1 = ($revenue[0] / $target['rev_amount']) * 100;
+                        $tp2 = ($revenue[1] / $target['gp_amount']) * 100;
+                        $tp = round(($tp1 + $tp2) / 2, 2);
+                    }
+                    $receivable = \App\Http\Controllers\SysCrmReportController::get_receivable_os_report_summary($company);
+                    $outstanding_balance = isset($receivable[0][0]) ? $receivable[0][0] : 0;
+
+                    $arrayVariable = [
+                        'company_id' => $value->id,
+                        'full_name' => $value->company_name,
+                        'role_id' => 1,
+                        'combind_user_id' => 0,
+                        'revenue' => $revenue,
+                        'forcast' => SysHelper::get_total_forcast_all_by_company($ctrl_date, $ctrl_date2, $company, $ps_amc_deal_id),
+                        'revenue_actual' => SysHelper::get_total_revenue_actual_all_by_company($ctrl_date, $ctrl_date2, $company, $ps_amc_deal_id),
+                        'on_process' => SysHelper::get_total_on_process_all_by_company($ctrl_date, $ctrl_date2, $company, $ps_amc_deal_id),
+                        'target' => $target,
+                        'dealcount' => SysHelper::get_deal_count_by_company($ctrl_date, $ctrl_date2, $company, $ps_amc_deal_id),
+                        'tp' => $tp,
+                        'outstanding_balance' => $outstanding_balance,
+                    ];
+                    $data[] = $arrayVariable;
+                }
+                $data = collect($data);
+                //$data = $data->sortByDesc('tp');
+                $rev_sum = SysHelper::get_total_revenue_all_by_company_sum($ctrl_date, $ctrl_date2, $company, $ps_amc_deal_id);
+            } else {
+                $data = '0';
+                $rev_sum = [0.00, 0.00, 0.00];
+            }
+
+            $form_data = [
+                'data' => $data,
+                'ctrl_company' => $ctrl_company,
+                'ctrl_date' => $ctrl_date,
+                'ctrl_date2' => $ctrl_date2,
+                'filter_by' => $filter_by,
+                'rev_sum' => $rev_sum,
+            ];
+
+            return view('backEnd/salesinvoice/reports/SalesReportCompany', compact('data', 'ctrl_date', 'ctrl_date2', 'filter_by', 'ps_amc', 'company', 'rev_sum'));
+
+            session()->put('sale_report_list_query', $form_data);
+            return redirect('crm-deals-sales-reports');
+            //return $data;
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+
+    public function salesreport(Request $request,$cid=null, $m1=null, $m2=null)
+    {
+        try {
+            
+            
+            $ctrl_owner='';
+            $filter_by='';
+            $ctrl_company=session('logged_session_data.company_id');
+            $ctrl_company_list=[];
+            $ctrl_date=date('Y-m-01');
+            $ctrl_date2=date("Y-m-t", strtotime($ctrl_date));
+            $ps_amc="";
+            $ps_amc_deal_id=[];
+
+            if($cid != null && $m1 != null && $m2 != null){                
+                $ctrl_company = $cid;
+                $ctrl_date=$m1;
+                $ctrl_date2=$m2;
+            }
+            
+            $company = SysCompany::select('id','company_name')->orderby('sort_id','asc')->get();
+            if(Auth::user()->id == 36){
+                $company = SysCompany::select('id','company_name')->where('id',5)->orderby('sort_id','asc')->get();
+            }
+            
+            if(Auth::user()->role_id == 1 || Auth::user()->role_id == 2 || Auth::user()->role_id == 35){
+                if($ctrl_company == 1){
+                    $staff = SmStaff::select('user_id','full_name')->where('active_status',1)->orderby('full_name','asc')->get();
+                }
+                else{
+                    $staff = SmStaff::select('user_id','full_name')
+                    ->whereRaw("find_in_set($ctrl_company,company_access)")
+                    //->where('main_company',$ctrl_company)
+                    ->where('active_status',1)->orderby('full_name','asc')->get();
+                }
+            }
+            else{
+                $staff = SmStaff::select('user_id','full_name')->where('user_id',Auth::user()->id)->get();
+            }
+
+            $query = SmStaff::select('user_id','full_name','role_id','combind_user_id');
+            
+            if(isset($request->company_id)){
+                if($request->company_id != 1){
+                    $query->where('main_company',$request->company_id);
+                    //$query->whereRaw("find_in_set($request->company_id,company_access)");    
+                }
+            }
+            else{
+                if($ctrl_company!=1 && (Auth::user()->role_id == 1 || Auth::user()->role_id == 2 || Auth::user()->role_id == 35)){
+                    //$query->where('main_company',$ctrl_company);
+                    $query->whereRaw("find_in_set($ctrl_company,company_access)");
+                    //$query->whereRaw("find_in_set($ctrl_company,company_access)");
+
+                }
+            }
+
+            // if(Auth::user()->id == 36){ //Jacob George
+            //     $query->wherein('user_id',[36,25,51,31,27]);
+            // }
+            // if(Auth::user()->id == 58) { //Thaiab Mohammed
+            //     $query->wherein('user_id',[58,59,60,62]);
+            // }
+            // if(Auth::user()->id == 18) { //Prajeesh Prabhakar
+            //     $query->wherein('user_id',[18,20,19]);
+            // }
+            // if(Auth::user()->id == 48) { //Parveen Sheik Asif
+            //     $query->wherein('user_id',[48,39,71]);
+            // }
+
+            //on 27/03/2025 commented mismatch issue in total
+            //$query->wherein('role_id', [1,2,5,8,32]);
+
+            //$query->wherenotin('user_id', [51,28]);
+            
+            //->where('active_status',1);
+            //$query->wherenotin('user_id', [48,82,21,49,71,28,55,56,35,80,75,30,18,61,3,72,37,78,4,60,73,22,51,31,23,1,59,89,76,24,102]);
+            if($_POST){
+                if ($request->company_id != 1) {
+                    //$query->where('company_id', $request->company_id);
+                    $ctrl_company_list=[$request->company_id];
+                    $ctrl_company = $request->company_id;
+                } else {
+                    if($ctrl_company == 1 && (Auth::user()->role_id == 1 || Auth::user()->role_id == 2 || Auth::user()->role_id == 35)){
+                        $ctrl_company_list= SysCompany::pluck('id');
+                    }
+                }
+                if ($request->owner_id != "") {
+                    $query->where('user_id', $request->owner_id);
+                    $ctrl_owner=$request->owner_id;
+                }
+                if ($request->date != "" && $request->filter_by == "") {
+                    $ctrl_date= SysHelper::normalizeToYmd($request->date);
+                }
+                if ($request->date != "" && $request->filter_by == "") {
+                    $ctrl_date= SysHelper::normalizeToYmd($request->date);
+                    if ($request->date2 != "") {
+                        $ctrl_date2= SysHelper::normalizeToYmd($request->date2);
+                    }
+                }
+                if ($request->filter_by == "this_month") {
+                    $ctrl_date=date('Y-m-01');
+                    $ctrl_date2=date("Y-m-t", strtotime($ctrl_date));
+                    $filter_by='this_month';               
+                }
+                if ($request->filter_by == "today") {
+                    $ctrl_date=date('Y-m-d');
+                    $ctrl_date2=date('Y-m-d');
+                    $filter_by='today';
+                }
+                if ($request->filter_by == "this_week") {
+                    $ctrl_date = date('Y-m-d', strtotime('-1 week sunday 00:00:00'));
+                    $ctrl_date2 = date('Y-m-d', strtotime('saturday 23:59:59'));
+                    $filter_by='this_week';
+                }
+                if ($request->filter_by == "last_week") {
+                    $ctrl_date = date('Y-m-d', strtotime('-2 week sunday 00:00:00'));
+                    $ctrl_date2 = date('Y-m-d', strtotime('-1 week saturday 23:59:59'));
+                    $filter_by='last_week';
+                }
+                if ($request->filter_by == "last_month") {
+                    $ctrl_date = date('Y-m-d', strtotime('first day of previous month'));
+                    $ctrl_date2 = date('Y-m-d', strtotime('last day of previous month'));
+                    $filter_by='last_month';
+                }
+                if ($request->filter_by == "this_quarter") {
+                    $q_date = SysHelper::get_quarter(date('m'));
+                    $ctrl_date = $q_date[0];
+                    $ctrl_date2 = $q_date[1];
+                    $filter_by='this_quarter';
+                }
+                if ($request->filter_by == "pre_quarter") {
+                    $q_date = SysHelper::get_pre_quarter(date('m'));
+                    $ctrl_date = $q_date[0];
+                    $ctrl_date2 = $q_date[1];
+                    $filter_by='pre_quarter';
+                }
+                if ($request->filter_by == "this_year") {
+                    $ctrl_date = date('Y-01-01');
+                    $ctrl_date2 = date('Y-12-31');
+                    $filter_by='this_year';
+                }
+                if ($request->filter_by == "last_year") {
+                    $ctrl_date = date("Y-01-01",strtotime("-1 year"));
+                    $ctrl_date2 = date("Y-12-31",strtotime("-1 year"));
+                    $filter_by='last_year';
+                }
+                
+                if($request->ps_amc == "ps")
+                {
+                    $ps_amc="ps";
+                    $ps_amc_deal_id = DB::table('sys_crm_deals')->select('sys_crm_deals.id')
+                    ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                    ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+                    ->wherein('sys_crm_quote_items.product_id',[26328,35710,36223])
+                    ->where('sys_crm_deals.stage',4)->pluck('sys_crm_deals.id');
+                }
+                if($request->ps_amc == "amc")
+                {
+                    $ps_amc="amc";
+                    $ps_amc_deal_id = DB::table('sys_crm_deals')->select('sys_crm_deals.id')
+                    ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                    ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+                    ->wherein('sys_crm_quote_items.product_id',[35657,35716,37892])
+                    ->where('sys_crm_deals.stage',4)->pluck('sys_crm_deals.id');
+                }
+                if($request->ps_amc == "ps_amc")
+                {
+                    $ps_amc="ps_amc";
+                    $ps_amc_deal_id = DB::table('sys_crm_deals')->select('sys_crm_deals.id')
+                    ->leftjoin('sys_crm_deal_track_approval_invoice','sys_crm_deal_track_approval_invoice.deal_id','sys_crm_deals.id')
+                    ->join('sys_crm_quote_items','sys_crm_quote_items.deal_id','sys_crm_deals.id')
+                    ->wherein('sys_crm_quote_items.product_id',[26328,35710,36223,35657,35716,37892])
+                    ->where('sys_crm_deals.stage',4)->pluck('sys_crm_deals.id');
+                }
+
+                $query->where(function($q) use ($ctrl_date2) {
+                    $q->whereRaw("DATE_FORMAT(date_of_resign, '%Y-%m-%d') > ?", [date('Y-m-d', strtotime($ctrl_date2))])
+                      ->orWhereNull('date_of_resign');
+                });
+
+                if(Auth::user()->role_id != 1 && Auth::user()->role_id != 2){
+                        $query->where('user_id', Auth::user()->id);
+                }
+                $deals = $query->orderby('full_name','asc')->get();
+            }
+            else{
+
+                if($ctrl_company == 1 && (Auth::user()->role_id == 1 || Auth::user()->role_id == 2 || Auth::user()->role_id == 35)){
+                    $ctrl_company_list= SysCompany::pluck('id');
+                } else{$ctrl_company_list= [$ctrl_company];}
+
+
+                //$query->where('company_id', $ctrl_company);
+                if(Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && Auth::user()->role_id != 8 && Auth::user()->role_id != 35){
+                    $query->where('user_id', Auth::user()->id);
+                }
+                if(Auth::user()->role_id == 8){
+                    $teams = DB::table('users')->wherein('role_id',[5,33])->pluck('id');
+                    $query->wherein('user_id', $teams);
+                }
+                
+                $query->where(function($q) use ($ctrl_date2) {
+                    $q->whereRaw("DATE_FORMAT(date_of_resign, '%Y-%m-%d') > ?", [date('Y-m-d', strtotime($ctrl_date2))])
+                      ->orWhereNull('date_of_resign');
+                });
+                $deals = $query->orderby('full_name','asc')->get();
+            }
+            
+            if(count($deals)>0){
+                foreach ($deals as $value) {
+                    $user=[$value->user_id];
+                    $revenue = SysHelper::get_total_revenue_all_by_user($user,$ctrl_date,$ctrl_date2,$ctrl_company_list,$ps_amc_deal_id);
+                    //return $revenue;
+                    
+                    /*$target = SysCrmSalesTarget::select(db::raw('sum(target) as amount'),db::raw('max(type) as type'))->where('user_id',$value->user_id)
+                    ->whereRaw("DATE_FORMAT(target_month, '%Y-%m') >= '".date('Y-m', strtotime($ctrl_date))."' and DATE_FORMAT(target_month, '%Y-%m') <= '".date('Y-m', strtotime($ctrl_date2))."'")->first();*/
+                    if($value->combind_user_id==""){
+                        //$target = SysCrmSalesTarget::select(db::raw('COALESCE(sum(revenue_target_monthly), 0) as rev_amount'),
+                        //db::raw('COALESCE(sum(gp_target_monthly), 0) as gp_amount'))->where('user_id',$value->user_id)
+                        //->whereRaw("DATE_FORMAT(target_month_from, '%Y-%m') <= '".date('Y-m', strtotime($ctrl_date))."'")->orderby('target_month_from','desc')->first();
+                        $target = SysHelper::calculateSalesTarget([$value->user_id], $ctrl_date, $ctrl_date2,$filter_by,$ctrl_company);
+                    } else {
+                        $userIds = array_map('intval', explode(',', $value->combind_user_id));
+                        /*$target = SysCrmSalesTarget::select(
+                            DB::raw('COALESCE(sum(revenue_target_monthly), 0) as rev_amount'),
+                            DB::raw('COALESCE(sum(gp_target_monthly), 0) as gp_amount')
+                        )
+                        ->wherein("user_id", $userIds)
+                        ->whereRaw("DATE_FORMAT(target_month_from, '%Y-%m') <= ?", [date('Y-m', strtotime($ctrl_date))]) // Using parameter binding for safety
+                        ->orderBy('target_month_from', 'desc')
+                        ->first();*/
+                        $target = SysHelper::calculateSalesTarget($userIds, $ctrl_date, $ctrl_date2,$filter_by,$ctrl_company);
+                    }
+
+                    //return SysHelper::calculateSalesTarget([5800], '2025-01-01', '2025-02-01');
+
+                    if($target['rev_amount']==0){
+                        $tp = 0;
+                    } else{
+                            $tp1 = ($revenue[0] / $target['rev_amount']) * 100;
+                            $tp2 = ($revenue[1] / $target['gp_amount']) * 100;
+                            $tp = round(($tp1+$tp2)/2,2);
+                    }
+                    $receivable = \App\Http\Controllers\SysCrmReportController::get_receivable_os_report_dashboard($value->user_id, $ctrl_company);
+                    $outstanding_balance = isset($receivable[0][0]) ? $receivable[0][0] : 0;
+
+                    $arrayVariable = [
+                        'user_id'  => $value->user_id,
+                        'full_name' => $value->full_name,
+                        'role_id' => $value->role_id,
+                        'combind_user_id' => $value->combind_user_id,
+                        'revenue' => $revenue,
+                        'revenue_nocombind' => SysHelper::get_total_revenue_all_by_user_nocombind($user,$ctrl_date,$ctrl_date2,$ctrl_company_list,$ps_amc_deal_id),
+                        'forcast' => SysHelper::get_total_forcast_all_by_user($user,$ctrl_date,$ctrl_date2,$ctrl_company_list,$ps_amc_deal_id),
+                        'revenue_actual' => SysHelper::get_total_revenue_actual_all_by_user($user,$ctrl_date,$ctrl_date2,$ctrl_company_list,$ps_amc_deal_id),
+                        'on_process' => SysHelper::get_total_on_process_all_by_user($user,$ctrl_date,$ctrl_date2,$ctrl_company_list,$ps_amc_deal_id),
+                        'target' => $target,
+                        'dealcount' => SysHelper::get_deal_count_by_user($user,$ctrl_date,$ctrl_date2,$ctrl_company_list,$ps_amc_deal_id),
+                        'tp' => $tp,
+                        'outstanding_balance' => $outstanding_balance,
+                    ];
+                    $data[]=$arrayVariable;
+                }
+                $data =  collect($data)->unique('user_id')->values();
+                $data = $data->sortByDesc('tp');
+                $rev_sum = SysHelper::get_total_revenue_all_by_user_sum($deals->pluck('user_id'),$ctrl_date,$ctrl_date2,$ctrl_company_list,$ps_amc_deal_id);
+            }
+            else{
+                $data='0';
+                $rev_sum=[0.00,0.00,0.00];
+            }
+            
+            $form_data = [
+                'data' => $data,
+                'staff' => $staff,
+                'ctrl_owner' => $ctrl_owner,
+                'ctrl_company' => $ctrl_company,
+                'ctrl_date' => $ctrl_date,
+                'ctrl_date2' => $ctrl_date2,
+                'filter_by' => $filter_by,
+                'rev_sum' => $rev_sum,
+            ];
+
+   
+            return view('backEnd.salesinvoice.reports.SalesReportSalesPerson', compact('data','staff','ctrl_owner','ctrl_company','ctrl_date','ctrl_date2','filter_by','company','rev_sum','ps_amc'));
+
+            session()->put('sale_report_list_query', $form_data);
+            return redirect('crm-deals-sales-reports');
+            //return $data;
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+
+
+
+
+
+
 }
