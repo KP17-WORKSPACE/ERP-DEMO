@@ -42,28 +42,28 @@
 
                 <li>
                     <a class="dropdown-item text-dark {{ $isSalesInvoiceRoute && $menuReportGroup == 'company_wise' ? 'active' : '' }}"
-                       href="{{ route('sales.invoice.report.detail', ['report_group' => 'company_wise']) }}">
+                       href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'company_wise'])) }}">
                         Company Wise
                     </a>
                 </li>
 
                 <li>
                     <a class="dropdown-item text-dark {{ $isSalesInvoiceRoute && $menuReportGroup == 'date_wise' ? 'active' : '' }}"
-                       href="{{ route('sales.invoice.report.detail', ['report_group' => 'date_wise']) }}">
+                       href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'date_wise'])) }}">
                         Date Wise
                     </a>
                 </li>
 
                 <li>
                     <a class="dropdown-item text-dark {{ $isSalesInvoiceRoute && $menuReportGroup == 'customer_wise' ? 'active' : '' }}"
-                       href="{{ route('sales.invoice.report.detail', ['report_group' => 'customer_wise']) }}">
+                       href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'customer_wise'])) }}">
                         Customer Wise
                     </a>
                 </li>
 
                 <li>
                     <a class="dropdown-item text-dark {{ $isSalesInvoiceRoute && $menuReportGroup == 'sales_person_wise' ? 'active' : '' }}"
-                       href="{{ route('sales.invoice.report.detail', ['report_group' => 'sales_person_wise']) }}">
+                       href="{{ route('sales.invoice.report.detail', array_merge(request()->except('page'), ['report_group' => 'sales_person_wise'])) }}">
                         Sales Person Wise
                     </a>
                 </li>
@@ -86,28 +86,28 @@
 
                 <li>
                     <a class="dropdown-item text-dark {{ $isSalesReturnRoute && $menuReportGroup == 'company_wise' ? 'active' : '' }}"
-                       href="{{ route('sales.return.report.detail', ['report_group' => 'company_wise']) }}">
+                       href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'company_wise'])) }}">
                         Company Wise
                     </a>
                 </li>
 
                 <li>
                     <a class="dropdown-item text-dark {{ $isSalesReturnRoute && $menuReportGroup == 'date_wise' ? 'active' : '' }}"
-                       href="{{ route('sales.return.report.detail', ['report_group' => 'date_wise']) }}">
+                       href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'date_wise'])) }}">
                         Date Wise
                     </a>
                 </li>
 
                 <li>
                     <a class="dropdown-item text-dark {{ $isSalesReturnRoute && $menuReportGroup == 'customer_wise' ? 'active' : '' }}"
-                       href="{{ route('sales.return.report.detail', ['report_group' => 'customer_wise']) }}">
+                       href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'customer_wise'])) }}">
                         Customer Wise
                     </a>
                 </li>
 
                 <li>
                     <a class="dropdown-item text-dark {{ $isSalesReturnRoute && $menuReportGroup == 'sales_person_wise' ? 'active' : '' }}"
-                       href="{{ route('sales.return.report.detail', ['report_group' => 'sales_person_wise']) }}">
+                       href="{{ route('sales.return.report.detail', array_merge(request()->except('page'), ['report_group' => 'sales_person_wise'])) }}">
                         Sales Person Wise
                     </a>
                 </li>
