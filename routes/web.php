@@ -2511,6 +2511,16 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::get('crm-deals-sales-report-company', 'SysCrmDealsReportController@salesreportcompany');
         Route::post('crm-deals-sales-report-company', 'SysCrmDealsReportController@salesreportcompany');
 
+
+        Route::get('sales-perfomance-report', 'SysSalesInvoiceReportDetailController@salesreportcompany');
+        Route::post('sales-perfomance-report', 'SysSalesInvoiceReportDetailController@salesreportcompany');
+
+        Route::get('sales-perfomance-invoice-report/{cid}/{m1}/{m2}/', 'SysSalesInvoiceReportDetailController@salesreport');
+        Route::post('sales-perfomance-invoice-report/{cid}/{m1}/{m2}/', 'SysSalesInvoiceReportDetailController@salesreport');
+
+        
+
+
         Route::get('crm-deals-sales-report', 'SysCrmDealsReportController@salesreport');
         Route::post('crm-deals-sales-report', 'SysCrmDealsReportController@salesreport');
         Route::get('crm-deals-sales-report/{cid}/{m1}/{m2}/', 'SysCrmDealsReportController@salesreport');
