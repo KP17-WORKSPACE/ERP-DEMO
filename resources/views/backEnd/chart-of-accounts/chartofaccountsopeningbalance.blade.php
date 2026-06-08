@@ -390,21 +390,13 @@
                                             </td>
                                             <td class="">
                                                 <div class="d-flex justify-content-center">
-                                                    @php $invoice_list = $invoice->where('account_id',$value->account_id); @endphp
-                                                    @if (count($invoice_list) > 0)
-                                                        {{-- <a class="btn-sm btn-danger"
-                                                    href="{{ url('chartofaccounts-opening-balance-edit/' . $value->account_id) }}">View
-                                                    & Edit</a> --}}
-
-                                                        <button data-account-id="{{ $value->account_id }}"    data-bs-popover="popover"
-                            data-bs-trigger="hover"
-                            data-bs-delay="500"
-                            data-bs-content="View & Edit Invoice"
-                            data-bs-placement="top"
-                                                            class="btn-sm btn btn-light open-invoice-modal text-success"><i class="ico icon-outline-pen-2 text-dark" style="font-size:14px"></i></button>
-                                                    @endif
+                                                    <button data-account-id="{{ $value->account_id }}"    data-bs-popover="popover"
+                                                        data-bs-trigger="hover"
+                                                        data-bs-delay="500"
+                                                        data-bs-content="View & Edit Invoice"
+                                                        data-bs-placement="top"
+                                                        class="btn-sm btn btn-light open-invoice-modal text-success"><i class="ico icon-outline-pen-2 text-dark" style="font-size:14px"></i></button>
                                                 </div>
-
                                             </td>
                                         </tr>
                                     @endif
@@ -1151,7 +1143,8 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
                     }
                     if (typeof toastr !== 'undefined') {
                         toastr.error(message);
-                    } else {
+                    } else 
+                    {
                         alert(message);
                     }
                 },

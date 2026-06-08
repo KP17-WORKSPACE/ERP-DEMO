@@ -57,7 +57,6 @@
             </div>
             <div class="modal-body p-0">
                 @php $invoice_list = $invoice->where('account_id',$value->account_id); @endphp
-                @if (count($invoice_list) > 0)
                     <div class="table-responsive">
                         <table class="table table-hover form-item-table" id="dataTable_{{ $value->account_id }}"
                             width="100%" cellspacing="0">
@@ -67,10 +66,15 @@
                                     <th class="text-center" style="width:150px">Invoice Date</th>
                                     <th class="text-end" style="width:150px">Debit Amount</th>
                                     <th class="text-end" style="width:150px">Credit Amount</th>
-                                    <th class="text-center" style="width:150px">Action</th>
+                                    <th class="text-center" style="width:150px">Action
+                                        <button type="button" class="btn btn-sm btn-light ms-2 p-1 d-inline-flex align-items-center"
+                                            onclick="add_invoice_row({{ $value->account_id }})">
+                                            <i class="ico icon-outline-add-square text-success" style="font-size: 16px;"></i>
+                                        </button>
+                                    </th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="invoice_table_body_{{ $value->account_id }}">
                                 @php
                                     $i = 0;
                                 @endphp
@@ -91,12 +95,12 @@
                                         <td class="text-center"><input type="text"
                                                 class="form-control table-input text-end p-0"
                                                 id="debit_amount_{{ $list->id }}"
-                                                value="{{ $list->debit_amount }}" />
+                                                value="{{ @App\SysHelper::com_curr_format($list->debit_amount ?? 0, 2, '.', ',') }}" />
                                         </td>
                                         <td class="text-center"> <input type="text"
                                                 class="form-control table-input text-end p-0"
                                                 id="credit_amount_{{ $list->id }}"
-                                                value="{{ $list->credit_amount }}" /></td>
+                                                value="{{ @App\SysHelper::com_curr_format($list->credit_amount ?? 0, 2, '.', ',') }}" /></td>
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center align-items-center">
                                                 <input type="hidden" id="account_id_{{ $list->id }}"
@@ -225,7 +229,6 @@
                             </table>
                         </div>
                     @endif
-                @endif
             </div>
 
         </div>
@@ -235,6 +238,81 @@
 
 
 <script>
+    let newRowCounter = 0;
+    function add_invoice_row(accountId) {
+        newRowCounter++;
+        let rowId = 'new_' + newRowCounter;
+        let html = `
+            <tr id="row_${rowId}">
+                <td class="text-center">
+                    <input type="text" class="form-control table-input text-center p-0" id="invoice_no_${rowId}" value="" placeholder="Invoice No" />
+                </td>
+                <td class="text-center">
+                    <input type="text" class="form-control table-input date-picker-2 p-0" id="invoice_date_${rowId}" value="" placeholder="Date" />
+                </td>
+                <td class="text-center">
+                    <input type="text" class="form-control table-input text-end p-0" id="debit_amount_${rowId}" value="0.00" />
+                </td>
+                <td class="text-center">
+                    <input type="text" class="form-control table-input text-end p-0" id="credit_amount_${rowId}" value="0.00" />
+                </td>
+                <td class="text-center">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <button type="button" class="btn-sm btn btn-light" onclick="save_new_invoice('${rowId}', ${accountId})">
+                            <i class="ico icon-outline-bookmark-opened text-success" style="font-size: 16px;"></i>
+                        </button>
+                        <button type="button" class="btn-sm btn btn-light" onclick="$('#row_${rowId}').remove()">
+                            <i class="ico icon-outline-trash-bin-minimalistic text-danger" style="font-size: 16px;"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        $('#invoice_table_body_' + accountId).append(html);
+        flatpickr("#invoice_date_" + rowId, {
+            dateFormat: "d/m/Y",
+            allowInput: true
+        });
+    }
+
+    function save_new_invoice(rowId, accountId) {
+        var invoice_no = $('#invoice_no_' + rowId).val();
+        var invoice_date = $('#invoice_date_' + rowId).val();
+        var debit_amount = $('#debit_amount_' + rowId).val();
+        var credit_amount = $('#credit_amount_' + rowId).val();
+        if (!invoice_no || !invoice_date) {
+            toastr.error("Please fill Invoice No and Invoice Date!");
+            return;
+        }
+        $("#loading_bg").css("display", "block");
+        var action = "{{ URL::to('chartofaccounts-invoice-store') }}";
+        $.ajax({
+            url: action,
+            type: "POST",
+            data: {
+                _token: '{{ csrf_token() }}',
+                invoice_no: invoice_no,
+                invoice_date: invoice_date,
+                debit_amount: debit_amount,
+                credit_amount: credit_amount,
+                account_id: accountId,
+            },
+            cache: false,
+            success: function(dataResult) {
+                var res = JSON.parse(dataResult);
+                if (res.data == "ERROR") {
+                    toastr.error("Error occurred while saving!");
+                } else {
+                    toastr.success("Saved Successfully!");
+                    loadInvoiceModal(accountId);
+                }
+            },
+            complete: function() {
+                $("#loading_bg").css("display", "none");
+            }
+        });
+    }
+
     function update_invoice(id) {
         $("#loading_bg").css("display", "block");
         var invoice_no = $('#invoice_no_' + id).val();
@@ -264,7 +342,9 @@
                     alert("Error found in something!!");
                 } else {
                     $("#loading_bg").css("display", "none");
-                    alert("Updated Successfully!");
+                    // alert("Updated Successfully!");
+                    //show toastr
+                    toastr.success("Updated Successfully!");    
                     loadInvoiceModal(account_id);
                     // location.reload(true);
                 }
