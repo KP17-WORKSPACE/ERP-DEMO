@@ -2730,6 +2730,14 @@ Route::get('/industry', 'SmIndustryController@index');
 
         Route::post('crm-pre-sales-request-list', 'SysCrmPreSalesController@pre_sales_request_list');
 
+        Route::get('crm-reimbursement-track/{id?}', 'SysCrmReimbursementRequest@track');
+        Route::get('crm-reimbursement-track-details/{id}', 'SysCrmReimbursementRequest@getDetails');
+        Route::get('crm-reimbursement-track-search', 'SysCrmReimbursementRequest@search')->name('crm-reimbursement.search');
+        Route::post('crm-reimbursement-track', 'SysCrmReimbursementRequest@track');
+
+
+
+
 
         Route::get('crm-reimbursement-request', 'SysCrmReimbursementRequest@index');
         Route::post('crm-reimbursement-request-add', 'SysCrmReimbursementRequest@store');
