@@ -751,13 +751,19 @@ function set_total_lessmore(id, amount) {
     $('#sum_' + id).text(newTotal.toLocaleString('en-US', { minimumFractionDigits: @json(session('logged_session_data.decimal_point')), maximumFractionDigits: @json(session('logged_session_data.decimal_point')) }));
 }
 function check_total(id, amount) {
-    let totText = $('#sum_' + id).text();
+    let $el = $('#sum_' + id);
+    let totText = $el.text();
     let currentTotal = formatAmountToNumber(totText);
     let additionalAmount = formatAmountToNumber(amount);
-    if(currentTotal != additionalAmount){
-        $('#sum_' + id).css('color', 'red');
+    let isMatch = Math.abs(currentTotal - additionalAmount) <= 0.01;
+    let hasOverdue = $el.attr('data-overdue') === 'true';
+    if (!isMatch) {
+        $el.css('color', 'red');
+    } else if (hasOverdue) {
+        $el.css('color', 'blue');
+    } else {
+        $el.css('color', 'black');
     }
-
 }
                 </script>
                 
@@ -1251,7 +1257,7 @@ function check_total(id, amount) {
 
                             @if(($breakdown['max_overdue_days'] ?? 0) > 0)
                             <script>
-                                $('#sum_{{ $aname->id }}').css('color', 'red');
+                                $('#sum_{{ $aname->id }}').attr('data-overdue', 'true');
                             </script>
                             @endif
 
