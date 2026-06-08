@@ -66,8 +66,16 @@ class SysCrmReimbursementRequest extends Controller
             } else {
                 $data = SysCrmReimbursement::where('company_id', $company_id)->where('created_by', Auth::user()->id)->orderby('date', 'desc')->get();
             }
+            
+            $currencies = \App\SysCurrency::where('active_status', 1)->get();
+            $company = \App\SysCompany::find($company_id);
+            $default_currency = $company ? $company->currency_id : null;
+            
+            $last = SysCrmReimbursement::orderBy('id', 'desc')->first();
+            $next_id = $last ? $last->id + 1 : 1;
+            $next_reimbursement_no = 'REIM-' . str_pad($next_id, 4, '0', STR_PAD_LEFT);
 
-            return view('backEnd.amc.reimbursementlist', compact('data'));
+            return view('backEnd.amc.reimbursementlist', compact('data', 'currencies', 'default_currency', 'next_reimbursement_no'));
 
         } catch (\Throwable $th) {
             return $th;
@@ -93,6 +101,10 @@ class SysCrmReimbursementRequest extends Controller
             }
             $r = new SysCrmReimbursement();
             
+            $last = SysCrmReimbursement::orderBy('id', 'desc')->first();
+            $next_id = $last ? $last->id + 1 : 1;
+            $r->reimbursement_no = 'REIM-' . str_pad($next_id, 4, '0', STR_PAD_LEFT);
+            
             $r->date = $request->date
                 ? Carbon::createFromFormat('d/m/Y', $request->date)->format('Y-m-d')
                 : null;
@@ -108,6 +120,12 @@ class SysCrmReimbursementRequest extends Controller
                 $r->remarks = $request->remarks;
             }
             $r->head_count_name = $request->head_count_name;
+            $r->invoice_date = $request->invoice_date ? Carbon::createFromFormat('d/m/Y', $request->invoice_date)->format('Y-m-d') : null;
+            $r->reimbursable_amount = $request->reimbursable_amount;
+            $r->payment_method = $request->payment_method;
+            $r->project_id = $request->project_id;
+            $r->vendor_name = $request->vendor_name;
+            $r->currency_id = $request->currency_id;
             $r->attachmant = $doc_file;
             $r->created_by = Auth::user()->id;
             $r->created_at = Carbon::now('+04:00')->format('Y-m-d H:i:s');
@@ -151,6 +169,12 @@ class SysCrmReimbursementRequest extends Controller
                 $r->remarks = $request->remarks;
             }
             $r->head_count_name = $request->head_count_name;
+            $r->invoice_date = $request->invoice_date ? Carbon::createFromFormat('d/m/Y', $request->invoice_date)->format('Y-m-d') : null;
+            $r->reimbursable_amount = $request->reimbursable_amount;
+            $r->payment_method = $request->payment_method;
+            $r->project_id = $request->project_id;
+            $r->vendor_name = $request->vendor_name;
+            $r->currency_id = $request->currency_id;
             if ($doc_file != "") {
                 $r->attachmant = $doc_file;
             }
@@ -179,9 +203,32 @@ class SysCrmReimbursementRequest extends Controller
     {
         try {
             $r = SysCrmReimbursement::find($request->account_re_id);
+            if (!$r) return redirect()->back();
+            
+            // Backend validation
+            if (Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && $r->acco_head_status != 1) {
+                Toastr::error('Finance must approve first.', 'Failed');
+                return redirect()->back();
+            }
+            if (Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && $r->accounts_status == 1) {
+                Toastr::error('Approved record cannot be edited.', 'Failed');
+                return redirect()->back();
+            }
+
             $r->accounts_status = $request->btn_status;
             $r->accounts_by = Auth::user()->id;
             $r->accounts_remarks = $request->remarks;
+            
+            if ($request->btn_status == 1) {
+                $r->accounts_payment_voucher_no = $request->accounts_payment_voucher_no;
+                $r->accounts_payment_date = $request->accounts_payment_date ? Carbon::createFromFormat('d/m/Y', $request->accounts_payment_date)->format('Y-m-d') : null;
+                $r->accounts_payment_method = $request->accounts_payment_method;
+                $r->accounts_bank_account_id = $request->accounts_bank_account_id;
+                $r->accounts_paid_amount = $request->accounts_paid_amount;
+                $r->accounts_payment_status = $request->accounts_payment_status;
+                $r->accounts_payment_reference = $request->accounts_payment_reference;
+            }
+
             $r->save();
 
             if ($request->btn_status == 1) {
@@ -200,9 +247,28 @@ class SysCrmReimbursementRequest extends Controller
     {
         try {
             $r = SysCrmReimbursement::find($request->acco_head_re_id);
+            if (!$r) return redirect()->back();
+
+            // Backend validation
+            if (Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && $r->dept_head_status != 1) {
+                Toastr::error('Reporting Manager must approve first.', 'Failed');
+                return redirect()->back();
+            }
+            if (Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && $r->acco_head_status == 1) {
+                Toastr::error('Approved record cannot be edited.', 'Failed');
+                return redirect()->back();
+            }
+
             $r->acco_head_status = $request->btn_status;
             $r->acco_head_by = Auth::user()->id;
             $r->acco_head_remarks = $request->remarks;
+            
+            if ($request->btn_status == 1) {
+                $r->acco_head_approved_amount = $request->acco_head_approved_amount;
+                $r->acco_head_account_id = $request->acco_head_account_id;
+                $r->acco_head_payment_required = $request->acco_head_payment_required;
+            }
+
             $r->save();
 
             if ($request->btn_status == 1) {
@@ -221,9 +287,21 @@ class SysCrmReimbursementRequest extends Controller
     {
         try {
             $r = SysCrmReimbursement::find($request->dept_head_re_id);
+            if (!$r) return redirect()->back();
+
+            if (Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && $r->dept_head_status == 1) {
+                Toastr::error('Approved record cannot be edited.', 'Failed');
+                return redirect()->back();
+            }
+
             $r->dept_head_status = $request->btn_status;
             $r->dept_head_by = Auth::user()->id;
             $r->dept_head_remarks = $request->remarks;
+            
+            if ($request->btn_status == 1) {
+                $r->dept_head_date = $request->dept_head_date ? Carbon::createFromFormat('d/m/Y', $request->dept_head_date)->format('Y-m-d') : null;
+            }
+
             $r->save();
 
             if ($request->btn_status == 1) {
@@ -297,4 +375,108 @@ class SysCrmReimbursementRequest extends Controller
             return json_encode('ERROR');
         }
     }
+    
+    public function track(Request $request, $id = null)
+    {
+        try {
+            $query = SysCrmReimbursement::where('status', '!=', 2);
+            $company_id = session('logged_session_data.company_id');
+            if ($company_id != 1) {
+                $query->where('company_id', $company_id);
+            }
+
+            if ($request->has('reimbursement_no') && $request->reimbursement_no != '') {
+                $query->where('reimbursement_no', 'like', '%' . $request->reimbursement_no . '%');
+            }
+            if ($request->has('vendor_name') && $request->vendor_name != '') {
+                $query->where('vendor_name', 'like', '%' . $request->vendor_name . '%');
+            }
+            if ($request->has('from_date') && $request->from_date != '') {
+                $query->whereDate('date', '>=', \Carbon\Carbon::createFromFormat('d/m/Y', $request->from_date)->format('Y-m-d'));
+            }
+            if ($request->has('to_date') && $request->to_date != '') {
+                $query->whereDate('date', '<=', \Carbon\Carbon::createFromFormat('d/m/Y', $request->to_date)->format('Y-m-d'));
+            }
+
+            $data = $query->orderBy('id', 'desc')->get();
+
+            $ctrl_reimbursement_no = $request->reimbursement_no;
+            $ctrl_vendor_name = $request->vendor_name;
+            $ctrl_from_date = $request->from_date;
+            $ctrl_to_date = $request->to_date;
+            
+            $active_id = $id;
+            $selectedReimbursement = null;
+            if ($active_id == null) {
+                $firstRecord = $data->first();
+                if ($firstRecord) {
+                    $active_id = $firstRecord->id;
+                    $selectedReimbursement = $firstRecord;
+                }
+            } else {
+                $selectedReimbursement = SysCrmReimbursement::find($active_id);
+            }
+            
+            $staff = null;
+            if ($selectedReimbursement) {
+                $staff = \App\SmStaff::where('user_id', $selectedReimbursement->created_by)->first();
+            }
+            
+            return view('backEnd.amc.reimbursement_track', compact('data', 'active_id', 'selectedReimbursement', 'staff', 'ctrl_reimbursement_no', 'ctrl_vendor_name', 'ctrl_from_date', 'ctrl_to_date'));
+        } catch (\Exception $e) {
+            return $e;
+        }
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $company_id = session('logged_session_data.company_id');
+            $query = SysCrmReimbursement::where('status', '!=', 2);
+            if ($company_id != 1) {
+                $query->where('company_id', $company_id);
+            }
+
+            if ($request->has('query')) {
+                $search = $request->input('query');
+                $query->where(function ($q) use ($search) {
+                    $q->where('reimbursement_no', 'LIKE', "%{$search}%")
+                        ->orWhere('vendor_name', 'LIKE', "%{$search}%");
+                });
+            }
+
+            $data = $query->orderBy('id', 'desc')->get();
+
+            $formatted_data = $data->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'reimbursement_no' => $item->reimbursement_no,
+                    'customer_name' => $item->deal_code->customername->name ?? '',
+                    'date' => $item->date,
+                    'amount' => $item->amount,
+                    'currency_code' => $item->currencycode->code ?? ''
+                ];
+            });
+
+            return response()->json($formatted_data);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getDetails($id)
+    {
+        try {
+            $selectedReimbursement = SysCrmReimbursement::find($id);
+            if (!$selectedReimbursement) {
+                return response()->json(['error' => 'Not found'], 404);
+            }
+            $staff = \App\SmStaff::where('user_id', $selectedReimbursement->created_by)->first();
+
+            return view('backEnd.amc.reimbursement_track_detail', compact('selectedReimbursement', 'staff'))->render();
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
 }
