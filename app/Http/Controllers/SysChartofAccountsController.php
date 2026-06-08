@@ -1774,8 +1774,8 @@ class SysChartofAccountsController extends Controller
             $invoice = SysChartofAccountsTransaction::where('company_id', $com_id)->where('account_id', $id)->where('transaction_type', 'opbinvoice')->get();
 
 
-            $receiptAdjustments = SysReceiptAdjustments::where('bi_doc_no', $invoice->pluck('transaction_no'))->where('status', 1)->get();
-            $returnAdjustments = SysSalesReturnAdjestment::where('siv_no', $invoice->pluck('transaction_no'))->where('status', 1)->get();
+            $receiptAdjustments = SysReceiptAdjustments::whereIn('bi_doc_no', $invoice->pluck('transaction_no'))->where('status', 1)->get();
+            $returnAdjustments = SysSalesReturnAdjestment::whereIn('siv_no', $invoice->pluck('transaction_no'))->where('status', 1)->get();
 
 
             return view('backEnd.chart-of-accounts.chartofaccountsopeningbalance_edit', compact('account', 'invoice', 'account_edit', 'receiptAdjustments', 'returnAdjustments'));
@@ -1932,8 +1932,15 @@ class SysChartofAccountsController extends Controller
                     $accounts->transaction_no = $dt->invoice_no;
                     $accounts->transaction_date = $dt->invoice_date;
                     $accounts->transaction_type = 'opbinvoice';
-                    $accounts->debit_amount = $dt->debit_amount;
-                    $accounts->credit_amount = $dt->credit_amount;
+                    // $accounts->debit_amount = $dt->debit_amount;
+                    // $accounts->credit_amount = $dt->credit_amount;
+
+                    $import_debit = isset($dt->debit_amount) && $dt->debit_amount != '' ? str_replace(',', '', $dt->debit_amount) : 0;
+                    $import_credit = isset($dt->credit_amount) && $dt->credit_amount != '' ? str_replace(',', '', $dt->credit_amount) : 0;
+
+                    $accounts->debit_amount = $import_debit !== '' ? $import_debit : 0;
+                    $accounts->credit_amount = $import_credit !== '' ? $import_credit : 0;
+
                     $accounts->remarks = 'Invoice Opening Balance';
                     $accounts->status = 1;
                     $accounts->plan = 0;
@@ -2014,12 +2021,17 @@ class SysChartofAccountsController extends Controller
     public function chartofaccounts_invoice_update(Request $request)
     {
         try {
+            $debit_amount = str_replace(',', '', $request->debit_amount);
+            $credit_amount = str_replace(',', '', $request->credit_amount);
+            $debit_amount = (isset($debit_amount) && $debit_amount !== '') ? $debit_amount : 0;
+            $credit_amount = (isset($credit_amount) && $credit_amount !== '') ? $credit_amount : 0;
+
             SysChartofAccountsTransaction::where('id', $request->id)->update([
                 'transaction_date' => Carbon::createFromFormat('d/m/Y', $request->invoice_date)
                     ->format('Y-m-d'),
                 'transaction_no' => $request->invoice_no,
-                'debit_amount' => $request->debit_amount,
-                'credit_amount' => $request->credit_amount,
+                'debit_amount' => $debit_amount,
+                'credit_amount' => $credit_amount,
             ]);
 
             $retData = SysChartofAccountsTransaction::where('account_id', $request->account_id)->where('transaction_type', 'opbinvoice')->get();
@@ -2035,6 +2047,52 @@ class SysChartofAccountsController extends Controller
         } else {
             $retData = 'ERROR';
             return json_encode(array('data' => $retData));
+        }
+    }
+    public function chartofaccounts_invoice_store(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $debit_amount = str_replace(',', '', $request->debit_amount);
+            $credit_amount = str_replace(',', '', $request->credit_amount);
+            $debit_amount = (isset($debit_amount) && $debit_amount !== '') ? $debit_amount : 0;
+            $credit_amount = (isset($credit_amount) && $credit_amount !== '') ? $credit_amount : 0;
+
+            $accounts = new SysChartofAccountsTransaction();
+            $accounts->account_id = $request->account_id;
+            $accounts->transaction_id = $request->account_id;
+            $accounts->transaction_no = $request->invoice_no;
+            $accounts->transaction_date = Carbon::createFromFormat('d/m/Y', $request->invoice_date)->format('Y-m-d');
+            $accounts->transaction_type = 'opbinvoice';
+            $accounts->debit_amount = $debit_amount;
+            $accounts->credit_amount = $credit_amount;
+            $accounts->remarks = 'Invoice Opening Balance';
+            $accounts->status = 1;
+            $accounts->plan = 0;
+            $accounts->created_by = Auth::user()->id;
+            $accounts->created_at = Carbon::now('+04:00');
+            $accounts->company_id = session('logged_session_data.company_id');
+            $accounts->transaction_ref = "";
+            $accounts->entry_no = 1;
+            $accounts->save();
+
+            DB::table('sys_chartofaccounts_transaction_invoice_detail')->insert([
+                'trn_id' => $accounts->id,
+                'account_id' => $accounts->account_id,
+                'transaction_no' => $accounts->transaction_no,
+            ]);
+
+            DB::commit();
+            $bug = 0;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return $e;
+            $bug = 1;
+        }
+        if ($bug == 0) {
+            return json_encode(array('data' => 'OK'));
+        } else {
+            return json_encode(array('data' => 'ERROR'));
         }
     }
 
