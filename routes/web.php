@@ -1331,6 +1331,7 @@ Route::get('/industry', 'SmIndustryController@index');
 
         Route::post('chartofaccounts-invoice-delete', ['as' => 'chartofaccounts-invoice-delete', 'uses' => 'SysChartofAccountsController@chartofaccounts_invoice_delete']);
         Route::post('chartofaccounts-invoice-update', ['as' => 'chartofaccounts-invoice-update', 'uses' => 'SysChartofAccountsController@chartofaccounts_invoice_update']);
+        Route::post('chartofaccounts-invoice-store', ['as' => 'chartofaccounts-invoice-store', 'uses' => 'SysChartofAccountsController@chartofaccounts_invoice_store']);
 
 
 
