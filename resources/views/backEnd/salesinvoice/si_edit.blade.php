@@ -1419,6 +1419,23 @@
     }
 </script>
 <script>
+    function fn_payment_terms() {
+        var val_payment_terms = $('#payment_terms').val();
+        if (val_payment_terms == 22) {
+            $('#div_payment_terms').css('display', 'block');
+            $('#payment_terms2').prop('required', true);
+        } else {
+            $('#div_payment_terms').css('display', 'none');
+            $('#payment_terms2').prop('required', false);
+        }
+    }
+
+    $(document).ready(function () {
+        $('#payment_terms').on('change', fn_payment_terms);
+        fn_payment_terms();
+    });
+</script>
+<script>
     $(document).on('focus', 'select[name="part_number[]"]', function () {
         const $select = $(this);
 
@@ -1428,7 +1445,10 @@
             //$select.remove('select2-hidden-accessible');
 
             // Initialize Select2
-            initAccountSelect2(this); // your existing function
+            if (typeof window.initProductSelect2 === 'function') {
+                window.initProductSelect2(this);
+                $select.select2('open');
+            }
         }
     });
 
@@ -1605,6 +1625,7 @@
 
         }
 
+        window.initProductSelect2 = initAccountSelect2;
         initAccountSelect2('.js-product-select');
 
         // Re-initialize on focus if needed
@@ -1699,7 +1720,7 @@
                             alert("Customer Information is incompleated! Please Update Customer.");
                             $('#btnSubmit').css('display', 'none');
                         } else { $('#btnSubmit').css('display', ''); }
-                        $('#payment_terms').val(dataResult['data'][i].payment_terms);
+                        $('#payment_terms').val(dataResult['data'][i].payment_terms).trigger('change');
                         $('#shipping_supplier').val(dataResult['data'][i].account_id).trigger('change');
 
                         // $('#shipping_name').val(dataResult['data'][i].contcat_person);
@@ -1717,7 +1738,7 @@
                     }
                 }
                 else {
-                    $('#payment_terms').val('');
+                    $('#payment_terms').val('').trigger('change');
                     $('#shipping_name').val('');
                     $('#shipping_address').val('');
                     $('#customer_type').val('');
@@ -2109,12 +2130,13 @@
 <!-- Modal Adjustment-->
 <script>
     function set_adjust(amt, id) {
-        let maxAdjustable = parseFloat($("input[name='adj_siv_amount_actual']").val());
+        let actualVal = $("input[name='adj_siv_amount_actual']").val() || "0";
+        let maxAdjustable = parseFloat(actualVal.toString().replace(/,/g, '')) || 0;
         let currentAdjusted = 0;
 
         // Sum up all currently adjusted values
         $("input[id^='set_amt_']").each(function () {
-            let val = parseFloat($(this).val());
+            let val = parseFloat($(this).val().toString().replace(/,/g, ''));
             if (!isNaN(val)) {
                 currentAdjusted += val;
             }
@@ -2128,7 +2150,7 @@
         }
 
         // Check how much is available for this line
-        let adjustAmount = parseFloat(amt);
+        let adjustAmount = parseFloat(amt.toString().replace(/,/g, '')) || 0;
         if (adjustAmount > remaining) {
             adjustAmount = remaining;
         }

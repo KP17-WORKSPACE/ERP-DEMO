@@ -192,7 +192,7 @@
                                 <label class="form-label">@lang('Payment Terms')<span>*</span></label>
                                 <div class="form-group">
                                     <select class="form-control js-example-basic-single" name="payment_terms"
-                                        id="payment_terms" required>
+                                        id="payment_terms" onchange="fn_payment_terms()" required>
                                         <option value=""></option>
                                         @foreach($paymentterms as $value)
                                             <option value="{{@$value->id}}" {{isset($edit) ? !empty(@$edit->payment_terms) ? @$edit->payment_terms == @$value->id ? 'selected' : '' : '' : ''}}
@@ -1273,6 +1273,23 @@
     update_totals();
 </script>
 <script>
+    function fn_payment_terms() {
+        var val_payment_terms = $('#payment_terms').val();
+        if (val_payment_terms == 22) {
+            $('#div_payment_terms').css('display', 'block');
+            $('#payment_terms2').prop('required', true);
+        } else {
+            $('#div_payment_terms').css('display', 'none');
+            $('#payment_terms2').prop('required', false);
+        }
+    }
+
+    $(document).ready(function () {
+        $('#payment_terms').on('change', fn_payment_terms);
+        fn_payment_terms();
+    });
+</script>
+<script>
 
     $(document).on('focus', 'select[name="part_number[]"]', function () {
         const $select = $(this);
@@ -1283,7 +1300,10 @@
             //$select.remove('select2-hidden-accessible');
 
             // Initialize Select2
-            initAccountSelect2(this); // your existing function
+            if (typeof window.initProductSelect2 === 'function') {
+                window.initProductSelect2(this);
+                $select.select2('open');
+            }
         }
     });
 
@@ -1475,6 +1495,7 @@
 
         }
 
+        window.initProductSelect2 = initAccountSelect2;
         initAccountSelect2('.js-product-select');
 
         // Re-initialize on focus if needed
@@ -1589,7 +1610,7 @@
                     }
                 }
                 else {
-                    $('#payment_terms').val('');
+                    $('#payment_terms').val('').trigger('change');
                     $('#shipping_name').val('');
                     $('#shipping_address').val('');
                     $('#customer_type').val('');
@@ -1890,8 +1911,17 @@
     function get_adjustments() {
         $("#loading_bg").css("display", "block");
 
-        $('#adj_siv_amount_actual').val($("input[name='totalamount[]']").val());
-        $('#adj_cus_id').val($('#customer').val());
+        var customerId = $('#customer').val();
+        if (!customerId) {
+            try {
+                customerId = $('#customer').select2('val');
+            } catch (e) {
+                customerId = '';
+            }
+        }
+
+        $('#adj_siv_amount_actual').val($('#lbl_total_totalamount').text() || $("input[name='totalamount[]']").val() || '0');
+        $('#adj_cus_id').val(customerId);
 
         var action = "{{ URL::to('sales-invoice-get-adjustment') }}";
         $.ajax({
@@ -1899,18 +1929,24 @@
             type: "POST",
             data: {
                 _token: '{{ csrf_token() }}',
-                customer: $("#customer").val(),
+                customer: customerId,
             },
             cache: false,
             success: function (dataResult) {
                 var data = JSON.parse(dataResult);
+                var getSelectedRows = "";
+                var getSelectedRows2 = "";
+                var decimalPoint = @json(session('logged_session_data.decimal_point'));
+                var dp = (decimalPoint !== null && decimalPoint !== undefined) ? decimalPoint : 2;
+
                 // Handle 'unadjusted'
                 if (data.unadjusted && data.unadjusted.length > 0) {
-                    var getSelectedRows = "";
                     for (var i = 0; i < data.unadjusted.length; i++) {
-                        var a = (data.unadjusted[i].amount - data.unadjusted[i].adj_amount).toFixed(@json(session('logged_session_data.decimal_point'))).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                        var a = (data.unadjusted[i].amount - data.unadjusted[i].adj_amount).toFixed(dp).replace(/\d(?=(\d{3})+\.)/g, '$&,');
                         getSelectedRows += "<tr>\
-                                         <td class='border'>"+ data.unadjusted[i].doc_date + "</td>\
+                                         <td class='border'>"+ (data.unadjusted[i].doc_date 
+    ? data.unadjusted[i].doc_date.split('-').reverse().join('/') 
+    : '') + "</td>\
                                          <td class='border'>"+ data.unadjusted[i].doc_number + "</td>\
                                          <td class='border'>"+ data.unadjusted[i].account_name + "</td>\
                                         <td class='border text-right'>"+ a + "</td>\
@@ -1925,16 +1961,17 @@
 
                 // Handle 'unadjusted_pdc'
                 if (data.unadjusted_pdc && data.unadjusted_pdc.length > 0) {
-                    var getSelectedRows2 = "";
                     for (var j = 0; j < data.unadjusted_pdc.length; j++) {
                         getSelectedRows2 += "<tr>\
-                                         <td class='border'>"+ data.unadjusted_pdc[i].doc_date + "</td>\
-                                         <td class='border'>"+ data.unadjusted_pdc[i].doc_number + "</td>\
-                                         <td class='border'>"+ data.unadjusted_pdc[i].account_name + "</td>\
-                                        <td class='border text-right'>"+ (data.unadjusted_pdc[i].amount - data.unadjusted_pdc[i].adj_amount) + "</td>\
-                                        <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+ data.unadjusted_pdc[i].doc_number + "' class='form-control text-right' value='" + data.unadjusted_pdc[i].adj_amount + "' onclick=\"set_adjust('" + (data.unadjusted_pdc[i].amount - data.unadjusted_pdc[i].adj_amount) + "','" + data.unadjusted[i].doc_number + "')\" />\
-                                            <input type='hidden' name='receiptno[]' value='"+ data.unadjusted_pdc[i].doc_number + "'/>\
-                                            <input type='hidden' name='set_amt_act[]' value='"+ (data.unadjusted_pdc[i].amount - data.unadjusted_pdc[i].adj_amount) + "'/>\
+                                        <td class='border'>"+ (data.unadjusted_pdc[j].doc_date 
+    ? data.unadjusted_pdc[j].doc_date.split('-').reverse().join('/') 
+    : '') + "</td>\
+                                         <td class='border'>"+ data.unadjusted_pdc[j].doc_number + "</td>\
+                                         <td class='border'>"+ data.unadjusted_pdc[j].account_name + "</td>\
+                                        <td class='border text-right'>"+ (data.unadjusted_pdc[j].amount - data.unadjusted_pdc[j].adj_amount) + "</td>\
+                                        <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+ data.unadjusted_pdc[j].doc_number + "' class='form-control text-right' value='" + data.unadjusted_pdc[j].adj_amount + "' onclick=\"set_adjust('" + (data.unadjusted_pdc[j].amount - data.unadjusted_pdc[j].adj_amount) + "','" + data.unadjusted_pdc[j].doc_number + "')\" />\
+                                            <input type='hidden' name='receiptno[]' value='"+ data.unadjusted_pdc[j].doc_number + "'/>\
+                                            <input type='hidden' name='set_amt_act[]' value='"+ (data.unadjusted_pdc[j].amount - data.unadjusted_pdc[j].adj_amount) + "'/>\
                                         </td>\
                                         </tr>";
                     }
@@ -2072,12 +2109,13 @@
 </div>
 <script>
     function set_adjust(amt, id) {
-        let maxAdjustable = parseFloat($("input[name='adj_siv_amount_actual']").val());
+        let actualVal = $("input[name='adj_siv_amount_actual']").val() || "0";
+        let maxAdjustable = parseFloat(actualVal.toString().replace(/,/g, '')) || 0;
         let currentAdjusted = 0;
 
         // Sum up all currently adjusted values
         $("input[id^='set_amt_']").each(function () {
-            let val = parseFloat($(this).val());
+            let val = parseFloat($(this).val().toString().replace(/,/g, ''));
             if (!isNaN(val)) {
                 currentAdjusted += val;
             }
@@ -2091,7 +2129,7 @@
         }
 
         // Check how much is available for this line
-        let adjustAmount = parseFloat(amt);
+        let adjustAmount = parseFloat(amt.toString().replace(/,/g, '')) || 0;
         if (adjustAmount > remaining) {
             adjustAmount = remaining;
         }
