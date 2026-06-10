@@ -1191,7 +1191,10 @@ class SysReceiptController extends Controller
     {
         try {
             DB::table('sys_receipt_adjustments')->where('id', $request->id)->delete();
-            $ret = SysReceiptAdjustments::where('bi_doc_number', $request->doc_number)->where('status', 1)->get();
+            $ret = SysReceiptAdjustments::where(function ($q) use ($request) {
+                $q->where('bi_doc_number', $request->doc_number)
+                  ->orWhere('bi_doc_no', $request->doc_number);
+            })->where('status', 1)->get();
             if (count($ret) > 0) {
                 return json_encode(array('data' => $ret));
             } else {
