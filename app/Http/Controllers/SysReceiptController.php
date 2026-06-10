@@ -579,6 +579,7 @@ class SysReceiptController extends Controller
 
                 $re->cheque_number = $request->cheque_number;
                 $re->cheque_bank_name = $request->cheque_bank_name;
+                $re->pdc_removed_os = ((int) $request->mode === 2 && (int) $request->receipt_through === 3) ? 1 : null;
                 $re->currency = $request->currency;
                 $re->receipt_date = Carbon::createFromFormat('d/m/Y', $request->receipt_date)->format('Y-m-d');
                 $re->narration = $request->narration;
@@ -1032,10 +1033,13 @@ class SysReceiptController extends Controller
             $re->cheque_number = $request->cheque_number;
             $re->cheque_bank_name = $request->cheque_bank_name;
             $re->currency = $request->currency;
-            if ($re->receipt_date != Carbon::createFromFormat('d/m/Y', $request->receipt_date)->format('Y-m-d')) {
+            $isPdcReceipt = ((int) $request->mode === 2 && (int) $request->receipt_through === 3);
+            $re->pdc_removed_os = $isPdcReceipt ? 1 : null;
+            $normalizedReceiptDate = Carbon::createFromFormat('d/m/Y', $request->receipt_date)->format('Y-m-d');
+            if ($isPdcReceipt && $re->receipt_date != $normalizedReceiptDate) {
                 $re->pdc_removed_os = 1;
             }
-            $re->receipt_date = Carbon::createFromFormat('d/m/Y', $request->receipt_date)->format('Y-m-d');
+            $re->receipt_date = $normalizedReceiptDate;
             $re->narration = $request->narration;
             $re->status = 1;
             $re->updated_by = Auth::user()->id;
