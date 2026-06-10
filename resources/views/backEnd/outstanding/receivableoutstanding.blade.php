@@ -1371,6 +1371,7 @@ function check_total(id, amount) {
 
                   <?php $unadj_list_jv_to_jv = !empty($list_of_unadjusted_jv_to_jv) ? $list_of_unadjusted_jv_to_jv->where('account_id',$aname->id) : []; ?>
                   @php
+                      $accountUnadjustedBalanceTotal = 0;
                       $unadj_list = collect($unadj_list)
                           ->filter(function ($row) {
                               $remaining = (float) ($row->amount ?? 0) - (float) ($row->adj_amount ?? 0);
@@ -1474,13 +1475,14 @@ function check_total(id, amount) {
                             <th class="text-center" style="width:5.5%">Deal ID</th>
                             <th class="text-center" style="width:6%">Doc Date</th>
                             <th class="text-center" style="width:6.5%">Receipt No</th>
-                            <th class="text-end" style="width:9.5%">Amount</th>
-                            <th class="text-end" style="width:5%">Adjusted</th>
+                            <th class="text-end" style="width:8.5%">Amount</th>
+                            <th class="text-end" style="width:7%">Adjusted</th>
+                            <th class="text-end" style="width:8.5%">Balance</th>
                             <th class="text-center" style="width:8%">Cheque Date</th>
-                            <th class="text-center" style="width:9%">Cheque No</th>
+                            <th class="text-center" style="width:8.5%">Cheque No</th>
                             <th class="text-center" style="width:8%">Receipt Date</th>
-                            <th class="text-center" style="width:11%">Invoice Adjusted</th>
-                            <th class="text-start" style="width:24%">Remarks</th>
+                            <th class="text-center" style="width:10%">Invoice Adjusted</th>
+                            <th class="text-start" style="width:22%">Remarks</th>
                             <th class="text-center" style="width:2%"></th>
                         </tr>
                     </thead>
@@ -1496,8 +1498,9 @@ function check_total(id, amount) {
                                $deal_id = @App\SysReceipt::where('doc_number',$p->doc_number)->pluck('deal_id')->first();
                             }
                             $pdcSign = ((float)($p->credit_amount ?? 0) > (float)($p->debit_amount ?? 0)) ? -1 : 1;
-                            $pdcOutstandingSigned = $pdcSign * abs((float)($p->amount ?? 0) - (float)($p->adj_amount ?? 0));
+                            $pdcAmountSigned = $pdcSign * abs((float)($p->amount ?? 0));
                             $pdcAdjustedSigned = $pdcSign * abs((float)($p->adj_amount ?? 0));
+                            $pdcBalanceSigned = $pdcAmountSigned - $pdcAdjustedSigned;
                             $pdcStatusFlag = ((float)($p->adj_amount ?? 0) > 0) ? 3 : 2;
                         @endphp
                         <tr id="row_pdc_received_{{ $p->doc_number }}">
@@ -1510,8 +1513,9 @@ function check_total(id, amount) {
                             </td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
                             <td class="text-center"><a href="{{url('get-url-receipt/' . $p->doc_number)}}" target="_blank">{{ $p->doc_number }}</a></td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcOutstandingSigned,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcAmountSigned,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcAdjustedSigned,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcBalanceSigned,2,'.',',') }}</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->cheque_date)) }}</td>
                             <td class="text-center">{{ $p->cheque_number }}</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->receipt_date)) }}</td>
@@ -1529,7 +1533,7 @@ function check_total(id, amount) {
                         @if(!empty($p->bi_doc_no))
                         <tr style="display: none;" id="row_det_{{ $p->doc_number }}">
                             <td></td>
-                            <td colspan="9">
+                            <td colspan="11">
                                     <table class="table" style="border: solid 1px #e3e6f0; width:auto; width:100%;" id="row_det_table_{{ $p->doc_number }}">
                                         <thead>
                                             <tr>
@@ -1554,12 +1558,13 @@ function check_total(id, amount) {
                         $pdcCount = count($pdcRows);
                         $pdcSumAmount = collect($pdcRows)->sum(function ($row) {
                             $sign = ((float)($row->credit_amount ?? 0) > (float)($row->debit_amount ?? 0)) ? -1 : 1;
-                            return $sign * abs((float)($row->amount ?? 0) - (float)($row->adj_amount ?? 0));
+                            return $sign * abs((float)($row->amount ?? 0));
                         });
                         $pdcSumAdjusted = collect($pdcRows)->sum(function ($row) {
                             $sign = ((float)($row->credit_amount ?? 0) > (float)($row->debit_amount ?? 0)) ? -1 : 1;
                             return $sign * abs((float)($row->adj_amount ?? 0));
                         });
+                        $pdcSumBalance = $pdcSumAmount - $pdcSumAdjusted;
                     
                         @endphp
                         <tr class="">
@@ -1568,6 +1573,7 @@ function check_total(id, amount) {
                             <td class=""></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumAmount,2,'.',',') }}</b></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumAdjusted,2,'.',',') }}</b></td>
+                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumBalance,2,'.',',') }}</b></td>
                             <td class=""></td>
                             <td class=""></td>
                             <td class=""></td>
@@ -1591,13 +1597,14 @@ function check_total(id, amount) {
                             <th class="text-center" style="width:6%">Deal ID</th>
                             <th class="text-center" style="width:6%">Doc Date</th>
                             <th class="text-center" style="width:7%">Receipt No</th>
-                            <th class="text-end" style="width:11%">Amount</th>
+                            <th class="text-end" style="width:10%">Amount</th>
                             <th class="text-end" style="width:9%">Adjustment</th>
-                            <th class="text-start" style="width:64%">Remarks</th>
+                            <th class="text-end" style="width:10%">Balance</th>
+                            <th class="text-start" style="width:54%">Remarks</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @php $unadjSum = 0; $unadjAdjustedSum = 0; @endphp
+                        @php $unadjAmountSum = 0; $unadjSum = 0; $unadjAdjustedSum = 0; @endphp
                         @if (count($unadj_list)>0)
                         @foreach ($unadj_list as $p)
                           @php
@@ -1656,19 +1663,22 @@ function check_total(id, amount) {
                                 </td>
                             @endif
                             @php
+                                $unadjustedAmount = (float)($p->amount ?? 0);
                                 $unadjustedAdjustment = (float)($p->adj_amount ?? 0);
-                                $unadjustedBalance = (float)($p->amount ?? 0) - $unadjustedAdjustment;
                                 $isReceivableOpeningDebit = ($p->transaction_type ?? '') === 'openingbalance'
                                     && preg_match('/^OPB-\d+$/', (string) ($p->doc_number ?? ''))
                                     && (float) ($p->amount ?? 0) > 0
                                     && (float) ($p->debit_amount ?? 0) > (float) ($p->credit_amount ?? 0);
                                 if (!$isReceivableOpeningDebit && (float)($p->credit_amount ?? 0) > (float)($p->debit_amount ?? 0)) {
-                                    $unadjustedBalance = -abs($unadjustedBalance);
+                                    $unadjustedAmount = -abs($unadjustedAmount);
+                                    $unadjustedAdjustment = -abs($unadjustedAdjustment);
                                 }
+                                $unadjustedBalance = $unadjustedAmount - $unadjustedAdjustment;
                             @endphp
-                            @php $unadjSum += $unadjustedBalance; $unadjAdjustedSum += $unadjustedAdjustment; @endphp
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalance,2,'.',',') }}</td>
+                            @php $unadjAmountSum += $unadjustedAmount; $unadjSum += $unadjustedBalance; $unadjAdjustedSum += $unadjustedAdjustment; @endphp
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAmount,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustment,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalance,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
                                 @if($isReceivableOpeningDebit)
@@ -1700,11 +1710,13 @@ function check_total(id, amount) {
                                     {{ $docNumber }}
                                 </td>
                             @endif
+                            @php $unadjustedAmountJv = (float)($p->amount ?? 0); @endphp
                             @php $unadjustedAdjustmentJv = (float)($p->amount2 ?? 0) + (float)($p->adj_amount ?? 0); @endphp
-                            @php $unadjustedBalanceJv = (float)($p->amount ?? 0) - $unadjustedAdjustmentJv; @endphp
-                            @php $unadjSum += $unadjustedBalanceJv; $unadjAdjustedSum += $unadjustedAdjustmentJv; @endphp
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalanceJv,2,'.',',') }}</td>
+                            @php $unadjustedBalanceJv = $unadjustedAmountJv - $unadjustedAdjustmentJv; @endphp
+                            @php $unadjAmountSum += $unadjustedAmountJv; $unadjSum += $unadjustedBalanceJv; $unadjAdjustedSum += $unadjustedAdjustmentJv; @endphp
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAmountJv,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustmentJv,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalanceJv,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
                                 set_total_lessmore({{ $aname->id }},{{ $unadjustedBalanceJv }})
@@ -1713,12 +1725,12 @@ function check_total(id, amount) {
                         @endforeach
                         @endif                       
 
+                        @php $accountUnadjustedBalanceTotal = $unadjSum; @endphp
                         <tr class="">
-                            <td class="text-center font-weight-bold"></td>
-                            <td class=""></td>
-                            <td class=""></td>
-                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjSum,2,'.',',') }}</b></td>
+                            <td colspan="3" class="text-end font-weight-bold"><b>Total</b></td>
+                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAmountSum,2,'.',',') }}</b></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAdjustedSum,2,'.',',') }}</b></td>
+                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjSum,2,'.',',') }}</b></td>
                             <td class=""></td>
                         </tr>
 
@@ -1751,7 +1763,10 @@ function check_total(id, amount) {
                   </table>
                   @endif -->
 
-                 
+                  <script>
+                      set_total({{ $aname->id }}, @json((float) ($grand_balance + $accountUnadjustedBalanceTotal)));
+                  </script>
+
 
                 </div>
                 
