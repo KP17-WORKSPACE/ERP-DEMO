@@ -43,6 +43,18 @@
     .popover .popover-arrow::after {
         border-top-color: #000 !important;
     }
+    .form-item-table .select2-container--default .select2-selection--single {
+        border: 0 !important;
+        background: transparent !important;
+        height: auto !important;
+    }
+    .form-item-table .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: inherit !important;
+        padding-left: 4px !important;
+    }
+    .form-item-table .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 100% !important;
+    }
 </style>
 
 
@@ -64,6 +76,7 @@
                                 <tr>
                                     <th class="text-center" style="width:150px">Invoice No</th>
                                     <th class="text-center" style="width:150px">Invoice Date</th>
+                                    <th class="text-center" style="width:180px">Payment Terms</th>
                                     <th class="text-end" style="width:150px">Debit Amount</th>
                                     <th class="text-end" style="width:150px">Credit Amount</th>
                                     <th class="text-center" style="width:150px">Action
@@ -91,6 +104,14 @@
                                                 class="form-control  table-input date-picker-2 p-0"
                                                 id="invoice_date_{{ $list->id }}"
                                                 value="{{ \Carbon\Carbon::parse($list->transaction_date)->format('d/m/Y') }}" />
+                                        </td>
+                                        <td class="text-center">
+                                            <select class="form-control select2-popup p-0 border-0" id="payment_terms_{{ $list->id }}">
+                                                <option value="">-Select-</option>
+                                                @foreach($payment_terms as $term)
+                                                    <option value="{{ $term->id }}" @if((string)$list->payment_terms == (string)$term->id) selected @endif>{{ $term->title }}</option>
+                                                @endforeach
+                                            </select>
                                         </td>
                                         <td class="text-center"><input type="text"
                                                 class="form-control table-input text-end p-0"
@@ -128,7 +149,7 @@
                                     </tr>
                                     
                                 @endforeach
-                                <tr><td colspan="5" style="height:18px"></td></tr>
+                                <tr><td colspan="6" style="height:18px"></td></tr>
                             </tbody>
                             <tfoot>
                                 @php
@@ -137,7 +158,7 @@
                                 @endphp
                                 <thead>
                                     <th class="text-center">Invoices: {{ $i }}</th>
-                                    <th colspan="" class="text-end">Total </th>
+                                    <th colspan="2" class="text-end">Total </th>
                                     <th class="text-end font-weight-bold">
                                         &nbsp; {{ @App\SysHelper::com_curr_format($d, 2, '.', ',') }}</th>
                                     <th class="text-end font-weight-bold">
@@ -145,7 +166,7 @@
                                     <th></th>
                                 </thead>
                                 <thead>
-                                    <td colspan="2" class="text-end"><span class="font-weight-600">Opening Balance</span> </td>
+                                    <td colspan="3" class="text-end"><span class="font-weight-600">Opening Balance</span> </td>
                            
                                     @if ($d > $c)
                                         <td class="text-end font-weight-bold">
@@ -242,6 +263,10 @@
     function add_invoice_row(accountId) {
         newRowCounter++;
         let rowId = 'new_' + newRowCounter;
+        let paymentTermsOptions = '<option value="">-Select-</option>';
+        @foreach($payment_terms as $term)
+            paymentTermsOptions += '<option value="{{ $term->id }}">{{ $term->title }}</option>';
+        @endforeach
         let html = `
             <tr id="row_${rowId}">
                 <td class="text-center">
@@ -249,6 +274,11 @@
                 </td>
                 <td class="text-center">
                     <input type="text" class="form-control table-input date-picker-2 p-0" id="invoice_date_${rowId}" value="" placeholder="Date" />
+                </td>
+                <td class="text-center">
+                    <select class="form-control select2-popup p-0 border-0" id="payment_terms_${rowId}">
+                        ${paymentTermsOptions}
+                    </select>
                 </td>
                 <td class="text-center">
                     <input type="text" class="form-control table-input text-end p-0" id="debit_amount_${rowId}" value="0.00" />
@@ -273,6 +303,9 @@
             dateFormat: "d/m/Y",
             allowInput: true
         });
+        $('#payment_terms_' + rowId).select2({
+            dropdownParent: $('#invoiceModal')
+        });
     }
 
     function save_new_invoice(rowId, accountId) {
@@ -280,6 +313,7 @@
         var invoice_date = $('#invoice_date_' + rowId).val();
         var debit_amount = $('#debit_amount_' + rowId).val();
         var credit_amount = $('#credit_amount_' + rowId).val();
+        var payment_terms = $('#payment_terms_' + rowId).val();
         if (!invoice_no || !invoice_date) {
             toastr.error("Please fill Invoice No and Invoice Date!");
             return;
@@ -296,6 +330,7 @@
                 debit_amount: debit_amount,
                 credit_amount: credit_amount,
                 account_id: accountId,
+                payment_terms: payment_terms,
             },
             cache: false,
             success: function(dataResult) {
@@ -320,6 +355,7 @@
         var debit_amount = $('#debit_amount_' + id).val();
         var credit_amount = $('#credit_amount_' + id).val();
         var account_id = $('#account_id_' + id).val();
+        var payment_terms = $('#payment_terms_' + id).val();
         var action = "{{ URL::to('chartofaccounts-invoice-update') }}";
         $.ajax({
             url: action,
@@ -332,6 +368,7 @@
                 debit_amount: debit_amount,
                 credit_amount: credit_amount,
                 account_id: account_id,
+                payment_terms: payment_terms,
             },
             cache: false,
             success: function(dataResult) {
@@ -400,6 +437,9 @@
     });
 
    $(document).ready(function() {
+       $('.select2-popup').select2({
+           dropdownParent: $('#invoiceModal')
+       });
 
    // Initialize Bootstrap popovers
     var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
