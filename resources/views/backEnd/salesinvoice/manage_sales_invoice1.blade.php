@@ -1648,11 +1648,15 @@ function srlno_add_item(){
                         cache: false,
                         success: function(dataResult) {
                             var data = JSON.parse(dataResult);
+                            var getSelectedRows = "";
+                            var getSelectedRows2 = "";
+                            var decimalPoint = @json(session('logged_session_data.decimal_point'));
+                            var dp = (decimalPoint !== null && decimalPoint !== undefined) ? decimalPoint : 2;
+
                             // Handle 'unadjusted'
                             if (data.unadjusted && data.unadjusted.length > 0) {
-                            var getSelectedRows="";
                                 for (var i = 0; i < data.unadjusted.length; i++) {
-                                    var a= (data.unadjusted[i].amount-data.unadjusted[i].adj_amount).toFixed(@json(session('logged_session_data.decimal_point'))).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                                    var a= (data.unadjusted[i].amount-data.unadjusted[i].adj_amount).toFixed(dp).replace(/\d(?=(\d{3})+\.)/g, '$&,');
                                     getSelectedRows +="<tr>\
                                          <td class='border'>"+data.unadjusted[i].doc_date+"</td>\
                                          <td class='border'>"+data.unadjusted[i].doc_number+"</td>\
@@ -1669,16 +1673,15 @@ function srlno_add_item(){
 
                             // Handle 'unadjusted_pdc'
                             if (data.unadjusted_pdc && data.unadjusted_pdc.length > 0) {
-                            var getSelectedRows2="";
                                 for (var j = 0; j < data.unadjusted_pdc.length; j++) {
                                     getSelectedRows2 +="<tr>\
-                                         <td class='border'>"+data.unadjusted_pdc[i].doc_date+"</td>\
-                                         <td class='border'>"+data.unadjusted_pdc[i].doc_number+"</td>\
-                                         <td class='border'>"+data.unadjusted_pdc[i].account_name+"</td>\
-                                        <td class='border text-right'>"+(data.unadjusted_pdc[i].amount-data.unadjusted_pdc[i].adj_amount)+"</td>\
-                                        <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+data.unadjusted_pdc[i].doc_number+"' class='form-control text-right' value='"+data.unadjusted_pdc[i].adj_amount+"' onclick=\"set_adjust('"+(data.unadjusted_pdc[i].amount-data.unadjusted_pdc[i].adj_amount)+"','"+data.unadjusted[i].doc_number+"')\" />\
-                                            <input type='hidden' name='receiptno[]' value='"+data.unadjusted_pdc[i].doc_number+"'/>\
-                                            <input type='hidden' name='set_amt_act[]' value='"+(data.unadjusted_pdc[i].amount-data.unadjusted_pdc[i].adj_amount)+"'/>\
+                                         <td class='border'>"+data.unadjusted_pdc[j].doc_date+"</td>\
+                                         <td class='border'>"+data.unadjusted_pdc[j].doc_number+"</td>\
+                                         <td class='border'>"+data.unadjusted_pdc[j].account_name+"</td>\
+                                        <td class='border text-right'>"+(data.unadjusted_pdc[j].amount-data.unadjusted_pdc[j].adj_amount)+"</td>\
+                                        <td class='border text-right'><input type='text' name='set_amt[]' id='set_amt_"+data.unadjusted_pdc[j].doc_number+"' class='form-control text-right' value='"+data.unadjusted_pdc[j].adj_amount+"' onclick=\"set_adjust('"+(data.unadjusted_pdc[j].amount-data.unadjusted_pdc[j].adj_amount)+"','"+data.unadjusted_pdc[j].doc_number+"')\" />\
+                                            <input type='hidden' name='receiptno[]' value='"+data.unadjusted_pdc[j].doc_number+"'/>\
+                                            <input type='hidden' name='set_amt_act[]' value='"+(data.unadjusted_pdc[j].amount-data.unadjusted_pdc[j].adj_amount)+"'/>\
                                         </td>\
                                         </tr>";
                                 }
