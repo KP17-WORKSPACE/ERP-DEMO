@@ -249,7 +249,7 @@ class SysSalesInvoiceNewController extends Controller
             }
 
 
-            $adj_list = SysReceiptAdjustments::select('bi_doc_number', 'bi_doc_no', 'bi_doc_date', 'bi_lpo_no', 'bi_total', 'bi_paid', 'bi_balance', 'bi_amount', 'bi_balance_to_adjust', 'bi_cheque_amount', 'bi_amount_adjusted')->wherein('company_id', $company_id)->get();
+            $adj_list = SysReceiptAdjustments::select('id', 'bi_doc_number', 'bi_doc_no', 'bi_doc_date', 'bi_lpo_no', 'bi_total', 'bi_paid', 'bi_balance', 'bi_amount', 'bi_balance_to_adjust', 'bi_cheque_amount', 'bi_amount_adjusted')->wherein('company_id', $company_id)->get();
 
 
 
@@ -277,7 +277,7 @@ class SysSalesInvoiceNewController extends Controller
                 } elseif ($poAction === 'edit') {
                     $action = 'edit';
                     $editData = $this->edit($active_id); // Get all data for editing;
-                    $adj_list = SysReceiptAdjustments::select('bi_doc_number', 'bi_doc_no', 'bi_doc_date', 'bi_lpo_no', 'bi_total', 'bi_paid', 'bi_balance', 'bi_amount', 'bi_balance_to_adjust', 'bi_cheque_amount', 'bi_amount_adjusted')->wherein('company_id', $company_id)->where('bi_doc_no', $editData['edit_si']->doc_number)->get();
+                    $adj_list = SysReceiptAdjustments::select('id', 'bi_doc_number', 'bi_doc_no', 'bi_doc_date', 'bi_lpo_no', 'bi_total', 'bi_paid', 'bi_balance', 'bi_amount', 'bi_balance_to_adjust', 'bi_cheque_amount', 'bi_amount_adjusted')->wherein('company_id', $company_id)->where('bi_doc_no', $editData['edit_si']->doc_number)->get();
 
                 }
             } else {
@@ -1427,8 +1427,7 @@ class SysSalesInvoiceNewController extends Controller
                                 $exe_type = "return";
                             } else {
                                 $currency = 1;
-                                $exe_type = "openingbalance";
-                                $transaction_type = "";
+                                $transaction_type = "openingbalance";
                                 $exe_type = "receipt";
                             }
                         }
@@ -1451,7 +1450,7 @@ class SysSalesInvoiceNewController extends Controller
                                 $amt_bi_balance_to_adjust = 0;
                             }
                             if ($adjData[$i]->set_amt > $adjusted_amt) {
-                                $amt_bi_balance_to_adjust = $adjData[$i]->set_amt > $adjusted_amt;
+                                $amt_bi_balance_to_adjust = $adjData[$i]->set_amt - $adjusted_amt;
                             }
                             if ($adjData[$i]->set_amt < $adjusted_amt) {
                                 $amt_bi_balance_to_adjust = $adjusted_amt - $adjData[$i]->set_amt;
@@ -1468,7 +1467,7 @@ class SysSalesInvoiceNewController extends Controller
                                 'bi_doc_no' => $si->doc_number,
                                 'bi_lpo_no' => '',
                                 'bi_doc_date' => $si->doc_date,
-                                'bi_total' => $sii->sum('taxableamount') + $sii->sum('vatamount'),
+                                'bi_total' => $total_tax_amount + $total_vat_amount,
                                 'bi_paid' => $adjData[$i]->set_amt,
                                 'bi_balance' => $amt_bi_balance_to_adjust,
                                 'bi_extra_amount' => $bi_extra_amount,
@@ -1954,7 +1953,7 @@ class SysSalesInvoiceNewController extends Controller
 
 
 
-            $list_of_unadjusted = SysHelper::get_list_of_unadjusted([$edit_si->customer], $company_id);
+            $list_of_unadjusted = $this->get_negative_unadjusted_balances($edit_si->customer, $company_id);
             $list_of_unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc([$edit_si->customer], $company_id);
 
 
@@ -1964,7 +1963,7 @@ class SysSalesInvoiceNewController extends Controller
             $returnAdjustments = SysSalesReturnAdjestment::where('siv_no', $edit_si->doc_number)->where('status', 1)->get();
 
 
-            $adj_list = SysReceiptAdjustments::select('bi_doc_number', 'bi_doc_no', 'bi_doc_date', 'bi_lpo_no', 'bi_total', 'bi_paid', 'bi_balance', 'bi_amount', 'bi_balance_to_adjust', 'bi_cheque_amount', 'bi_amount_adjusted')->wherein('company_id', $company_id)->where('bi_doc_no', $edit_si->doc_number)->get();
+            $adj_list = SysReceiptAdjustments::select('id', 'bi_doc_number', 'bi_doc_no', 'bi_doc_date', 'bi_lpo_no', 'bi_total', 'bi_paid', 'bi_balance', 'bi_amount', 'bi_balance_to_adjust', 'bi_cheque_amount', 'bi_amount_adjusted')->wherein('company_id', $company_id)->where('bi_doc_no', $edit_si->doc_number)->get();
 
             $query = SysSalesInvoice::select(DB::raw('sys_sales_invoice.*, (SELECT GROUP_CONCAT(doc_file) FROM sys_sales_invoice_att WHERE siv_id = sys_sales_invoice.id) AS attach, (SELECT GROUP_CONCAT(doc_number) FROM sys_delivery_note WHERE invoice_no = sys_sales_invoice.doc_number) AS dlnno, (SELECT GROUP_CONCAT(doc_number) FROM sys_sales_return WHERE si_doc_number = sys_sales_invoice.doc_number) AS srtno, (SELECT max(debit_amount) FROM sys_chartofaccounts_transaction WHERE transaction_type="salesinvoice" and transaction_no=sys_sales_invoice.doc_number and account_id=sys_sales_invoice.customer) AS amount, (SELECT GROUP_CONCAT(code) FROM sys_crm_deals WHERE id=sys_sales_invoice.deal_id) AS code'), DB::raw('(SELECT SUM(vatamount) FROM sys_sales_invoice_items WHERE si_id = sys_sales_invoice.id) AS total_vatamount'), DB::raw('(SELECT SUM(taxableamount) FROM sys_sales_invoice_items WHERE si_id = sys_sales_invoice.id) AS total_taxableamount'));
             $query->wherein('company_id', $company_id);
@@ -3000,7 +2999,7 @@ class SysSalesInvoiceNewController extends Controller
                             'bi_doc_no' => $request->adj_siv_no,
                             'bi_lpo_no' => '',
                             'bi_doc_date' => $request->adj_siv_date,
-                            'bi_total' => $request->adj_siv_amount,
+                            'bi_total' => $request->adj_siv_amount_actual,
                             'bi_paid' => $request->set_amt[$i],
                             'bi_balance' => $request->adj_siv_amount_actual - ($request->set_amt[$i] + $adjusted_amt),
                             'bi_extra_amount' => $bi_extra_amount,
@@ -3051,13 +3050,104 @@ class SysSalesInvoiceNewController extends Controller
         }
     }
 
+    private function get_negative_unadjusted_balances($customer_id, $company_id)
+    {
+        $raw_unadjusted = SysHelper::get_list_of_unadjusted([$customer_id], $company_id);
+        $raw_unadjusted_jv_to_jv = SysHelper::get_list_of_unadjusted_jv_to_jv([$customer_id], $company_id);
+
+        $filtered_unadjusted = collect();
+
+        if (!empty($raw_unadjusted)) {
+            $unadj_list = collect($raw_unadjusted)
+                ->filter(function ($row) {
+                    $remaining = (float) ($row->amount ?? 0) - (float) ($row->adj_amount ?? 0);
+                    $isOpeningBalanceCredit = ($row->transaction_type ?? '') === 'openingbalance'
+                        && (float) ($row->amount ?? 0) < 0;
+
+                    if ($isOpeningBalanceCredit) {
+                        return round(abs($remaining), 2) > 0.00;
+                    }
+
+                    return round($remaining, 2) > 0.00;
+                })
+                ->values();
+
+            foreach ($unadj_list as $p) {
+                $unadjustedAdjustment = (float)($p->adj_amount ?? 0);
+                $unadjustedBalance = (float)($p->amount ?? 0) - $unadjustedAdjustment;
+                $isReceivableOpeningDebit = ($p->transaction_type ?? '') === 'openingbalance'
+                    && preg_match('/^OPB-\d+$/', (string) ($p->doc_number ?? ''))
+                    && (float) ($p->amount ?? 0) > 0;
+                if (!$isReceivableOpeningDebit && (float)($p->credit_amount ?? 0) > (float)($p->debit_amount ?? 0)) {
+                    $unadjustedBalance = -abs($unadjustedBalance);
+                }
+
+                if ($unadjustedBalance < 0) {
+                    $cloned = clone $p;
+                    $cloned->amount = abs($unadjustedBalance);
+                    $cloned->adj_amount = 0;
+                    $filtered_unadjusted->push($cloned);
+                }
+            }
+        }
+
+        if (!empty($raw_unadjusted_jv_to_jv)) {
+            $existingUnadjDocNos = $filtered_unadjusted->pluck('doc_number')->filter()->unique();
+            $unadj_list_jv_to_jv = collect($raw_unadjusted_jv_to_jv)
+                ->groupBy('doc_number')
+                ->map(function ($rows) {
+                    $first = $rows->first();
+                    $first->amount = collect($rows)->sum(function ($row) {
+                        return (float) ($row->amount ?? 0);
+                    });
+                    $first->amount2 = collect($rows)->sum(function ($row) {
+                        return (float) ($row->amount2 ?? 0);
+                    });
+                    $first->adj_amount = collect($rows)->sum(function ($row) {
+                        return (float) ($row->adj_amount ?? 0);
+                    });
+                    return $first;
+                })
+                ->filter(function ($row) use ($existingUnadjDocNos) {
+                    if ($existingUnadjDocNos->contains($row->doc_number ?? null)) {
+                        return false;
+                    }
+                    return round((float) (($row->amount ?? 0) - ($row->amount2 ?? 0) - ($row->adj_amount ?? 0)), 2) > 0.00;
+                })
+                ->values();
+
+            foreach ($unadj_list_jv_to_jv as $p) {
+                $unadjustedAdjustmentJv = (float)($p->amount2 ?? 0) + (float)($p->adj_amount ?? 0);
+                $unadjustedBalanceJv = (float)($p->amount ?? 0) - $unadjustedAdjustmentJv;
+
+                $cloned = clone $p;
+                $cloned->amount = $unadjustedBalanceJv;
+                $cloned->adj_amount = 0;
+                $filtered_unadjusted->push($cloned);
+            }
+        }
+
+        return $filtered_unadjusted;
+    }
+
     function salesinvoice_get_adjustment(Request $request)
     {
         try {
             $company_id = session('logged_session_data.company_id');
+            $customer_id = $request->customer;
 
-            $unadjusted = SysHelper::get_list_of_unadjusted([$request->customer], $company_id);
-            $unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc([$request->customer], $company_id);
+            \Log::info('salesinvoice_get_adjustment called', [
+                'customer_id' => $customer_id,
+                'company_id' => $company_id
+            ]);
+
+            $unadjusted = $this->get_negative_unadjusted_balances($customer_id, $company_id);
+            $unadjusted_pdc = SysHelper::get_list_of_unadjusted_pdc([$customer_id], $company_id);
+
+            \Log::info('salesinvoice_get_adjustment results', [
+                'unadjusted_count' => count($unadjusted),
+                'unadjusted_pdc_count' => count($unadjusted_pdc)
+            ]);
 
             return json_encode([
                 'unadjusted' => $unadjusted,
@@ -3065,6 +3155,7 @@ class SysSalesInvoiceNewController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('salesinvoice_get_adjustment error', ['msg' => $e->getMessage()]);
             return json_encode([
                 'error' => true,
                 'message' => $e->getMessage()
@@ -3089,18 +3180,25 @@ class SysSalesInvoiceNewController extends Controller
             $setAmts = $request->input('set_amt');
             $setAmtActs = $request->input('set_amt_act');
 
-            foreach ($receiptNos as $index => $receiptNo) {
-                $data[] = [
-                    'cart_id' => session('logged_session_data.cart_id'),
-                    'receiptno' => $receiptNos[$index],
-                    'set_amt_act' => str_replace(',', '', $setAmtActs[$index]),
-                    'set_amt' => $setAmts[$index],
-                    'adj_cus_id' => $adj_cus_id,
-                    'adj_siv_amount_actual' => $adj_siv_amount_actual,
-                    'status' => 1,
-                    'company_id' => $company_id,
-                    'user_id' => Auth::user()->id,
-                ];
+            $data = [];
+            if (!empty($receiptNos)) {
+                foreach ($receiptNos as $index => $receiptNo) {
+                    $set_amt = isset($setAmts[$index]) ? str_replace(',', '', $setAmts[$index]) : '';
+                    if ($set_amt === null || $set_amt === '' || (float)$set_amt == 0) {
+                        continue;
+                    }
+                    $data[] = [
+                        'cart_id' => session('logged_session_data.cart_id'),
+                        'receiptno' => $receiptNo,
+                        'set_amt_act' => (float) str_replace(',', '', $setAmtActs[$index] ?? 0),
+                        'set_amt' => (float) $set_amt,
+                        'adj_cus_id' => $adj_cus_id,
+                        'adj_siv_amount_actual' => (float) str_replace(',', '', $adj_siv_amount_actual ?? 0),
+                        'status' => 1,
+                        'company_id' => $company_id,
+                        'user_id' => Auth::user()->id,
+                    ];
+                }
             }
 
             if (count($data) > 0) {
@@ -3109,10 +3207,10 @@ class SysSalesInvoiceNewController extends Controller
             return response()->json(['status' => 'success']);
 
         } catch (\Exception $e) {
-            return json_encode([
+            return response()->json([
                 'error' => true,
                 'message' => $e->getMessage()
-            ]);
+            ], 400);
         }
     }
 

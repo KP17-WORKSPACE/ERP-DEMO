@@ -301,6 +301,8 @@ class SysSalesReturnController extends Controller
                     ->leftJoin('sys_delivery_note as dn', 'dn.id', 'sys_sales_invoice.dn_id')
                     ->where('cat.account_id', $sr->customer)
                     ->where('sys_sales_invoice.customer', $sr->customer)
+                    ->where('sys_sales_invoice.status', 1)
+                    ->where('cat.status', 1)
                     ->where('cat.company_id', session('logged_session_data.company_id'))
                     ->groupBy(
                         'sys_sales_invoice.doc_number',
@@ -439,6 +441,8 @@ class SysSalesReturnController extends Controller
                 ->leftJoin('sys_delivery_note as dn', 'dn.id', 'sys_sales_invoice.dn_id')
                 ->where('cat.account_id', $request->id)
                 ->where('sys_sales_invoice.customer', $request->id)
+                ->where('sys_sales_invoice.status', 1)
+                ->where('cat.status', 1)
                 ->where('cat.company_id', session('logged_session_data.company_id'))
                 ->groupBy(
                     'sys_sales_invoice.doc_number',
@@ -575,6 +579,8 @@ class SysSalesReturnController extends Controller
                 ->leftjoin('sys_delivery_note as dn', 'dn.id', 'sys_sales_invoice.dn_id')
                 ->where('customer', $request->id)
                 ->where('account_id', $request->id)
+                ->where('sys_sales_invoice.status', 1)
+                ->where('cat.status', 1)
                 ->groupby('sys_sales_invoice.doc_number', 'sys_sales_invoice.doc_date', 'cat.debit_amount', 'dn.doc_number', 'sys_sales_invoice.lpo_number')
                 ->get();
 
@@ -596,6 +602,8 @@ class SysSalesReturnController extends Controller
                 ->leftjoin('sys_delivery_note as dn', 'dn.id', 'sys_sales_invoice.dn_id')
                 ->where('customer', $request->id)
                 ->where('account_id', $request->id)
+                ->where('sys_sales_invoice.status', 1)
+                ->where('cat.status', 1)
                 ->groupby('sys_sales_invoice.doc_number', 'sys_sales_invoice.doc_date', 'cat.debit_amount', 'dn.doc_number', 'adj.status')
                 ->orderby('sys_sales_invoice.doc_number', 'asc')
                 ->get();
@@ -1152,6 +1160,8 @@ class SysSalesReturnController extends Controller
                 ->where('cat.account_id', $edit->customer)
                 //->where('sys_sales_invoice.doc_number', $edit->doc_number)
                 ->where('sys_sales_invoice.customer', $edit->customer)
+                ->where('sys_sales_invoice.status', 1)
+                ->where('cat.status', 1)
                 ->where('cat.company_id', session('logged_session_data.company_id'))
                 ->groupBy(
                     'sys_sales_invoice.doc_number',

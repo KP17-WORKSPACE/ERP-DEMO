@@ -1771,14 +1771,20 @@ class SysChartofAccountsController extends Controller
                 ->where('sys_chartofaccounts_transaction.company_id', $com_id)->orderby('account_code', 'asc')->orderby('transaction_date', 'desc')->get();
 
             //$invoice = SysChartofaccountsOpeningBalanceInvoice::where('company_id',$com_id)->get();
-            $invoice = SysChartofAccountsTransaction::where('company_id', $com_id)->where('account_id', $id)->where('transaction_type', 'opbinvoice')->get();
+            $invoice = SysChartofAccountsTransaction::select('sys_chartofaccounts_transaction.*', 'd.payment_terms')
+                ->leftJoin('sys_chartofaccounts_transaction_invoice_detail as d', 'd.trn_id', '=', 'sys_chartofaccounts_transaction.id')
+                ->where('sys_chartofaccounts_transaction.company_id', $com_id)
+                ->where('sys_chartofaccounts_transaction.account_id', $id)
+                ->where('sys_chartofaccounts_transaction.transaction_type', 'opbinvoice')
+                ->get();
 
 
             $receiptAdjustments = SysReceiptAdjustments::whereIn('bi_doc_no', $invoice->pluck('transaction_no'))->where('status', 1)->get();
             $returnAdjustments = SysSalesReturnAdjestment::whereIn('siv_no', $invoice->pluck('transaction_no'))->where('status', 1)->get();
 
+            $payment_terms = SysPaymentTerms::where('active_status', 1)->get();
 
-            return view('backEnd.chart-of-accounts.chartofaccountsopeningbalance_edit', compact('account', 'invoice', 'account_edit', 'receiptAdjustments', 'returnAdjustments'));
+            return view('backEnd.chart-of-accounts.chartofaccountsopeningbalance_edit', compact('account', 'invoice', 'account_edit', 'receiptAdjustments', 'returnAdjustments', 'payment_terms'));
         } catch (\Exception $e) {
             return $e;
             Toastr::error('Operation Failed', 'Failed');
@@ -2034,6 +2040,24 @@ class SysChartofAccountsController extends Controller
                 'credit_amount' => $credit_amount,
             ]);
 
+            $resolvedPaymentTerm = SysPaymentTerms::find($request->payment_terms);
+            $dueDateStored = null;
+            if ($resolvedPaymentTerm && !empty($request->invoice_date)) {
+                $dueDateStored = Carbon::createFromFormat('d/m/Y', $request->invoice_date)
+                    ->addDays(SysPaymentTerms::resolveCreditDays($resolvedPaymentTerm))
+                    ->format('Y-m-d');
+            }
+
+            DB::table('sys_chartofaccounts_transaction_invoice_detail')->updateOrInsert(
+                ['trn_id' => $request->id],
+                [
+                    'payment_terms' => $request->payment_terms,
+                    'due_date' => $dueDateStored,
+                    'account_id' => $request->account_id,
+                    'transaction_no' => $request->invoice_no,
+                ]
+            );
+
             $retData = SysChartofAccountsTransaction::where('account_id', $request->account_id)->where('transaction_type', 'opbinvoice')->get();
 
             $bug = 0;
@@ -2076,10 +2100,23 @@ class SysChartofAccountsController extends Controller
             $accounts->entry_no = 1;
             $accounts->save();
 
+            $resolvedPaymentTerm = SysPaymentTerms::find($request->payment_terms);
+            $dueDateStored = null;
+            if ($resolvedPaymentTerm && !empty($request->invoice_date)) {
+                $dueDateStored = Carbon::createFromFormat('d/m/Y', $request->invoice_date)
+                    ->addDays(SysPaymentTerms::resolveCreditDays($resolvedPaymentTerm))
+                    ->format('Y-m-d');
+            }
+
             DB::table('sys_chartofaccounts_transaction_invoice_detail')->insert([
                 'trn_id' => $accounts->id,
                 'account_id' => $accounts->account_id,
                 'transaction_no' => $accounts->transaction_no,
+                'payment_terms' => $request->payment_terms,
+                'due_date' => $dueDateStored,
+                'status' => 1,
+                'created_by' => Auth::user()->id,
+                'created_at' => Carbon::now('+04:00'),
             ]);
 
             DB::commit();
