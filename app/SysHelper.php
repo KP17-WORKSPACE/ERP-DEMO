@@ -7743,7 +7743,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
 //receivable outatsnding start
     /**
-     * Same total as receivableoutstanding.blade.php footer "Amount" (grand_debit_amount) for invoice rows.
+     * Amount of OPB invoice rows that should reduce the unallocated opening balance debit.
      */
     protected static function sumReceivableOutstandingInvoiceAmountTotal($accountId, $companyId, $tillDate = null)
     {
@@ -7761,7 +7761,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             ->where('account_id', $accountId)
             ->where('company_id', $companyId)
             ->where('status', 1)
-            ->whereIn('transaction_type', ['salesinvoice', 'salesreturn', 'opbinvoice', 'openingbalance111'])
+            ->where('transaction_type', 'opbinvoice')
             ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
             ->groupBy('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type')
             ->get();
@@ -8403,8 +8403,8 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
             if ($creditAmt > 0) {
                 $creditRow = (object) (array) $r;
-                $creditRow->amount = -$creditAmt;
-                $creditRow->adj_amount = 0;
+                $creditRow->amount = $creditAmt;
+                $creditRow->adj_amount = $adj;
                 $creditRow->debit_amount = 0;
                 $creditRow->credit_amount = $creditAmt;
                 $creditRow->remarks = 'Credit amount : ' . self::com_curr_format($creditAmt, 2, '.', ',');
