@@ -8965,7 +8965,10 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 })
             ->leftJoin('sys_receipt', 'sys_receipt.doc_number', '=', 't.transaction_no')
             //->leftJoin('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 't.transaction_no')
-            ->whereNotIn('sys_receipt.pdc_removed_os', [2])
+            ->where(function ($query) {
+                $query->whereNull('sys_receipt.pdc_removed_os')
+                    ->orWhere('sys_receipt.pdc_removed_os', '!=', 2);
+            })
             ->whereIn('t.account_id', $account_ids)
             ->where('t.company_id', $company)
             ->wherein('t.status', [1,3])
@@ -9006,7 +9009,10 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 })
             ->leftJoin('sys_receipt', 'sys_receipt.doc_number', '=', 't.transaction_no')
             //->leftJoin('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 't.transaction_no')
-            ->whereNotIn('sys_receipt.pdc_removed_os', [3])
+            ->where(function ($query) {
+                $query->whereNull('sys_receipt.pdc_removed_os')
+                    ->orWhere('sys_receipt.pdc_removed_os', 1);
+            })
             ->whereIn('t.account_id', $account_ids)
             ->where('t.company_id', $company)
             ->wherein('t.status', [1,3])
