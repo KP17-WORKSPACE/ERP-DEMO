@@ -1660,7 +1660,8 @@ function check_total(id, amount) {
                                 $unadjustedBalance = (float)($p->amount ?? 0) - $unadjustedAdjustment;
                                 $isReceivableOpeningDebit = ($p->transaction_type ?? '') === 'openingbalance'
                                     && preg_match('/^OPB-\d+$/', (string) ($p->doc_number ?? ''))
-                                    && (float) ($p->amount ?? 0) > 0;
+                                    && (float) ($p->amount ?? 0) > 0
+                                    && (float) ($p->debit_amount ?? 0) > (float) ($p->credit_amount ?? 0);
                                 if (!$isReceivableOpeningDebit && (float)($p->credit_amount ?? 0) > (float)($p->debit_amount ?? 0)) {
                                     $unadjustedBalance = -abs($unadjustedBalance);
                                 }
