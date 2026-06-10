@@ -15,7 +15,7 @@
            
        
                     <h4 style="position: fixed; margin-top: 7px;">
-                        Chartofaccounts Invoice Import
+                        Chart of Accounts Invoice Import
                     </h4>
                   <div class="purchase-order-content-header-right">
 

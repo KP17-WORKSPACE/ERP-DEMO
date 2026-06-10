@@ -817,6 +817,10 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
                 }
             });
 
+            $('#editAccountModal2 #edit_debit_amount, #editAccountModal2 #edit_credit_amount').on('blur', function() {
+                $(this).val(formatAmount($(this).val()));
+            });
+
         // Use event delegation for dynamically loaded buttons
         $(document).on('click', '.editAccountBtn2', function() {
             let accountId = $(this).data('id');
@@ -862,10 +866,10 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
                     $('#editAccountModal2 #edit_stl').val(editData.stl).trigger('change');
 
                     if (editData_tran) {
-                        $('#editAccountModal2 #edit_debit_amount').val(editData_tran
-                            .debit_amount);
-                        $('#editAccountModal2 #edit_credit_amount').val(editData_tran
-                            .credit_amount);
+                        $('#editAccountModal2 #edit_debit_amount').val(formatAmount(editData_tran
+                            .debit_amount));
+                        $('#editAccountModal2 #edit_credit_amount').val(formatAmount(editData_tran
+                            .credit_amount));
 
                         $('#editAccountModal2 #edit_opening_balance_date').val(editData_tran
                             .transaction_date ? editData_tran
