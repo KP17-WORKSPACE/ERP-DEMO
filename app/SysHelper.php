@@ -7743,121 +7743,19 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
 //receivable outatsnding start
     /**
-     * Amount of OPB invoice rows that should reduce the unallocated opening balance debit.
+     * Raw OPB popup invoice debit total. Receipt/adjustment status must not change this.
      */
     protected static function sumReceivableOutstandingInvoiceAmountTotal($accountId, $companyId, $tillDate = null)
     {
         $till = $tillDate ? (self::normalizeToYmd($tillDate) ?: $tillDate) : date('Y-m-d');
 
-        $rows = DB::table('sys_chartofaccounts_transaction')
-            ->select(
-                'transaction_date',
-                'transaction_id',
-                'transaction_no',
-                'transaction_type',
-                DB::raw('SUM(debit_amount) as debit_amount'),
-                DB::raw('SUM(credit_amount) as credit_amount')
-            )
+        return (float) DB::table('sys_chartofaccounts_transaction')
             ->where('account_id', $accountId)
             ->where('company_id', $companyId)
             ->where('status', 1)
             ->where('transaction_type', 'opbinvoice')
             ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
-            ->groupBy('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type')
-            ->get();
-
-        if ($rows->isEmpty()) {
-            return 0.0;
-        }
-
-        $trnNos = $rows->pluck('transaction_no')->unique()->values();
-
-        $srnPaid = DB::table('sys_sales_return_adjestment as ra')
-            ->join('sys_sales_return as r', 'ra.srn_no', '=', 'r.doc_number')
-            ->select('ra.srn_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
-            ->whereIn('ra.srn_no', $trnNos)
-            ->where('r.company_id', $companyId)
-            ->where('r.status', 1)
-            ->where('ra.status', 1)
-            ->groupBy('ra.srn_no')
-            ->pluck('paid_amount', 'srn_no');
-
-        $receiptPaid = DB::table('sys_receipt as r')
-            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'r.doc_number')
-            ->where('ra.account_id', $accountId)
-            ->whereIn('ra.bi_doc_no', $trnNos)
-            ->where('r.company_id', $companyId)
-            ->where('r.status', 1)
-            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
-            ->groupBy('ra.bi_doc_no')
-            ->pluck('bi_amount', 'bi_doc_no');
-
-        $jvReceiptPaid = DB::table('sys_journalvoucher as j')
-            ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 'j.doc_number')
-            ->where('ra.account_id', $accountId)
-            ->whereIn('ra.bi_doc_no', $trnNos)
-            ->where('j.company_id', $companyId)
-            ->where('j.status', 1)
-            ->where('ra.status', 1)
-            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
-            ->groupBy('ra.bi_doc_no')
-            ->pluck('bi_amount', 'bi_doc_no');
-
-        $jvPaymentPaid = DB::table('sys_journalvoucher as j')
-            ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', '=', 'j.doc_number')
-            ->where('pa.account_id', $accountId)
-            ->whereIn('pa.bi_doc_no', $trnNos)
-            ->where('j.company_id', $companyId)
-            ->where('j.status', 1)
-            ->select('pa.bi_doc_no', DB::raw('SUM(pa.bi_amount) as bi_amount'))
-            ->groupBy('pa.bi_doc_no')
-            ->pluck('bi_amount', 'bi_doc_no');
-
-        $returnPaid = DB::table('sys_sales_return as r')
-            ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', '=', 'r.doc_number')
-            ->where('r.customer', $accountId)
-            ->whereIn('ra.siv_no', $trnNos)
-            ->where('r.company_id', $companyId)
-            ->where('r.status', 1)
-            ->where('ra.status', 1)
-            ->select('ra.siv_no', DB::raw('SUM(ra.paid_amount) as paid_amount'))
-            ->groupBy('ra.siv_no')
-            ->pluck('paid_amount', 'siv_no');
-
-        $opbReceiptPaid = DB::table('sys_receipt_adjustments as ra')
-            ->where('ra.transaction_type', 'openingbalance')
-            ->where('ra.company_id', $companyId)
-            ->where('ra.status', 1)
-            ->where('ra.account_id', $accountId)
-            ->whereIn('ra.bi_doc_no', $trnNos)
-            ->select('ra.bi_doc_no', DB::raw('SUM(ra.bi_amount) as bi_amount'))
-            ->groupBy('ra.bi_doc_no')
-            ->pluck('bi_amount', 'bi_doc_no');
-
-        $total = 0.0;
-        foreach ($rows as $dt) {
-            $debit = (float) ($dt->debit_amount ?? 0);
-            $credit = (float) ($dt->credit_amount ?? 0);
-            $trnNo = (string) ($dt->transaction_no ?? '');
-            $jvInvoiceAdjustment = $debit > 0 ? (float) ($jvReceiptPaid[$trnNo] ?? 0) : 0.0;
-            $opbImportPaid = ($dt->transaction_type ?? '') === 'opbinvoice' ? $credit : 0.0;
-            $paid = (float) ($srnPaid[$trnNo] ?? 0)
-                + (float) ($receiptPaid[$trnNo] ?? 0)
-                + $jvInvoiceAdjustment
-                + (float) ($returnPaid[$trnNo] ?? 0)
-                + (float) ($opbReceiptPaid[$trnNo] ?? 0)
-                + $opbImportPaid
-                - (float) ($jvPaymentPaid[$trnNo] ?? 0);
-
-            $isHiddenSalesReturn = str_contains($trnNo, 'SR') && round($credit, 2) >= round($paid, 2);
-            $isHiddenSalesInvoice = str_contains($trnNo, 'SI') && round(abs($debit), 2) == round(abs($paid), 2);
-            $showRow = ((round($debit, 2) != round($paid, 2)) || ($credit > 0)) && !$isHiddenSalesReturn && !$isHiddenSalesInvoice;
-            if ($showRow) {
-                $total += str_contains($trnNo, 'SR') ? -$credit : $debit;
-            }
-        }
-
-        return $total;
+            ->sum('debit_amount');
     }
 
     /**
@@ -8398,13 +8296,15 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
             $invNet = (float) ($invoiceAmountTotalsByAccount[$r->account_id] ?? 0);
             $adj = (float) ($r->adj_amount ?? 0);
+            $creditAdj = isset($r->credit_adj_amount) ? (float) $r->credit_adj_amount : $adj;
+            $debitAdj = isset($r->debit_adj_amount) ? (float) $r->debit_adj_amount : $adj;
             $creditAmt = (float) ($r->credit_amount ?? 0);
             $debitAmt = (float) ($r->debit_amount ?? 0);
 
             if ($creditAmt > 0) {
                 $creditRow = (object) (array) $r;
                 $creditRow->amount = $creditAmt;
-                $creditRow->adj_amount = $adj;
+                $creditRow->adj_amount = $creditAdj;
                 $creditRow->debit_amount = 0;
                 $creditRow->credit_amount = $creditAmt;
                 $creditRow->remarks = 'Credit amount : ' . self::com_curr_format($creditAmt, 2, '.', ',');
@@ -8414,10 +8314,10 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             if ($debitAmt > 0) {
                 $netDebit = max($debitAmt - $invNet, 0);
                 $effectiveInvoiceAmount = $debitAmt - $netDebit;
-                if (abs($netDebit - $adj) > 0.0001) {
+                if (abs($netDebit - $debitAdj) > 0.0001) {
                     $debitRow = (object) (array) $r;
                     $debitRow->amount = $netDebit;
-                    $debitRow->adj_amount = $adj;
+                    $debitRow->adj_amount = $debitAdj;
                     $debitRow->debit_amount = $netDebit;
                     $debitRow->credit_amount = 0;
                     $debitRow->remarks = 'Debit amount : ' . self::com_curr_format($debitAmt, 2, '.', ',')
@@ -8438,18 +8338,29 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 return null;
             }         
                 $company = (int) $company;
+                $jvDebitRowSql = "(t.transaction_type = 'journalvoucher' AND IFNULL(t.debit_amount, 0) > IFNULL(t.credit_amount, 0))";
+                $jvCreditRowSql = "(t.transaction_type = 'journalvoucher' AND IFNULL(t.credit_amount, 0) > IFNULL(t.debit_amount, 0))";
                 $receiptAdjustedSql = "(SELECT COALESCE(SUM(ra.bi_paid),0)
                     FROM sys_receipt_adjustments ra
                     WHERE ra.company_id = {$company}
                       AND ra.status = 1
                       AND ra.account_id = t.account_id
-                      AND ra.bi_doc_number = t.transaction_no)";
+                      AND ra.bi_doc_number = t.transaction_no
+                      AND NOT {$jvDebitRowSql})";
                 $billwiseReceiptAdjustedSql = "(SELECT COALESCE(SUM(ra.bi_paid),0)
                     FROM sys_receipt_adjustments ra
                     WHERE ra.company_id = {$company}
                       AND ra.status = 1
                       AND ra.account_id = t.account_id
-                      AND ra.bi_doc_no = t.transaction_no)";
+                      AND ra.bi_doc_no = t.transaction_no
+                      AND NOT {$jvCreditRowSql}
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM sys_journalvoucher jrx
+                          WHERE jrx.doc_number = ra.bi_doc_number
+                            AND jrx.company_id = ra.company_id
+                            AND jrx.status = 1
+                      ))";
                 $salesReturnAdjustedSql = "(SELECT COALESCE(SUM(sr.paid_amount),0)
                     FROM sys_sales_return_adjestment sr
                     WHERE sr.srn_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci)";
@@ -8460,7 +8371,8 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND ra.status = 1
                       AND j.status = 1
                       AND ra.account_id = t.account_id
-                      AND ra.bi_doc_no = t.transaction_no)";
+                      AND ra.bi_doc_no = t.transaction_no
+                      AND NOT {$jvCreditRowSql})";
                 $jvAdjustedSql = "(SELECT COALESCE(SUM(jv.amount),0)
                     FROM sys_receipt_adjustments_jv jv
                     INNER JOIN sys_journalvoucher j ON j.doc_number = jv.jv_id AND j.company_id = jv.company_id
@@ -8468,8 +8380,11 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND jv.status = 1
                       AND j.status = 1
                       AND jv.account_id = t.account_id
-                      AND jv.receipt_no = t.transaction_no)";
+                      AND jv.receipt_no = t.transaction_no
+                      AND NOT ({$jvCreditRowSql} AND jv.jv_id = t.transaction_no))";
                 $totalAdjustedSql = "COALESCE({$receiptAdjustedSql}, 0) + COALESCE({$billwiseReceiptAdjustedSql}, 0) + COALESCE({$salesReturnAdjustedSql}, 0) + COALESCE({$billwiseJvAdjustedSql}, 0) + COALESCE({$jvAdjustedSql}, 0)";
+                $opbCreditAdjustedSql = "COALESCE({$receiptAdjustedSql}, 0)";
+                $opbDebitAdjustedSql = "COALESCE({$billwiseReceiptAdjustedSql}, 0) + COALESCE({$billwiseJvAdjustedSql}, 0) + COALESCE({$jvAdjustedSql}, 0)";
 
                 $unadjested_receipt = DB::table('sys_chartofaccounts_transaction as t')->select(
                     't.account_id',
@@ -8482,7 +8397,9 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                     't.credit_amount',
                     'c.group as account_group',
                     DB::raw('t.credit_amount - t.debit_amount AS amount'),
-                    DB::raw("{$totalAdjustedSql} AS adj_amount")
+                    DB::raw("{$totalAdjustedSql} AS adj_amount"),
+                    DB::raw("{$opbCreditAdjustedSql} AS credit_adj_amount"),
+                    DB::raw("{$opbDebitAdjustedSql} AS debit_adj_amount")
                 )
                 ->leftJoin('sys_chartofaccounts as c', 'c.id', '=', 't.account_id')
                 ->leftJoin('sys_receipt', 'sys_receipt.doc_number', '=', 't.transaction_no')
@@ -8838,7 +8755,8 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 ->leftJoin('sys_chartofaccounts as c', 'c.id', '=', 't.account_id')
                 ->leftJoin('sys_receipt_adjustments as ra', function ($join) {
                     $join->on('ra.bi_doc_number', '=', 't.transaction_no')
-                        ->whereColumn('ra.account_id', '=', 't.account_id');
+                        ->whereColumn('ra.account_id', '=', 't.account_id')
+                        ->whereRaw('IFNULL(t.credit_amount, 0) > IFNULL(t.debit_amount, 0)');
                 })
                 ->leftJoin('sys_receipt', 'sys_receipt.doc_number', '=', 't.transaction_no')
                 ->where('t.company_id', $company)
@@ -8869,13 +8787,16 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 $currentJvNo = $currentJvNo ? addslashes((string) $currentJvNo) : '';
                 $otherJvFilter = $currentJvNo !== '' ? " AND jv.jv_id <> '{$currentJvNo}'" : '';
                 $currentJvFilter = $currentJvNo !== '' ? " AND jv.jv_id = '{$currentJvNo}'" : " AND 1 = 0";
+                $jvDebitRowSql = "(t.transaction_type = 'journalvoucher' AND IFNULL(t.debit_amount, 0) > IFNULL(t.credit_amount, 0))";
+                $jvCreditRowSql = "(t.transaction_type = 'journalvoucher' AND IFNULL(t.credit_amount, 0) > IFNULL(t.debit_amount, 0))";
 
                 $receiptAdjustedSql = "(SELECT COALESCE(SUM(ra.bi_paid),0)
                     FROM sys_receipt_adjustments ra
                     WHERE ra.company_id = {$company}
                       AND ra.status = 1
                       AND ra.account_id = t.account_id
-                      AND ra.bi_doc_number = t.transaction_no)";
+                      AND ra.bi_doc_number = t.transaction_no
+                      AND NOT {$jvDebitRowSql})";
                 $salesReturnAdjustedSql = "(SELECT COALESCE(SUM(sr.paid_amount),0)
                     FROM sys_sales_return_adjestment sr
                     WHERE sr.srn_no COLLATE utf8mb4_general_ci = t.transaction_no COLLATE utf8mb4_general_ci)";
@@ -8886,7 +8807,8 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND ra.status = 1
                       AND j.status = 1
                       AND ra.account_id = t.account_id
-                      AND ra.bi_doc_no = t.transaction_no)";
+                      AND ra.bi_doc_no = t.transaction_no
+                      AND NOT {$jvCreditRowSql})";
                 $jvOtherAdjustedSql = "(SELECT COALESCE(SUM(jv.amount),0)
                     FROM sys_receipt_adjustments_jv jv
                     INNER JOIN sys_journalvoucher j ON j.doc_number = jv.jv_id AND j.company_id = jv.company_id
@@ -8894,7 +8816,8 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND jv.status = 1
                       AND j.status = 1
                       AND jv.account_id = t.account_id
-                      AND jv.receipt_no = t.transaction_no{$otherJvFilter})";
+                      AND jv.receipt_no = t.transaction_no
+                      AND NOT ({$jvCreditRowSql} AND jv.jv_id = t.transaction_no){$otherJvFilter})";
                 $jvCurrentAdjustedSql = "(SELECT COALESCE(SUM(jv.amount),0)
                     FROM sys_receipt_adjustments_jv jv
                     INNER JOIN sys_journalvoucher j ON j.doc_number = jv.jv_id AND j.company_id = jv.company_id
@@ -8902,7 +8825,8 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                       AND jv.status = 1
                       AND j.status = 1
                       AND jv.account_id = t.account_id
-                      AND jv.receipt_no = t.transaction_no{$currentJvFilter})";
+                      AND jv.receipt_no = t.transaction_no
+                      AND NOT ({$jvCreditRowSql} AND jv.jv_id = t.transaction_no){$currentJvFilter})";
                 $totalAdjustedSql = "COALESCE({$receiptAdjustedSql}, 0) + COALESCE({$salesReturnAdjustedSql}, 0) + COALESCE({$billwiseJvAdjustedSql}, 0) + COALESCE({$jvOtherAdjustedSql}, 0)";
 
                 $unadjested_receipt = DB::table('sys_chartofaccounts_transaction as t')->select(
