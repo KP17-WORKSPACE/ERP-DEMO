@@ -1122,25 +1122,29 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
          foreach($opb as $dt){
             $paid = SysReceiptAdjustments::where('bi_doc_no',$dt->transaction_no)->where('account_id',$request->account_id)->sum('bi_paid');
             $bi_amount = $adjestData->where('bi_doc_no',$dt->transaction_no)->sum('bi_paid');
-            if($bi_amount != 0) { $paid=0; }
-            $searchData[] =  [
-                'doc_number' => $dt->transaction_no,
-                'doc_date' => $dt->transaction_date,
-                'lpo_number' => '',
-                'lpo_date' => '',
-                'total' => abs($dt->debit_amount - $dt->credit_amount),
-                'paid' => $paid,
-                'bi_amount' => $bi_amount,
-                'balance' => abs($dt->debit_amount - $dt->credit_amount)-$paid,
-            ];
+            $paid = max(0, $paid - $bi_amount);
+            $total = abs($dt->debit_amount - $dt->credit_amount);
+            $balance = max(0, $total - $paid);
+            if ($balance > 0 || $bi_amount > 0) {
+                $searchData[] =  [
+                    'doc_number' => $dt->transaction_no,
+                    'doc_date' => $dt->transaction_date,
+                    'lpo_number' => '',
+                    'lpo_date' => '',
+                    'total' => $total,
+                    'paid' => $paid,
+                    'bi_amount' => $bi_amount,
+                    'balance' => $balance,
+                ];
+            }
          }
         }
 
 		foreach($items as $item){
-            $paid = $item->paid;
             $bi_amount = $adjestData->where('bi_doc_no',$item->doc_number)->sum('bi_paid');
-            if($bi_amount != 0) { $paid=0; }
-            if($item->balance>0){
+            $paid = max(0, $item->paid - $bi_amount);
+            $balance = max(0, $item->total - $paid);
+            if($balance > 0){
                 $searchData[] =  [
                     'doc_number' => $item->doc_number,
                     'doc_date' => $item->doc_date,
@@ -1149,7 +1153,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
                     'total' => $item->total,
                     'paid' => $paid,
                     'bi_amount' => $bi_amount,
-                    'balance' => $item->balance,
+                    'balance' => $balance,
                 ];
             }
 		}
@@ -1170,31 +1174,32 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
         $adjestData = SysReceiptAdjustments::where('bi_doc_number',$request->doc_number)->where('account_id',$request->account_id)->get();
 
         if(count($opb)>0){
-         foreach($opb as $dt){
-            $paid = SysReceiptAdjustments::where('bi_doc_no',$dt->transaction_no)->where('account_id',$request->account_id)->sum('bi_paid');
-            $bi_amount = $adjestData->where('bi_doc_no',$dt->transaction_no)->sum('bi_paid');
-            if($bi_amount != 0) { $paid=0; }
-            $balance = abs($dt->debit_amount - $dt->credit_amount)-$paid;
-                if($balance > 0){
-                    $searchData[] =  [
-                        'doc_number' => $dt->transaction_no,
-                        'doc_date' => $dt->transaction_date,
-                        'lpo_number' => '',
-                        'lpo_date' => '',
-                        'total' => abs($dt->debit_amount - $dt->credit_amount),
-                        'paid' => $paid,
-                        'bi_amount' => $bi_amount,
-                        'balance' => abs($dt->debit_amount - $dt->credit_amount)-$paid,
-                    ];
-                }
-            }
+          foreach($opb as $dt){
+             $paid = SysReceiptAdjustments::where('bi_doc_no',$dt->transaction_no)->where('account_id',$request->account_id)->sum('bi_paid');
+             $bi_amount = $adjestData->where('bi_doc_no',$dt->transaction_no)->sum('bi_paid');
+             $paid = max(0, $paid - $bi_amount);
+             $total = abs($dt->debit_amount - $dt->credit_amount);
+             $balance = max(0, $total - $paid);
+             if($balance > 0 || $bi_amount > 0){
+                 $searchData[] =  [
+                     'doc_number' => $dt->transaction_no,
+                     'doc_date' => $dt->transaction_date,
+                     'lpo_number' => '',
+                     'lpo_date' => '',
+                     'total' => $total,
+                     'paid' => $paid,
+                     'bi_amount' => $bi_amount,
+                     'balance' => $balance,
+                 ];
+             }
+          }
         }
         
 		foreach($items as $item){
-            $paid = $item->paid; $add=0;
             $bi_amount = $adjestData->where('bi_doc_no',$item->doc_number)->sum('bi_paid');
-            if($bi_amount != 0) { $paid=0; }
-            if($item->balance > 0){
+            $paid = max(0, $item->paid - $bi_amount);
+            $balance = max(0, $item->total - $paid);
+            if($balance > 0){
                 $searchData[] =  [
                     'doc_number' => $item->doc_number,
                     'doc_date' => $item->doc_date,
@@ -1203,20 +1208,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
                     'total' => $item->total,
                     'paid' => $paid,
                     'bi_amount' => $bi_amount,
-                    'balance' => $item->balance,
-                ];
-                $add=1;
-            }
-            if($bi_amount > 0 && $add==0){
-                $searchData[] =  [
-                    'doc_number' => $item->doc_number,
-                    'doc_date' => $item->doc_date,
-                    'lpo_number' => $item->lpo_number,
-                    'lpo_date' => $item->lpo_date,
-                    'total' => $item->total,
-                    'paid' => $paid,
-                    'bi_amount' => $bi_amount,
-                    'balance' => $item->balance,
+                    'balance' => $balance,
                 ];
             }
 		}
@@ -1250,31 +1242,32 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
         $adjestData = SysPaymentAdjustments::where('bi_doc_number',$request->doc_number)->where('account_id',$request->account_id)->get();
 
         if(count($opb)>0){
-         foreach($opb as $dt){
-            $paid = SysPaymentAdjustments::where('bi_doc_no',$dt->transaction_no)->where('account_id',$request->account_id)->sum('bi_paid');
-            $bi_amount = $adjestData->where('bi_doc_no',$dt->transaction_no)->sum('bi_paid');
-            if($bi_amount != 0) { $paid=0; }
-            $balance = abs($dt->debit_amount - $dt->credit_amount)-$paid;
-                if($balance > 0){
-                    $searchData[] =  [
-                        'doc_number' => $dt->transaction_no,
-                        'doc_date' => $dt->transaction_date,
-                        'lpo_number' => '',
-                        'lpo_date' => '',
-                        'total' => abs($dt->debit_amount - $dt->credit_amount),
-                        'paid' => $paid,
-                        'bi_amount' => $bi_amount,
-                        'balance' => abs($dt->debit_amount - $dt->credit_amount)-$paid,
-                    ];
-                }
-            }
+          foreach($opb as $dt){
+             $paid = SysPaymentAdjustments::where('bi_doc_no',$dt->transaction_no)->where('account_id',$request->account_id)->sum('bi_paid');
+             $bi_amount = $adjestData->where('bi_doc_no',$dt->transaction_no)->sum('bi_paid');
+             $paid = max(0, $paid - $bi_amount);
+             $total = abs($dt->debit_amount - $dt->credit_amount);
+             $balance = max(0, $total - $paid);
+             if($balance > 0 || $bi_amount > 0){
+                 $searchData[] =  [
+                     'doc_number' => $dt->transaction_no,
+                     'doc_date' => $dt->transaction_date,
+                     'lpo_number' => '',
+                     'lpo_date' => '',
+                     'total' => $total,
+                     'paid' => $paid,
+                     'bi_amount' => $bi_amount,
+                     'balance' => $balance,
+                 ];
+             }
+          }
         }
         
 		foreach($items as $item){
-            $paid = $item->paid; $add=0;
             $bi_amount = $adjestData->where('bi_doc_no',$item->doc_number)->sum('bi_paid');
-            if($bi_amount != 0) { $paid=0; }
-            if($item->balance > 0){
+            $paid = max(0, $item->paid - $bi_amount);
+            $balance = max(0, $item->total - $paid);
+            if($balance > 0){
                 $searchData[] =  [
                     'doc_number' => $item->doc_number,
                     'doc_date' => $item->doc_date,
@@ -1283,20 +1276,7 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
                     'total' => $item->total,
                     'paid' => $paid,
                     'bi_amount' => $bi_amount,
-                    'balance' => $item->balance,
-                ];
-                $add=1;
-            }
-            if($bi_amount > 0 && $add==0){
-                $searchData[] =  [
-                    'doc_number' => $item->doc_number,
-                    'doc_date' => $item->doc_date,
-                    'lpo_number' => $item->lpo_number,
-                    'lpo_date' => $item->lpo_date,
-                    'total' => $item->total,
-                    'paid' => $paid,
-                    'bi_amount' => $bi_amount,
-                    'balance' => $item->balance,
+                    'balance' => $balance,
                 ];
             }			
 		}

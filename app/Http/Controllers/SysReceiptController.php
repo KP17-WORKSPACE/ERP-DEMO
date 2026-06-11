@@ -1341,31 +1341,31 @@ class SysReceiptController extends Controller
             foreach ($opb as $dt) {
                 $paid = SysReceiptAdjustments::where('bi_doc_no', $dt->transaction_no)->where('account_id', $request->account_id)->sum('bi_paid');
                 $bi_amount = $adjestData->where('bi_doc_no', $dt->transaction_no)->sum('bi_paid');
-                if ($bi_amount != 0) {
-                    $paid = 0;
+                $paid = max(0, $paid - $bi_amount);
+                $total = abs($dt->debit_amount - $dt->credit_amount);
+                $balance = max(0, $total - $paid);
+                if ($balance > 0 || $bi_amount > 0) {
+                    $searchData[] = [
+                        'deal_id' => '',
+                        'doc_number' => $dt->transaction_no,
+                        'doc_date' => $dt->transaction_date,
+                        'lpo_number' => '',
+                        'lpo_date' => '',
+                        'total' => $total,
+                        'paid' => $paid,
+                        'bi_amount' => $bi_amount,
+                        'balance' => $balance,
+                    ];
                 }
-                $searchData[] = [
-                    'deal_id' => '',
-                    'doc_number' => $dt->transaction_no,
-                    'doc_date' => $dt->transaction_date,
-                    'lpo_number' => '',
-                    'lpo_date' => '',
-                    'total' => abs($dt->debit_amount - $dt->credit_amount),
-                    'paid' => $paid,
-                    'bi_amount' => $bi_amount,
-                    'balance' => abs($dt->debit_amount - $dt->credit_amount) - $paid,
-                ];
             }
         }
 
 
         foreach ($items as $item) {
-            $paid = $item->paid;
             $bi_amount = $adjestData->where('bi_doc_no', $item->doc_number)->sum('bi_paid');
-            if ($bi_amount != 0) {
-                $paid = 0;
-            }
-            if ($item->balance > 0 || $bi_amount > 0) {
+            $paid = max(0, $item->paid - $bi_amount);
+            $balance = max(0, $item->total - $paid);
+            if ($balance > 0) {
                 $searchData[] = [
                     'deal_id' => SysHelper::get_salesinvoice_deal_code($item->doc_number),
                     'doc_number' => $item->doc_number,
@@ -1375,7 +1375,7 @@ class SysReceiptController extends Controller
                     'total' => $item->total,
                     'paid' => $paid,
                     'bi_amount' => $bi_amount,
-                    'balance' => $item->balance,
+                    'balance' => $balance,
                 ];
             }
         }
