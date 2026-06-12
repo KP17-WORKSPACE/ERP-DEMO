@@ -2091,8 +2091,8 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                             
                                             $current_doc_adjustment = $editDataAdjustments->where('siv_no', $dt->doc_number)->sum('paid_amount');
                                             if($dt->total_paid_amount==""){$paid_amount = 0;} else {$paid_amount = $dt->total_paid_amount;}
-                                            $balance_amount = max($dt->total_amount - $paid_amount, 0);
                                             $previous_paid_amount = max($paid_amount - $current_doc_adjustment, 0);
+                                            $balance_amount = max($dt->total_amount - $previous_paid_amount, 0);
 
                                             @endphp
                                             @if($balance_amount > 0 || $current_doc_adjustment > 0)
@@ -2104,7 +2104,7 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                                 <td style="width:120px;" class="text-center">{{ empty($dt->deal_id) ? '' : App\SysHelper::get_code_from_dealid($dt->deal_id) }}<input type="hidden" id="deal_id_{{ $i }}" value="{{ empty($dt->deal_id) ? '' : App\SysHelper::get_code_from_dealid($dt->deal_id) }}" readonly /></td>
                                                 <td style="width:100px;" class="text-end">{{ @App\SysHelper::com_curr_format($dt->total_amount,2,'.',',') }}<input type="hidden" name="adj_total[]" id="adj_total_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($dt->total_amount,2,'.',',') }}" readonly /></td>
                                                 <td style="width:100px;" class="text-end">{{ @App\SysHelper::com_curr_format($previous_paid_amount,2,'.',',') }}<input type="hidden" class="js-sr-adj-previous-paid" id="adj_previous_paid_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($previous_paid_amount,2,'.',',') }}" readonly /></td>
-                                                <td style="width:100px;" class="text-end"><span id="adj_balance_display_{{ $i }}">{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}</span><input type="hidden" name="adj_balance[]" id="adj_balance_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}" data-actual-balance="{{ $balance_amount }}" readonly /></td>
+                                                <td style="width:100px;" class="text-end"><span id="adj_balance_display_{{ $i }}">{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}</span><input type="hidden" name="adj_balance[]" id="adj_balance_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}" data-actual-balance="{{ $balance_amount }}" data-available-balance="{{ $balance_amount }}" readonly /></td>
                                                 <td style="width:100px;"><input type="text" class="form-control text-end class_adj_paid" name="adj_paid[]" id="adj_paid_{{ $i }}" value="{{ $current_doc_adjustment > 0 ? @App\SysHelper::com_curr_format($current_doc_adjustment,2,'.',',') : @App\SysHelper::com_curr_format(0,2,'.',',') }}" data-current-amount="{{ $current_doc_adjustment }}" onclick="get_set_amount({{ $i }})"  /></td>
                                                 {{-- <td style="width:100px;"><input type="text" class="form-control" name="bi_amount[]" id="bi_amount_{{ $i }}" value="{{ $balance_amount }}" readonly /></td> --}}
                                                 <td style="width:100px;"><input type="text" class="form-control" name="narration[]" id="narration_{{ $i }}" value="{{ $dt->narration }}" /></td>
@@ -2170,7 +2170,7 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                                 $current_doc_adjustment = $editDataAdjustments->where('siv_no', $dt->doc_number)->sum('paid_amount');
                                                 $paid_amount = (float) ($dt->paid ?? 0);
                                                 $total_amount = (float) ($dt->total ?? 0);
-                                                $balance_amount = (float) ($dt->balance ?? 0);
+                                                $balance_amount = max((float) ($dt->balance ?? 0) + (float) $current_doc_adjustment, 0);
                                                 $previous_paid_amount = max($paid_amount, 0);
                                             @endphp
                                             @if($balance_amount > 0 || $current_doc_adjustment > 0)
@@ -2181,7 +2181,7 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                                 <td style="width:120px;" class="text-center">{{ empty($dt->deal_id) ? '' : App\SysHelper::get_code_from_dealid($dt->deal_id) }}<input type="hidden" id="deal_id_{{ $i }}" value="{{ empty($dt->deal_id) ? '' : App\SysHelper::get_code_from_dealid($dt->deal_id) }}" readonly /></td>
                                                 <td style="width:100px;" class="text-end">{{ @App\SysHelper::com_curr_format($total_amount,2,'.',',') }}<input type="hidden" name="adj_total[]" id="adj_total_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($total_amount,2,'.',',') }}" readonly /></td>
                                                 <td style="width:100px;" class="text-end">{{ @App\SysHelper::com_curr_format($previous_paid_amount,2,'.',',') }}<input type="hidden" class="js-sr-adj-previous-paid" id="adj_previous_paid_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($previous_paid_amount,2,'.',',') }}" readonly /></td>
-                                                <td style="width:100px;" class="text-end"><span id="adj_balance_display_{{ $i }}">{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}</span><input type="hidden" name="adj_balance[]" id="adj_balance_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}" data-actual-balance="{{ $balance_amount }}" readonly /></td>
+                                                <td style="width:100px;" class="text-end"><span id="adj_balance_display_{{ $i }}">{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}</span><input type="hidden" name="adj_balance[]" id="adj_balance_{{ $i }}" value="{{ @App\SysHelper::com_curr_format($balance_amount,2,'.',',') }}" data-actual-balance="{{ $balance_amount }}" data-available-balance="{{ $balance_amount }}" readonly /></td>
                                                 <td style="width:100px;"><input type="text" class="form-control text-end class_adj_paid" name="adj_paid[]" id="adj_paid_{{ $i }}" value="{{ $current_doc_adjustment > 0 ? @App\SysHelper::com_curr_format($current_doc_adjustment,2,'.',',') : @App\SysHelper::com_curr_format(0,2,'.',',') }}" data-current-amount="{{ $current_doc_adjustment }}" onclick="get_set_amount({{ $i }})"  /></td>
                                                 <td style="width:100px;"><input type="text" class="form-control" name="narration[]" id="narration_{{ $i }}" value="{{ $dt->remarks ?? '' }}" /></td>
                                             </tr>
@@ -2218,14 +2218,13 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
 
                             function getSrAdjustmentRowBalance(id) {
                                 var $balance = $('#adj_balance_' + id);
+                                if ($balance.data('available-balance') !== undefined) {
+                                    return parseSrAdjustmentAmount($balance.data('available-balance'));
+                                }
                                 if ($balance.data('actual-balance') === undefined) {
                                     $balance.data('actual-balance', parseSrAdjustmentAmount($balance.val()));
                                 }
                                 return parseSrAdjustmentAmount($balance.data('actual-balance'));
-                            }
-
-                            function getSrAdjustmentCurrentAmount(id) {
-                                return parseSrAdjustmentAmount($('#adj_paid_' + id).data('current-amount'));
                             }
 
                             function updateSrAdjustmentTotals() {
@@ -2234,7 +2233,7 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                 var paid = 0;
                                 var adjustment = 0;
 
-                                $('#table_adjestment tbody tr').each(function () {
+                                $('#table_adjestment tbody tr, #table_adjestment_unadjusted tbody tr').each(function () {
                                     total += parseSrAdjustmentAmount($(this).find('input[name="adj_total[]"]').val());
                                     balance += parseSrAdjustmentAmount($(this).find('input[name="adj_balance[]"]').val());
                                     paid += parseSrAdjustmentAmount($(this).find('.js-sr-adj-previous-paid').val());
@@ -2247,7 +2246,7 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                 $('#footer_adjustment').text(formatSrAdjustmentAmount(adjustment));
                             }
 
-                            $(document).on('click', '#table_adjestment tbody tr.js-sr-adj-row', function (event) {
+                            $(document).on('click', '#table_adjestment tbody tr.js-sr-adj-row, #table_adjestment_unadjusted tbody tr.js-sr-adj-row', function (event) {
                                 if ($(event.target).is('input, textarea, select, button, a, label')) {
                                     return;
                                 }
@@ -2257,10 +2256,10 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                 $('#adj_paid_' + id).trigger('focus');
                             });
 
-                            $(document).on('input', '#table_adjestment .class_adj_paid', function () {
+                            $(document).on('input', '#table_adjestment .class_adj_paid, #table_adjestment_unadjusted .class_adj_paid', function () {
                                 var id = ($(this).attr('id') || '').replace('adj_paid_', '');
                                 var paid = parseSrAdjustmentAmount($(this).val());
-                                var available = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
+                                var available = getSrAdjustmentRowBalance(id);
 
                                 if (paid > available) {
                                     paid = available;
@@ -2272,8 +2271,25 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                 updateSrAdjustmentTotals();
                             });
 
-                            $(document).on('blur', '#table_adjestment .class_adj_paid', function () {
+                            $(document).on('blur', '#table_adjestment .class_adj_paid, #table_adjestment_unadjusted .class_adj_paid', function () {
                                 $(this).val(formatSrAdjustmentAmount($(this).val()));
+                                updateSrAdjustmentTotals();
+                            });
+
+                            $(document).on('submit', '#sales-return-add-adjestment', function () {
+                                $('#table_adjestment .class_adj_paid, #table_adjestment_unadjusted .class_adj_paid').each(function () {
+                                    var id = ($(this).attr('id') || '').replace('adj_paid_', '');
+                                    var available = getSrAdjustmentRowBalance(id);
+                                    var paid = parseSrAdjustmentAmount($(this).val());
+
+                                    if (paid > available) {
+                                        paid = available;
+                                        $(this).val(formatSrAdjustmentAmount(paid));
+                                    }
+
+                                    $('#adj_balance_' + id).val(formatSrAdjustmentAmount(Math.max(available - paid, 0)));
+                                    $('#adj_balance_display_' + id).text(formatSrAdjustmentAmount(Math.max(available - paid, 0)));
+                                });
                                 updateSrAdjustmentTotals();
                             });
 
@@ -2284,9 +2300,16 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                     return;
                                 }
 
-                                set_adjestment(id);
-                                var adj_total = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
                                 var adj_paid = parseSrAdjustmentAmount($('#adj_paid_'+id).val());
+                                if (adj_paid <= 0) {
+                                    set_adjestment(id);
+                                }
+                                var adj_total = getSrAdjustmentRowBalance(id);
+                                adj_paid = parseSrAdjustmentAmount($('#adj_paid_'+id).val());
+                                if (adj_paid > adj_total) {
+                                    adj_paid = adj_total;
+                                    $('#adj_paid_'+id).val(formatSrAdjustmentAmount(adj_paid));
+                                }
                                 $('#adj_balance_'+id).val(formatSrAdjustmentAmount(Math.max(adj_total - adj_paid, 0)));
                                 $('#adj_balance_display_'+id).text(formatSrAdjustmentAmount(Math.max(adj_total - adj_paid, 0)));
                                 updateSrAdjustmentTotals();
@@ -2312,7 +2335,7 @@ window.SELECTED_STATE_ID = dataResult['data'][i].vat_state;
                                 var adj3 = parseSrAdjustmentAmount($('#srn_adj_amount').val());
 
                                 if(adj3 > 0){
-                                    var adj_total = getSrAdjustmentRowBalance(id) + getSrAdjustmentCurrentAmount(id);
+                                    var adj_total = getSrAdjustmentRowBalance(id);
                                     if(adj3 >= adj_total){
                                         $('#adj_paid_'+id).val(formatSrAdjustmentAmount(adj_total));
                                     }
