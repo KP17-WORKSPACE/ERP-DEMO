@@ -1005,6 +1005,12 @@ class SysReceiptController extends Controller
         try {
             DB::beginTransaction();
             $re = SysReceipt::find($id);
+            $existingIsPdcReceipt = ((int) $re->mode === 2 && (int) $re->receipt_through === 3);
+            $existingPdcRemovedOs = $re->pdc_removed_os;
+            $existingReceiptDate = $re->receipt_date ? Carbon::parse($re->receipt_date)->format('Y-m-d') : null;
+            $existingTransactionStatus = SysChartofAccountsTransaction::where('transaction_id', $id)
+                ->whereIn('transaction_type', ['cashreceipt', 'bankreceipt'])
+                ->value('status');
             $re->doc_date = Carbon::createFromFormat('d/m/Y', $request->doc_date)->format('Y-m-d');
             $re->mode = $request->mode;
             if ($request->mode == 1) {
@@ -1034,11 +1040,11 @@ class SysReceiptController extends Controller
             $re->cheque_bank_name = $request->cheque_bank_name;
             $re->currency = $request->currency;
             $isPdcReceipt = ((int) $request->mode === 2 && (int) $request->receipt_through === 3);
-            $re->pdc_removed_os = $isPdcReceipt ? 1 : null;
             $normalizedReceiptDate = Carbon::createFromFormat('d/m/Y', $request->receipt_date)->format('Y-m-d');
-            if ($isPdcReceipt && $re->receipt_date != $normalizedReceiptDate) {
-                $re->pdc_removed_os = 1;
-            }
+            $receiptDateChanged = $existingReceiptDate !== $normalizedReceiptDate;
+            $re->pdc_removed_os = $isPdcReceipt
+                ? ((!$existingIsPdcReceipt || $receiptDateChanged) ? 1 : ($existingPdcRemovedOs ?? 1))
+                : null;
             $re->receipt_date = $normalizedReceiptDate;
             $re->narration = $request->narration;
             $re->status = 1;
@@ -1091,8 +1097,8 @@ class SysReceiptController extends Controller
 
 
             $status = 1;
-            if ($request->receipt_through == 3 && $request->mode == 2) {
-                $status = 3;
+            if ($isPdcReceipt) {
+                $status = (!$existingIsPdcReceipt || $receiptDateChanged) ? 3 : ($existingTransactionStatus ?? 3);
             }
             $array_sum_amount = array_sum(
                 array_map(function ($value) {
