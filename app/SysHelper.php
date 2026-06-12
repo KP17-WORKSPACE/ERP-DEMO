@@ -8409,7 +8409,11 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 ->wherein('t.transaction_type',['openingbalance','journalvoucher','bankreceipt','cashreceipt','salesreturn'])
                 ->where(function ($query) {
                     $query->whereNull('sys_receipt.receipt_through')
-                        ->orWhereNotIn('sys_receipt.receipt_through', [3]);
+                        ->orWhereNotIn('sys_receipt.receipt_through', [3])
+                        ->orWhere(function ($query) {
+                            $query->where('sys_receipt.receipt_through', 3)
+                                ->whereIn('sys_receipt.pdc_removed_os', [2, 3]);
+                        });
                 })
                 ->groupBy('t.account_id','t.transaction_no','t.transaction_date','t.remarks','t.debit_amount','t.credit_amount','t.transaction_type','c.group')
                 ->havingRaw('(
@@ -8849,7 +8853,11 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
                 ->wherein('t.transaction_type',['openingbalance','journalvoucher','bankreceipt','cashreceipt','salesreturn'])
                 ->where(function ($query) {
                     $query->whereNull('sys_receipt.receipt_through')
-                        ->orWhereNotIn('sys_receipt.receipt_through', [3]);
+                        ->orWhereNotIn('sys_receipt.receipt_through', [3])
+                        ->orWhere(function ($query) {
+                            $query->where('sys_receipt.receipt_through', 3)
+                                ->whereIn('sys_receipt.pdc_removed_os', [2, 3]);
+                        });
                 })
                 ->groupBy('t.account_id','t.transaction_no','t.transaction_date','t.remarks','t.debit_amount','t.credit_amount','c.account_name')
                 ->havingRaw('(t.credit_amount - t.debit_amount) > ('.$totalAdjustedSql.')')
@@ -8891,7 +8899,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             //->leftJoin('sys_receipt_adjustments as ra', 'ra.bi_doc_number', '=', 't.transaction_no')
             ->where(function ($query) {
                 $query->whereNull('sys_receipt.pdc_removed_os')
-                    ->orWhere('sys_receipt.pdc_removed_os', '!=', 2);
+                    ->orWhereNotIn('sys_receipt.pdc_removed_os', [2, 3]);
             })
             ->whereIn('t.account_id', $account_ids)
             ->where('t.company_id', $company)
