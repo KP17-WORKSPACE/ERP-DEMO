@@ -300,7 +300,7 @@
                                                 <div class="d-flex justify-content-start">
                                                     <button class="btn btn-sm btn-light" style="margin-left:29px"
                                                         id="btn_pdc_received_{{ $p->doc_number }}" href="#"
-                                                        onclick="receipt_pdc_update('{{ $p->doc_number }}','{{ $p->receipt_date ? \Carbon\Carbon::parse($p->receipt_date)->format('d/m/Y') : '' }}')">Update</button>
+                                                        onclick="receipt_pdc_update('{{ $p->doc_number }}','{{ $p->receipt_date ? \Carbon\Carbon::parse($p->receipt_date)->format('d/m/Y') : '' }}',{{ !empty($p->bi_doc_no) ? 3 : 2 }})">Update</button>
                                                 </div>
 
                                             </td>
@@ -328,7 +328,7 @@
                                                 <div class="d-flex justify-content-start">
                                                     <button class="btn-sm btn btn-light"  style="margin-left:29px"
                                                         id="btn_pdc_payment_{{ $p->doc_number }}"
-                                                        onclick="payment_pdc_update('{{ $p->doc_number }}','{{ $p->payment_date ? \Carbon\Carbon::parse($p->payment_date)->format('d/m/Y') : '' }}')">Update</button>
+                                                        onclick="payment_pdc_update('{{ $p->doc_number }}','{{ $p->payment_date ? \Carbon\Carbon::parse($p->payment_date)->format('d/m/Y') : '' }}',{{ !empty($p->bi_doc_no) ? 3 : 2 }})">Update</button>
                                                 </div>
 
                                             </td>
@@ -428,7 +428,7 @@
                                                 <div class="d-flex justify-content-center">
                                                     <button class="btn btn-sm btn-light" style="margin-left:29px"
                                                         id="btn_pdc_received_{{ $p->doc_number }}" href="#"
-                                                        onclick="receipt_pdc_update('{{ $p->doc_number }}','{{ $p->receipt_date ? \Carbon\Carbon::parse($p->receipt_date)->format('d/m/Y') : '' }}')">Update</button>
+                                                        onclick="receipt_pdc_update('{{ $p->doc_number }}','{{ $p->receipt_date ? \Carbon\Carbon::parse($p->receipt_date)->format('d/m/Y') : '' }}',{{ !empty($p->bi_doc_no) ? 3 : 2 }})">Update</button>
                                                 </div>
 
                                             </td>
@@ -494,7 +494,7 @@
                                                 <div class="d-flex justify-content-center">
                                                     <button class="btn-sm btn btn-light"  style="margin-left:29px"
                                                         id="btn_pdc_payment_{{ $p->doc_number }}"
-                                                        onclick="payment_pdc_update('{{ $p->doc_number }}','{{ $p->payment_date ? \Carbon\Carbon::parse($p->payment_date)->format('d/m/Y') : '' }}')">Update</button>
+                                                        onclick="payment_pdc_update('{{ $p->doc_number }}','{{ $p->payment_date ? \Carbon\Carbon::parse($p->payment_date)->format('d/m/Y') : '' }}',{{ !empty($p->bi_doc_no) ? 3 : 2 }})">Update</button>
                                                 </div>
 
                                             </td>
@@ -532,9 +532,10 @@
     </div>
 
     <script>
-        function receipt_pdc_update(id, dat) {
+        function receipt_pdc_update(id, dat, pdcStatus) {
             $('#pdc_receipt_doc_no').val(id);
             $('#pdc_receipt_doc_date').val(dat);
+            $('#pdc_receipt_status_flag').val(pdcStatus);
 
             // $('#pdc_receipt_doc_date').val(dat ? dat.split('-')
             //     .reverse().join('/') : '');
@@ -558,6 +559,7 @@
                     doc_id: $('#pdc_receipt_doc_no').val(),
                     doc_date: $('#pdc_receipt_doc_date').val(),
                     status: $('#pdc_receipt_status').val(),
+                    pdc_status: $('#pdc_receipt_status_flag').val(),
                 },
                 cache: false,
                 success: function(dataResult) {
@@ -602,6 +604,7 @@
                                 <div class="col">
                                     <div class="input-effect">
                                         <input type="hidden" id="pdc_receipt_doc_no">
+                                        <input type="hidden" id="pdc_receipt_status_flag">
                                         <label class="form-label">@lang('Receipt Date')<span></span></label>
                                         <input class="form-control date-picker" id="pdc_receipt_doc_date" type="text"
                                             required>
@@ -708,6 +711,7 @@
                                 <div class="col">
                                     <div class="input-effect">
                                         <input type="hidden" id="pdc_payment_doc_no">
+                                        <input type="hidden" id="pdc_payment_status_flag">
                                         <label class="form-label">@lang('Payment Date')<span></span></label>
                                         <input class="form-control date-picker" id="pdc_payment_doc_date" type="text"
                                             required>
@@ -745,10 +749,11 @@
     <!-- Modal Payment PDC Update -->
 
     <script>
-        function payment_pdc_update(id, dat) {
+        function payment_pdc_update(id, dat, pdcStatus) {
             $('#pdc_payment_doc_no').val(id);
             console.log(dat)
             $('#pdc_payment_doc_date').val(dat);
+            $('#pdc_payment_status_flag').val(pdcStatus);
             $('#ModalPaymentPDCUpdate').modal('show');
         }
 
@@ -763,6 +768,7 @@
                     doc_id: $('#pdc_payment_doc_no').val(),
                     doc_date: $('#pdc_payment_doc_date').val(),
                     status: $('#pdc_payment_status').val(),
+                    pdc_status: $('#pdc_payment_status_flag').val(),
                 },
                 cache: false,
                 success: function(dataResult) {
