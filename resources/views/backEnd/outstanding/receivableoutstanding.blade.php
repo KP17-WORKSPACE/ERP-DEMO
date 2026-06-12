@@ -1465,6 +1465,9 @@ function check_total(id, amount) {
             return $first;
         })
         ->values();
+    $accountPdcAdjustedTotal = collect($pdcRows)->sum(function ($row) {
+        return abs((float)($row->adj_amount ?? 0));
+    });
  @endphp
 
                   @if (count($pdcRows)>0)
@@ -1476,8 +1479,9 @@ function check_total(id, amount) {
                             <th class="text-center" style="width:6%">Doc Date</th>
                             <th class="text-center" style="width:6.5%">Receipt No</th>
                             <th class="text-end" style="width:8.5%">Amount</th>
-                            <th class="text-end" style="width:7%">Adjusted</th>
+                                  <th class="text-end" style="width:7%">Adjusted</th>
                             <th class="text-end" style="width:8.5%">Balance</th>
+                      
                             <th class="text-center" style="width:8%">Cheque Date</th>
                             <th class="text-center" style="width:8.5%">Cheque No</th>
                             <th class="text-center" style="width:8%">Receipt Date</th>
@@ -1499,8 +1503,9 @@ function check_total(id, amount) {
                             }
                             $pdcSign = ((float)($p->credit_amount ?? 0) > (float)($p->debit_amount ?? 0)) ? -1 : 1;
                             $pdcAmountSigned = $pdcSign * abs((float)($p->amount ?? 0));
-                            $pdcAdjustedSigned = $pdcSign * abs((float)($p->adj_amount ?? 0));
-                            $pdcBalanceSigned = $pdcAmountSigned - $pdcAdjustedSigned;
+                            $pdcAdjustedForBalance = $pdcSign * abs((float)($p->adj_amount ?? 0));
+                            $pdcAdjustedDisplay = abs((float)($p->adj_amount ?? 0));
+                            $pdcBalanceSigned = $pdcAmountSigned - $pdcAdjustedForBalance;
                             $pdcStatusFlag = ((float)($p->adj_amount ?? 0) > 0) ? 3 : 2;
                         @endphp
                         <tr id="row_pdc_received_{{ $p->doc_number }}">
@@ -1514,8 +1519,10 @@ function check_total(id, amount) {
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
                             <td class="text-center"><a href="{{url('get-url-receipt/' . $p->doc_number)}}" target="_blank">{{ $p->doc_number }}</a></td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcAmountSigned,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcAdjustedSigned,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcAdjustedDisplay,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcBalanceSigned,2,'.',',') }}</td>
+                            
+
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->cheque_date)) }}</td>
                             <td class="text-center">{{ $p->cheque_number }}</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->receipt_date)) }}</td>
@@ -1527,13 +1534,10 @@ function check_total(id, amount) {
                             <td class="">{{ $p->remarks }}</td>
                             <td class="text-center"><a class="text-danger text-center" id="btn_pdc_received_{{ $p->doc_number }}" onclick="pdc_update('{{ $p->doc_number }}','{{ @App\SysHelper::normalizeToDmy($p->receipt_date) }}',{{ $pdcStatusFlag }})"><i class="ico icon-outline-pen-new-square" style="font-size: 16px" aria-hidden="true"></i></a></td>
                         </tr>
-                        <script>
-                            set_total_addmore({{ $aname->id }},{{ $pdcAdjustedSigned }})
-                        </script>
                         @if(!empty($p->bi_doc_no))
                         <tr style="display: none;" id="row_det_{{ $p->doc_number }}">
                             <td></td>
-                            <td colspan="11">
+                            <td colspan="12">
                                     <table class="table" style="border: solid 1px #e3e6f0; width:auto; width:100%;" id="row_det_table_{{ $p->doc_number }}">
                                         <thead>
                                             <tr>
@@ -1560,11 +1564,11 @@ function check_total(id, amount) {
                             $sign = ((float)($row->credit_amount ?? 0) > (float)($row->debit_amount ?? 0)) ? -1 : 1;
                             return $sign * abs((float)($row->amount ?? 0));
                         });
-                        $pdcSumAdjusted = collect($pdcRows)->sum(function ($row) {
+                        $pdcSumAdjusted = $accountPdcAdjustedTotal;
+                        $pdcSumBalance = collect($pdcRows)->sum(function ($row) {
                             $sign = ((float)($row->credit_amount ?? 0) > (float)($row->debit_amount ?? 0)) ? -1 : 1;
-                            return $sign * abs((float)($row->adj_amount ?? 0));
+                            return ($sign * abs((float)($row->amount ?? 0))) - ($sign * abs((float)($row->adj_amount ?? 0)));
                         });
-                        $pdcSumBalance = $pdcSumAmount - $pdcSumAdjusted;
                     
                         @endphp
                         <tr class="">
@@ -1574,6 +1578,8 @@ function check_total(id, amount) {
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumAmount,2,'.',',') }}</b></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumAdjusted,2,'.',',') }}</b></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumBalance,2,'.',',') }}</b></td>
+                           
+
                             <td class=""></td>
                             <td class=""></td>
                             <td class=""></td>
@@ -1764,7 +1770,7 @@ function check_total(id, amount) {
                   @endif -->
 
                   <script>
-                      set_total({{ $aname->id }}, @json((float) ($grand_balance + $accountUnadjustedBalanceTotal)));
+                      set_total({{ $aname->id }}, @json((float) ($grand_balance + $accountUnadjustedBalanceTotal + $accountPdcAdjustedTotal)));
                   </script>
 
 
