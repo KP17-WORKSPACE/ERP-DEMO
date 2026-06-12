@@ -289,13 +289,15 @@ class SysSalesReturnController extends Controller
                         SELECT IFNULL(SUM(paid_amount), 0)
                         FROM sys_sales_return_adjestment
                         WHERE siv_no = sys_sales_invoice.doc_number
+                          AND status = 1
                     ) + (
                         SELECT IFNULL(SUM(bi_paid), 0)
                         FROM sys_receipt_adjustments
                         WHERE bi_doc_no = sys_sales_invoice.doc_number
+                          AND status = 1
                     ) AS total_paid_amount'),
-                    'dn.doc_number as dn_doc_number',
-                    DB::raw("COALESCE((SELECT narration FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number LIMIT 1), '') as narration")
+                'dn.doc_number as dn_doc_number',
+                DB::raw("COALESCE((SELECT narration FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number AND status = 1 LIMIT 1), '') as narration")
                 )
                     ->join('sys_chartofaccounts_transaction as cat', 'cat.transaction_no', 'sys_sales_invoice.doc_number')
                     ->leftJoin('sys_delivery_note as dn', 'dn.id', 'sys_sales_invoice.dn_id')
@@ -321,7 +323,7 @@ class SysSalesReturnController extends Controller
 
                 $srn_adjestment = [];
                 foreach ($opb as $dt) {
-                    $paid = SysReceiptAdjustments::where('bi_doc_no', $dt->transaction_no)->sum('bi_paid');
+                    $paid = SysReceiptAdjustments::where('bi_doc_no', $dt->transaction_no)->where('status', 1)->sum('bi_paid');
                     $srn_adjestment[] = [
                         'doc_number' => $dt->transaction_no,
                         'doc_date' => $dt->transaction_date,
@@ -431,11 +433,11 @@ class SysSalesReturnController extends Controller
                 'sys_sales_invoice.lpo_number',
                 'cat.debit_amount as total_amount',
                 DB::raw('
-            (SELECT IFNULL(SUM(paid_amount), 0) FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number) +
-            (SELECT IFNULL(SUM(bi_paid), 0) FROM sys_receipt_adjustments WHERE bi_doc_no = sys_sales_invoice.doc_number) 
+            (SELECT IFNULL(SUM(paid_amount), 0) FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number AND status = 1) +
+            (SELECT IFNULL(SUM(bi_paid), 0) FROM sys_receipt_adjustments WHERE bi_doc_no = sys_sales_invoice.doc_number AND status = 1)
             AS total_paid_amount'),
                 'dn.doc_number as dn_doc_number',
-                DB::raw("COALESCE((SELECT narration FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number LIMIT 1), '') as narration")
+                DB::raw("COALESCE((SELECT narration FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number AND status = 1 LIMIT 1), '') as narration")
             )
                 ->join('sys_chartofaccounts_transaction as cat', 'cat.transaction_no', 'sys_sales_invoice.doc_number')
                 ->leftJoin('sys_delivery_note as dn', 'dn.id', 'sys_sales_invoice.dn_id')
@@ -458,7 +460,7 @@ class SysSalesReturnController extends Controller
 
             if (count($opb) > 0) {
                 foreach ($opb as $dt) {
-                    $paid = SysReceiptAdjustments::where('bi_doc_no', $dt->transaction_no)->sum('bi_paid');
+                    $paid = SysReceiptAdjustments::where('bi_doc_no', $dt->transaction_no)->where('status', 1)->sum('bi_paid');
                     //if(abs($dt->debit_amount - $dt->credit_amount)-$paid>0){
                     $srn_adjestment[] = [
                         'doc_number' => $dt->transaction_no,
@@ -506,12 +508,14 @@ class SysSalesReturnController extends Controller
     public function salesreturnadd_adjestment(Request $request)
     {
         try {
-            if (count($request->adj_paid) > 0) {
-                for ($i = 0; $i < count($request->adj_paid); $i++) {
-                    SysSalesReturnAdjestment::where(['srn_no' => $request->adj_srn_no])->where('status', 5)->delete(); //, 'siv_no' => $request->adj_siv_no[$i]
-                }
-                for ($i = 0; $i < count($request->adj_paid); $i++) {
-                    if ($request->adj_paid[$i] != "" && $request->adj_paid[$i] != 0) {
+            $adjPaid = $request->adj_paid ?? [];
+            if (count($adjPaid) > 0) {
+                SysSalesReturnAdjestment::where('srn_no', $request->adj_srn_no)
+                    ->whereIn('status', [1, 5])
+                    ->delete();
+
+                for ($i = 0; $i < count($adjPaid); $i++) {
+                    if ($adjPaid[$i] != "" && $adjPaid[$i] != 0) {
                         $data = [
                             'srn_no' => $request->adj_srn_no,
                             'dln_no' => $request->adj_dn_doc_number,
@@ -519,7 +523,7 @@ class SysSalesReturnController extends Controller
                             'lpo_number' => $request->lpo_number[$i],
                             'doc_date' => date('Y-m-d', strtotime($request->edit_adj_doc_date)),
                             'total_amount' => str_replace(',', '', $request->adj_total[$i]),
-                            'paid_amount' => str_replace(',', '', $request->adj_paid[$i]),
+                            'paid_amount' => str_replace(',', '', $adjPaid[$i]),
                             'balance_amount' => max((float) str_replace(',', '', $request->adj_balance[$i]), 0),
                             'narration' => $request->narration[$i],
                             'status' => 1,
@@ -1149,11 +1153,11 @@ class SysSalesReturnController extends Controller
                 'sys_sales_invoice.deal_id',
                 'cat.debit_amount as total_amount',
                 DB::raw('
-            (SELECT IFNULL(SUM(paid_amount), 0) FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number) +
-            (SELECT IFNULL(SUM(bi_paid), 0) FROM sys_receipt_adjustments WHERE bi_doc_no = sys_sales_invoice.doc_number) 
+            (SELECT IFNULL(SUM(paid_amount), 0) FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number AND status = 1) +
+            (SELECT IFNULL(SUM(bi_paid), 0) FROM sys_receipt_adjustments WHERE bi_doc_no = sys_sales_invoice.doc_number AND status = 1)
             AS total_paid_amount'),
                 'dn.doc_number as dn_doc_number',
-                DB::raw("COALESCE((SELECT narration FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number LIMIT 1), '') as narration")
+                DB::raw("COALESCE((SELECT narration FROM sys_sales_return_adjestment WHERE siv_no = sys_sales_invoice.doc_number AND status = 1 LIMIT 1), '') as narration")
             )
                 ->join('sys_chartofaccounts_transaction as cat', 'cat.transaction_no', 'sys_sales_invoice.doc_number')
                 ->leftJoin('sys_delivery_note as dn', 'dn.id', 'sys_sales_invoice.dn_id')
@@ -1179,7 +1183,7 @@ class SysSalesReturnController extends Controller
 
             if (count($opb) > 0) {
                 foreach ($opb as $dt) {
-                    $paid = SysReceiptAdjustments::where('bi_doc_no', $dt->transaction_no)->sum('bi_paid');
+                    $paid = SysReceiptAdjustments::where('bi_doc_no', $dt->transaction_no)->where('status', 1)->sum('bi_paid');
                     //if(abs($dt->debit_amount - $dt->credit_amount)-$paid>0){
                     $srn_adjestment[] = [
                         'doc_number' => $dt->transaction_no,
