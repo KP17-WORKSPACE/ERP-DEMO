@@ -321,16 +321,23 @@
                 @if ($selectedLeave)
                     @include('backEnd.approvals._details', ['leave' => $selectedLeave])
                 @else
-                    <div class="container-fluid d-flex flex-column justify-content-center align-items-center"
-                        style="min-height:60vh;">
-                        <div class="text-center mb-4">
-                            <div class="rounded-circle bg-success d-flex justify-content-center align-items-center mx-auto"
-                                style="width:80px;height:80px;font-size:36px;">
-                                <i class="ico icon-outline-calendar text-white"></i>
+                     <div class="container-fluid d-flex flex-column justify-content-center align-items-center"
+                        style="min-height: 90vh;">
+
+                        <!-- Icon + Heading -->
+                       <a href="{{ url('employee/leaves/create') }}" class="text-decoration-none text-dark">
+                            <div class="text-center mb-4">
+                                <div 
+                                    class="rounded-circle bg-success text-white d-flex justify-content-center align-items-center mx-auto"
+                                    style="width: 80px; height: 80px; font-size: 36px; cursor:pointer">
+                                    <i class="ico icon-outline-add-square"></i>
+                                </div>
+                                <h1 class="fw-bold mt-3">Add Leave</h1>
+                                <p class="text-muted">Create and track your leaves with ease</p>
                             </div>
-                            <h1 class="fw-bold mt-3">Leave Requests</h1>
-                            <p class="text-muted">Select a leave from the list to view details</p>
-                        </div>
+                        </a>
+
+
                     </div>
                 @endif
             </div>
