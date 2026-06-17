@@ -479,7 +479,8 @@
             
             <script>
     function download_outstanding(id){
-        var date = $('#till_date').val();                                                                        
+        var date = $('#till_date').val();
+        date = (date || '').replace(/\//g, '-');
         var url = $("#base_url").val()+"/payables-outstanding-download/"+id+"/"+date;
         window.location.href = url;
     }
