@@ -7743,7 +7743,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 
 //receivable outatsnding start
     /**
-     * Raw OPB popup invoice debit total. Receipt/adjustment status must not change this.
+     * Raw OPB popup invoice net total. Receipt/adjustment status must not change this.
      */
     protected static function sumReceivableOutstandingInvoiceAmountTotal($accountId, $companyId, $tillDate = null)
     {
@@ -7755,7 +7755,8 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             ->where('status', 1)
             ->where('transaction_type', 'opbinvoice')
             ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
-            ->sum('debit_amount');
+            ->selectRaw('COALESCE(SUM(IFNULL(debit_amount, 0) - IFNULL(credit_amount, 0)), 0) as invoice_amount')
+            ->value('invoice_amount');
     }
 
     /**
@@ -8977,7 +8978,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
 //payable outatsnding start
 
     /**
-     * Raw OPB popup invoice credit total. Normal invoices must not reduce supplier OPB credit.
+     * Raw OPB popup invoice net total. Normal invoices must not reduce supplier OPB credit.
      */
     protected static function sumPayableOutstandingInvoiceAmountTotal($accountId, $companyId, $tillDate = null)
     {
@@ -8989,7 +8990,8 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             ->where('status', 1)
             ->where('transaction_type', 'opbinvoice')
             ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= ?", [$till])
-            ->sum('credit_amount');
+            ->selectRaw('COALESCE(SUM(IFNULL(credit_amount, 0) - IFNULL(debit_amount, 0)), 0) as invoice_amount')
+            ->value('invoice_amount');
     }
 
     /**
