@@ -1513,8 +1513,8 @@ function check_total(id, amount) {
                             <th class="text-center" style="width:5%">Deal ID</th>
                             <th class="text-center" style="width:6%">Doc Date</th>
                             <th class="text-center" style="width:7%">Payment No</th>
-                            <th class="text-end" style="width:9%; white-space:normal;">Debit Amount</th>
-                            <th class="text-end" style="width:9%; white-space:normal;">Credit Amount</th>
+                            <!-- <th class="text-end" style="width:9%; white-space:normal;">Debit Amount</th>
+                            <th class="text-end" style="width:9%; white-space:normal;">Credit Amount</th> -->
                             <th class="text-end" style="width:7%">Amount</th>
                             <th class="text-end" style="width:7%">Adjustment</th>
                             <th class="text-end" style="width:7%">Balance</th>
@@ -1606,8 +1606,8 @@ function check_total(id, amount) {
                                 $unadjSum += $unadjustedBalance;
                                 $unadjAdjustedSum += $unadjustedAdjustment;
                             @endphp
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedDebitAmount,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedCreditAmount,2,'.',',') }}</td>
+                            <!-- <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedDebitAmount,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedCreditAmount,2,'.',',') }}</td> -->
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAmount,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustment,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalance,2,'.',',') }}</td>
@@ -1680,7 +1680,7 @@ function check_total(id, amount) {
 
                     @php $accountUnadjustedBalanceTotal = $unadjSum; @endphp
                     <tr class="">
-                        <td colspan="3" class="text-end font-weight-bold"><b>Total</b></td>
+                        <td colspan="1" class="text-end font-weight-bold"><b>Total</b></td>
                         <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjDebitSum,2,'.',',') }}</b></td>
                         <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjCreditSum,2,'.',',') }}</b></td>
                         <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAmountSum,2,'.',',') }}</b></td>
