@@ -27,7 +27,7 @@
     footer { position: fixed; left: 0px; bottom: -100px; right: 0px; height: 100px; background-color: white; }
     footer .page:after { content: counter(page, upper-roman); }
 
-    body{font-family: Verdana, sans-serif; font-size:12px; color:#555555; background-image: url('{!! asset("public/".$company->pdf_watermark."") !!}');}
+    body{font-family: Verdana, sans-serif; font-size:12px; color:#555555; background-image: url('{!! asset("public/backEnd/img/".$company->pdf_watermark."") !!}');}
 
     th, td {padding: 5px 5px;}
     .tdd{border:dashed 1px #9e9e9e; border-width:0 0 1px 0;}
@@ -63,7 +63,7 @@
     <?php try { ?>
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
       <tr>
-          <td align="left"><img  src="{{asset('public/'.$company->company_logo)}}" width="200px"/></td>
+          <td align="left"><img  src="{{asset(@$company->company_logo)}}" width="200px"/></td>
           <td align="right"><b style="font-size: 30px; font-weight: 400;">Statement of Outstanding</b></td>
       </tr>
   </table>
@@ -242,104 +242,6 @@ else
     $('.hidecol').css('display','none');
 </script>
 @endif
-
-
-@if (count($list_of_unadjusted)>0 || count($list_of_unadjusted_jv_to_jv)>0)<br />
-                    <b>List of Unadjusted balance:-</b>
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                      <tr class="item-head-row">
-                        <td style="width: 100px; text-align: center;">Doc Date</td>
-                        <td style="width: 100px; text-align: center;">Payment No</td>
-                        <td style="width: 100px; text-align: right;">Amount</td>
-                        <td style="width: 100px; text-align: center;">Remarks</td>
-                      </tr>
-                    </table>
-                    @if (count($list_of_unadjusted)>0)
-                          @foreach ($list_of_unadjusted as $p)
-                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                              <tr>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ $p->doc_number }}</td>
-                                <td class="item-row" style="width: 100px; text-align: right;">{{ @App\SysHelper::com_curr_format($p->amount - $p->adj_amount,2,'.',',') }}</td>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ @$p->remarks }}&nbsp;</td>
-                              </tr>
-                            </table>
-                          @endforeach
-                    @endif
-                    @if (count($list_of_unadjusted_jv_to_jv)>0)
-                          @foreach ($list_of_unadjusted_jv_to_jv as $p)
-                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                              <tr>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ $p->doc_number }}</td>
-                                <td class="item-row" style="width: 100px; text-align: right;">{{ @App\SysHelper::com_curr_format($p->amount - $p->adj_amount,2,'.',',') }}</td>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ @$p->remarks }}&nbsp;</td>
-                              </tr>
-                            </table>
-                          @endforeach
-                    @endif
-                  @endif
-
-                  @if (count($list_of_unadjusted_pdc)>0)<br />
-                  <b>List of Unadjusted PDC:-</b>
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                      <tr class="item-head-row">
-                            <td style="width: 100px; text-align: center;">Doc Date</td>
-                            <td style="width: 100px; text-align: center;">Payment No</td>
-                            <td style="width: 100px; text-align: right;">Amount</td>
-                            <td style="width: 100px; text-align: center;">Cheque Date</td>
-                            <td style="width: 100px; text-align: center;">Cheque No</td>
-                            <td style="width: 100px; text-align: center;">Payment Date</td>
-                        </tr>
-                    </table>
-                        @foreach ($list_of_unadjusted_pdc as $p)
-                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                        <tr>
-                            <td class="item-row" style="width: 100px; text-align: center;">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
-                            <td class="item-row" style="width: 100px; text-align: center;">{{ $p->doc_number }}</td>
-                            <td class="item-row" style="width: 100px; text-align: right;">{{ @App\SysHelper::com_curr_format($p->amount - $p->adj_amount,2,'.',',') }}</td>
-                            <td class="item-row" style="width: 100px; text-align: center;">{{ date('d/m/Y', strtotime($p->cheque_date)) }}</td>
-                            <td class="item-row" style="width: 100px; text-align: center;">{{ $p->cheque_number }}</td>
-                            <td class="item-row" style="width: 100px; text-align: center;">{{ date('d/m/Y', strtotime($p->payment_date)) }}</td>
-                        </tr>
-                        </table>
-                        @endforeach
-                  @endif
-
-                  @if (count($list_of_adjusted_pdc)>0)<br />
-                  <b>List of PDC:-</b>
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                      <tr class="item-head-row">
-                            <td style="width: 80px; text-align: center;">Doc Date</td>
-                            <td style="width: 80px; text-align: center;">Payment No</td>
-                            <td style="width: 80px; text-align: right;">Amount</td>
-                            <td style="width: 80px; text-align: center;">Cheque Date</td>
-                            <td style="width: 80px; text-align: center;">Cheque No</td>
-                            <td style="width: 80px; text-align: center;">Payment Date</td>
-                            <td style="width: 80px; text-align: center;">Invoice</td>
-                            <td style="width: 80px; text-align: right;">Adjusted</td>
-                        </tr>
-                        </table>
-                        
-                        @foreach ($list_of_adjusted_pdc as $p)
-                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                        <tr>
-                            <td class="item-row" style="width: 80px; text-align: center;">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
-                            <td class="item-row" style="width: 80px; text-align: center;">{{ $p->doc_number }}</td>
-                            <td class="item-row" style="width: 80px; text-align: right;">{{ @App\SysHelper::com_curr_format($p->amount,2,'.',',') }}</td>
-                            <td class="item-row" style="width: 80px; text-align: center;">{{ date('d/m/Y', strtotime($p->cheque_date)) }}</td>
-                            <td class="item-row" style="width: 80px; text-align: center;">{{ $p->cheque_number }}</td>
-                            <td class="item-row" style="width: 80px; text-align: center;">{{ date('d/m/Y', strtotime($p->payment_date)) }}</td>
-                            <td class="item-row" style="width: 80px; text-align: center;">{{ $p->bi_doc_no }}</td>
-                            <td class="item-row" style="width: 80px; text-align: right;">
-                                {{ @App\SysHelper::com_curr_format(@$p->adj_amount,2,'.',',') }}
-                            </td>
-                        </tr>
-                        </table>
-                        
-                        @endforeach
-                        @endif
-
 
 {{--  <br /><br />
 <table width="100%" border="0" cellspacing="0" cellpadding="0">
