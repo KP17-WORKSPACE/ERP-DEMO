@@ -84,8 +84,8 @@
             <b>To,</b><br />
             <b style="font-size: 100%;">{{@$cust_detail->customer_name_display}}</b><br />
             {{ $cust_detail->customer_salutation }} {{ $cust_detail->first_name }} {{ $cust_detail->last_name }}<br />
-            {{ $cust_address->address }}<br />
-            {{ $cust_address->address2 }}, {{ $cust_address->city }}<br />
+            <!-- {{ $cust_address->address }}<br />
+            {{ $cust_address->address2 }}, {{ $cust_address->city }}<br /> -->
             {{ $cust_address->statename->name }}, {{ $cust_address->countryname->name }}<br />
             Phone: {{@$cust_detail->contcat_number}}<br />
             Email: {{@$cust_detail->email}}<br />
