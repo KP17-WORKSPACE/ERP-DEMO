@@ -227,11 +227,19 @@ class SysGeneralLedgerController extends Controller
                         }
 
                         if(count($resultsra1)>0){
+                        $processedLedgerKeys = [];
                         foreach ($resultsra1 as $res1) {
+                            $ledgerKey = $res1->transaction_no . '|' . $res1->entry_no;
+                            if (isset($processedLedgerKeys[$ledgerKey])) {
+                                continue;
+                            }
+                            $processedLedgerKeys[$ledgerKey] = true;
+
                             $resultsra2 = DB::table('sys_chartofaccounts_transaction AS cat')
                             ->select('cat.id','cat.account_id','ca.account_name','ca.account_code','cat.transaction_no','cat.transaction_id','cat.transaction_date','cat.debit_amount','cat.credit_amount','cat.entry_no','cat.remarks','cat.is_main_account')
                             ->join('sys_chartofaccounts AS ca', 'ca.id', 'cat.account_id')
                             ->where('cat.transaction_no', $res1->transaction_no)
+                            ->where('cat.company_id', $com_id)
                             ->where('entry_no', $res1->entry_no)
                             ->wherenotin('transaction_type',['openingbalance','opbinvoice'])
                             ->where('cat.status',1)
@@ -522,6 +530,7 @@ class SysGeneralLedgerController extends Controller
                                 if(count($resultsra2)>0){
                                     if(!str_contains($resultsra2[0]->transaction_no,'JV') && !str_contains($resultsra2[0]->transaction_no,'BR') && !str_contains($resultsra2[0]->transaction_no,'CR') && !str_contains($resultsra2[0]->transaction_no,'BP') && !str_contains($resultsra2[0]->transaction_no,'CP')){
                                      
+                                        $processedContraEntryKeys = [];
                                         foreach ($resultsra2 as $res2) {                                        
                                             
                                             if($res2->is_main_account==0 && $res2->account_id ==$account_id){
@@ -564,7 +573,21 @@ class SysGeneralLedgerController extends Controller
                                                 ];
                                             }
                                             if($res2->account_id==$account_id && $res2->credit_amount != '0.00'){
-                                                $resultsra2_sub = $resultsra2->where('entry_no',$res2->entry_no)->wherenotin('account_id', $res2->account_id);
+                                                $contraEntryKey = $res2->transaction_no . '|' . $res2->entry_no . '|' . $res2->account_id;
+                                                if (isset($processedContraEntryKeys[$contraEntryKey])) {
+                                                    continue;
+                                                }
+                                                $processedContraEntryKeys[$contraEntryKey] = true;
+
+                                                $resultsra2_sub = $resultsra2->where('entry_no',$res2->entry_no)->wherenotin('account_id', $res2->account_id)
+                                                    ->groupBy('account_id')
+                                                    ->map(function ($rows) {
+                                                        $first = clone $rows->first();
+                                                        $first->debit_amount = $rows->sum('debit_amount');
+                                                        $first->credit_amount = $rows->sum('credit_amount');
+                                                        return $first;
+                                                    })
+                                                    ->values();
                                                 if(count($resultsra2_sub)>0){
                                                     foreach ($resultsra2_sub as $value) {
                                                         $data[]=[
