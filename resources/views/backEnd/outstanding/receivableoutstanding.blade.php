@@ -1610,7 +1610,7 @@ function check_total(id, amount) {
                         </tr>
                     </thead>
                     <tbody>
-                        @php $unadjAmountSum = 0; $unadjSum = 0; $unadjAdjustedSum = 0; @endphp
+                        @php $unadjAmountSum = 0; $unadjSum = 0; $unadjAdjustedDisplaySum = 0; @endphp
                         @if (count($unadj_list)>0)
                         @foreach ($unadj_list as $p)
                           @php
@@ -1680,10 +1680,11 @@ function check_total(id, amount) {
                                     $unadjustedAdjustment = -abs($unadjustedAdjustment);
                                 }
                                 $unadjustedBalance = $unadjustedAmount - $unadjustedAdjustment;
+                                $unadjustedAdjustmentDisplay = abs($unadjustedAdjustment);
                             @endphp
-                            @php $unadjAmountSum += $unadjustedAmount; $unadjSum += $unadjustedBalance; $unadjAdjustedSum += $unadjustedAdjustment; @endphp
+                            @php $unadjAmountSum += $unadjustedAmount; $unadjSum += $unadjustedBalance; $unadjAdjustedDisplaySum += $unadjustedAdjustmentDisplay; @endphp
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAmount,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustment,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustmentDisplay,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalance,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
@@ -1719,9 +1720,10 @@ function check_total(id, amount) {
                             @php $unadjustedAmountJv = (float)($p->amount ?? 0); @endphp
                             @php $unadjustedAdjustmentJv = (float)($p->amount2 ?? 0) + (float)($p->adj_amount ?? 0); @endphp
                             @php $unadjustedBalanceJv = $unadjustedAmountJv - $unadjustedAdjustmentJv; @endphp
-                            @php $unadjAmountSum += $unadjustedAmountJv; $unadjSum += $unadjustedBalanceJv; $unadjAdjustedSum += $unadjustedAdjustmentJv; @endphp
+                            @php $unadjustedAdjustmentJvDisplay = abs($unadjustedAdjustmentJv); @endphp
+                            @php $unadjAmountSum += $unadjustedAmountJv; $unadjSum += $unadjustedBalanceJv; $unadjAdjustedDisplaySum += $unadjustedAdjustmentJvDisplay; @endphp
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAmountJv,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustmentJv,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustmentJvDisplay,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalanceJv,2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
@@ -1735,7 +1737,7 @@ function check_total(id, amount) {
                         <tr class="">
                             <td colspan="3" class="text-end font-weight-bold"><b>Total</b></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAmountSum,2,'.',',') }}</b></td>
-                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAdjustedSum,2,'.',',') }}</b></td>
+                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAdjustedDisplaySum,2,'.',',') }}</b></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjSum,2,'.',',') }}</b></td>
                             <td class=""></td>
                         </tr>
