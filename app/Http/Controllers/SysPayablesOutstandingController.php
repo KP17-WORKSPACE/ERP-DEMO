@@ -493,8 +493,12 @@ class SysPayablesOutstandingController extends Controller
         }
     }
 
-    public function download($account, $date)
+    public function download($account, $date, $month = null, $year = null)
     {
+        if ($month !== null && $year !== null) {
+            $date = $date . '-' . $month . '-' . $year;
+        }
+        $date = SysHelper::normalizeToYmd($date) ?: $date;
         $com_id = session('logged_session_data.company_id');
         $transaction_no = SysChartofAccountsTransaction::where('account_id', $account)->where('status', 1)->where('company_id', $com_id)->pluck('transaction_no');
 
