@@ -1391,6 +1391,7 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::post('payables-outstanding-store-temp-delete', 'SysPayablesOutstandingController@store_temp_delete');
         Route::post('payables-outstanding-store-update', 'SysPayablesOutstandingController@store_update');
         Route::post('payables-outstanding-store-delete-before-update', 'SysPayablesOutstandingController@store_delete_before_update');
+        Route::get('payables-outstanding-download/{account}/{date}/{month}/{year}', 'SysPayablesOutstandingController@download');
         Route::get('payables-outstanding-download/{account}/{date}', 'SysPayablesOutstandingController@download');
 
 
