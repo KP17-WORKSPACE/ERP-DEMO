@@ -88,6 +88,7 @@ class SysPayablesOutstandingController extends Controller
             $list_of_unadjusted_jv_to_jv = [];
             $list_of_unadjusted_pdc = [];
             $list_of_adjusted_pdc = [];
+            $list_of_removed_adjusted_pdc = collect([]);
             $opb_balance_amount = 0;
 
             $list_option = "";
@@ -133,6 +134,7 @@ class SysPayablesOutstandingController extends Controller
                             $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($accounts->pluck('id'), $com_id);
                             $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($accounts->pluck('id'), $com_id);
                             $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($accounts->pluck('id'), $com_id);
+                            $list_of_removed_adjusted_pdc = SysHelper::get_list_of_payable_removed_adjusted_pdc($accounts->pluck('id'), $com_id);
 
                             $opb_balance_amount = SysHelper::get_supplier_opening_balance($accounts->pluck('id'), $this->supplierOpeningBalanceCutoffDate($till_date), $com_id);
 
@@ -325,6 +327,7 @@ class SysPayablesOutstandingController extends Controller
                 $list_of_unadjusted_jv_to_jv = SysHelper::get_list_of_payable_unadjusted_jv_to_jv($account_id, $com_id);
                 $list_of_unadjusted_pdc = SysHelper::get_list_of_payable_unadjusted_pdc($account_id, $com_id);
                 $list_of_adjusted_pdc = SysHelper::get_list_of_payable_adjusted_pdc($account_id, $com_id);
+                $list_of_removed_adjusted_pdc = SysHelper::get_list_of_payable_removed_adjusted_pdc($account_id, $com_id);
                 $opb_balance_amount = SysHelper::get_supplier_opening_balance($account_id, $this->supplierOpeningBalanceCutoffDate($till_date), $com_id);
                 $data_all = $this->appendUnadjustedOnlyPayableAccounts($data_all, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $till_date);
 
@@ -349,7 +352,7 @@ class SysPayablesOutstandingController extends Controller
             $viewSupport = $this->loadPayableOutstandingViewData($com_id);
             extract($viewSupport);
 
-            return view('backEnd.outstanding.payableoutstanding', compact('data', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_payment', 'data_all', 'overdue', 'ageing', 'doc_date', 'sales_person_list', 'opbinvoice', 'opbinvoice_map', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'opb_balance_amount', 'ctrl_overdue', 'ctrl_ageing', 'is_view_all_supp', 'accounts_select', 'ctrl_sales_person', 'list_option', 'ctrl_list_option', 'first_load', 'ctrl_basic_search', 'ctrl_intext', 'ctrl_followup_from', 'ctrl_followup_to', 'payment_terms_map', 'max_installments', 'purchase_invoice_map', 'sales_invoice_map', 'payable_finance_rate'));
+            return view('backEnd.outstanding.payableoutstanding', compact('data', 'accounts', 'account_id', 'till_date', 'data_adjestment', 'data_payment', 'data_all', 'overdue', 'ageing', 'doc_date', 'sales_person_list', 'opbinvoice', 'opbinvoice_map', 'list_of_unadjusted', 'list_of_unadjusted_jv_to_jv', 'list_of_unadjusted_pdc', 'list_of_adjusted_pdc', 'list_of_removed_adjusted_pdc', 'opb_balance_amount', 'ctrl_overdue', 'ctrl_ageing', 'is_view_all_supp', 'accounts_select', 'ctrl_sales_person', 'list_option', 'ctrl_list_option', 'first_load', 'ctrl_basic_search', 'ctrl_intext', 'ctrl_followup_from', 'ctrl_followup_to', 'payment_terms_map', 'max_installments', 'purchase_invoice_map', 'sales_invoice_map', 'payable_finance_rate'));
 
         } catch (\Exception $e) {
             return $e;
