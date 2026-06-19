@@ -1065,21 +1065,23 @@ class SysReceivableOutstandingController extends Controller
             $data_return_all = DB::table('sys_sales_return as r')->select('ra.siv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date', 'r.customer', 'ra.srn_no')
                 ->join('sys_sales_return_adjestment as ra', 'ra.srn_no', 'r.doc_number')->where('r.company_id', $com_id)->where('r.status', 1)->where('ra.status', 1);
 
-            $accountIdsForUnadj = collect($data_all)->map(function ($chunk) {
-                return count($chunk) > 0 ? $chunk[0]->account_id : null;
-            })->filter()->unique()->values();
+            $selectedAccountIds = collect($accounts)->pluck('id')->filter()->unique()->values();
 
-            $list_of_unadjusted = $accountIdsForUnadj->isNotEmpty()
-                ? SysHelper::get_list_of_unadjusted($accountIdsForUnadj, $com_id, $till_date)
+            $list_of_unadjusted = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_list_of_unadjusted($selectedAccountIds, $com_id, $till_date)
                 : collect([]);
-            $list_of_unadjusted_jv_to_jv = $accountIdsForUnadj->isNotEmpty()
-                ? SysHelper::get_list_of_unadjusted_jv_to_jv($accountIdsForUnadj, $com_id)
+            $list_of_unadjusted_jv_to_jv = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_list_of_unadjusted_jv_to_jv($selectedAccountIds, $com_id)
                 : collect([]);
-            $list_of_adjusted_pdc = $accountIdsForUnadj->isNotEmpty()
-                ? SysHelper::get_list_of_adjusted_pdc($accountIdsForUnadj, $com_id)
+            $list_of_unadjusted_pdc = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_list_of_unadjusted_pdc($selectedAccountIds, $com_id)
                 : collect([]);
-            $opb_balance_amount = $accountIdsForUnadj->isNotEmpty()
-                ? SysHelper::get_customer_opening_balance($accountIdsForUnadj, date('Y-m-d', strtotime('+1 day')), $com_id)
+            $list_of_adjusted_pdc = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_list_of_adjusted_pdc($selectedAccountIds, $com_id)
+                : collect([]);
+            $data_all = $this->appendUnadjustedOnlyReceivableAccounts($data_all, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $till_date);
+            $opb_balance_amount = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_customer_opening_balance($selectedAccountIds, date('Y-m-d', strtotime('+1 day')), $com_id)
                 : collect([]);
 
             $osViewData = $this->loadReceivableOutstandingViewData($com_id);
@@ -1099,6 +1101,7 @@ class SysReceivableOutstandingController extends Controller
                     'com_id',
                     'list_of_unadjusted',
                     'list_of_unadjusted_jv_to_jv',
+                    'list_of_unadjusted_pdc',
                     'list_of_adjusted_pdc',
                     'opb_balance_amount'
                 ),
