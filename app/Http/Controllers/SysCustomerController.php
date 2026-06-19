@@ -42,6 +42,7 @@ use App\SysHelper;
 use App\SysItemStockImport;
 use App\SysPurchaseType;
 use App\SysSaleType;
+use App\SysCurrencySettings;
 use App\SysStates;
 use App\SysVat;
 use App\SysVatType;
@@ -810,6 +811,7 @@ class SysCustomerController extends Controller
 
             $customer_type = SysCustomerType::where('status', '=', '1')->get();
             $sale_type = SysSaleType::where('status', '=', '1')->get();
+            $currency = SysCurrencySettings::select('id', 'code')->where('status', 1)->orderBy('code', 'ASC')->get();
             //$staffs = SmStaff::select('id','full_name')->where('active_status', '=', '1')->whereIn('designation_id', array(9,1,2,3))->get();
             $staffs = SysHelper::get_sales_persons2();
 
@@ -822,7 +824,7 @@ class SysCustomerController extends Controller
                 ->join('sys_states', 'sys_states.id', 'sys_cust_suppl_addressbook_cart.state')
                 ->where('cart_id', session('logged_session_data.cart_id'))->get();
 
-            return compact('roles', 'paymentterms', 'staffs', 'accounts', 'accounttype', 'countries', 'vattype', 'customer_type', 'sale_type', 'vat', 'address_cart', 'designation', 'department', 'company');
+            return compact('roles', 'paymentterms', 'staffs', 'accounts', 'accounttype', 'countries', 'vattype', 'customer_type', 'sale_type', 'vat', 'address_cart', 'designation', 'department', 'company', 'currency');
         } catch (\Throwable $th) {
             return $th;
         }
@@ -906,6 +908,7 @@ class SysCustomerController extends Controller
             $new_customer->customer_name_display = $request->customer_name_display;
             $new_customer->code = SysHelper::get_new_customer_code();
             $new_customer->grn_select = $request->grn_select;
+            $new_customer->currency_id = $request->transaction_type == 'Cash' ? null : $request->currency_id;
             // $new_customer->address = preg_replace('/[^A-Za-z0-9\-]/', '', $request->address);
             // $new_customer->address2 = preg_replace('/[^A-Za-z0-9\-]/', '', $request->address2);
             $new_customer->contcat_person = $request->e_first_name[0];
@@ -1248,6 +1251,7 @@ class SysCustomerController extends Controller
 
             $customer_type = SysCustomerType::where('status', '=', '1')->get();
             $sale_type = SysSaleType::where('status', '=', '1')->get();
+            $currency = SysCurrencySettings::select('id', 'code')->where('status', 1)->orderBy('code', 'ASC')->get();
 
             $designation = SmDesignation::select('id', 'title')->where('active_status', 1)->orderby('title', 'asc')->get();
             $department = SmHumanDepartment::select('id', 'name')->where('active_status', 1)->orderby('name', 'asc')->get();
@@ -1282,7 +1286,7 @@ class SysCustomerController extends Controller
 
             $editAssign = DB::table('sys_cust_suppl_assign')->where('cust_supp_id', $id)->get();
 
-            return compact('roles', 'paymentterms', 'staffs', 'accounts', 'accounttype', 'countries', 'vattype', 'customer_type', 'sale_type', 'vat', 'editData', 'editAddressbook', 'editContact', 'editDoc', 'editAssign', 'states', 'designation', 'department', 'company');
+            return compact('roles', 'paymentterms', 'staffs', 'accounts', 'accounttype', 'countries', 'vattype', 'customer_type', 'sale_type', 'vat', 'editData', 'editAddressbook', 'editContact', 'editDoc', 'editAssign', 'states', 'designation', 'department', 'company', 'currency');
         } catch (\Throwable $th) {
             return $th;
         }
@@ -1379,6 +1383,7 @@ class SysCustomerController extends Controller
         $new_customer->designation = $request->designation;
         $new_customer->last_name = $request->last_name;
         $new_customer->grn_select = $request->grn_select;
+        $new_customer->currency_id = $request->transaction_type == 'Cash' ? null : $request->currency_id;
 
         if (SysHelper::check_customer_is_added($request->customer_name) == 0) {
             $new_customer->name = $request->customer_name;
