@@ -1518,9 +1518,21 @@ function check_total(id, amount) {
                             </td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
                             <td class="text-center"><a href="{{url('get-url-receipt/' . $p->doc_number)}}" target="_blank">{{ $p->doc_number }}</a></td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcAmountSigned,2,'.',',') }}</td>
+                            <!-- <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcAmountSigned,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcAdjustedDisplay,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcBalanceSigned,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcBalanceSigned,2,'.',',') }}</td> -->
+
+                            <td class="text-end">
+    {{ @App\SysHelper::com_curr_format(abs($pdcAmountSigned), 2, '.', ',') }}
+</td>
+
+<td class="text-end">
+    {{ @App\SysHelper::com_curr_format(abs($pdcAdjustedDisplay), 2, '.', ',') }}
+</td>
+
+<td class="text-end">
+    {{ @App\SysHelper::com_curr_format(abs($pdcBalanceSigned), 2, '.', ',') }}
+</td>
                             
 
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->cheque_date)) }}</td>
@@ -1575,9 +1587,21 @@ function check_total(id, amount) {
                             <td class="text-center font-weight-bold"></td>
                             <td class=""></td>
                             <td class=""></td>
-                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumAmount,2,'.',',') }}</b></td>
+                            <!-- <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumAmount,2,'.',',') }}</b></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumAdjusted,2,'.',',') }}</b></td>
-                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumBalance,2,'.',',') }}</b></td>
+                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumBalance,2,'.',',') }}</b></td> -->
+
+                            <td class="text-end">
+    <b>{{ @App\SysHelper::com_curr_format(abs($pdcSumAmount), 2, '.', ',') }}</b>
+</td>
+
+<td class="text-end">
+    <b>{{ @App\SysHelper::com_curr_format(abs($pdcSumAdjusted), 2, '.', ',') }}</b>
+</td>
+
+<td class="text-end">
+    <b>{{ @App\SysHelper::com_curr_format(abs($pdcSumBalance), 2, '.', ',') }}</b>
+</td>
                            
 
                             <td class=""></td>
@@ -1683,9 +1707,9 @@ function check_total(id, amount) {
                                 $unadjustedAdjustmentDisplay = abs($unadjustedAdjustment);
                             @endphp
                             @php $unadjAmountSum += $unadjustedAmount; $unadjSum += $unadjustedBalance; $unadjAdjustedDisplaySum += $unadjustedAdjustmentDisplay; @endphp
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAmount,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedAmount),2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustmentDisplay,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalance,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedBalance),2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
                                 @if($isReceivableOpeningDebit)
@@ -1722,9 +1746,9 @@ function check_total(id, amount) {
                             @php $unadjustedBalanceJv = $unadjustedAmountJv - $unadjustedAdjustmentJv; @endphp
                             @php $unadjustedAdjustmentJvDisplay = abs($unadjustedAdjustmentJv); @endphp
                             @php $unadjAmountSum += $unadjustedAmountJv; $unadjSum += $unadjustedBalanceJv; $unadjAdjustedDisplaySum += $unadjustedAdjustmentJvDisplay; @endphp
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAmountJv,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedAmountJv),2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustmentJvDisplay,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalanceJv,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedBalanceJv),2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
                                 set_total_lessmore({{ $aname->id }},{{ $unadjustedBalanceJv }})
@@ -1736,9 +1760,9 @@ function check_total(id, amount) {
                         @php $accountUnadjustedBalanceTotal = $unadjSum; @endphp
                         <tr class="">
                             <td colspan="3" class="text-end font-weight-bold"><b>Total</b></td>
-                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAmountSum,2,'.',',') }}</b></td>
+                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format(abs($unadjAmountSum),2,'.',',') }}</b></td>
                             <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAdjustedDisplaySum,2,'.',',') }}</b></td>
-                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjSum,2,'.',',') }}</b></td>
+                            <td class="text-end"><b>{{ @App\SysHelper::com_curr_format(abs($unadjSum),2,'.',',') }}</b></td>
                             <td class=""></td>
                         </tr>
 

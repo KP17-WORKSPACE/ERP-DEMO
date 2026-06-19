@@ -1377,11 +1377,24 @@ function check_total(id, amount) {
                                 @endif</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
                             <td class="text-center"><a href="{{url('get-url-payment/' . $p->doc_number)}}" target="_blank">{{ $p->doc_number }}</a></td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcDisplayAmount,2,'.',',') }}</td>
+                            <!-- <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcDisplayAmount,2,'.',',') }}</td>
                               <td class="text-end">
                                 {{ @App\SysHelper::com_curr_format($pdcDisplayAdjusted,2,'.',',') }}
                             </td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcDisplayBalance,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcDisplayBalance,2,'.',',') }}</td> -->
+
+                            <td class="text-end">
+    {{ @App\SysHelper::com_curr_format(abs($pdcDisplayAmount), 2, '.', ',') }}
+</td>
+
+<td class="text-end">
+    {{ @App\SysHelper::com_curr_format(abs($pdcDisplayAdjusted), 2, '.', ',') }}
+</td>
+
+<td class="text-end">
+    {{ @App\SysHelper::com_curr_format(abs($pdcDisplayBalance), 2, '.', ',') }}
+</td>
+
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->cheque_date)) }}</td>
                             <td class="text-center">{{ $p->cheque_number }}</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->payment_date)) }}</td>
@@ -1457,9 +1470,17 @@ function check_total(id, amount) {
                             </td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
                             <td class="text-center"><a href="{{url('get-url-payment/' . $p->doc_number)}}" target="_blank">{{ $p->doc_number }}</a></td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcDisplayAmount,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcDisplayAdjusted,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($pdcDisplayBalance,2,'.',',') }}</td>
+                     <td class="text-end">
+    {{ @App\SysHelper::com_curr_format(abs($pdcDisplayAmount), 2, '.', ',') }}
+</td>
+
+<td class="text-end">
+    {{ @App\SysHelper::com_curr_format(abs($pdcDisplayAdjusted), 2, '.', ',') }}
+</td>
+
+<td class="text-end">
+    {{ @App\SysHelper::com_curr_format(abs($pdcDisplayBalance), 2, '.', ',') }}
+</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->cheque_date)) }}</td>
                             <td class="text-center">{{ $p->cheque_number }}</td>
                             <td class="text-center">{{ date('d/m/Y', strtotime($p->payment_date)) }}</td>
@@ -1478,9 +1499,17 @@ function check_total(id, amount) {
                         <td class="text-center font-weight-bold"></td>
                         <td class=""></td>
                         <td class=""></td>
-                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumAmount,2,'.',',') }}</b></td>
-                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumAdjusted,2,'.',',') }}</b></td>
-                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($pdcSumBalance,2,'.',',') }}</b></td>
+                <td class="text-end">
+    <b>{{ @App\SysHelper::com_curr_format(abs($pdcSumAmount), 2, '.', ',') }}</b>
+</td>
+
+<td class="text-end">
+    <b>{{ @App\SysHelper::com_curr_format(abs($pdcSumAdjusted), 2, '.', ',') }}</b>
+</td>
+
+<td class="text-end">
+    <b>{{ @App\SysHelper::com_curr_format(abs($pdcSumBalance), 2, '.', ',') }}</b>
+</td>
                         <td class=""></td>
                         <td class=""></td>
                         <td class=""></td>
@@ -1609,9 +1638,9 @@ function check_total(id, amount) {
                             @endphp
                             <!-- <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedDebitAmount,2,'.',',') }}</td>
                             <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedCreditAmount,2,'.',',') }}</td> -->
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAmount,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustment,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalance,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedAmount),2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedAdjustment),2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedBalance),2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
                                 @if($isPayableCreditDoc || $isPayableOpeningBalanceSplit)
@@ -1666,11 +1695,11 @@ function check_total(id, amount) {
                                 $unadjSum += $unadjustedBalanceJv;
                                 $unadjAdjustedSum += $unadjustedAdjustmentJv;
                             @endphp
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedDebitAmountJv,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedCreditAmountJv,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAmountJv,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedAdjustmentJv,2,'.',',') }}</td>
-                            <td class="text-end">{{ @App\SysHelper::com_curr_format($unadjustedBalanceJv,2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedDebitAmountJv),2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedCreditAmountJv),2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedAmountJv),2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedAdjustmentJv),2,'.',',') }}</td>
+                            <td class="text-end">{{ @App\SysHelper::com_curr_format(abs($unadjustedBalanceJv),2,'.',',') }}</td>
                             <td class="">{{ $p->remarks }}</td>
                             <script>
                                 set_total_lessmore({{ $aname->id }},{{ $unadjustedBalanceJv }})
@@ -1682,11 +1711,11 @@ function check_total(id, amount) {
                     @php $accountUnadjustedBalanceTotal = $unadjSum; @endphp
                     <tr class="">
                         <td colspan="1" class="text-end font-weight-bold"><b>Total</b></td>
-                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjDebitSum,2,'.',',') }}</b></td>
-                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjCreditSum,2,'.',',') }}</b></td>
-                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAmountSum,2,'.',',') }}</b></td>
-                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjAdjustedSum,2,'.',',') }}</b></td>
-                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format($unadjSum,2,'.',',') }}</b></td>
+                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format(abs($unadjDebitSum),2,'.',',') }}</b></td>
+                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format(abs($unadjCreditSum),2,'.',',') }}</b></td>
+                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format(abs($unadjAmountSum),2,'.',',') }}</b></td>
+                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format(abs($unadjAdjustedSum),2,'.',',') }}</b></td>
+                        <td class="text-end"><b>{{ @App\SysHelper::com_curr_format(abs($unadjSum),2,'.',',') }}</b></td>
                         <td class=""></td>
                     </tr>
   </tbody>
