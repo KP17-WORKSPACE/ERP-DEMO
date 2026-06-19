@@ -8048,6 +8048,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             '90_plus' => 0.0,
             'finance_cost' => 0.0,
             'has_overdue' => false,
+            'payable_main_sum' => 0.0,
         ];
         if ($rows->isEmpty()) {
             return $empty;
@@ -8265,6 +8266,7 @@ $account_id_list = array_merge($account_id_list, $sub_acc);
             '90_plus' => $ageing['90_plus'],
             'finance_cost' => $totalFinance,
             'has_overdue' => $hasOverdue,
+            'payable_main_sum' => $sumB,
         ];
     }
 
