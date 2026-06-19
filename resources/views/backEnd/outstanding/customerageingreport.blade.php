@@ -149,6 +149,7 @@
                                         $receivable_finance_rate = $receivable_finance_rate ?? 0;
                                         $list_of_unadjusted = $list_of_unadjusted ?? collect([]);
                                         $list_of_unadjusted_jv_to_jv = $list_of_unadjusted_jv_to_jv ?? collect([]);
+                                        $list_of_unadjusted_pdc = $list_of_unadjusted_pdc ?? collect([]);
                                         $list_of_adjusted_pdc = $list_of_adjusted_pdc ?? collect([]);
                                         $opb_balance_amount = $opb_balance_amount ?? collect([]);
                                         $com_id = $com_id ?? session('logged_session_data.company_id');
@@ -170,7 +171,8 @@
                                                     $sales_invoice_map,
                                                     $opbinvoice_map,
                                                     $receivable_finance_rate,
-                                                    $list_of_adjusted_pdc
+                                                    $list_of_adjusted_pdc,
+                                                    $list_of_unadjusted_pdc
                                                 );
                                                 $customer_total_invoice_amount = $customerTotals['net_invoice_amount'];
                                                 $customer_total_balance = $customerTotals['net_balance'];
@@ -181,7 +183,7 @@
                                                 $customer_total_finance_cost = $customerTotals['finance_cost'];
                                                 $opb_record = $opb_balance_amount->where('account_id', $data[0]->account_id)->first();
                                                 $opb_total = $opb_record ? (float) $opb_record->opb_amount : 0;
-                                                $is_total_attention = !empty($customerTotals['has_overdue']) || round((float) $customer_total_balance, 2) != round($opb_total, 2);
+                                                $is_total_attention = round((float) $customer_total_balance, 2) != round($opb_total, 2);
                                                 
                                                 // Match receivable outstanding visibility: the customer header is shown only when its main total is non-zero.
                                                 if(abs($customer_total_balance) > 0.01) {
@@ -205,7 +207,7 @@
                                                 <td class=" text-end">
                                                     {{ @App\SysHelper::com_curr_format($customer_total_invoice_amount, 2, '.', ',') }}
                                                 </td>
-                                                <td class=" text-end {{ $is_total_attention ? 'text-danger' : '' }}">
+                                                <td class=" text-end {{ $is_total_attention ? 'text-danger' : 'text-dark' }}">
                                                     {{ @App\SysHelper::com_curr_format($customer_total_balance, 2, '.', ',') }}
                                                 </td>
                                                 <td class=" text-end">
