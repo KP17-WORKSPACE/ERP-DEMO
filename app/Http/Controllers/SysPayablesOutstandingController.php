@@ -886,18 +886,26 @@ class SysPayablesOutstandingController extends Controller
                 }
             }
 
-            $accountIdsForUnadj = collect($data_all)->map(function ($chunk) {
-                return count($chunk) > 0 ? $chunk[0]->account_id : null;
-            })->filter()->unique()->values();
+            $selectedAccountIds = collect($accounts)->pluck('id')->filter()->unique()->values();
 
-            $list_of_unadjusted = $accountIdsForUnadj->isNotEmpty()
-                ? SysHelper::get_list_of_payable_unadjusted($accountIdsForUnadj, $com_id, $till_date)
+            $list_of_unadjusted = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_list_of_payable_unadjusted($selectedAccountIds, $com_id, $till_date)
                 : collect([]);
-            $list_of_unadjusted_jv_to_jv = $accountIdsForUnadj->isNotEmpty()
-                ? SysHelper::get_list_of_payable_unadjusted_jv_to_jv($accountIdsForUnadj, $com_id)
+            $list_of_unadjusted_jv_to_jv = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_list_of_payable_unadjusted_jv_to_jv($selectedAccountIds, $com_id)
                 : collect([]);
-            $opb_balance_amount = $accountIdsForUnadj->isNotEmpty()
-                ? SysHelper::get_supplier_opening_balance($accountIdsForUnadj, $this->supplierOpeningBalanceCutoffDate($till_date), $com_id)
+            $list_of_unadjusted_pdc = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_list_of_payable_unadjusted_pdc($selectedAccountIds, $com_id)
+                : collect([]);
+            $list_of_adjusted_pdc = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_list_of_payable_adjusted_pdc($selectedAccountIds, $com_id)
+                : collect([]);
+            $list_of_removed_adjusted_pdc = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_list_of_payable_removed_adjusted_pdc($selectedAccountIds, $com_id)
+                : collect([]);
+            $data_all = $this->appendUnadjustedOnlyPayableAccounts($data_all, $accounts, $list_of_unadjusted, $list_of_unadjusted_jv_to_jv, $till_date);
+            $opb_balance_amount = $selectedAccountIds->isNotEmpty()
+                ? SysHelper::get_supplier_opening_balance($selectedAccountIds, $this->supplierOpeningBalanceCutoffDate($till_date), $com_id)
                 : collect([]);
 
             $osViewData = $this->loadPayableOutstandingViewData($com_id);
@@ -911,6 +919,9 @@ class SysPayablesOutstandingController extends Controller
                     'com_id',
                     'list_of_unadjusted',
                     'list_of_unadjusted_jv_to_jv',
+                    'list_of_unadjusted_pdc',
+                    'list_of_adjusted_pdc',
+                    'list_of_removed_adjusted_pdc',
                     'opb_balance_amount'
                 ),
                 $osViewData
