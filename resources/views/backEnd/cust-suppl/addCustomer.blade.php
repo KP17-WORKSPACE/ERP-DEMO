@@ -1413,6 +1413,17 @@
                             </select>
                         </div>
                     </div>
+                    <div class="row mt-2 currency-fields">
+                        <div class="col-md-3">Currency</div>
+                        <div class="col-md-8">
+                            <select class="form-control js-example-basic-single" name="currency_id" id="currency_id">
+                                <option value="">Select</option>
+                                @foreach ($currency as $value)
+                                    <option value="{{ $value->id }}">{{ $value->code }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2022,9 +2033,13 @@
             if (type === 'Cash') {
                 $('.credit-fields').hide();
                 $('.credit-fields input').prop('required', false).val('');
+                $('.currency-fields').hide();
+                $('#currency_id').prop('disabled', true).val('').trigger('change');
             } else if (type === 'Credit') {
                 $('.credit-fields').show();
                 $('.credit-fields input').prop('required', true);
+                $('.currency-fields').show();
+                $('#currency_id').prop('disabled', false);
             }
         }
 

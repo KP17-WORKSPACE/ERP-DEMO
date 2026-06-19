@@ -1318,11 +1318,15 @@
                                     $('#payment_terms_cash').show();
                                     $('#payment_terms_normal').hide();
                                     $('.credit-fields input').prop('required', false).val('');
+                                    $('.currency-fields').hide();
+                                    $('#currency_id').prop('disabled', true).val('').trigger('change');
                                 } else if (type === 'Credit') {
                                     $('.credit-fields').show();
                                     $('.credit-fields input').prop('required', true);
                                     $('#payment_terms_cash').hide();
                                     $('#payment_terms_normal').show();
+                                    $('.currency-fields').show();
+                                    $('#currency_id').prop('disabled', false);
                                 }
                             }
 
@@ -1391,6 +1395,17 @@
                                     <option value="yes" @if ($editData->grn_select == 'yes') selected @endif>Yes</option>
                                     <option value="no" @if ($editData->grn_select == 'no') selected @endif>No</option>
                              
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-2 currency-fields">
+                        <div class="col-md-3">Currency</div>
+                        <div class="col-md-8">
+                            <select class="form-control js-example-basic-single" name="currency_id" id="currency_id">
+                                <option value="">Select</option>
+                                @foreach ($currency as $value)
+                                    <option value="{{ $value->id }}" @if ($editData->currency_id == $value->id) selected @endif>{{ $value->code }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
