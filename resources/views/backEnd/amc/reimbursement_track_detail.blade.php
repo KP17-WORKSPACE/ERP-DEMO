@@ -38,19 +38,45 @@
         }
     </style>
 
+    @php
+        $isRequestScreen = request()->is('crm-reimbursement-request*') || request('context') == 'request';
+        $reimbursementPermissions = $reimbursementPermissions ?? ['create' => false, 'view' => false, 'edit' => false, 'delete' => false, 'export' => false, 'attach' => false];
+        $reimbursementTrackPermissions = $reimbursementTrackPermissions ?? ['create' => false, 'view' => false, 'edit' => false, 'delete' => false, 'export' => false, 'attach' => false];
+        $ownsReimbursement = (int) $selectedReimbursement->created_by === (int) Auth::id() || (int) $selectedReimbursement->employee_id === (int) Auth::id();
+        $canEditReimbursement = (!empty($reimbursementPermissions['edit']) && $ownsReimbursement) || ($ownsReimbursement && (int) $selectedReimbursement->approval_status === 0) || in_array(Auth::user()->role_id, [1, 2]);
+    @endphp
+
     <div class="purchase-order-content-header sticky-top" style="background-color: #f7f8fd">
         <h4 class="purchase-order-content-header-left">
             {{ $selectedReimbursement->reimbursement_no }}
         </h4>
         <div class="purchase-order-content-header-right">
-            <a href="{{ url('crm-reimbursement-request') }}" class="btn btn-light text-dark">
-                <i class="ico icon-outline-document-text text-success"></i> View
-            </a>
+            @if ($isRequestScreen)
+                @if ($canEditReimbursement)
+                    <button type="button" class="btn btn-light text-dark" data-bs-toggle="modal" data-bs-target="#ModalService" onclick='fun_edit({{ $selectedReimbursement->id }}, @json($selectedReimbursement->reimbursement_no))'>
+                        <i class="ico icon-outline-pen-2 text-success"></i> Edit
+                    </button>
+                @endif
+                @if (!empty($reimbursementPermissions['create']))
+                    <button type="button" class="btn btn-light text-dark" data-bs-toggle="modal" data-bs-target="#ModalService" onclick="prepareAddReimbursementForm()">
+                        <i class="ico icon-outline-add-square text-success"></i> Add
+                    </button>
+                @endif
+            @else
+                @if (!empty($reimbursementPermissions['view']))
+                    <a href="{{ url('crm-reimbursement-request') }}" class="btn btn-light text-dark">
+                        <i class="ico icon-outline-document-text text-success"></i> View
+                    </a>
+                @endif
+            @endif
             <div class="dropdown" style="display: inline-block; margin-left: 5px;">
                 <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="ico icon-outline-hamburger-menu"></i>
                 </button>
                 <ul class="dropdown-menu">
+                    @if ($isRequestScreen && !empty($reimbursementTrackPermissions['view']))
+                        <li><a class="dropdown-item" href="{{ url('crm-reimbursement-track') }}"><i class="ico icon-outline-list-down"></i> Reimbursement Track</a></li>
+                    @endif
                 </ul>
             </div> 
         </div>
@@ -64,7 +90,12 @@
                     <div class="col-2 mb-2">
                         <label class="form-label">Employee Name</label> 
                         <div class="form-control-plaintext truncate-text-custom">
-                            {{ $staff->full_name ?? 'N/A' }}
+                            @php
+                                $name = $staff->full_name ?? 'N/A';
+                                $nameParts = explode(' ', trim($name));
+                                $shortName = count($nameParts) > 1 ? $nameParts[0] . ' ' . end($nameParts) : $name;
+                            @endphp
+                            {{ $shortName }}
                         </div>
                     </div>
                     <div class="col-2 mb-2">
@@ -85,16 +116,12 @@
                             {{ number_format($selectedReimbursement->amount, 2) }} {{ $selectedReimbursement->currencycode->code ?? '' }}
                         </div>
                     </div>
-                    <div class="col-2 mb-2">
-                        <label class="form-label">Status</label> 
-                        <div class="form-control-plaintext truncate-text-custom">
-                            @if($selectedReimbursement->status == 1)
-                                <span class="text-success">Active</span>
-                            @else
-                                <span class="text-danger">Inactive</span>
-                            @endif
-                        </div>
-                    </div>
+                      <div class="col-2 mb-2">
+                          <label class="form-label">Submitted By</label> 
+                          <div class="form-control-plaintext truncate-text-custom">
+                              {{ $submitter->full_name ?? 'N/A' }}
+                          </div>
+                      </div>
                 </div>
             </div>
         </div>
@@ -102,7 +129,7 @@
 
     <style>
         #purchaseDetailsTabsContent .tab-content { display: flex; }
-        #purchaseDetailsTabsContent .tab-pane { flex: 1; height: 135px; }
+        #purchaseDetailsTabsContent .tab-pane { flex: 1; min-height: 135px; }
     </style>
     
     <div class="tab-wrap mb-3">
@@ -115,7 +142,7 @@
         <div class="tab-content mb-3" id="purchaseDetailsTabsContent">
             <!-- Expense Details Tab -->
             <div class="tab-pane fade show active" id="expense-details" role="tabpanel" aria-labelledby="expense-details-tab">
-                <div class="row text-start" style="height: 100%; overflow-y: auto;">
+                <div class="row text-start">
                     <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
                         <p class="font-weight-600 mb-0">Expense Date</p>
                         {{ $selectedReimbursement->date ? date('d/m/Y', strtotime($selectedReimbursement->date)) : '' }}
@@ -134,11 +161,11 @@
                     </div>
                     <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
                         <p class="font-weight-600 mb-0">Amount</p>
-                        {{ $selectedReimbursement->amount }}
+                        {{ number_format((float)$selectedReimbursement->amount, 2) }}
                     </div>
                     <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
                         <p class="font-weight-600 mb-0">Reimbursable Amount</p>
-                        {{ $selectedReimbursement->reimbursable_amount }}
+                        {{ number_format((float)$selectedReimbursement->reimbursable_amount, 2) }}
                     </div>
                     <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
                         <p class="font-weight-600 mb-0">Payment Method</p>
@@ -173,11 +200,35 @@
                         <p class="font-weight-600 mb-0">Scope of Work</p>
                         {{ $selectedReimbursement->scope_of_work }}
                     </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
+                        <p class="font-weight-600 mb-0">Attachment</p>
+                        @php
+                            $attachments = @$selectedReimbursement->attachmant ?: @$selectedReimbursement->attachment;
+                            $attachmentFiles = $attachments ? explode('|', $attachments) : [];
+                        @endphp
+                        @if (count($attachmentFiles) > 0)
+                            @foreach ($attachmentFiles as $f)
+                                @php
+                                    $f = trim($f);
+                                    $attachmentUrl = strpos($f, '/') !== false ? asset($f) : asset('public/uploads/crm_amc_doc/' . $f);
+                                @endphp
+                                @if ($f != '')
+                                    <a class="text-success" href="{{ $attachmentUrl }}" target="_blank">{{ basename($f) }}</a>@if (!$loop->last), @endif
+                                @endif
+                            @endforeach
+                        @else
+                            -
+                        @endif
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
+                        <p class="font-weight-600 mb-0">Remarks</p>
+                        {{ $selectedReimbursement->attachment_remarks ?: '-' }}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    @include('backEnd.amc.ReimbursementTrackApprovalStatus')
-
-
+    @if ((int) $selectedReimbursement->approval_status !== 0)
+        @include('backEnd.amc.ReimbursementTrackApprovalStatus')
+    @endif

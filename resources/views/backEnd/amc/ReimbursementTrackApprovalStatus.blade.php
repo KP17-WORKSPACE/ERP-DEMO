@@ -1,6 +1,9 @@
 @php
+    $isRequestScreen = $isRequestScreen ?? (request()->is('crm-reimbursement-request*') || request('context') == 'request');
     $role = Auth::user()->role_id;
     $isSuperAdmin = ($role == 1 || $role == 2);
+    $reimbursementTrackPermissions = $reimbursementTrackPermissions ?? ['create' => false, 'view' => false, 'edit' => false, 'delete' => false, 'export' => false, 'attach' => false];
+    $canTrackEdit = $isSuperAdmin || !empty($reimbursementTrackPermissions['edit']);
 
     $dept_status = $selectedReimbursement->dept_head_status;
     $finance_status = $selectedReimbursement->acco_head_status;
@@ -10,14 +13,14 @@
     $canEditDept = false;
     if ($isSuperAdmin) {
         $canEditDept = true;
-    } else if ($role == 8 && $dept_status != 1) {
+    } else if ($canTrackEdit && $role == 8 && $dept_status != 1) {
         $canEditDept = true; // can edit if not approved yet
     }
 
     // Finance Gating
     $canEditFinance = false;
     if ($dept_status == 1) {
-        if ($isSuperAdmin || ($role == 27 && $finance_status != 1)) {
+        if ($isSuperAdmin || ($canTrackEdit && $role == 27 && $finance_status != 1)) {
             $canEditFinance = true;
         }
     }
@@ -25,12 +28,18 @@
     // Payment Processing Gating
     $canEditPayment = false;
     if ($finance_status == 1) {
-        if ($isSuperAdmin || ($role == 28 && $payment_status != 1)) {
+        if ($isSuperAdmin || ($canTrackEdit && $role == 28 && $payment_status != 1)) {
             $canEditPayment = true;
         }
     }
 
-    $chartOfAccounts = \App\SysChartofAccounts::where('status', 1)->get();
+    $chartOfAccounts = \App\SysChartofAccounts::where('status', 1)
+        ->whereNotIn('id', function($q) {
+            $q->select('main_account_id')
+              ->from('sys_chartofaccounts')
+              ->where('status', 1)
+              ->whereNotNull('main_account_id');
+        })->get();
 @endphp
 
 <style>
@@ -56,7 +65,7 @@
                     <td class="{{ $dept_status_class }} d-flex align-items-center justify-content-start gap-1" style="height:23px; padding: 0 15px;">
                         <div class="d-flex align-items-center justify-content-start flex-grow-1 gap-1 header-height">
                             <b>Reporting Manager</b>
-                            @if($canEditDept)
+                            @if(!$isRequestScreen && $canEditDept)
                                 <a class="btn-md light" style="display: contents; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalReportingManager">
                                     <i class="ico icon-outline-pen-new-square title-15 {{ $dept_status_class == 'bg-lightgreen text-dark' ? 'text-dark' : 'text-white' }}" title="Reporting Manager Approval" style="font-size: 12px"></i>
                                 </a>
@@ -76,24 +85,24 @@
                         @endif
                     </td>
                 </tr>
-                @if($selectedReimbursement->dept_head_date)
+                @if($selectedReimbursement->dept_head_remarks)
                 <tr>
                     <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
-                        <span class="fw-bold">Approval Date</span> : {{ date('d/m/Y', strtotime($selectedReimbursement->dept_head_date)) }}
+                        <span class="fw-bold">Remarks</span> : {{ $selectedReimbursement->dept_head_remarks }}
                     </td>
                 </tr>
                 @endif
                 @if($selectedReimbursement->deptheadby)
                 <tr>
                     <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
-                        <span class="fw-bold">Approved By</span> : {{ $selectedReimbursement->deptheadby->full_name }}
+                        <span class="fw-bold">Created By</span> : {{ $selectedReimbursement->deptheadby->full_name }}
                     </td>
                 </tr>
                 @endif
-                @if($selectedReimbursement->dept_head_remarks)
+                @if($selectedReimbursement->dept_head_datetime)
                 <tr>
                     <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
-                        <span class="fw-bold">Remarks</span> : {{ $selectedReimbursement->dept_head_remarks }}
+                        <span class="fw-bold">Created At</span> : {{ date('d/m/Y h:i A', strtotime($selectedReimbursement->dept_head_datetime)) }}
                     </td>
                 </tr>
                 @endif
@@ -118,7 +127,7 @@
                     <td class="{{ $finance_status_class }} d-flex align-items-center justify-content-start gap-1" style="height:23px; padding: 0 15px;">
                         <div class="d-flex align-items-center justify-content-start flex-grow-1 gap-1 header-height">
                             <b>Finance</b>
-                            @if($canEditFinance)
+                            @if(!$isRequestScreen && $canEditFinance)
                                 <a class="btn-md light" style="display: contents; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalFinance">
                                     <i class="ico icon-outline-pen-new-square title-15 {{ $finance_status_class == 'bg-lightgreen text-dark' ? 'text-dark' : 'text-white' }}" title="Finance Approval" style="font-size: 12px"></i>
                                 </a>
@@ -145,10 +154,18 @@
                     </td>
                 </tr>
                 @endif
-                @if($selectedReimbursement->accoheadby)
+                @if($selectedReimbursement->acco_head_account_id)
+                @php $f_acc = \App\SysChartofAccounts::find($selectedReimbursement->acco_head_account_id); @endphp
                 <tr>
                     <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
-                        <span class="fw-bold">Approved By</span> : {{ $selectedReimbursement->accoheadby->full_name }}
+                        <span class="fw-bold">Account</span> : {{ $f_acc ? $f_acc->account_name : '' }}
+                    </td>
+                </tr>
+                @endif
+                @if($selectedReimbursement->acco_head_payment_required)
+                <tr>
+                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                        <span class="fw-bold">Payment Required</span> : {{ $selectedReimbursement->acco_head_payment_required }}
                     </td>
                 </tr>
                 @endif
@@ -156,6 +173,20 @@
                 <tr>
                     <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
                         <span class="fw-bold">Remarks</span> : {{ $selectedReimbursement->acco_head_remarks }}
+                    </td>
+                </tr>
+                @endif
+                @if($selectedReimbursement->accoheadby)
+                <tr>
+                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                        <span class="fw-bold">Created By</span> : {{ $selectedReimbursement->accoheadby->full_name }}
+                    </td>
+                </tr>
+                @endif
+                @if($selectedReimbursement->acco_head_datetime)
+                <tr>
+                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                        <span class="fw-bold">Created At</span> : {{ date('d/m/Y h:i A', strtotime($selectedReimbursement->acco_head_datetime)) }}
                     </td>
                 </tr>
                 @endif
@@ -180,7 +211,7 @@
                     <td class="{{ $accounts_status_class }} d-flex align-items-center justify-content-start gap-1" style="height:23px; padding: 0 15px;">
                         <div class="d-flex align-items-center justify-content-start flex-grow-1 gap-1 header-height">
                             <b>Payment Processing</b>
-                            @if($canEditPayment)
+                            @if(!$isRequestScreen && $canEditPayment)
                                 <a class="btn-md light" style="display: contents; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalPaymentProcessing">
                                     <i class="ico icon-outline-pen-new-square title-15 {{ $accounts_status_class == 'bg-lightgreen text-dark' ? 'text-dark' : 'text-white' }}" title="Payment Processing Approval" style="font-size: 12px"></i>
                                 </a>
@@ -207,6 +238,42 @@
                     </td>
                 </tr>
                 @endif
+                @if($selectedReimbursement->accounts_payment_method)
+                <tr>
+                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                        <span class="fw-bold">Payment Method</span> : {{ $selectedReimbursement->accounts_payment_method }}
+                    </td>
+                </tr>
+                @endif
+                @if($selectedReimbursement->accounts_bank_account_id)
+                @php $p_acc = \App\SysChartofAccounts::find($selectedReimbursement->accounts_bank_account_id); @endphp
+                <tr>
+                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                        <span class="fw-bold">Bank Account</span> : {{ $p_acc ? $p_acc->account_name : '' }}
+                    </td>
+                </tr>
+                @endif
+                @if($selectedReimbursement->accounts_payment_status)
+                <tr>
+                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                        <span class="fw-bold">Payment Status</span> : {{ $selectedReimbursement->accounts_payment_status }}
+                    </td>
+                </tr>
+                @endif
+                @if($selectedReimbursement->accounts_payment_reference)
+                <tr>
+                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                        <span class="fw-bold">Payment Reference</span> : {{ $selectedReimbursement->accounts_payment_reference }}
+                    </td>
+                </tr>
+                @endif
+                @if($selectedReimbursement->accounts_remarks)
+                <tr>
+                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                        <span class="fw-bold">Remarks</span> : {{ $selectedReimbursement->accounts_remarks }}
+                    </td>
+                </tr>
+                @endif
                 @if($selectedReimbursement->accounts_payment_voucher_no)
                 <tr>
                     <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
@@ -217,7 +284,14 @@
                 @if($selectedReimbursement->accountsby)
                 <tr>
                     <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
-                        <span class="fw-bold">Paid By</span> : {{ $selectedReimbursement->accountsby->full_name }}
+                        <span class="fw-bold">Created By</span> : {{ $selectedReimbursement->accountsby->full_name }}
+                    </td>
+                </tr>
+                @endif
+                @if($selectedReimbursement->accounts_datetime)
+                <tr>
+                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                        <span class="fw-bold">Created At</span> : {{ date('d/m/Y h:i A', strtotime($selectedReimbursement->accounts_datetime)) }}
                     </td>
                 </tr>
                 @endif
@@ -226,8 +300,9 @@
     </div>
 </div>
 
+@if(!$isRequestScreen)
 <!-- Modals -->
-<div class="modal side-panel fade" id="modalReportingManager" data-bs-backdrop="false" tabindex="-1" role="dialog" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
+<div class="modal fade" id="modalReportingManager" data-bs-backdrop="false" tabindex="-1" role="dialog" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -242,14 +317,11 @@
                         <label>Status <span class="text-danger">*</span></label>
                         <select name="btn_status" class="form-control" required>
                             <option value="">-Select-</option>
-                            <option value="1" {{ $dept_status == 1 ? 'selected' : '' }}>Approve</option>
+                            <option value="1" {{ $dept_status == 1 || empty($selectedReimbursement->dept_head_status) ? 'selected' : '' }}>Approve</option>
                             <option value="2" {{ $dept_status == 2 ? 'selected' : '' }}>Reject</option>
                         </select>
                     </div>
-                    <div class="form-group mb-3">
-                        <label>Approval Date</label>
-                        <input type="text" name="dept_head_date" class="form-control date form-control-sm" placeholder="DD/MM/YYYY" value="{{ $selectedReimbursement->dept_head_date ? date('d/m/Y', strtotime($selectedReimbursement->dept_head_date)) : date('d/m/Y') }}">
-                    </div>
+                    <input type="hidden" name="dept_head_date" value="{{ date('d/m/Y') }}">
                     <div class="form-group mb-3">
                         <label>Remarks</label>
                         <textarea name="remarks" class="form-control" rows="3">{{ $selectedReimbursement->dept_head_remarks }}</textarea>
@@ -265,7 +337,7 @@
     </div>
 </div>
 
-<div class="modal side-panel fade" id="modalFinance" data-bs-backdrop="false" tabindex="-1" role="dialog" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
+<div class="modal fade" id="modalFinance" data-bs-backdrop="false" tabindex="-1" role="dialog" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -280,7 +352,7 @@
                         <label>Status <span class="text-danger">*</span></label>
                         <select name="btn_status" class="form-control" required>
                             <option value="">-Select-</option>
-                            <option value="1" {{ $finance_status == 1 ? 'selected' : '' }}>Approve</option>
+                            <option value="1" {{ $finance_status == 1 || empty($selectedReimbursement->acco_head_status) ? 'selected' : '' }}>Approve</option>
                             <option value="2" {{ $finance_status == 2 ? 'selected' : '' }}>Reject</option>
                         </select>
                     </div>
@@ -300,8 +372,8 @@
                     <div class="form-group mb-3">
                         <label>Payment Required</label>
                         <select name="acco_head_payment_required" class="form-control">
-                            <option value="" {{ empty($selectedReimbursement->acco_head_payment_required) ? 'selected' : '' }}>-Select-</option>
-                            <option value="Yes" {{ $selectedReimbursement->acco_head_payment_required == 'Yes' ? 'selected' : '' }}>Yes</option>
+                            <option value="">-Select-</option>
+                            <option value="Yes" {{ $selectedReimbursement->acco_head_payment_required == 'Yes' || empty($selectedReimbursement->acco_head_payment_required) ? 'selected' : '' }}>Yes</option>
                             <option value="No" {{ $selectedReimbursement->acco_head_payment_required == 'No' ? 'selected' : '' }}>No</option>
                         </select>
                     </div>
@@ -319,8 +391,9 @@
         </div>
     </div>
 </div>
+@endif
 
-<div class="modal side-panel fade" id="modalPaymentProcessing" data-bs-backdrop="false" tabindex="-1" role="dialog" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
+<div class="modal fade" id="modalPaymentProcessing" data-bs-backdrop="false" tabindex="-1" role="dialog" aria-hidden="true" style="background: rgba(0,0,0,0.5);">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -335,7 +408,7 @@
                         <label>Status <span class="text-danger">*</span></label>
                         <select name="btn_status" class="form-control" required>
                             <option value="">-Select-</option>
-                            <option value="1" {{ $payment_status == 1 ? 'selected' : '' }}>Approve</option>
+                            <option value="1" {{ $payment_status == 1 || empty($selectedReimbursement->accounts_status) ? 'selected' : '' }}>Approve</option>
                             <option value="2" {{ $payment_status == 2 ? 'selected' : '' }}>Reject</option>
                         </select>
                     </div>
@@ -343,10 +416,7 @@
                         <label>Payment Voucher No.</label>
                         <input type="text" name="accounts_payment_voucher_no" class="form-control" value="{{ $selectedReimbursement->accounts_payment_voucher_no }}">
                     </div>
-                    <div class="form-group mb-3">
-                        <label>Payment Date</label>
-                        <input type="text" name="accounts_payment_date" class="form-control date form-control-sm" placeholder="DD/MM/YYYY" value="{{ $selectedReimbursement->accounts_payment_date ? date('d/m/Y', strtotime($selectedReimbursement->accounts_payment_date)) : date('d/m/Y') }}">
-                    </div>
+                    <input type="hidden" name="accounts_payment_date" value="{{ date('d/m/Y') }}">
                     <div class="form-group mb-3">
                         <label>Payment Method</label>
                         <select name="accounts_payment_method" class="form-control">
@@ -372,9 +442,9 @@
                     <div class="form-group mb-3">
                         <label>Payment Status</label>
                         <select name="accounts_payment_status" class="form-control">
-                            <option value="" {{ empty($selectedReimbursement->accounts_payment_status) ? 'selected' : '' }}>-Select-</option>
+                            <option value="">-Select-</option>
                             <option value="Pending" {{ $selectedReimbursement->accounts_payment_status == 'Pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="Paid" {{ $selectedReimbursement->accounts_payment_status == 'Paid' ? 'selected' : '' }}>Paid</option>
+                            <option value="Paid" {{ $selectedReimbursement->accounts_payment_status == 'Paid' || empty($selectedReimbursement->accounts_payment_status) ? 'selected' : '' }}>Paid</option>
                         </select>
                     </div>
                     <div class="form-group mb-3">
