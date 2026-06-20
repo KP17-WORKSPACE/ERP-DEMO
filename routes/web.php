@@ -1147,16 +1147,22 @@ Route::post('onboard-employee/{id}/approve', 'SmOnboardEmployeeController@approv
     ->name('employee.loans.approve');
        
 Route::prefix('employee')->middleware(['auth'])->group(function () {
-    Route::get('loans', [SmAdvanceloanController::class, 'index'])->name('employee.loans.index');
-    Route::get('loans/create', [SmAdvanceloanController::class, 'create'])->name('employee.loans.create');
-    Route::post('loans/store', [SmAdvanceloanController::class, 'store'])->name('employee.loans.store');
-    Route::get('loans/{id}', [SmAdvanceloanController::class, 'show'])->name('employee.loans.show');
+            Route::get('loan-report', [SmAdvanceloanController::class, 'report'])->name('employee.loans.report');
+            Route::get('loan-report/export', [SmAdvanceloanController::class, 'reportExport'])->name('employee.loans.report.export');
+            Route::get('loans', [SmAdvanceloanController::class, 'index'])->name('employee.loans.index');
+            Route::get('loans/create', [SmAdvanceloanController::class, 'create'])->name('employee.loans.create');
+            Route::post('loans/store', [SmAdvanceloanController::class, 'store'])->name('employee.loans.store');
+            Route::get('loans/export', [SmAdvanceloanController::class, 'export'])->name('employee.loans.export');
+            Route::get('loans/guarantor/{id}', [SmAdvanceloanController::class, 'guarantor'])->name('employee.loans.guarantor');
+            Route::get('loans/track/{id}', [SmAdvanceloanController::class, 'track'])->name('employee.loans.track');
+            Route::get('loans/{id}', [SmAdvanceloanController::class, 'show'])->name('employee.loans.show');
 
 
-    // ✅ add these two for editing & updating
-    Route::get('loans/{id}/edit', [SmAdvanceloanController::class, 'edit'])->name('employee.loans.edit');
-    Route::put('loans/{id}/update', [SmAdvanceloanController::class, 'update'])->name('employee.loans.update');
-});
+
+            // ✅ add these two for editing & updating
+            Route::get('loans/{id}/edit', [SmAdvanceloanController::class, 'edit'])->name('employee.loans.edit');
+            Route::put('loans/{id}/update', [SmAdvanceloanController::class, 'update'])->name('employee.loans.update');
+        });
 
 Route::get('/industry', 'SmIndustryController@index');
     Route::post('/industry', 'SmIndustryController@store');
@@ -1240,11 +1246,12 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::post('/company/bank/session/delete', 'SysCompanyController@deleteBankSession');
         
 
-        Route::group(['prefix' => 'employee', 'middleware' => ['auth']], function () {
+       Route::group(['prefix' => 'employee', 'middleware' => ['auth']], function () {
             // List + Create + Store
-            Route::get('leaves',              'LeaveController@index')->name('employee.leaves.index');
-            Route::get('leaves/create',       'LeaveController@create')->name('employee.leaves.create');
-            Route::post('leaves',             'LeaveController@store')->name('employee.leaves.store');
+            Route::get('leaves', 'LeaveController@index')->name('employee.leaves.index');
+            Route::get('leaves/create', 'LeaveController@create')->name('employee.leaves.create');
+            Route::post('leaves', 'LeaveController@store')->name('employee.leaves.store');
+
 
 
             // Edit + Update (PUT/PATCH)
@@ -1252,18 +1259,22 @@ Route::get('/industry', 'SmIndustryController@index');
             Route::match(['put', 'patch'], 'leaves/{leave}', 'LeaveController@update')->name('employee.leaves.update');
 
 
-            // Show (keep after edit to avoid conflicts)
-            Route::get('leaves/{leave}',      'LeaveController@show')->name('employee.leaves.show');
 
-            
+            // Show (keep after edit to avoid conflicts)
+            Route::get('leaves/{leave}', 'LeaveController@show')->name('employee.leaves.show');
+
+
+
         });
 
         // Approval Routes
 
         // routes/web.php
-        Route::get('approvals/inbox', 'ApprovalController@index')->name('approvals.inbox');
+     Route::get('approvals/inbox', 'ApprovalController@index')->name('approvals.inbox');
+        Route::get('approvals/leave-track/{id?}', 'ApprovalController@track')->name('approvals.leave-track');
         Route::get('approvals/inbox/{id}', 'ApprovalController@show')->name('approvals.show');
         Route::post('approvals/action', 'ApprovalController@action')->name('approvals.action');
+        Route::post('approvals/handover-update', 'ApprovalController@updateHandover')->name('approvals.handover_update');
 
         // policy
         Route::match(['get', 'post'], 'company/policy', 'SysCompanyController@policy')->name('policy');
@@ -1351,9 +1362,13 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::get('bankbook', 'SysBankbookController@index');
         Route::post('bankbook', 'SysBankbookController@index');
 
+
         //Credit Card Book
         Route::get('creditcard', 'SysCreditcardbookController@index');
         Route::post('creditcard', 'SysCreditcardbookController@index');
+
+
+
 
         //Cheque Book
         Route::get('chequebook', 'ChequeBookController@index');
@@ -2736,7 +2751,7 @@ Route::get('/industry', 'SmIndustryController@index');
 
         Route::post('crm-pre-sales-request-list', 'SysCrmPreSalesController@pre_sales_request_list');
 
-        Route::get('crm-reimbursement-track/{id?}', 'SysCrmReimbursementRequest@track');
+  Route::get('crm-reimbursement-track/{id?}', 'SysCrmReimbursementRequest@track');
         Route::get('crm-reimbursement-track-details/{id}', 'SysCrmReimbursementRequest@getDetails');
         Route::get('crm-reimbursement-track-search', 'SysCrmReimbursementRequest@search')->name('crm-reimbursement.search');
         Route::post('crm-reimbursement-track', 'SysCrmReimbursementRequest@track');
@@ -2745,15 +2760,20 @@ Route::get('/industry', 'SmIndustryController@index');
 
 
 
-        Route::get('crm-reimbursement-request', 'SysCrmReimbursementRequest@index');
+Route::get('crm-reimbursement-request', 'SysCrmReimbursementRequest@index');
+        Route::get('crm-reimbursement-request-export', 'SysCrmReimbursementRequest@export');
         Route::post('crm-reimbursement-request-add', 'SysCrmReimbursementRequest@store');
+        Route::post('crm-reimbursement-request-update', 'SysCrmReimbursementRequest@update');
         Route::post('crm-reimbursement-request-update', 'SysCrmReimbursementRequest@update');
         Route::post('crm-reimbursement-request-delete', 'SysCrmReimbursementRequest@delete');
         Route::post('crm-reimbursement-request-restore', 'SysCrmReimbursementRequest@restore');
         Route::get('crm-reimbursement-request-get-custname', 'SysCrmReimbursementRequest@get_custname');
+        Route::get('crm-reimbursement-request-check-invoice', 'SysCrmReimbursementRequest@check_invoice');
         Route::post('crm-reimbursement-request-account-approve', 'SysCrmReimbursementRequest@account_approve');
         Route::post('crm-reimbursement-request-accounts-head-approve', 'SysCrmReimbursementRequest@accounts_head_approve');
         Route::post('crm-reimbursement-request-dept-head-approve', 'SysCrmReimbursementRequest@dept_head_approve');
+        Route::get('crm-reimbursement-search', 'SysCrmReimbursementRequest@search')->name('crm-reimbursement.search');
+        Route::get('crm-user-my-tasks-search', 'SysCrmUserTaskController@searchMyTasks')->name('crm-user-my-tasks.search');
 
 
         //crm-amc-track-service-list
