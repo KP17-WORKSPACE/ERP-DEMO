@@ -4,7 +4,60 @@
     use Illuminate\Support\Str;
     $auth = Auth::user();
     $types = [1=>'Loan',2=>'Salary Advance',3=>'Emergency Advance',4=>'Travel Advance',5=>'Other'];
+    $trackPermissions = $trackPermissions ?? ['create' => true, 'view' => true, 'edit' => true, 'delete' => true, 'export' => true, 'attach' => true];
 @endphp
+<style>
+  #filters-long .loan-list-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  #filters-long .loan-list-toolbar .loan-list-search {
+    width: 320px;
+    flex: 0 0 320px;
+    font-size: 13px;
+    height: 32px;
+  }
+  #filters-long .loan-list-toolbar .btn,
+  #filters-long .loan-list-toolbar .list_style_expand_btn,
+  #filters-long .loan-list-toolbar .list_style_search_btn {
+    position: static;
+    top: auto;
+    right: auto;
+    margin-right: 0 !important;
+  }
+  #filters-short .search-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #filters-short .search-filter-container .input-group {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  #filters-short .search-filter-container .list_style_expand_btn {
+    position: static;
+    top: auto;
+    right: auto;
+    flex: 0 0 auto;
+  }
+  #long-list .truncate-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @media (max-width: 992px) {
+    #filters-long .loan-list-toolbar {
+      justify-content: flex-start;
+    }
+    #filters-long .loan-list-toolbar .loan-list-search {
+      width: 100%;
+      flex: 1 1 280px;
+    }
+  }
+</style>
 
 <script>
   function setLoanView(mode) {
@@ -71,19 +124,16 @@ $permissions = App\SmRolePermission::where('role_id', $auth->role_id)->get();
 
   {{-- SHORT (Compact) --}}
   <div class="short-list" id="filters-short">
-    <h4 class="mb-2">Loan Approvals</h4>
+    <h4 class="mb-2">Loan Track</h4>
 
     {{ Form::open(['class'=>'form-horizontal','method'=>'get','url'=>route('employee.loans.approvals'),'id'=>'loan-search']) }}
-      <div class="search-filter-container mb-4 d-flex">
+      <div class="search-filter-container mb-4" id="short-list">
         <div class="input-group flex-nowrap">
           <input type="text" name="q" class="form-control"
-                 placeholder="Search by ID / Purpose"
+                 placeholder="Request No / Employee / Purpose"
                  value="{{ request('q') ?? '' }}">
         </div>
-        <button type="submit" class="btn btn-light ms-2">
-          <i class="ico icon-outline-magnifer"></i>
-        </button>
-        <button type="button" class="btn btn-light ms-2" id="list_style_button" onclick="list_style_new()">
+        <button type="button" class="btn btn-light list_style_expand_btn" id="list_style_button" onclick="list_style_new()">
           <i class="ico icon-outline-list-down"></i>
         </button>
       </div>
@@ -92,13 +142,28 @@ $permissions = App\SmRolePermission::where('role_id', $auth->role_id)->get();
 
   {{-- LONG (Full Filter) --}}
   <div class="long-list d-none" id="filters-long">
-    <div class="d-flex align-items-center justify-content-between">
-      <h4 class="mb-2">All Loan Requests</h4>
-      <div class="search-filter-container mb-0">
-        <button class="btn btn-light" onclick="document.getElementById('long-filters-box').classList.toggle('d-none')">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h4 class="mb-0">Loan Track</h4>
+      <div class="search-filter-container mb-0 loan-list-toolbar">
+        <input type="text" id="tableSearch" class="form-control loan-list-search" placeholder="Search">
+        @if(!empty($trackPermissions['export']))
+        <a href="{{ route('employee.loans.export', array_merge(request()->query(), ['source' => 'track'])) }}" class="btn btn-light list_style_search_btn">
+          <i class="ico icon-outline-export text-success"></i> Export
+        </a>
+        @endif
+        <button type="button" class="btn btn-light list_style_search_btn" onclick="document.getElementById('long-filters-box').classList.toggle('d-none')" title="Search / Filter">
           <i class="ico icon-outline-magnifer"></i>
         </button>
-        <button class="btn btn-light" id="list_style_button" onclick="list_style_new()">
+        @if($active_id)
+          <a href="{{ url('employee/loans?active=' . $active_id) }}" target="_blank" class="btn btn-light text-dark">
+            <i class="ico icon-outline-eye text-success"></i> View
+          </a>
+        @else
+          <a href="javascript:void(0)" onclick="alert('Please select a loan request to view.')" class="btn btn-light text-dark">
+            <i class="ico icon-outline-eye text-success"></i> View
+          </a>
+        @endif
+        <button type="button" class="btn btn-light list_style_expand_btn" id="list_style_button" onclick="list_style_new()" title="Compact list">
           <i class="ico icon-outline-list-down"></i>
         </button>
       </div>
@@ -143,20 +208,26 @@ $permissions = App\SmRolePermission::where('role_id', $auth->role_id)->get();
     <ul id="loanShortList" class="nav flex-column nav-pills" role="tablist">
       @forelse($loans as $loan)
         <li class="nav-item w-100" role="presentation">
-          <button class="nav-link lv-item {{ $loop->first ? 'active' : '' }}"
+          <button class="nav-link lv-item data-item {{ (isset($active_id) && $active_id == $loan->id) ? 'active' : '' }}"
                   data-id="{{ $loan->id }}" type="button" role="tab">
-            <div class="row w-100 align-items-center">
-              
-              <div class="col-10 ps-2">
-                <div class="d-flex justify-content-between">
-                  <span class="form-control-plaintext fw-semibold">{{ Str::limit($loan->purpose, 24) }}</span>
-                  <span class="badge fw-semibold">{{ $loan->status }}</span>
+            <div class="row w-100">
+                <div class="col-12">
+                    <label class="form-control-plaintext truncate-text">
+                        {{ optional($loan->staffDetails)->full_name ?: 'N/A' }}
+                    </label>
                 </div>
-                <div class="xsmall text-muted d-flex justify-content-between mt-1">
-                  <span>#LN{{ $loan->id }}</span>
-                  <span>{{ number_format($loan->amount,0) }}</span>
+                <div class="col-4">
+                    <div class="form-control-plaintext" style="font-size:11px">{{ $loan->document_number }}</div>
                 </div>
-              </div>
+                <div class="col-4 pl-2">
+                    <div class="form-control-plaintext truncate-text" style="font-size:11px">
+                        {{ optional($loan->created_at)->format('d/m/Y') }}</div>
+                </div>
+                <div class="col-4 text-end">
+                    <div class="form-control-plaintext truncate-text" style="font-size:11px">
+                        {{ number_format((float)$loan->amount, 2) }}
+                    </div>
+                </div>
             </div>
           </button>
         </li>
@@ -166,67 +237,136 @@ $permissions = App\SmRolePermission::where('role_id', $auth->role_id)->get();
     </ul>
 
     {{-- LONG LIST TABLE --}}
-    <div class="table-responsive mb-4 mt-4">
-      <table id="long-list" class="table table-hover d-none" style="table-layout:fixed;width:100%">
-        <thead class="text-center">
-          <tr>
-            <th style="width:70px;">ID</th>
-            <th style="width:120px;">Employee</th>
-            <th style="width:140px;">Type</th>
-            <th style="width:100px;">Amount</th>
-            <th style="width:180px;">Purpose</th>
-            <th style="width:100px;">Manager</th>
-            <th style="width:100px;">Finance</th>
-            <th style="width:100px;">HR</th>
-            <th style="width:100px;">Status</th>
-            <th class="text-center" style="width:160px;">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($loans as $loan)
-            @php
-              $staff = $loan->staffDetails ?? $loan->staff;
-              $roleId = $auth->role_id;
-              $canAct = false;
-
-              if($roleId == 1 && $staff) {
-                  $ids = explode(',', $staff->reporting_manager_id);
-                  if(in_array($auth->id, $ids) && $loan->manager_approval == 'Pending') $canAct = true;
-              }
-              elseif($roleId == 2 && $loan->manager_approval == 'Approved' && $loan->finance_approval == 'Pending') $canAct = true;
-              elseif($roleId == 3 && $loan->finance_approval == 'Approved' && $loan->hr_approval == 'Pending') $canAct = true;
-            @endphp
-
+    <div id="long-list" class="d-none">
+        <style>
+          .loan-table-wrapper {
+            max-height: calc(100vh - 160px);
+            overflow: auto;
+          }
+          .loan-table-wrapper thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #deebe1 !important;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            white-space: nowrap !important;
+            vertical-align: middle;
+            line-height: 1.2;
+            padding: 7px 4px !important;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .loan-table-wrapper tbody td {
+            vertical-align: middle;
+            white-space: nowrap;
+            word-break: normal;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+          }
+          .loan-table-wrapper .loan-action-buttons {
+            gap: 3px;
+            min-width: 78px;
+          }
+          .loan-table-wrapper .loan-action-buttons .btn {
+            width: 24px;
+            height: 24px;
+            padding: 2px !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 24px;
+          }
+          .loan-table-wrapper .badge {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+          }
+        </style>
+        <div class="table-responsive mb-4 mt-4 loan-table-wrapper">
+        <table class="table table-hover mt-0 data-table" style="table-layout: fixed;width:100%">
+          <thead>
             <tr>
-              <td>LN{{ $loan->id }}</td>
-              <td>{{ optional($staff)->first_name ?? '—' }}</td>
-              <td>{{ $types[$loan->type_id] ?? '—' }}</td>
-              <td>{{ number_format($loan->amount,2) }}</td>
-              <td class="truncate-text" title="{{ $loan->purpose }}">{{ Str::limit($loan->purpose,25) }}</td>
-
-              <td><span class="badge {{ $loan->manager_approval=='Approved'?'bg-success':($loan->manager_approval=='Rejected'?'bg-danger':'bg-warning') }}">{{ $loan->manager_approval ?? 'Pending' }}</span></td>
-              <td><span class="badge {{ $loan->finance_approval=='Approved'?'bg-success':($loan->finance_approval=='Rejected'?'bg-danger':'bg-warning') }}">{{ $loan->finance_approval ?? 'Pending' }}</span></td>
-              <td><span class="badge {{ $loan->hr_approval=='Approved'?'bg-success':($loan->hr_approval=='Rejected'?'bg-danger':'bg-warning') }}">{{ $loan->hr_approval ?? 'Pending' }}</span></td>
-              <td><span class="badge {{ $loan->status=='Approved'?'bg-success':($loan->status=='Rejected'?'bg-danger':'bg-secondary') }}">{{ $loan->status ?? 'Pending' }}</span></td>
-
-              <td class="text-center">
-                @if($canAct)
-                  <form method="POST" action="{{ route('employee.loans.approve',$loan->id) }}" class="d-inline">@csrf
-                    <input type="hidden" name="status" value="Approved">
-                    <button class="btn btn-success btn-sm">Approve</button>
-                  </form>
-                  <form method="POST" action="{{ route('employee.loans.approve',$loan->id) }}" class="d-inline">@csrf
-                    <input type="hidden" name="status" value="Rejected">
-                    <button class="btn btn-danger btn-sm">Reject</button>
-                  </form>
-                @else
-                  <em class="text-muted small">No action</em>
-                @endif
-              </td>
+              <th style="width: 5.5%;" title="Date">Date</th>
+              <th style="width: 6.5%;" title="Doc No">Doc No</th>
+              <th style="width: 8.5%;" title="Employee Name">Employee Name</th>
+              <th style="width: 6.5%;" title="Request Type">Request Type</th>
+              <th style="width: 7%;" title="Loan Category">Loan Category</th>
+              <th style="width: 7%;" class="text-end" title="Amount Requested">Amount Requested</th>
+              <th style="width: 6.5%;" class="text-end" title="Installment Number">Installment Number</th>
+              <th style="width: 8%;" class="text-end" title="Monthly Deduction Amount">Monthly Deduction Amount</th>
+              <th style="width: 7%;" title="Repayment Start Month">Repayment Start Month</th>
+              <th style="width: 7%;" title="Repayment Mode">Repayment Mode</th>
+              <th style="width: 6.5%;" title="Disbursement Date">Disbursement Date</th>
+              <th style="width: 9%;" title="Purpose">Purpose</th>
+              <th style="width: 8%;" title="Guarantor Employee">Guarantor Employee</th>
+              <th style="width: 6%;" title="Status">Status</th>
+              <th style="width: 7%;" class="text-center" title="Actions">Actions</th>
             </tr>
-          @endforeach
-        </tbody>
-      </table>
+          </thead>
+          <tbody style="font-size:12px">
+            @forelse($loans as $loan)
+              @php
+                $staff = $loan->staffDetails ?? $loan->staff;
+                $guarantor = $loan->guarantor_employee_id ? \App\SmStaff::find($loan->guarantor_employee_id) : null;
+                $amount = (float) $loan->amount;
+                $monthly = (float) $loan->amount_per_month;
+                if ($loan->status === 'Rejected' || in_array('Rejected', [$loan->manager_approval, $loan->finance_approval, $loan->hr_approval, $loan->management_approval, $loan->payment_approval], true)) {
+                  $workflowStatus = 'Rejected';
+                } elseif (($loan->manager_approval ?: 'Pending') !== 'Approved') {
+                  $workflowStatus = 'Pending';
+                } elseif (($loan->finance_approval ?: 'Pending') !== 'Approved') {
+                  $workflowStatus = 'Pending Finance';
+                } elseif (($loan->hr_approval ?: 'Pending') !== 'Approved') {
+                  $workflowStatus = 'Pending HR';
+                } elseif ($loan->status === 'Pending' && (($loan->management_approval ?: 'Pending') !== 'Approved')) {
+                  $workflowStatus = 'Pending Management';
+                } else {
+                  $workflowStatus = 'Approved';
+                }
+                $statusBadgeClass = 'badge bg-warning';
+                if ($workflowStatus === 'Approved') $statusBadgeClass = 'badge bg-success';
+                elseif ($workflowStatus === 'Rejected') $statusBadgeClass = 'badge bg-danger';
+              @endphp
+              <tr>
+                <td class="text-center">{{ optional($loan->created_at)->format('d/m/Y') ?: '-' }}</td>
+                <td class="text-center lv-item" data-id="{{ $loan->id }}" onclick="list_style_new()">
+                  <a class="text-success" style="cursor:pointer">{{ $loan->document_number }}</a>
+                </td>
+                <td class="truncate-cell" title="{{ optional($staff)->full_name }}">{{ optional($staff)->full_name ?: optional($staff)->first_name ?: '-' }}</td>
+                <td title="{{ $loan->request_type ?: ($types[$loan->type_id] ?? '-') }}">{{ $loan->request_type ?: ($types[$loan->type_id] ?? '-') }}</td>
+                <td title="{{ $loan->loan_category ?: ($types[$loan->type_id] ?? '-') }}">{{ $loan->loan_category ?: ($types[$loan->type_id] ?? '-') }}</td>
+                <td class="text-end">{{ number_format($amount, 2) }}</td>
+                <td class="text-end">{{ $loan->installments ?: '-' }}</td>
+                <td class="text-end">{{ number_format($monthly, 2) }}</td>
+                <td title="{{ $loan->repayment_start ? \Carbon\Carbon::parse($loan->repayment_start)->format('M Y') : '-' }}">{{ $loan->repayment_start ? \Carbon\Carbon::parse($loan->repayment_start)->format('M Y') : '-' }}</td>
+                <td title="{{ $loan->repayment_mode ?: '-' }}">{{ $loan->repayment_mode ?: '-' }}</td>
+                <td class="text-center">{{ $loan->requested_disbursement_date ? date('d/m/Y', strtotime($loan->requested_disbursement_date)) : '-' }}</td>
+                <td class="truncate-cell" title="{{ $loan->purpose }}">{{ $loan->purpose ?: '-' }}</td>
+                <td class="truncate-cell" title="{{ optional($guarantor)->full_name }}">{{ optional($guarantor)->full_name ?: '-' }}</td>
+                <td class="text-center" title="{{ $workflowStatus }}"><span class="{{ $statusBadgeClass }}">{{ $workflowStatus }}</span></td>
+                <td class="text-center align-middle">
+                  <div class="d-flex justify-content-center align-items-center loan-action-buttons flex-nowrap">
+                    @if(!empty($loan->attachment))
+                        <a href="{{ asset('public/uploads/loan_docs/'.$loan->attachment) }}" target="_blank" download class="btn btn-sm btn-light" title="Download Attachment">
+                            <i class="ico icon-bold-download-minimalistic text-dark" style="font-size: 16px;"></i>
+                        </a>
+                    @else
+                        -
+                    @endif
+                  </div>
+                </td>
+              </tr>
+            @empty
+              <tr>
+                <td colspan="15" class="text-center text-muted p-4">No loan track requests found.</td>
+              </tr>
+            @endforelse
+          </tbody>
+        </table>
+      </div>
       <div class="mt-3">{{ $loans->links() }}</div>
     </div>
   </div>
@@ -269,8 +409,16 @@ $(function(){
 
   const first = $('.lv-item').first();
   if(first.length){ loadDetail(first.data('id')); }
+
+  $('#tableSearch').on('input', function () {
+    var needle = (this.value || '').toLowerCase();
+    $('#long-list tbody tr').each(function () {
+      $(this).toggle($(this).text().toLowerCase().indexOf(needle) !== -1);
+    });
+  });
 });
 </script>
 
 <?php } catch (\Exception $e) { ?> {{ $e }} <?php } ?>
 @endsection
+
