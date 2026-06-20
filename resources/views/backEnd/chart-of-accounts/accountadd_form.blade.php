@@ -57,7 +57,7 @@
                               <input
                                         class="txtbx primary-input form-control {{ $errors->has('account_code') ? 'is-invalid' : ' ' }}"
                                         type="hidden" name="account_code"
-                                        value="{{ isset($editData) ? @$editData->account_code : @App\SysHelper::get_new_account_code() }}"
+                                        value="{{  @App\SysHelper::get_new_account_code() }}"
                                         required>
 
                         
