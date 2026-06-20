@@ -23,6 +23,7 @@ use App\SysSupplierType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Brian2694\Toastr\Facades\Toastr;
 //use Barryvdh\DomPDF\PDF;
@@ -322,7 +323,7 @@ class SysPurchaseOrderController extends Controller
 
             return view('backEnd/purchaseorder/purchase_order_list', compact('purchaseorder', 'supplier_list', 'pending_grn', 'pending_pi', 'pending_pr', 'currency', 'selectedPO', 'flt_documents_number', 'flt_supplier', 'flt_customer', 'flt_dealno', 'flt_currency', 'flt_grnno', 'flt_purchase_invoice_no', 'flt_purchase_return_no', 'flt_attachments', 'ctrl_date', 'ctrl_date2', 'filter_by', 'quotations', 'currency', 'vendors', 'items', 'departments', 'paymentterms', 'company', 'shipping', 'suppliertype', 'purchasetype', 'countries', 'states', 'cart', 'customer', 'salesman', 'action', 'active_id', 'editData', 'staff', 'customer_reference_list', 'auto_print'));
         } catch (\Exception $e) {
-            return $e;
+            Log::error('Purchase order list failed', ['exception' => $e]);
             Toastr::error('Operation Failed', 'Failed');
             return redirect()->back();
         }
@@ -358,6 +359,7 @@ class SysPurchaseOrderController extends Controller
             $bill_tel = "";
             $bill_mob = "";
             $bill_emali = "";
+            $bill_trnno = "";
 
             $ship_company_name = "";
             $ship_contact_name = "";
@@ -369,25 +371,25 @@ class SysPurchaseOrderController extends Controller
             $ship_tel = "";
             $ship_mob = "";
             $ship_emali = "";
+            $ship_trnno = "";
 
 
 
             if (!empty($po)) {
                 $company = SysCompany::find($po->company_id);
 
-                $bill_contact_name = $po->createdby->full_name;
-                $bill_company_name = $company->company_name;
-                $bill_tel = $company->telephone;
-                $bill_mob = $company->mobile;
-                $bill_emali = $company->email;
-                $bill_trnno = $company->vat_number;
-                $bill_address1 = $company->company_address;
+                $bill_contact_name = optional($po->createdby)->full_name ?: '';
+                $bill_company_name = optional($company)->company_name ?: '';
+                $bill_tel = optional($company)->telephone ?: '';
+                $bill_mob = optional($company)->mobile ?: '';
+                $bill_emali = optional($company)->email ?: '';
+                $bill_trnno = optional($company)->vat_number ?: '';
+                $bill_address1 = optional($company)->company_address ?: '';
                 $bill_address2 = "";
                 $bill_city = "";
-                $bill_state = $company->stateRelation->name;
-                $bill_country = $company->countryname->name;
-                $ship_mob = SmStaff::select('mobile')->where('user_id', $po->created_by)->first();
-                $ship_mob = $ship_mob->mobile;
+                $bill_state = optional(optional($company)->stateRelation)->name ?: '';
+                $bill_country = optional(optional($company)->countryname)->name ?: '';
+                $ship_mob = optional(SmStaff::select('mobile')->where('user_id', $po->created_by)->first())->mobile ?: '';
 
 
 
@@ -396,17 +398,15 @@ class SysPurchaseOrderController extends Controller
 
                 $main_data_list = SysCustSuppl::select('sys_cust_suppl.*')->join('sys_chartofaccounts', 'sys_chartofaccounts.account_code', 'sys_cust_suppl.code')->where('sys_chartofaccounts.id', $po->vendors)->first();
 
-                $main_address = SysCustSupplAddressbook::where('cust_suppl_id', $main_data_list->id)->orderby('set_default', 'desc')->first();
-
-
-                if (isset($main_address)) {
+                if (isset($main_data_list)) {
+                    $main_address = SysCustSupplAddressbook::where('cust_suppl_id', $main_data_list->id)->orderby('set_default', 'desc')->first();
                     $m_company_name = $main_data_list->name;
                     $m_contact_name = $main_data_list->customer_salutation . ' ' . $main_data_list->first_name . ' ' . $main_data_list->last_name;
-                    $m_address1 = $main_address->address;
-                    $m_address2 = $main_address->address2;
-                    $m_city = $main_address->city;
-                    $m_state = $main_address->statename->name;
-                    $m_country = $main_address->countryname->name;
+                    $m_address1 = optional($main_address)->address ?: '';
+                    $m_address2 = optional($main_address)->address2 ?: '';
+                    $m_city = optional($main_address)->city ?: '';
+                    $m_state = optional(optional($main_address)->statename)->name ?: '';
+                    $m_country = optional(optional($main_address)->countryname)->name ?: '';
                     $m_tel = $main_data_list->contcat_number;
                     $m_mob = $main_data_list->mobile;
                     $m_emali = $main_data_list->email;
@@ -424,16 +424,11 @@ class SysPurchaseOrderController extends Controller
 
                     $ship_company_name = $sub_data_list->name;
                     $ship_contact_name = $sub_data_list->customer_salutation . ' ' . $sub_data_list->first_name . ' ' . $sub_data_list->last_name;
-                    $ship_address1 = $sub_address->address;
-                    $ship_address2 = $sub_address->address2;
-                    $ship_city = $sub_address->city;
-                    try {
-                        $ship_state = optional($sub_address->statename)->name;
-                    } catch (\Throwable $th) {
-                        $ship_state = "";
-                    }
-
-                    $ship_country = optional($sub_address->countryname)->name;
+                    $ship_address1 = optional($sub_address)->address ?: '';
+                    $ship_address2 = optional($sub_address)->address2 ?: '';
+                    $ship_city = optional($sub_address)->city ?: '';
+                    $ship_state = optional(optional($sub_address)->statename)->name ?: '';
+                    $ship_country = optional(optional($sub_address)->countryname)->name ?: '';
                     $ship_tel = $sub_data_list->contcat_number;
                     //$ship_mob= $sub_data_list->mobile;
                     $ship_emali = $sub_data_list->email;
@@ -521,32 +516,52 @@ class SysPurchaseOrderController extends Controller
             }
 
         } catch (\Throwable $th) {
+            Log::error('Purchase order print data failed', [
+                'purchase_order_id' => $id,
+                'exception' => $th,
+            ]);
 
-            return [];
+            throw $th;
         }
     }
 
     public function getDetails($id)
     {
-        $data = $this->get_print_data($id);
+        try {
+            $data = $this->get_print_data($id);
+            if (empty($data) || !is_array($data)) {
+                throw new \RuntimeException('Purchase order not found.');
+            }
 
-        if (!empty($data) && is_array($data)) {
-            return view('backEnd/purchaseorder/po-pdf-html', $data);
-        } else {
-            return response("Error loading details!", 404);
+            return response(view('backEnd/purchaseorder/po-pdf-html', $data)->render());
+        } catch (\Throwable $th) {
+            Log::error('Purchase order details failed', [
+                'purchase_order_id' => $id,
+                'exception' => $th,
+            ]);
+            Toastr::error('Unable to load purchase order details.', 'Failed');
+
+            return redirect()->back();
         }
     }
 
     public function getDetailsPDF($id)
     {
-        $data = $this->get_print_data($id);
+        try {
+            $data = $this->get_print_data($id);
+            if (empty($data) || !is_array($data)) {
+                throw new \RuntimeException('Purchase order not found.');
+            }
 
+            return response(view('backEnd.purchaseorder.po-pdf-view-html', $data)->render());
+        } catch (\Throwable $th) {
+            Log::error('Purchase order PDF details failed', [
+                'purchase_order_id' => $id,
+                'exception' => $th,
+            ]);
+            Toastr::error('Unable to load purchase order PDF.', 'Failed');
 
-
-        if (!empty($data) && is_array($data)) {
-            return view('backEnd.purchaseorder.po-pdf-view-html', $data);
-        } else {
-            return response("Error loading details!", 404);
+            return redirect()->back();
         }
     }
 
