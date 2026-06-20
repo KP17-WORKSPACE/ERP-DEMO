@@ -51,20 +51,6 @@
 
             {{-- 4 --}}
             <div class="col">
-                <label class="form-label">Reporting Manager</label>
-                <select class="form-select form-select-sm" name="reporting_manager" required>
-                    <option value="">-- Select Manager --</option>
-                    @foreach ($reportingManager as $user)
-                        <option value="{{ $user->id }}"
-                            {{ old('reporting_manager', $leave->reporting_manager ?? null) == $user->id ? 'selected' : '' }}>
-                            {{ $user->full_name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- 5 --}}
-            <div class="col">
                 <label class="form-label">Type of Leave</label>
                 <select id="type_of_leave" name="type_id" class="form-select form-select-sm" required>
                     <option value="">-- Select --</option>

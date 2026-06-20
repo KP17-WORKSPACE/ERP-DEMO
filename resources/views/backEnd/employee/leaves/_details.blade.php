@@ -1,349 +1,293 @@
-{{-- resources/views/backEnd/employee/leaves/_details.blade.php --}}
 @php
     use Carbon\Carbon;
+    use Illuminate\Support\Str;
 
-    // --- Helpers for PHP 7.1 / Laravel 5.7 ---
-    if (!function_exists('safeDate')) {
-        function safeDate($d)
-        {
-            return $d ? Carbon::parse($d)->format('d M Y') : '—';
+    $leaveNumber = $leave->leave_application_no ?: ('LR' . optional($leave->company)->other_code . '-' . $leave->id);
+    $employeeName = optional($leave->staffs)->full_name ?: trim(optional($leave->staffs)->first_name . ' ' . optional($leave->staffs)->last_name);
+
+    if (!function_exists('leaveStatusClass')) {
+        function leaveStatusClass($status) {
+            if ($status === 'A') return 'bg-success text-white';
+            if ($status === 'R') return 'bg-danger text-white';
+            if ($status === 'C') return 'bg-secondary text-white';
+            if ($status === 'P') return 'bg-warning text-dark';
+            return 'bg-lightgreen text-dark';
         }
     }
-
-    // Normalize status (handles P/A/R/C or words)
-    $raw = (string) ($leave->approve_status ?? 'P');
-    $normalized = strtoupper(trim($raw));
-    $map = [
-        'P' => 'Pending',
-        'A' => 'Approved',
-        'R' => 'Rejected',
-        'C' => 'Cancelled',
-        'PENDING' => 'Pending',
-        'APPROVED' => 'Approved',
-        'REJECTED' => 'Rejected',
-        'CANCELLED' => 'Cancelled',
-    ];
-    $status = isset($map[$normalized]) ? $map[$normalized] : ucfirst(strtolower($raw));
-
-    // Top status badge (Bootstrap 5)
-    $topBadgeClass = 'bg-warning';
-    if ($status == 'Approved') {
-        $topBadgeClass = 'bg-success';
-    } elseif ($status == 'Rejected') {
-        $topBadgeClass = 'bg-danger';
-    } elseif ($status == 'Cancelled') {
-        $topBadgeClass = 'bg-secondary';
-    }
-
-    // Half-day label
+    
+    $statusLabel = ['D'=>'New','P'=>'Pending','A'=>'Approved','R'=>'Rejected','C'=>'Cancelled'][$leave->approve_status] ?? 'Pending';
+    
     $halfLabel = '';
     if (!empty($leave->is_half_day)) {
-        $halfLabel = '(Half Day' . (!empty($leave->half_session) ? ' - ' . $leave->half_session : '') . ')';
-    }
-
-    // ---- Build Approval Flow ----
-    // Preferred: approvals_json (array of steps with keys: name, role, status, acted_at, comment, is_current)
-    $flow = [];
-    if (!empty($leave->approvals_json)) {
-        $decoded = is_array($leave->approvals_json)
-            ? $leave->approvals_json
-            : json_decode($leave->approvals_json, true);
-        if (is_array($decoded)) {
-            foreach ($decoded as $step) {
-                $flow[] = [
-                    'name' => isset($step['name']) ? $step['name'] : 'Approver',
-                    'role' => isset($step['role']) ? $step['role'] : '',
-                    'status' => isset($step['status']) ? $step['status'] : 'Pending',
-                    'acted_at' => !empty($step['acted_at']) ? safeDate($step['acted_at']) : null,
-                    'comment' => isset($step['comment']) ? $step['comment'] : null,
-                    'is_current' => !empty($step['is_current']),
-                ];
-            }
-        }
-    }
-
-    // Fallback: approver_chain + current_index
-    if (empty($flow)) {
-        // Treat current_index as 0-based; change if your DB stores 1-based
-        $currentIndex = is_null($leave->current_index) ? 0 : max(0, (int) $leave->current_index);
-        $chainRaw = trim((string) $leave->approver_chain);
-
-        $ids = [];
-        if ($chainRaw !== '') {
-            $asJson = json_decode($chainRaw, true);
-            if (is_array($asJson)) {
-                foreach ($asJson as $item) {
-                    if (is_array($item) && isset($item['id'])) {
-                        $ids[] = (int) $item['id'];
-                    } elseif (is_numeric($item)) {
-                        $ids[] = (int) $item;
-                    }
-                }
-                $ids = array_values(array_unique(array_filter($ids)));
-            } else {
-                $parts = array_filter(array_map('trim', explode(',', $chainRaw)));
-                foreach ($parts as $p) {
-                    if (is_numeric($p)) {
-                        $ids[] = (int) $p;
-                    }
-                }
-            }
-        }
-
-        // Resolve staff names if IDs are present
-        $namesById = [];
-        if (!empty($ids)) {
-            try {
-                $namesById = \DB::table('sm_staffs')->whereIn('id', $ids)->pluck('full_name', 'id')->toArray();
-            } catch (\Exception $e) {
-                $namesById = [];
-            }
-        }
-
-        // Build token list
-        $tokens = [];
-        if (!empty($ids)) {
-            foreach ($ids as $sid) {
-                $tokens[] = isset($namesById[$sid]) ? $namesById[$sid] : 'Staff #' . $sid;
-            }
-        } elseif (!empty($chainRaw)) {
-            $tokens = array_filter(array_map('trim', explode(',', $chainRaw)));
-        }
-
-        // Infer per-step status from current_index and overall
-        foreach ($tokens as $i => $nm) {
-            $stepStatus = 'Pending';
-            if ($i < $currentIndex) {
-                $stepStatus = 'Approved';
-            } elseif ($i == $currentIndex && $status === 'Rejected') {
-                $stepStatus = 'Rejected';
-            }
-
-            $flow[] = [
-                'name' => $nm ?: 'Approver',
-                'role' => '',
-                'status' => $stepStatus,
-                'acted_at' => null,
-                'comment' => null,
-                'is_current' => $i === $currentIndex && $status === 'Pending',
-            ];
-        }
-    }
-
-    // Helper for per-card badge class (Bootstrap 5)
-    if (!function_exists('flowBadgeClass')) {
-        function flowBadgeClass($status)
-        {
-            $s = strtolower((string) $status);
-            if ($s === 'approved') {
-                return 'bg-success';
-            }
-            if ($s === 'rejected') {
-                return 'bg-danger';
-            }
-            if ($s === 'cancelled') {
-                return 'bg-secondary';
-            }
-            return 'bg-warning'; // pending/unknown
-        }
+        $session = $leave->half_session ? ' (' . str_replace('_', ' ', ucwords(strtolower($leave->half_session))) . ')' : '';
+        $halfLabel = '<span class="badge bg-warning text-dark ms-1">Half Day' . $session . '</span>';
     }
 @endphp
 
-<div class="purchase-order-content-header">
-    <h4 class="purchase-order-content-header-left">#{{ 'LR' . $leave->company->other_code . '-' . $leave->id }}
-    </h4>
+<style>
+    #leave-details label {
+        font-weight: 600 !important;
+        background-color: #deebe1 !important;
+        margin-bottom: 3px !important;
+        text-align: center !important;
+        color: #212529 !important;
+    }
+    #leave-details .green-heading p {
+        font-weight: 600 !important;
+        background-color: #deebe1 !important;
+        margin-bottom: 3px !important;
+        text-align: center !important;
+        color: #212529 !important;
+    }
+    #leave-details .green-heading { text-align: center !important; }
+    #leave-details .form-control-plaintext { text-align: center !important; }
+    #leave-details .detail-item-table-sm td { text-align: start !important; }
+    .bg-lightgreen { background-color: #deebe1 !important; }
+</style>
+
+<div id="leave-details">
+
+<div class="purchase-order-content-header sticky-top d-flex justify-content-between align-items-center" style="background-color: #f7f8fd; padding: 15px;">
+    <div class="d-flex align-items-center">
+        <h4 class="purchase-order-content-header-left mb-0">#{{ $leaveNumber }}</h4>
+        @php 
+            $badgeColor = $statusLabel === 'Approved' ? 'success' : ($statusLabel === 'Rejected' ? 'danger' : ($statusLabel === 'Pending' ? 'warning text-dark' : ($statusLabel === 'New' ? 'primary' : 'secondary'))); 
+        @endphp
+        <span class="badge bg-{{ $badgeColor }} ms-2 px-2 py-1" style="font-size: 14px; font-weight: 500;">{{ $statusLabel }}</span>
+    </div>
+    
     <div class="purchase-order-content-header-right d-flex align-items-center">
-        {{-- Apply Leave --}}
-        <a href="{{ url('employee/leaves/create') }}" class="btn btn-light text-dark d-inline-flex align-items-center">
-            <i class="ico icon-outline-add-square text-success"></i>
-            <span class="btn-text ms-1">Add</span>
+        @if(in_array($leave->approve_status, ['D', 'P']))
+            <a href="{{ route('employee.leaves.edit', $leave->id) }}" class="btn btn-light text-dark">
+                <i class="ico icon-outline-pen-2 text-success btn-icon"></i><span class="btn-text ms-1">Edit</span>
+            </a>
+        @endif
+        <a href="{{ route('employee.leaves.index', ['leave_action' => 'add']) }}" class="btn btn-light text-dark ms-2">
+            <i class="ico icon-outline-add-square text-success btn-icon"></i><span class="btn-text ms-1">Add</span>
         </a>
-
-        {{-- Edit current Leave - --}}
-        @if (isset($leave) && $status == 'Pending')
-    <a href="{{ route('employee.leaves.edit', $leave->id) }}"
-       class="btn btn-light text-dark d-inline-flex align-items-center ms-2">
-        <i class="ico icon-outline-pen-2 text-success"></i>
-        <span class="btn-text ms-1">Edit</span>
-    </a>
-@endif
-
+        <div class="dropdown" style="display:inline-block;margin-left:5px;">
+            <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ico icon-outline-hamburger-menu"></i>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{{ route('employee.leaves.index') }}"><i class="ico icon-outline-list-down text-success"></i> My Leaves</a></li>
+            </ul>
+        </div>
     </div>
 </div>
 
-<div class="card">
+<div class="card mb-3">
     <div class="card-body">
-        <div class="row g-2">
-            <div class="col-md-3">
-                <label class="fw-bold text-muted small d-block">Type</label>
-                <div class="fw-semibold">
-                    {{ isset($leave->type) && isset($leave->type->name) ? $leave->type->name : 'Type #' . $leave->type_id }}
-                </div>
+        <div class="row">
+            <div class="col-2 mb-2">
+                <label class="form-label">Request Number</label>
+                <div class="form-control-plaintext truncate-text-custom">{{ $leaveNumber }}</div>
             </div>
-
-            <div class="col-md-3">
-                <label class="fw-bold text-muted small d-block">From</label>
-                <div class="fw-semibold">
-                    {{ $leave->leave_from ? \Carbon\Carbon::parse($leave->leave_from)->format('d-m-Y') : '—' }}
-                </div>
+            <div class="col-2 mb-2">
+                <label class="form-label">Employee</label>
+                <div class="form-control-plaintext truncate-text-custom">{{ $employeeName ?: 'N/A' }}</div>
             </div>
-
-            <div class="col-md-3">
-                <label class="fw-bold text-muted small d-block">To</label>
-                <div class="fw-semibold">
-                    {{ $leave->leave_to ? \Carbon\Carbon::parse($leave->leave_to)->format('d-m-Y') : '—' }}
-                </div>
+            <div class="col-2 mb-2">
+                <label class="form-label">Department</label>
+                <div class="form-control-plaintext truncate-text-custom">{{ optional(optional($leave->staffs)->departments)->name ?: 'N/A' }}</div>
             </div>
-
-            <div class="col-md-3">
-                <label class="fw-bold text-muted small d-block">Days</label>
-                <div class="fw-semibold">
-                  {{ (int)$leave->days == $leave->days ? (int)$leave->days : $leave->days }} {!! $halfLabel !!} days
-
-
-                </div>
+            <div class="col-2 mb-2">
+                <label class="form-label">Designation</label>
+                <div class="form-control-plaintext truncate-text-custom">{{ optional(optional($leave->staffs)->designations)->title ?: 'N/A' }}</div>
             </div>
-
-            <div class="col-md-3">
-                <label class="fw-bold text-muted small d-block">Apply Date</label>
-                <div class="fw-semibold">
-                    {{ $leave->apply_date ? \Carbon\Carbon::parse($leave->apply_date)->format('d-m-Y') : '—' }}
-                </div>
+            <div class="col-2 mb-2">
+                <label class="form-label">Leave Status</label>
+                <div class="form-control-plaintext truncate-text-custom">{{ $statusLabel }}</div>
             </div>
-
-            <div class="col-md-3">
-                <label class="fw-bold text-muted small d-block">Reporting Manager</label>
-                <div class="fw-semibold">{{ $leave->reportingManager->full_name ?? '-' }}
-                </div>
+            <div class="col-2 mb-2">
+                <label class="form-label">Applied On</label>
+                <div class="form-control-plaintext truncate-text-custom">{{ optional($leave->apply_date)->format('d/m/Y') ?: (optional($leave->created_at)->format('d/m/Y') ?: '-') }}</div>
             </div>
+        </div>
+    </div>
+</div>
 
-            <div class="col-md-3">
-                <label class="fw-bold text-muted small d-block">Hand Over</label>
-                <div class="fw-semibold">{{ $leave->handover_to ?? '-' }}
-                </div>
-            </div>
+<div class="tab-wrap mb-3">
+    <ul class="nav nav-tabs" id="leaveDetailsTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#leave-details-tab" type="button">Leave Details</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#travel-info-tab" type="button">Travel Information</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#handover-info-tab" type="button">Handover Information</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#emergency-contact-tab" type="button">Emergency Contact</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#leave-balance-tab" type="button">Leave Balance</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#approval-info-tab" type="button">Approval Information</button></li>
+    </ul>
 
-            {{-- File attachment --}}
-            <div class="col-md-3">
-                <label class="fw-bold text-muted small d-block">Attachment</label>
-                <div>
+    <div class="tab-content mb-3">
+        <!-- Tab 1: Leave Details -->
+        <div class="tab-pane fade show active" id="leave-details-tab">
+            <div class="row text-center">
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Leave Type</p>{{ optional($leave->type)->name ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Leave Category</p>{{ $leave->leave_category ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Leave From</p>{{ optional($leave->leave_from)->format('d/m/Y') ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Leave To</p>{{ optional($leave->leave_to)->format('d/m/Y') ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Number of Days</p>{{ (float)$leave->days }} {!! $halfLabel !!}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Return To Work</p>{{ optional($leave->return_to_work_date)->format('d/m/Y') ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Notice Period</p>{{ $leave->notice_period ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Urgency Level</p>{{ $leave->urgency_level ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Nature of Leave</p>{{ $leave->nature_of_leave ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Expected Availability</p>{{ $leave->availability_during_leave ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Reason for Leave</p>{{ $leave->reason ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Contact During Leave</p>{{ $leave->contact_number_during_leave ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Email During Leave</p>{{ $leave->email_during_leave ?? 'N/A' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Attachment</p>
                     @if (!empty($leave->file))
-                        <a href="{{ asset('uploads/leave/' . $leave->file) }}" target="_blank"
-                            class="btn btn-sm btn-outline-primary">
-                            View File
-                        </a>
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($leave->file) }}" target="_blank" class="text-success">View File</a>
                     @else
-                        <span class="text-muted">No attachment</span>
+                        N/A
                     @endif
                 </div>
             </div>
+        </div>
 
-            <div class="col-md-3">
-                <label class="fw-bold text-muted small d-block">Reason</label>
-                <div class="fw-semibold">{{ !empty($leave->reason) ? $leave->reason : '—' }}</div>
-            </div>
-
-
-
-
-            {{-- Notes --}}
-            @if (!empty($leave->note))
-                <div class="col-md-3">
-                    <label class="fw-bold text-muted small d-block">Note</label>
-                    <div class="fw-semibold">{{ $leave->note }}</div>
+        <!-- Tab 2: Travel Information -->
+        <div class="tab-pane fade" id="travel-info-tab">
+            @if(($leave->leaving_country ?? 'No') === 'Yes')
+                <div class="row text-center">
+                    <div class="col-xxl-3 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Leaving Country</p>{{ $leave->leaving_country }}</div>
+                    <div class="col-xxl-3 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Destination Country</p>{{ $leave->destination_country ?? 'N/A' }}</div>
+                    <div class="col-xxl-3 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Departure Date</p>{{ optional($leave->departure_date)->format('d/m/Y') ?? 'N/A' }}</div>
+                    <div class="col-xxl-3 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Expected Return</p>{{ optional($leave->expected_return_date)->format('d/m/Y') ?? 'N/A' }}</div>
+                    <div class="col-xxl-6 col-lg-6 col-md-12 col-12 mb-3 green-heading"><p class="mb-0">Accommodation Address</p>{{ $leave->accommodation_address ?? 'N/A' }}</div>
+                    <div class="col-xxl-3 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Travel Ticket</p>
+                        @if (!empty($leave->travel_ticket_file))
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($leave->travel_ticket_file) }}" target="_blank" class="text-success">View Ticket</a>
+                        @else
+                            N/A
+                        @endif
+                    </div>
+                </div>
+            @else
+                <div class="p-4 text-center text-muted">
+                    Travel information not applicable.
                 </div>
             @endif
         </div>
 
-        <div class="col-12">
-         <h6 class="fw-bold mb-3 mt-4">Emergency Contacts</h6>
-
-    @php
-        $contacts = is_array($leave->emergency_contacts)
-            ? $leave->emergency_contacts
-            : (json_decode($leave->emergency_contacts, true) ?: []);
-    @endphp
-
-    @if(count($contacts))
-        <div class="row">
-            @foreach($contacts as $i => $c)
-                <div class="col-md-4 mb-3">
-                    <div class="border rounded p-3 bg-light h-100">
-                            <strong>Contact {{ $i + 1 }}</strong><br>
-                        <span>{{ $c['name'] ?? '—' }}</span><br>
-                        <small class="text-muted">
-                            {{ $c['relation'] ?? '—' }} |
-                            {{ $c['phone'] ?? '—' }} |
-                            {{ $c['country'] ?? '—' }}
-                        </small>
-                    </div>
-                </div>
-            @endforeach
+        <!-- Tab 3: Handover Information -->
+        <div class="tab-pane fade" id="handover-info-tab">
+            @php
+                $isNoHandover = ($leave->handover_required ?? 'No') !== 'Yes';
+                $valOrDash = function($val) use ($isNoHandover) {
+                    return $isNoHandover ? '-' : ($val ?: 'N/A');
+                };
+                $handoverStaff = $leave->handover_employee_id ? \App\SmStaff::find($leave->handover_employee_id) : null;
+                $formatName = function ($staff) {
+                    if (!$staff) return '';
+                    return trim($staff->first_name . ' ' . $staff->last_name);
+                };
+            @endphp
+            <div class="row text-center">
+                <div class="col-xxl-2 col-lg-3 col-md-2 col-6 mb-3 green-heading"><p class="mb-0">Required</p>{{ $leave->handover_required ?? 'No' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-2 col-6 mb-3 green-heading"><p class="mb-0">To Employee</p>{{ $valOrDash($handoverStaff ? ($formatName($handoverStaff) ?: 'N/A') : ($leave->handover_to ?? 'N/A')) }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-2 col-6 mb-3 green-heading"><p class="mb-0" title="Employee Department">Emp. Department</p>{{ $valOrDash(optional(optional($handoverStaff)->departments)->name) }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-2 col-6 mb-3 green-heading"><p class="mb-0" title="Employee Designation">Emp. Designation</p>{{ $valOrDash(optional(optional($handoverStaff)->designations)->title) }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-2 col-6 mb-3 green-heading"><p class="mb-0 text-nowrap">Pending Tasks</p><span>{{ $valOrDash(data_get($leave, 'pending_tasks')) }}</span></div>
+                <div class="col-xxl-2 col-lg-3 col-md-2 col-6 mb-3 green-heading"><p class="mb-0 text-nowrap" title="Client Responsibilities">Client Resp.</p><span>{{ $valOrDash(data_get($leave, 'client_responsibilities')) }}</span></div>
+                <div class="col-xxl-2 col-lg-3 col-md-2 col-6 mb-3 green-heading"><p class="mb-0 text-nowrap" title="Access Transfer Required">Access Transfer</p><span>{{ $valOrDash(data_get($leave, 'access_transfer_required')) }}</span></div>
+                <div class="col-xxl-2 col-lg-3 col-md-2 col-6 mb-3 green-heading"><p class="mb-0 text-nowrap" title="Completion Confirmation">Completion Conf.</p><span>{{ $valOrDash(data_get($leave, 'handover_completion_confirmation')) }}</span></div>
+                <div class="col-xxl-2 col-lg-3 col-md-2 col-6 mb-3 green-heading"><p class="mb-0 text-nowrap" title="Manager Verification">Manager Verif.</p><span>{{ $valOrDash(data_get($leave, 'manager_verification_of_handover')) }}</span></div>
+                <div class="col-xxl-4 col-lg-4 col-md-2 col-12 mb-3 green-heading"><p class="mb-0 text-nowrap" title="Additional Remarks">Addl. Remarks</p><span>{{ $valOrDash(data_get($leave, 'handover_additional_remarks', $leave->note)) }}</span></div>
+            </div>
         </div>
-    @else
-        <p class="text-muted">No emergency contacts provided.</p>
-    @endif
+
+        <!-- Tab 4: Emergency Contact -->
+        <div class="tab-pane fade" id="emergency-contact-tab">
+            <div class="row text-center">
+                @php
+                    $contacts = is_array($leave->emergency_contacts) ? $leave->emergency_contacts : (json_decode($leave->emergency_contacts, true) ?: []);
+                @endphp
+                @if(count($contacts))
+                    @foreach($contacts as $i => $c)
+                        <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Emergency Contact Person</p>{{ $c['name'] ?? 'N/A' }}</div>
+                        <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Emergency Contact Number</p>{{ $c['phone'] ?? 'N/A' }}</div>
+                        <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Relationship</p>{{ $c['relation'] ?? 'N/A' }}</div>
+                    @endforeach
+                @else
+                    <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Emergency Contact Person</p>{{ $leave->emergency_contact_person ?? 'N/A' }}</div>
+                    <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Emergency Contact Number</p>{{ $leave->emergency_contact_number ?? 'N/A' }}</div>
+                    <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading"><p class="mb-0">Relationship</p>{{ $leave->emergency_contact_relationship ?? 'N/A' }}</div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Tab 5: Leave Balance -->
+        <div class="tab-pane fade" id="leave-balance-tab">
+            <div class="p-4 text-center text-muted">
+                No leave balance information available.
+            </div>
+        </div>
+
+        <!-- Tab 6: Approval Information -->
+        <div class="tab-pane fade" id="approval-info-tab">
+            <div class="row">
+                @if($leave->chain && $leave->chain->steps)
+                    @foreach($leave->chain->steps as $step)
+                        @php
+                            $stepClass = leaveStatusClass($step->status);
+                        @endphp
+                        <div class="col-12 p-1 mb-3">
+                            <div class="card">
+                                <table class="detail-item-table-sm" width="100%" style="table-layout: fixed;width:100%">
+                                    <tr>
+                                        <td class="{{ $stepClass }} d-flex align-items-center justify-content-start gap-1" style="height:23px; padding: 0 15px;">
+                                            <div class="d-flex align-items-center justify-content-start flex-grow-1 gap-1 header-height">
+                                                <b>{{ $step->role }}</b>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-start truncate-text-custom" style="padding: 10px 15px;">
+                                            <span class="fw-bold">Status</span> : 
+                                            @if ($step->status === 'A') Approved <i class="ico icon-outline-check-read title-15 text-success"></i>
+                                            @elseif($step->status === 'R') Rejected <i class="ico icon-outline-close text-danger"></i>
+                                            @else Pending <i class="ico icon-outline-clock-circle text-info"></i>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @if(strtoupper($step->role) == 'REPORTING MANAGER')
+                                        @if($step->l1_coverage)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Team Staffing Availability</span> : {{ $step->l1_coverage }}</td></tr>@endif
+                                        @if($step->l1_workload)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Operational Impact</span> : {{ $step->l1_workload }}</td></tr>@endif
+                                        @if($step->l1_duration_ok)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Project Deadlines</span> : {{ $step->l1_duration_ok }}</td></tr>@endif
+                                        @if($step->l1_notice_compliance)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Work Handover Adequacy</span> : {{ $step->l1_notice_compliance }}</td></tr>@endif
+                                        @if($step->l1_eligibility)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Leave Pattern Review</span> : {{ $step->l1_eligibility }}</td></tr>@endif
+                                    @elseif(strtoupper($step->role) == 'HR')
+                                        @if($step->l2_cost)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Leave Eligibility</span> : {{ $step->l2_cost }}</td></tr>@endif
+                                        @if($step->l2_unpaid)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Service Validation</span> : {{ $step->l2_unpaid }}</td></tr>@endif
+                                        @if($step->l2_balance)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Entitlement Validation</span> : {{ $step->l2_balance }}</td></tr>@endif
+                                        @if($step->l2_policy)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Compliance</span> : {{ $step->l2_policy }}</td></tr>@endif
+                                        @if($step->l2_encash)<tr><td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span class="fw-bold">Previous Leave History</span> : {{ $step->l2_encash }}</td></tr>@endif
+                                    @endif
+                                    @if($step->comment)
+                                    <tr>
+                                        <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                                            <span class="fw-bold">Remarks</span> : {{ $step->comment }}
+                                        </td>
+                                    </tr>
+                                    @endif
+                                    @if($step->acted_at)
+                                    <tr>
+                                        <td class="text-start truncate-text-custom" style="padding: 5px 15px;">
+                                            <span class="fw-bold">Approval Date</span> : {{ \Carbon\Carbon::parse($step->acted_at)->format('d M Y h:i A') }}
+                                        </td>
+                                    </tr>
+                                    @endif
+                                </table>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="p-4 text-center text-muted col-12">
+                        No approval information available.
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
 </div>
 
-
-        {{-- ===== Approval Flow (Bootstrap 5) ===== --}}
-        @if (!empty($flow))
-            <hr>
-            <h6 class="mb-3">Approval Flow</h6>
-
-            <div class="d-flex align-items-stretch flex-wrap gap-3">
-                @foreach ($flow as $st)
-                    @php
-                        $statusText = $st['status'] ?? 'Pending';
-                        $statusClassMap = [
-                            'Approved' => 'bg-success',
-                            'Rejected' => 'bg-danger',
-                            'Pending' => 'bg-warning text-dark',
-                            'Skipped' => 'bg-secondary',
-                        ];
-                        $badge = isset($statusClassMap[$statusText]) ? $statusClassMap[$statusText] : 'bg-secondary';
-
-                        $name = !empty($st['name']) ? $st['name'] : 'Unassigned';
-                        $role = !empty($st['role']) ? $st['role'] : 'Approver';
-                        $actedAt = !empty($st['acted_at']) ? $st['acted_at'] : null;
-                        $comment = !empty($st['comment']) ? $st['comment'] : null;
-                    @endphp
-
-                    <div class="card text-center shadow-sm"
-                        style="width: 16rem; border-top: 4px solid var(--bs-primary);">
-                        <div class="card-body">
-                            {{-- Role + Approver name --}}
-                            <h6 class="card-title mb-1">{{ $role }}</h6>
-                            <p class="text-muted small mb-2">{{ $name }}</p>
-
-                            {{-- Status --}}
-                            <span class="badge {{ $badge }} mb-2 px-2 py-1">{{ $statusText }}</span>
-
-                            {{-- Action date --}}
-                            @if ($actedAt)
-                                <p class="small mb-1"><strong>Date:</strong> {{ $actedAt }}</p>
-                            @endif
-
-                            {{-- Comment --}}
-                            @if ($comment)
-                                <p class="small text-muted mb-0">“{{ \Illuminate\Support\Str::limit($comment, 90) }}”
-                                </p>
-                            @endif
-                        </div>
-                        <div class="card-footer text-muted small">
-                            Step {{ $loop->iteration }}
-                        </div>
-                    </div>
-
-                    {{-- Arrow between steps --}}
-                    @if (!$loop->last)
-                        <div class="d-none d-lg-flex align-items-center">
-                            <i class="bi bi-arrow-right-circle fs-3 text-secondary"></i>
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-        @endif
-
-    </div>
 </div>

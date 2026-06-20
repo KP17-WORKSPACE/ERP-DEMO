@@ -91,7 +91,7 @@ $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->ge
                 <label class="form-label">Status</label>
                 <select class="form-control" name="status">
                   <option value="">All</option>
-                  @foreach (['Pending','Approved','Rejected','Cancelled'] as $st)
+                  @foreach (['New','Pending','Approved','Rejected','Cancelled'] as $st)
                     <option value="{{ $st }}" {{ request('status')===$st?'selected':'' }}>{{ $st }}</option>
                   @endforeach
                 </select>
@@ -143,7 +143,7 @@ $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->ge
                       </span>
                     </div>
                     <div class="col-5 text-end">
-                      <span class="badge bg-secondary">{{ $lv->approve_status ?? 'Pending' }}</span>
+                      <span class="badge bg-{{ $lv->approve_status_badge }}">{{ $lv->approve_status_label }}</span>
                     </div>
                   </div>
                   <div class="d-flex justify-content-between align-items-center text-muted xsmall mt-1">
@@ -206,12 +206,8 @@ $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->ge
           <td>{{ number_format((float)$lv->days, 2) }}</td>
 
           <td>
-            <span class="badge bg-{{ 
-              ($lv->approve_status=='Approved' ? 'success' : 
-              ($lv->approve_status=='Rejected' ? 'danger' : 
-              ($lv->approve_status=='Cancelled' ? 'secondary' : 'warning'))) 
-            }}">
-              {{ $lv->approve_status ?? 'Pending' }}
+            <span class="badge bg-{{ $lv->approve_status_badge }}">
+              {{ $lv->approve_status_label }}
             </span>
           </td>
 
@@ -288,19 +284,19 @@ $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->ge
       @else
         <div class="container-fluid d-flex flex-column justify-content-center align-items-center" style="min-height: 60vh;">
         <div class="text-center mb-4">
-  <a href="{{ url('employee/leaves/create') }}"
+  <a href="{{ route('approvals.inbox', ['leave_action' => 'add']) }}"
      class="rounded-circle bg-success text-white d-flex justify-content-center align-items-center mx-auto text-decoration-none"
      style="width: 80px; height: 80px; font-size: 36px; cursor: pointer;">
       <i class="ico icon-outline-add-square"></i>
   </a>
 
   <h1 class="fw-bold mt-3">
-    <a href="{{ url('employee/leaves/create') }}" class="text-dark text-decoration-none">
-      Leave Requests
+    <a href="{{ route('approvals.inbox', ['leave_action' => 'add']) }}" class="text-dark text-decoration-none">
+      Add Leave
     </a>
   </h1>
 
-  <p class="text-muted">Select a leave from the list to view details</p>
+  <p class="text-muted">Create and track your leaves with ease.</p>
 </div>
 
         </div>

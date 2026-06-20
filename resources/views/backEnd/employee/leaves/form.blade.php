@@ -61,23 +61,6 @@ $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->ge
                 </div>
 
                 <div class="col">
-                    <label class="form-label">Reporting Manager</label>
-                    <select name="reporting_manager_id"
-                            class="form-select form-select-sm {{ $errors->has('reporting_manager_id') ? 'is-invalid' : '' }}">
-                        <option value="">-- Select Manager --</option>
-                        @foreach ($reportingManager as $user)
-                            <option value="{{ $user->id }}"
-                                {{ (string)old('reporting_manager_id', $isEdit ? $leave->reporting_manager_id : '') === (string)$user->id ? 'selected' : '' }}>
-                                {{ $user->full_name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @if($errors->has('reporting_manager_id'))
-                        <div class="invalid-feedback d-block">{{ $errors->first('reporting_manager_id') }}</div>
-                    @endif
-                </div>
-
-                <div class="col">
                     <label class="form-label">Type of Leave</label>
                     <select id="type_of_leave" name="type_id"
                             class="form-select form-select-sm {{ $errors->has('type_id') ? 'is-invalid' : '' }}">
