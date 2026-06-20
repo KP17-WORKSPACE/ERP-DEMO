@@ -1,602 +1,1061 @@
-<div class="purchase-order-content-header">
-    <h4 class="purchase-order-content-header-left">#{{ 'LR' . $leave->company->other_code . '-' . $leave->id }}</h4>
-    <div class="purchase-order-content-header-right d-flex align-items-center">
-        {{-- Apply Leave --}}
-        <a href="{{ url('employee/leaves/create') }}"
-           class="btn btn-light text-dark d-inline-flex align-items-center">
-            <i class="ico icon-outline-add-square text-success"></i>
-            <span class="btn-text ms-1">Add</span>
-        </a>
+@php
+    if (!function_exists('firstLastName')) {
+        function firstLastName($name)
+        {
+            if (!$name)
+                return '-';
+            $parts = array_filter(explode(' ', trim($name)));
+            if (count($parts) > 1) {
+                return reset($parts) . ' ' . end($parts);
+            }
+            return $name;
+        }
+    }
+@endphp
+@php
+    $trackMode = $trackMode ?? false;
+    $leaveNumber = $leave->leave_application_no ?: ('LR' . optional($leave->company)->other_code . '-' . $leave->id);
+    $employeeName = optional($leave->staffs)->full_name ?: trim(optional($leave->staffs)->first_name . ' ' . optional($leave->staffs)->last_name);
+    $statusLabel = ['D' => 'New', 'P' => 'Pending', 'A' => 'Approved', 'R' => 'Rejected', 'C' => 'Returned'][$leave->approve_status] ?? 'Pending';
+    $badgeColor = $statusLabel === 'Approved' ? 'success' : ($statusLabel === 'Rejected' ? 'danger' : ($statusLabel === 'Pending' ? 'warning' : ($statusLabel === 'New' ? 'primary' : 'secondary')));
+    $handoverStaff = $leave->handover_employee_id ? \App\SmStaff::with(['departments', 'designations'])->find($leave->handover_employee_id) : null;
+    $contacts = is_array($leave->emergency_contacts) ? $leave->emergency_contacts : (json_decode($leave->emergency_contacts, true) ?: []);
+    $firstPendingStep = optional($leave->chain)->steps ? $leave->chain->steps->firstWhere('status', 'P') : null;
+    $firstPendingStepId = optional($firstPendingStep)->id;
 
-        <div class="dropdown">
-                <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    $fmtDate = function ($value, $format = 'd/m/Y') {
+        if (empty($value))
+            return '-';
+        try {
+            return \Carbon\Carbon::parse($value)->format($format);
+        } catch (\Exception $e) {
+            return '-';
+        }
+    };
+    $stepStatusText = function ($status) {
+        return ['P' => 'Pending', 'A' => 'Approved', 'R' => 'Rejected', 'C' => 'Returned', 'S' => 'Not Required'][$status] ?? 'Pending';
+    };
+    $stepStatusClass = function ($status) {
+        return ['A' => 'bg-success text-white', 'R' => 'bg-danger text-white', 'C' => 'bg-secondary text-white', 'P' => 'bg-lightgreen text-dark', 'S' => 'bg-lightgreen text-dark'][$status] ?? 'bg-lightgreen text-dark';
+    };
+    $stepIcon = function ($status) {
+        if ($status === 'A')
+            return '<i class="ico icon-outline-check-read title-15 text-success"></i>';
+        if ($status === 'R')
+            return '<i class="ico icon-outline-close text-danger"></i>';
+        if ($status === 'C')
+            return '<i class="ico icon-outline-close text-warning"></i>';
+        return '<i class="ico icon-outline-clock-circle text-info"></i>';
+    };
+@endphp
+
+<style>
+    #leave-details label {
+        font-weight: 600 !important;
+        background-color: #deebe1 !important;
+        margin-bottom: 3px !important;
+        text-align: center !important;
+        color: #212529 !important;
+    }
+
+    #leave-details .green-heading p {
+        font-weight: 600 !important;
+        background-color: #deebe1 !important;
+        margin-bottom: 3px !important;
+        text-align: center !important;
+        color: #212529 !important;
+    }
+
+    #leave-details .green-heading {
+        text-align: center !important;
+    }
+
+    #leave-details .form-control-plaintext {
+        text-align: center !important;
+    }
+
+    #leave-details .detail-item-table-sm td {
+        text-align: start !important;
+    }
+
+    #leave-details .handover-inline .green-heading p {
+        white-space: nowrap;
+    }
+
+    #leave-details .handover-inline .form-select-sm,
+    #leave-details .handover-inline .form-control-sm {
+        font-size: 13px;
+        min-height: 30px;
+        padding: 3px 8px;
+        text-align: center;
+    }
+
+    #leave-details .handover-inline textarea.form-control-sm {
+        text-align: left;
+        min-height: 46px;
+        resize: vertical;
+    }
+
+    #leave-details .handover-field-edit {
+        color: #0f5132;
+        font-size: 12px;
+        line-height: 1;
+        text-decoration: none;
+    }
+
+    .bg-lightgreen {
+        background-color: #deebe1 !important;
+    }
+
+    .header-height {
+        height: 1rem;
+    }
+</style>
+
+<div id="leave-details">
+    <div class="purchase-order-content-header sticky-top" style="background-color:#f7f8fd">
+        <div class="d-flex align-items-center gap-2">
+            <h4 class="purchase-order-content-header-left mb-0">{{ $leaveNumber }}</h4>
+            <div class="pipeline-arrow {{ $badgeColor }}">{{ $statusLabel }}</div>
+        </div>
+        <div class="purchase-order-content-header-right d-flex align-items-center">
+            @if(!$trackMode)
+                <a href="{{ route('approvals.inbox', ['leave_action' => 'add']) }}"
+                    class="btn btn-light text-dark d-inline-flex align-items-center">
+                    <i class="ico icon-outline-add-square text-success"></i><span class="btn-text ms-1">Add</span>
+                </a>
+                @if(in_array($leave->approve_status, ['D', 'P'], true))
+                    <a href="{{ route('approvals.inbox', ['active' => $leave->id, 'leave_action' => 'edit']) }}"
+                        class="btn btn-light text-dark d-inline-flex align-items-center ms-2">
+                        <i class="ico icon-outline-pen-2 text-success btn-icon"></i><span class="btn-text ms-1">Edit</span>
+                    </a>
+                @endif
+            @endif
+            <div class="dropdown" style="display:inline-block;margin-left:5px;">
+                <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="ico icon-outline-hamburger-menu"></i>
                 </button>
-                <ul class="dropdown-menu" style="">
-                    
+                <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                    <a class="dropdown-item d-flex align-items-center text-dark" href="{{ url('employee/leaves') }}">
-                        <i class="ico icon-bold-info-minimalistic text-success  title-15 me-2"></i> My Leaves</a>
+                        @if($trackMode)
+                            <a class="dropdown-item" href="{{ route('approvals.inbox', ['active' => $leave->id]) }}">
+                                <i class="ico icon-outline-list-down text-success"></i> Leaves
+                            </a>
+                        @elseif($leave->approve_status === 'D')
+                            <a class="dropdown-item" href="javascript:void(0)"
+                                onclick="alert('Draft requests are not available in Leave Track. Please submit for approval first.')">
+                                <i class="ico icon-outline-list-down text-success"></i> Leave Track
+                            </a>
+                        @else
+                            <a class="dropdown-item" href="{{ route('approvals.leave-track', $leave->id) }}">
+                                <i class="ico icon-outline-list-down text-success"></i> Leave Track
+                            </a>
+                        @endif
                     </li>
                 </ul>
             </div>
-
-        {{-- Edit current Leave --}}
-        {{-- @if(isset($leave) && $status == 'Pending')
-            <a href="{{ url('employee/leaves/'.$leave->id.'/edit') }}"
-               class="btn btn-light text-dark d-inline-flex align-items-center ms-2">
-                <i class="ico icon-outline-pen-2 btn-icon"></i>
-                <span class="btn-text ms-1">Edit</span>
-            </a>
-        @endif --}}
-    </div>
-</div>
-<div class="card shadow-sm">
-  <div class="card-body">
-    
-
-    {{-- === Leave Details (same fields, 3-3 columns) === --}}
-@php
-    // Half-day label (optional)
-    $halfLabel = '';
-    if (!empty($leave->is_half_day)) {
-        $session = $leave->half_session
-            ? ' (' . str_replace('_', ' ', ucwords(strtolower($leave->half_session))) . ')'
-            : '';
-        $halfLabel = '<span class="badge bg-warning text-dark ms-1">Half Day' . $session . '</span>';
-    }
-@endphp
-
-<div class="">
-
-  <div class="row g-2">
-    <div class="col-md-3">
-      <label class="fw-bold text-muted small d-block">Type</label>
-      <div class="fw-semibold">
-        {{ $leave->type->name ?? ('Type #'.$leave->type_id) }}
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <label class="fw-bold text-muted small d-block">From</label>
-      <div class="fw-semibold">
-        {{ optional($leave->leave_from)->format('d-m-Y') ?? '—' }}
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <label class="fw-bold text-muted small d-block">To</label>
-      <div class="fw-semibold">
-        {{ optional($leave->leave_to)->format('d-m-Y') ?? '—' }}
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <label class="fw-bold text-muted small d-block">Days</label>
-      <div class="fw-semibold">
-        {{ number_format((float)($leave->days ?? 0), 2) }} {!! $halfLabel !!}
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <label class="fw-bold text-muted small d-block">Apply Date</label>
-      <div class="fw-semibold">
-        {{ optional($leave->apply_date)->format('d-m-Y') ?? '—' }}
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <label class="fw-bold text-muted small d-block">Reporting Manager</label>
-      <div class="fw-semibold">
-        {{ $leave->reportingManager->full_name ?? '—' }}
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <label class="fw-bold text-muted small d-block">Hand Over</label>
-      <div class="fw-semibold">
-        {{ $leave->handover_to ?? '—' }}
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <label class="fw-bold text-muted small d-block">Attachment</label>
-      <div>
-        @if (!empty($leave->file))
-          {{-- stored via $r->file('file')->store('leaves', 'public') --}}
-          <a href="{{ \Illuminate\Support\Facades\Storage::url($leave->file) }}"
-             target="_blank" class="btn btn-sm btn-outline-primary">
-            View File
-          </a>
-        @else
-          <span class="text-muted">No attachment</span>
-        @endif
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <label class="fw-bold text-muted small d-block">Reason</label>
-      <div class="fw-semibold">
-        {{ $leave->reason ?: '—' }}
-      </div>
-    </div>
-
-    @if (!empty($leave->note))
-      <div class="col-md-3">
-        <label class="fw-bold text-muted small d-block">Note</label>
-        <div class="fw-semibold">
-          {{ $leave->note }}
         </div>
-      </div>
-    @endif
-  </div>
-</div>
+    </div>
 
-      <div class="col-12">
-         <h6 class="fw-bold mt-1">Emergency Contacts</h6>
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-2 mb-2">
+                    <label class="form-label">Request Number</label>
+                    <div class="form-control-plaintext truncate-text-custom">{{ $leaveNumber }}</div>
+                </div>
+                <div class="col-2 mb-2">
+                    <label class="form-label">Employee</label>
+                    <div class="form-control-plaintext truncate-text-custom">{{ $employeeName ?: 'N/A' }}</div>
+                </div>
+                <div class="col-2 mb-2">
+                    <label class="form-label">Department</label>
+                    <div class="form-control-plaintext truncate-text-custom">
+                        {{ optional(optional($leave->staffs)->departments)->name ?: 'N/A' }}
+                    </div>
+                </div>
+                <div class="col-2 mb-2">
+                    <label class="form-label">Designation</label>
+                    <div class="form-control-plaintext truncate-text-custom">
+                        {{ optional(optional($leave->staffs)->designations)->title ?: 'N/A' }}
+                    </div>
+                </div>
+                <div class="col-2 mb-2">
+                    <label class="form-label">Leave Status</label>
+                    <div class="form-control-plaintext truncate-text-custom">{{ $statusLabel }}</div>
+                </div>
+                <div class="col-2 mb-2">
+                    <label class="form-label">Applied On</label>
+                    <div class="form-control-plaintext truncate-text-custom">
+                        {{ $fmtDate($leave->apply_date ?: $leave->created_at) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    @php
-        $contacts = is_array($leave->emergency_contacts)
-            ? $leave->emergency_contacts
-            : (json_decode($leave->emergency_contacts, true) ?: []);
-    @endphp
+    <div class="tab-wrap mb-3">
+        <ul class="nav nav-tabs" id="leaveDetailsTabs" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab"
+                    data-bs-target="#leave-details-tab" type="button">Leave Details</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#travel-info-tab"
+                    type="button">Travel Information</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#handover-info-tab"
+                    type="button">Handover Information</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#emergency-contact-tab"
+                    type="button">Emergency Contact</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#leave-balance-tab"
+                    type="button">Leave Balance</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#attachments-remarks-tab"
+                    type="button">Attachments / Remarks</button></li>
+        </ul>
 
-    @if(count($contacts))
-        <div class="row">
-            @foreach($contacts as $i => $c)
-                <div class="col-md-6 mb-3">
-                    <div class="border rounded p-3 bg-light h-100">
-                        <strong>Contact {{ $i + 1 }}</strong><br>
-                        <span>{{ $c['name'] ?? '—' }}</span><br>
-                        <small class="text-muted">
-                            {{ $c['relation'] ?? '—' }} |
-                            {{ $c['phone'] ?? '—' }} |
-                            {{ $c['country'] ?? '—' }}
-                        </small>
+        <div class="tab-content mb-3">
+            <div class="tab-pane fade show active" id="leave-details-tab">
+                <div class="row text-center">
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Leave Type">Type</p>{{ optional($leave->type)->name ?? 'N/A' }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Leave Category">Category</p>{{ $leave->leave_category ?? 'N/A' }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Leave From">From</p>{{ $fmtDate($leave->leave_from) }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Leave To">To</p>{{ $fmtDate($leave->leave_to) }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Number of Leave Days">Days</p>
+                        {{ number_format((float) $leave->days, 2) }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Return To Work">Return Date</p>
+                        {{ $fmtDate($leave->return_to_work_date) }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0">Notice Period</p>{{ $leave->notice_period ?? 'N/A' }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0">Urgency Level</p>{{ $leave->urgency_level ?? 'N/A' }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0">Nature of Leave</p>{{ $leave->nature_of_leave ?? 'N/A' }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Expected Availability">Availability</p>
+                        {{ $leave->availability_during_leave ?? 'N/A' }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Reason for Leave">Reason</p>{{ $leave->reason ?? 'N/A' }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Contact During Leave">Contact</p>
+                        {{ $leave->contact_number_during_leave ?? 'N/A' }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0" title="Email During Leave">Email</p>{{ $leave->email_during_leave ?? 'N/A' }}
+                    </div>
+                    <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                        <p class="mb-0">Attachment</p>
+                        @if (!empty($leave->file))
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($leave->file) }}" target="_blank"
+                                class="text-success">View File</a>
+                        @else
+                            N/A
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="travel-info-tab">
+                @if(($leave->leaving_country ?? 'No') === 'Yes')
+                    <div class="row text-center">
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Leaving The Country">Leaving Country</p>{{ $leave->leaving_country }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Destination Country">Destination</p>
+                            {{ $leave->destination_country ?? 'N/A' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-6 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Accommodation Address">Address</p>
+                            {{ $leave->accommodation_address ?? 'N/A' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Departure Date">Departure</p>{{ $fmtDate($leave->departure_date) }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Expected Return Date">Return Date</p>
+                            {{ $fmtDate($leave->expected_return_date) }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Travel Ticket Attached">Ticket</p>
+                            @if (!empty($leave->travel_ticket_file))
+                                <a href="{{ \Illuminate\Support\Facades\Storage::url($leave->travel_ticket_file) }}"
+                                    target="_blank" class="text-success">View Ticket</a>
+                            @else
+                                No
+                            @endif
+                        </div>
+                    </div>
+                @else
+                    <div class="p-4 text-center text-muted">Travel information not applicable.</div>
+                @endif
+            </div>
+
+            <div class="tab-pane fade" id="handover-info-tab">
+                @php
+                    $handoverSuppliedByEmployee = ($leave->handover_required ?? 'No') === 'Yes';
+                    $anyApprovalDone = $leave->chain && $leave->chain->steps
+                        ? $leave->chain->steps->contains(function ($step) {
+                            return $step->status === 'A';
+                        })
+                        : false;
+                    $canEditHandover = $trackMode && $leave->approve_status === 'P' && !$anyApprovalDone;
+                @endphp
+
+                @if($canEditHandover)
+                    <div class="row text-center handover-inline align-items-start">
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0">Required</p>{{ $leave->handover_required ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0">To Employee</p>
+                            {{ firstLastName(optional($handoverStaff)->full_name ?: $leave->handover_to) }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Employee Department">Emp. Dept.</p>
+                            {{ optional(optional($handoverStaff)->departments)->name ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Employee Designation">Emp. Desig.</p>
+                            {{ optional(optional($handoverStaff)->designations)->title ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0">Pending Tasks</p>
+                            <span data-handover-field="pending_tasks">{{ data_get($leave, 'pending_tasks') ?: '-' }}</span>
+                            <a href="#" class="ms-1 handover-field-edit" data-bs-toggle="modal"
+                                data-bs-target="#handoverFieldEditModal" data-title="Update Pending Tasks"
+                                data-field="pending_tasks" data-type="select"
+                                data-value="{{ e(data_get($leave, 'pending_tasks') ?: 'No') }}"><i
+                                    class="ico icon-outline-pen-new-square text-danger" style="font-size: 12px"></i></a>
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Access Transfer Required">Access Transfer</p>
+                            <span
+                                data-handover-field="access_transfer_required">{{ data_get($leave, 'access_transfer_required') ?: '-' }}</span>
+                            <a href="#" class="ms-1 handover-field-edit" data-bs-toggle="modal"
+                                data-bs-target="#handoverFieldEditModal" data-title="Update Access Transfer"
+                                data-field="access_transfer_required" data-type="select"
+                                data-value="{{ e(data_get($leave, 'access_transfer_required') ?: 'No') }}"><i
+                                    class="ico icon-outline-pen-new-square text-danger" style="font-size: 12px"></i></a>
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Handover Completion Confirmation">Completion</p>
+                            <span
+                                data-handover-field="handover_completion_confirmation">{{ data_get($leave, 'handover_completion_confirmation') ?: '-' }}</span>
+                            <a href="#" class="ms-1 handover-field-edit" data-bs-toggle="modal"
+                                data-bs-target="#handoverFieldEditModal" data-title="Update Completion"
+                                data-field="handover_completion_confirmation" data-type="select"
+                                data-value="{{ e(data_get($leave, 'handover_completion_confirmation') ?: 'No') }}"><i
+                                    class="ico icon-outline-pen-new-square text-danger" style="font-size: 12px"></i></a>
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Manager Verification of Handover">Manager Verify</p>
+                            <span
+                                data-handover-field="manager_verification_of_handover">{{ data_get($leave, 'manager_verification_of_handover') ?: '-' }}</span>
+                            <a href="#" class="ms-1 handover-field-edit" data-bs-toggle="modal"
+                                data-bs-target="#handoverFieldEditModal" data-title="Update Manager Verification"
+                                data-field="manager_verification_of_handover" data-type="select"
+                                data-value="{{ e(data_get($leave, 'manager_verification_of_handover') ?: 'No') }}"><i
+                                    class="ico icon-outline-pen-new-square text-danger" style="font-size: 12px"></i></a>
+                        </div>
+                        <div class="col-xxl-4 col-lg-6 col-md-6 col-12 mb-3 green-heading">
+                            <p class="mb-0" title="Client Responsibilities">Client Resp.</p>
+                            <span
+                                data-handover-field="client_responsibilities">{{ data_get($leave, 'client_responsibilities') ?: '-' }}</span>
+                            <a href="#" class="ms-1 handover-field-edit" data-bs-toggle="modal"
+                                data-bs-target="#handoverClientRespEditModal"><i
+                                    class="ico icon-outline-pen-new-square text-danger" style="font-size: 12px"></i></a>
+                        </div>
+                        <div class="col-xxl-4 col-lg-6 col-md-6 col-12 mb-3 green-heading">
+                            <p class="mb-0" title="Additional Remarks">Remarks</p>
+                            <span
+                                data-handover-field="handover_additional_remarks">{{ data_get($leave, 'handover_additional_remarks') ?: '-' }}</span>
+                            <a href="#" class="ms-1 handover-field-edit" data-bs-toggle="modal"
+                                data-bs-target="#handoverRemarksEditModal"><i
+                                    class="ico icon-outline-pen-new-square text-danger" style="font-size: 12px"></i></a>
+                        </div>
+                    </div>
+                @else
+                    <div class="row text-center">
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0">Required</p>{{ $leave->handover_required ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="To Employee">To Employee</p>
+                            {{ firstLastName(optional($handoverStaff)->full_name ?: $leave->handover_to) }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Employee Department">Emp. Dept.</p>
+                            {{ optional(optional($handoverStaff)->departments)->name ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Employee Designation">Emp. Desig.</p>
+                            {{ optional(optional($handoverStaff)->designations)->title ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0">Pending Tasks</p>{{ data_get($leave, 'pending_tasks') ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Client Responsibilities">Client Resp.</p>
+                            {{ data_get($leave, 'client_responsibilities') ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Access Transfer Required">Access Transfer</p>
+                            {{ data_get($leave, 'access_transfer_required') ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Completion Confirmation">Completion</p>
+                            {{ data_get($leave, 'handover_completion_confirmation') ?: '-' }}
+                        </div>
+                        <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading">
+                            <p class="mb-0" title="Manager Verification">Manager Verify</p>
+                            {{ data_get($leave, 'manager_verification_of_handover') ?: '-' }}
+                        </div>
+                        <div class="col-xxl-3 col-lg-4 col-md-6 col-12 mb-3 green-heading">
+                            <p class="mb-0" title="Additional Remarks">Remarks</p>
+                            {{ data_get($leave, 'handover_additional_remarks') ?: '-' }}
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <div class="tab-pane fade" id="emergency-contact-tab">
+                <div class="row text-center">
+                    @if(count($contacts))
+                        @foreach($contacts as $contact)
+                            <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading">
+                                <p class="mb-0" title="Emergency Contact Person">Contact Person</p>
+                                {{ $contact['name'] ?? 'N/A' }}
+                            </div>
+                            <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading">
+                                <p class="mb-0" title="Emergency Contact Number">Contact No.</p>{{ $contact['phone'] ?? 'N/A' }}
+                            </div>
+                            <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading">
+                                <p class="mb-0">Relationship</p>{{ $contact['relation'] ?? 'N/A' }}
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading">
+                            <p class="mb-0" title="Emergency Contact Person">Contact Person</p>
+                            {{ $leave->emergency_contact_person ?? 'N/A' }}
+                        </div>
+                        <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading">
+                            <p class="mb-0" title="Emergency Contact Number">Contact No.</p>
+                            {{ $leave->emergency_contact_number ?? 'N/A' }}
+                        </div>
+                        <div class="col-xxl-4 col-lg-4 col-md-6 col-12 mb-3 green-heading">
+                            <p class="mb-0">Relationship</p>{{ $leave->emergency_contact_relationship ?? 'N/A' }}
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="leave-balance-tab">
+                <div class="p-4 text-center text-muted">No leave balance information available.</div>
+            </div>
+
+            <div class="tab-pane fade" id="attachments-remarks-tab">
+                <div class="row text-center">
+                    <div class="col-xxl-3 col-lg-4 col-md-6 col-12 mb-3 green-heading">
+                        <p class="mb-0" title="Supporting Documents">Docs</p>
+                        @if (!empty($leave->file))
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($leave->file) }}" target="_blank"
+                                class="text-success">View File</a>
+                        @else
+                            -
+                        @endif
+                    </div>
+                    <div class="col-xxl-3 col-lg-4 col-md-6 col-12 mb-3 green-heading">
+                        <p class="mb-0" title="Travel Ticket Attached">Ticket</p>
+                        @if (!empty($leave->travel_ticket_file))
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($leave->travel_ticket_file) }}"
+                                target="_blank" class="text-success">View Ticket</a>
+                        @else
+                            -
+                        @endif
+                    </div>
+                    <div class="col-xxl-3 col-lg-4 col-md-3 col-12 mb-3 green-heading">
+                        <p class="mb-0">Remarks</p>{{ $leave->note ?: '-' }}
+                    </div>
+                    <div class="col-xxl-3 col-lg-4 col-md-3 col-12 mb-3 green-heading">
+                        <p class="mb-0">Submitted At</p>{{ $fmtDate($leave->submitted_at, 'd/m/Y h:i A') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        @if($leave->chain && $leave->chain->steps && $leave->chain->steps->count())
+            @foreach($leave->chain->steps as $step)
+                @php
+                    $stageRole = strtolower((string) $step->role);
+                    if ((strpos($stageRole, 'management') !== false || strpos($stageRole, 'finance') !== false) && $step->status === 'S') {
+                        continue;
+                    }
+                    $stageName = strpos($stageRole, 'report') !== false ? 'Reporting Manager' : ($stageRole === 'hr' ? 'HR' : 'Management');
+                    $displayStatus = ($stageName === 'HR' && $step->status === 'S') ? 'P' : $step->status;
+                    $isYou = ((int) ($step->approver_id ?? 0) === (int) Auth::id());
+                    $canAct = $trackMode && $isYou && $step->status === 'P' && (int) $step->id === (int) $firstPendingStepId;
+                    if ($trackMode && in_array((int) Auth::user()->role_id, [1, 2], true) && $step->status === 'P' && (int) $step->id === (int) $firstPendingStepId) {
+                        $canAct = true;
+                    }
+                    $actedByLabel = $step->status === 'A' ? 'Approved By' : ($step->status === 'R' ? 'Rejected By' : ($step->status === 'C' ? 'Returned By' : null));
+                    $actedAtLabel = $step->status === 'A' ? 'Approved At' : ($step->status === 'R' ? 'Rejected At' : ($step->status === 'C' ? 'Returned At' : null));
+                    $approverName = optional($step->approver)->full_name ?: trim(optional($step->approver)->first_name . ' ' . optional($step->approver)->last_name);
+                    if (!$approverName && $step->approver_id) {
+                        $fallbackUser = \App\User::find($step->approver_id);
+                        if ($fallbackUser) {
+                            $approverName = $fallbackUser->full_name ?: trim($fallbackUser->first_name . ' ' . $fallbackUser->last_name);
+                        }
+                    }
+                @endphp
+                <div class="col p-1">
+                    <div class="card mb-3">
+                        <table class="detail-item-table-sm" width="100%" style="table-layout: fixed;width:100%">
+                            <tr>
+                                <td class="{{ $stepStatusClass($displayStatus) }} d-flex align-items-center justify-content-start gap-1"
+                                    style="height:23px; padding: 0 15px;">
+                                    <div
+                                        class="d-flex align-items-center justify-content-start flex-grow-1 gap-1 header-height">
+                                        <b>{{ $stageName }}</b>
+                                        @if($canAct)
+                                            <a class="btn-md light" style="display: contents; cursor: pointer;"
+                                                data-bs-toggle="modal" data-bs-target="#approvalActionModal"
+                                                data-leave-id="{{ $leave->id }}" data-step-id="{{ $step->id }}"
+                                                data-role="{{ $stageName }}">
+                                                <i class="ico icon-outline-pen-new-square title-15 {{ $step->status === 'P' ? 'text-dark' : 'text-white' }}"
+                                                    title="Approval Action" style="font-size: 12px"></i>
+                                            </a>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-start truncate-text-custom" style="padding: 10px 15px;">
+                                    <span class="fw-bold">Status</span> : {{ $stepStatusText($displayStatus) }}
+                                    {!! $stepIcon($displayStatus) !!}
+                                </td>
+                            </tr>
+                            @if($stageName === 'HR' && $step->status !== 'P')
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">Leave Balance Verification</span> :
+                                        {{ $step->l2_balance_verify ?: '-' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">Policy Compliance</span> : {{ $step->l2_policy_verify ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">Documentation Verified</span> : {{ $step->l2_docs_verify ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">Management Approval Req</span> :
+                                        {{ $leave->management_approval_req ?: 'No' }}
+                                    </td>
+                                </tr>
+                            @endif
+                            @if($stageName === 'Management' && $step->status !== 'P')
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">Leave Exceeds Limits</span> : {{ $step->l3_limits ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">Critical Role</span> : {{ $step->l3_critical ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">Blackout Period</span> : {{ $step->l3_blackout ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">Exceptional Circumstances</span> : {{ $step->l3_exceptional ?: '-' }}
+                                    </td>
+                                </tr>
+                            @endif
+                            @if($step->comment && $step->status !== 'P')
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">Remarks</span> : {{ $step->comment }}</td>
+                                </tr>
+                            @endif
+                            @if($step->acted_at && $step->status !== 'P')
+                                @if($actedByLabel)
+                                    <tr>
+                                        <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                                class="fw-bold">{{ $actedByLabel }}</span> : {{ $approverName ?: '-' }}</td>
+                                    </tr>
+                                @endif
+                                <tr>
+                                    <td class="text-start truncate-text-custom" style="padding: 5px 15px;"><span
+                                            class="fw-bold">{{ $actedAtLabel ?: 'Action At' }}</span> :
+                                        {{ $fmtDate($step->acted_at, 'd/m/Y h:i A') }}
+                                    </td>
+                                </tr>
+                            @endif
+                        </table>
                     </div>
                 </div>
             @endforeach
-        </div>
-    @else
-        <p class="text-muted">No emergency contacts provided.</p>
-    @endif
+        @else
+            <div class="p-4 text-center text-muted col-12">No approval information available.</div>
+        @endif
+    </div>
 </div>
 
+@if($trackMode)
+    <div class="modal fade" id="approvalActionModal" tabindex="-1" aria-hidden="true" style="background: rgba(0,0,0,0.5);"
+        data-bs-backdrop="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('approvals.action') }}" id="approvalActionForm">
+                    @csrf
+                    <input type="hidden" name="leave_id" id="act_leave_id">
+                    <input type="hidden" name="step_id" id="act_step_id">
+                    <input type="hidden" name="actor_role" id="act_role">
 
-    {{-- Header --}}
-    {{-- <div class="d-flex justify-content-between align-items-center mb-3">
-     
-      <span class="badge badge-{{ $leave->approve_status_badge }}">
-        {{ $leave->approve_status_label }}
-      </span>
-    </div> --}}
+                    <div class="modal-header m-0">
+                        <h5 class="modal-title">Approval Action</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
 
-    {{-- Applicant info --}}
-  
-    
+                    <div class="modal-body">
+                        <div class="level-section level-l1 d-none">
+                            <h6 class="mb-3">Reporting Manager Approval</h6>
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-6"><label class="form-label">Approval <span
+                                            class="text-danger">*</span></label><select class="form-select"
+                                        name="l1_decision" required>
+                                        <option value="Approve">Approve</option>
+                                        <option value="Reject">Reject</option>
+                                    </select></div>
+                                <!-- <div class="col-12 col-sm-6"><label class="form-label">Recommended Action</label><input type="text" class="form-control" name="l1_recommended_action"></div> -->
+                                <div class="col-12"><label class="form-label">Remarks</label><textarea class="form-control"
+                                        name="l1_remark" rows="2"></textarea></div>
+                            </div>
+                            <h6 class="mb-3 mt-4">Manager Review Checks</h6>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l1-check" type="checkbox"
+                                            name="l1_coverage" value="Checked" id="l1_coverage" required><label
+                                            class="form-check-label" for="l1_coverage">Team staffing availability</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l1-check" type="checkbox"
+                                            name="l1_workload" value="Checked" id="l1_workload" required><label
+                                            class="form-check-label" for="l1_workload">Operational impact</label></div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l1-check" type="checkbox"
+                                            name="l1_duration_ok" value="Checked" id="l1_duration_ok" required><label
+                                            class="form-check-label" for="l1_duration_ok">Project deadlines</label></div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l1-check" type="checkbox"
+                                            name="l1_notice_compliance" value="Checked" id="l1_notice_compliance"
+                                            required><label class="form-check-label" for="l1_notice_compliance">Adequacy of
+                                            work handover</label></div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l1-check" type="checkbox"
+                                            name="l1_eligibility" value="Checked" id="l1_eligibility" required><label
+                                            class="form-check-label" for="l1_eligibility">Leave pattern review</label></div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l1-check" type="checkbox"
+                                            name="l1_emergency" value="Checked" id="l1_emergency" required><label
+                                            class="form-check-label" for="l1_emergency">Emergency justification</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-  {{-- Approval Flow (Cards) --}}
-@if($leave->chain && $leave->chain->steps && $leave->chain->steps->count())
-  @php
-    $allSteps = $leave->chain->steps;
+                        <div class="level-section level-l2 d-none">
+                            <h6 class="mb-3" id="level_l2_title">HR Approval</h6>
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-6"><label class="form-label">HR Approval Status <span
+                                            class="text-danger">*</span></label><select class="form-select"
+                                        name="l2_decision" required>
+                                        <option value="Approve">Approve</option>
+                                        <option value="Reject">Reject</option>
+                                    </select></div>
+                                <div class="col-12 col-sm-6"><label class="form-label">Leave Balance Verification <span
+                                            class="text-danger">*</span></label><select class="form-select"
+                                        name="l2_balance_verify">
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select></div>
+                                <div class="col-12 col-sm-6"><label class="form-label">Policy Compliance <span
+                                            class="text-danger">*</span></label><select class="form-select"
+                                        name="l2_policy_verify">
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select></div>
+                                <div class="col-12 col-sm-6"><label class="form-label">Documentation Verified <span
+                                            class="text-danger">*</span></label><select class="form-select"
+                                        name="l2_docs_verify">
+                                        <option value="Yes">Yes</option>
+                                        <option value="No">No</option>
+                                    </select></div>
+                                <div class="col-12 col-sm-6"><label class="form-label">Management Approval Req <span
+                                            class="text-danger">*</span></label><select class="form-select"
+                                        name="management_approval_req">
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                    </select></div>
+                                <div class="col-12"><label class="form-label">Remarks</label><textarea class="form-control"
+                                        name="l2_remark" rows="2"></textarea></div>
+                            </div>
+                            <h6 class="mb-3 mt-4">HR Checks</h6>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l2-check" type="checkbox"
+                                            name="l2_cost" value="Checked" id="l2_cost" required><label
+                                            class="form-check-label" for="l2_cost">Leave eligibility</label></div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l2-check" type="checkbox"
+                                            name="l2_unpaid" value="Checked" id="l2_unpaid" required><label
+                                            class="form-check-label" for="l2_unpaid">Service period validation</label></div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l2-check" type="checkbox"
+                                            name="l2_balance" value="Checked" id="l2_balance" required><label
+                                            class="form-check-label" for="l2_balance">Leave entitlement availability</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l2-check" type="checkbox"
+                                            name="l2_docs" value="Checked" id="l2_docs" required><label
+                                            class="form-check-label" for="l2_docs">Supporting documents verification</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l2-check" type="checkbox"
+                                            name="l2_policy" value="Checked" id="l2_policy" required><label
+                                            class="form-check-label" for="l2_policy">Statutory compliance</label></div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l2-check" type="checkbox"
+                                            name="l2_encash" value="Checked" id="l2_encash" required><label
+                                            class="form-check-label" for="l2_encash">Previous leave history review</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-    // HR ko last me rakho (PHP 7.1 compatible)
-    $ordered = $allSteps->reject(function ($s) {
-        return stripos((string)($s->role ?? ''), 'hr') !== false;
-    })->values()->merge(
-        $allSteps->filter(function ($s) {
-            return stripos((string)($s->role ?? ''), 'hr') !== false;
-        })->values()
-    );
+                        <div class="level-section level-l3 d-none">
+                            <h6 class="mb-3">Management Approval</h6>
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-6"><label class="form-label">Final Approval Status <span
+                                            class="text-danger">*</span></label><select class="form-select"
+                                        name="l3_decision">
+                                        <option value="Approve">Approve</option>
+                                        <option value="Reject">Reject</option>
+                                    </select></div>
+                                <div class="col-12"><label class="form-label">Remarks</label><textarea class="form-control"
+                                        name="l3_remark" rows="2"></textarea></div>
+                            </div>
+                            <h6 class="mb-3 mt-4">Management Required-When Checks</h6>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l3-check" type="checkbox"
+                                            name="l3_limits" value="Checked" id="l3_limits" required><label
+                                            class="form-check-label" for="l3_limits">Leave exceeds predefined limits</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l3-check" type="checkbox"
+                                            name="l3_critical" value="Checked" id="l3_critical" required><label
+                                            class="form-check-label" for="l3_critical">Critical role employees apply</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l3-check" type="checkbox"
+                                            name="l3_blackout" value="Checked" id="l3_blackout" required><label
+                                            class="form-check-label" for="l3_blackout">Leave during blackout periods</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check"><input class="form-check-input l3-check" type="checkbox"
+                                            name="l3_exceptional" value="Checked" id="l3_exceptional" required><label
+                                            class="form-check-label" for="l3_exceptional">Exceptional circumstances</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    // Kya hum approvals page par hain?
-    $routeName    = \Illuminate\Support\Facades\Route::currentRouteName();
-    $path         = request()->path();
-    $inApprovals  = (\Illuminate\Support\Str::contains((string)$routeName, 'approvals')
-                    || \Illuminate\Support\Str::contains((string)$path, 'approvals'));
-  @endphp
-
-  <hr>
-  <h6 class="mb-3">Approval Flow</h6>
-
-  <div class="row g-4">
-    @foreach($ordered as $step)
-     @php
-  $code       = $step->status ?? 'P';
-  $statusText = $code==='A'?'Approved':($code==='R'?'Rejected':($code==='S'?'Skipped':'Pending'));
-  $badge      = $statusText==='Approved' ? 'bg-success' : ($statusText==='Rejected' ? 'bg-danger' : ($statusText==='Pending' ? 'bg-warning text-dark' : 'bg-secondary'));
-
-  $role  = $step->role ?: 'Approver';
-  $name  = $step->approver_name ?? $step->name ?? (optional($step->user)->first_name ?: '');
-
-  // ✅ approver can always act (P/A/R/S) if this is *their* step
-  $isYou      = ((int)($step->approver_id ?? 0) === (int)Auth::id());
-  $canAct     = $isYou;
-  $actionText = ($code === 'P') ? 'Take Action' : 'Update Action';
-
-  $actedAt = !empty($step->acted_at)
-    ? \Carbon\Carbon::parse($step->acted_at)->format('d M Y, h:i A')
-    : ((!empty($step->updated_at) && ($code==='A'||$code==='R'))
-        ? \Carbon\Carbon::parse($step->updated_at)->format('d M Y, h:i A')
-        : null);
-@endphp
-
-      <div class="col-xl-4 col-lg-4 col-md-4 col-sm-6">
-        <div class="card text-center shadow-sm h-100" style="border-top:4px solid var(--bs-primary);">
-          <div class="card-body">
-            <h6 class="card-title mb-1">
-              {{ $role }}
-              @if($isYou)<span class="badge bg-info ms-1">You</span>@endif
-            </h6>
-            <p class="text-muted small mb-2">{{ $name ?: '' }}</p>
-
-            <span class="badge {{ $badge }} mb-2 px-2 py-1">{{ $statusText }}</span>
-
-            @php
-              $hasAction = ($code !== 'P')
-                           || !empty($step->acted_at)
-                           || !empty($step->l1_decision)
-                           || !empty($step->l2_decision)
-                           || !empty($step->l3_decision);
-
-              $r = strtolower((string)($role ?: ''));
-              $items = [];
-
-              if ($hasAction) {
-                  if (strpos($r, 'report') !== false) {
-                      $items = [
-                          'Workload Planning'            => $step->l1_workload ?? null,
-                          'Team Coverage'                => $step->l1_coverage ?? null,
-                          'Leave Eligibility'            => $step->l1_eligibility ?? null,
-                          'Leave Duration Reasonable?'   => $step->l1_duration_ok ?? null,
-                          'Policy Compliance (Notice)'   => $step->l1_notice_compliance ?? null,
-                          'Approval'                     => $step->l1_decision ?? null,
-                          'Remark'                       => $step->l1_remark ?? null,
-                      ];
-                  } elseif (strpos($r, 'finance') !== false) {
-                      $items = [
-                          'Leave Balance Validation'     => $step->l2_balance ?? null,
-                          'Unpaid Leave Impact'          => $step->l2_unpaid ?? null,
-                          'Encashment Eligibility'       => $step->l2_encash ?? null,
-                          'Cost Implications'            => $step->l2_cost ?? null,
-                          'Policy Adherence'             => $step->l2_policy ?? null,
-                          'Approval'                     => $step->l2_decision ?? null,
-                          'Remark'                       => $step->l2_remark ?? null,
-                      ];
-                  } else { // HR
-                      $items = [
-                          'Document Verification'        => $step->l3_docs ?? null,
-                          'Policy Compliance (HR Rules)' => $step->l3_policy ?? null,
-                          'System Update'                => $step->l3_system ?? null,
-                          'Payroll Coordination'         => $step->l3_payroll ?? null,
-                          'Legal Compliance (UAE Law)'   => $step->l3_legal ?? null,
-                          'Final Approval'               => $step->l3_decision ?? null,
-                          'Remark'                       => $step->l3_remark ?? null,
-                      ];
-                  }
-              }
-            @endphp
-
-            @php
-  // helper (PHP 7.1 compatible) — label+value+step code se icon/color decide
-  $decideIcon = function ($label, $value, $code) {
-      $v = strtolower(trim((string)$value));
-
-      // Positive/Negative keyword buckets
-      $positives = [
-          'valid','compliant','updated','shared with finance','sufficient balance','not required',
-          'eligible','approve','approved','no extra cost','backup available','no impact',
-          'manageable impact','annual','sick','emergency','yes','ok','na'
-      ];
-      $negatives = [
-          'invalid','not compliant','insufficient balance','deduction required','overtime required',
-          'temporary staff required','not eligible','reject','rejected','not available','no','needs adjustment'
-      ];
-      $neutrals = ['pending','modify','n/a','na','-',''];
-
-      // Default state from value
-      $state = 'neu';
-      if ($v !== '') {
-          if (in_array($v, $positives, true)) $state = 'pos';
-          elseif (in_array($v, $negatives, true)) $state = 'neg';
-          elseif (in_array($v, $neutrals, true)) $state = 'neu';
-      } else {
-          // Fallback from step status
-          if ($code === 'A') $state = 'pos';
-          elseif ($code === 'R') $state = 'neg';
-          else $state = 'neu';
-      }
-
-      // Return icon char + BS color class
-      if ($state === 'pos')   return ['✔', 'text-success'];
-      if ($state === 'neg')   return ['✖', 'text-danger'];
-      return ['•', 'text-muted'];
-  };
-@endphp
-
-
-            @if(!empty($items))
-             <ul class="list-unstyled text-start small mb-0 mt-2">
-  @foreach($items as $lbl => $val)
-    @if(!is_null($val) && $val !== '')
-      @php list($iChar, $iClass) = $decideIcon($lbl, $val, $code); @endphp
-      <li class="mb-1 d-flex">
-        <span class="me-2 {{ $iClass }}" aria-hidden="true" style="line-height:1.35;">{{ $iChar }}</span>
-        <div><strong>{{ $lbl }}:</strong> {{ \Illuminate\Support\Str::limit($val, 120) }}</div>
-      </li>
-    @endif
-  @endforeach
-  @if(!empty($actedAt))
-    <li class="text-secondary"><em>Acted at:</em> {{ $actedAt }}</li>
-  @endif
-</ul>
-            @endif
-
-           
-          </div>
-
-          {{-- Footer: Approvals page par "Action", warna "Step n" --}}
-                @if($canAct)
-                <div class="card-footer text-muted small">
-                <button
-                type="button"
-                class="btn btn-light text-dark d-inline-flex align-items-center gap-2"
-                data-bs-toggle="modal"
-                data-bs-target="#approvalActionModal"
-                data-leave-id="{{ $leave->id }}"
-                data-step-id="{{ $step->id }}"
-                data-role="{{ $role }}"
-                data-approver="{{ $name }}"
-                > <i class="ico icon-outline-add-circle text-success btn-icon"></i>Take Action</button>
-                </div>
-                @endif
-
+                    <div class="modal-footer p-2">
+                        <button type="submit" class="btn btn-light add-btn ms-2"><i
+                                class="ico icon-outline-send-square text-success"></i> Save</button>
+                    </div>
+                </form>
+            </div>
         </div>
-      </div>
-    @endforeach
-  </div>
+    </div>
+
+    <script>
+        (function () {
+            var modal = document.getElementById('approvalActionModal');
+            if (!modal) return;
+
+            modal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var role = button.getAttribute('data-role') || '';
+                document.getElementById('act_role').value = role;
+                document.getElementById('act_step_id').value = button.getAttribute('data-step-id');
+                document.getElementById('act_leave_id').value = button.getAttribute('data-leave-id');
+
+                modal.querySelectorAll('.level-section').forEach(function (el) { el.classList.add('d-none'); });
+                modal.querySelectorAll('input, select, textarea').forEach(function (el) {
+                    el.removeAttribute('required');
+                });
+                if (role.toLowerCase().indexOf('report') !== -1 || role.toLowerCase().indexOf('manager') !== -1) {
+                    modal.querySelector('.level-l1').classList.remove('d-none');
+                    modal.querySelector('[name="l1_decision"]').setAttribute('required', 'required');
+                    modal.querySelectorAll('.l1-check').forEach(function (el) { el.setAttribute('required', 'required'); });
+                } else if (role.toLowerCase().indexOf('hr') !== -1) {
+                    modal.querySelector('.level-l2').classList.remove('d-none');
+                    modal.querySelector('[name="l2_decision"]').setAttribute('required', 'required');
+                    modal.querySelector('[name="l2_balance_verify"]').setAttribute('required', 'required');
+                    modal.querySelector('[name="l2_policy_verify"]').setAttribute('required', 'required');
+                    modal.querySelector('[name="l2_docs_verify"]').setAttribute('required', 'required');
+                    modal.querySelector('[name="management_approval_req"]').setAttribute('required', 'required');
+                    modal.querySelectorAll('.l2-check').forEach(function (el) { el.setAttribute('required', 'required'); });
+                } else {
+                    modal.querySelector('.level-l3').classList.remove('d-none');
+                    modal.querySelector('[name="l3_decision"]').setAttribute('required', 'required');
+                    modal.querySelectorAll('.l3-check').forEach(function (el) { el.setAttribute('required', 'required'); });
+                }
+            });
+        })();
+    </script>
 @endif
 
-
-
-
-{{-- ===== Global Action Modal (Bootstrap 5) ===== --}}
-@push('modals')
-<div class="modal fade" id="approvalActionModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <form method="POST" action="{{ route('approvals.action') }}" id="approvalActionForm">
-        @csrf
-        <input type="hidden" name="leave_id" id="act_leave_id">
-        <input type="hidden" name="step_id"  id="act_step_id">
-        <input type="hidden" name="actor_role" id="act_role">
-
-        <div class="modal-header">
-          <h5 class="modal-title">Action</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <div class="modal-body">
-          <div class="alert alert-light border small mb-3" id="act_header" style="display:none;"></div>
-
-          {{-- ===== Level 1: Reporting Manager (3x grid) ===== --}}
-          <div class="level-section level-l1 d-none">
-            <h6 class="mb-3">Level 1: Reporting Manager (Direct Supervisor)</h6>
-            <div class="row g-3">
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Workload Planning</label>
-                <select class="form-select" name="l1_workload">
-                  <option>No Impact</option><option>Manageable Impact</option><option>High Impact</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Team Coverage</label>
-                <select class="form-select" name="l1_coverage">
-                  <option>Backup Available</option><option>Not Available</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Leave Eligibility</label>
-                <select class="form-select" name="l1_eligibility">
-                  <option>Annual</option><option>Sick</option><option>Emergency</option><option>Other</option>
-                </select>
-              </div>
-
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Leave Duration Reasonable?</label>
-                <select class="form-select" name="l1_duration_ok">
-                  <option>Yes</option><option>No</option><option>Needs Adjustment</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Policy Compliance (Notice)</label>
-                <select class="form-select" name="l1_notice_compliance">
-                  <option>Compliant</option><option>Not Compliant</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Approval</label>
-                <select class="form-select" name="l1_decision" required>
-                  <option value="Approve">Approve</option>
-                  <option value="Reject">Reject</option>
-                  <option value="Modify">Modify</option>
-                </select>
-              </div>
-
-              <div class="col-12">
-                <label class="form-label">Remark</label>
-                <textarea class="form-control" name="l1_remark" rows="2"></textarea>
-              </div>
+@if($canEditHandover ?? false)
+    <div class="modal fade" id="handoverFieldEditModal" tabindex="-1" aria-hidden="true"
+        style="background: rgba(0,0,0,0.5); z-index: 1060;" data-bs-backdrop="false">
+        <div class="modal-dialog modal-dialog-centered" style="z-index: 1061; max-width: 380px;">
+            <div class="modal-content">
+                <form action="{{ route('approvals.handover_update') }}" method="POST" id="handoverFieldEditForm"
+                    class="handover-update-form">
+                    @csrf
+                    <input type="hidden" name="leave_id" value="{{ $leave->id }}">
+                    <div class="modal-header m-0">
+                        <h5 class="modal-title" id="handoverFieldEditTitle">Update Handover Field</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="handoverSelectWrap">
+                            <label class="form-label" for="handoverFieldSelect">Value</label>
+                            <select class="form-select" id="handoverFieldSelect">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                        <div id="handoverTextareaWrap" class="d-none">
+                            <label class="form-label" for="handoverFieldTextarea">Value</label>
+                            <textarea class="form-control" id="handoverFieldTextarea" rows="2"
+                                style="min-height: 60px;"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer p-2">
+                        <button type="submit" class="btn btn-light add-btn ms-2"><i
+                                class="ico icon-outline-send-square text-success"></i> Save</button>
+                    </div>
+                </form>
             </div>
-          </div>
-
-          {{-- ===== Level 2: Finance Manager (3x grid) ===== --}}
-          <div class="level-section level-l2 d-none">
-            <h6 class="mb-3">Level 2: Finance Manager</h6>
-            <div class="row g-3">
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Leave Balance Validation</label>
-                <select class="form-select" name="l2_balance">
-                  <option>Sufficient Balance</option><option>Insufficient Balance</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Unpaid Leave Impact</label>
-                <select class="form-select" name="l2_unpaid">
-                  <option>Deduction Required</option><option>Not Required</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Encashment Eligibility</label>
-                <select class="form-select" name="l2_encash">
-                  <option>Eligible</option><option>Not Eligible</option><option>NA</option>
-                </select>
-              </div>
-
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Cost Implications</label>
-                <select class="form-select" name="l2_cost">
-                  <option>No Extra Cost</option><option>Overtime Required</option><option>Temporary Staff Required</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Policy Adherence</label>
-                <select class="form-select" name="l2_policy">
-                  <option>Compliant</option><option>Not Compliant</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Approval</label>
-                <select class="form-select" name="l2_decision" required>
-                  <option value="Approve">Approve</option>
-                  <option value="Reject">Reject</option>
-                  <option value="Modify">Modify</option>
-                </select>
-              </div>
-
-              <div class="col-12">
-                <label class="form-label">Remark</label>
-                <textarea class="form-control" name="l2_remark" rows="2"></textarea>
-              </div>
-            </div>
-          </div>
-
-          {{-- ===== Level 3: HR (3x grid) ===== --}}
-          <div class="level-section level-l3 d-none">
-            <h6 class="mb-3">Level 3: HR (Human Resources)</h6>
-            <div class="row g-3">
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Document Verification</label>
-                <select class="form-select" name="l3_docs">
-                  <option>Valid</option><option>Invalid</option><option>Not Submitted</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Policy Compliance (HR Rules)</label>
-                <select class="form-select" name="l3_policy">
-                  <option>Compliant</option><option>Not Compliant</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">System Update</label>
-                <select class="form-select" name="l3_system">
-                  <option>Updated</option><option>Pending</option>
-                </select>
-              </div>
-
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Payroll Coordination</label>
-                <select class="form-select" name="l3_payroll">
-                  <option>Shared with Finance</option><option>Not Applicable</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Legal Compliance (UAE Labour Law)</label>
-                <select class="form-select" name="l3_legal">
-                  <option>Compliant</option><option>Not Compliant</option>
-                </select>
-              </div>
-              <div class="col-12 col-sm-6 col-md-4">
-                <label class="form-label">Final Approval</label>
-                <select class="form-select" name="l3_decision" required>
-                  <option value="Approve">Approve</option><option value="Reject">Reject</option>
-                </select>
-              </div>
-
-              <div class="col-12">
-                <label class="form-label">Remark</label>
-                <textarea class="form-control" name="l3_remark" rows="2"></textarea>
-              </div>
-            </div>
-          </div>
         </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-outline-info text-dark d-inline-flex align-items-center gap-2">
-            <i class="ico icon-outline-bookmark-opened text-success btn-icon"></i>
-            Submit
-          </button>
-        </div>
-      </form>
     </div>
-  </div>
-</div>
+    <div class="modal fade" id="handoverClientRespEditModal" tabindex="-1" aria-hidden="true"
+        style="background: rgba(0,0,0,0.5); z-index: 1060;" data-bs-backdrop="false">
+        <div class="modal-dialog modal-dialog-centered" style="z-index: 1061; max-width: 380px;">
+            <div class="modal-content">
+                <form action="{{ route('approvals.handover_update') }}" method="POST" class="handover-update-form">
+                    @csrf
+                    <input type="hidden" name="leave_id" value="{{ $leave->id }}">
+                    <div class="modal-header m-0">
+                        <h5 class="modal-title">Update Client Responsibilities</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label" for="handoverClientResponsibilitiesInput">Client Responsibilities</label>
+                        <textarea class="form-control" id="handoverClientResponsibilitiesInput"
+                            name="client_responsibilities" rows="2"
+                            style="min-height: 70px;">{{ data_get($leave, 'client_responsibilities') }}</textarea>
+                    </div>
+                    <div class="modal-footer p-2">
+                        <button type="submit" class="btn btn-light add-btn ms-2"><i
+                                class="ico icon-outline-send-square text-success"></i> Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="handoverRemarksEditModal" tabindex="-1" aria-hidden="true"
+        style="background: rgba(0,0,0,0.5); z-index: 1060;" data-bs-backdrop="false">
+        <div class="modal-dialog modal-dialog-centered" style="z-index: 1061; max-width: 380px;">
+            <div class="modal-content">
+                <form action="{{ route('approvals.handover_update') }}" method="POST" class="handover-update-form">
+                    @csrf
+                    <input type="hidden" name="leave_id" value="{{ $leave->id }}">
+                    <div class="modal-header m-0">
+                        <h5 class="modal-title">Update Remarks</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label" for="handoverRemarksInput">Remarks</label>
+                        <textarea class="form-control" id="handoverRemarksInput" name="handover_additional_remarks" rows="2"
+                            style="min-height: 70px;">{{ data_get($leave, 'handover_additional_remarks') }}</textarea>
+                    </div>
+                    <div class="modal-footer p-2">
+                        <button type="submit" class="btn btn-light add-btn ms-2"><i
+                                class="ico icon-outline-send-square text-success"></i> Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var textFields = ['client_responsibilities', 'additional_remarks', 'remarks', 'handover_additional_remarks'];
+            var selectFields = ['pending_tasks', 'access_transfer_required', 'completion_confirmation', 'handover_completion_confirmation', 'manager_verification', 'manager_verification_of_handover'];
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  var modalEl = document.getElementById('approvalActionModal');
-  if (!modalEl) return;
+            function configureHandoverFieldModal(button) {
+                if (button && button.closest) {
+                    button = button.closest('.handover-field-edit');
+                }
+                if (!button || button.getAttribute('data-bs-target') !== '#handoverFieldEditModal') return;
 
-  modalEl.addEventListener('show.bs.modal', function (e) {
-    var btn  = e.relatedTarget;
-    if (!btn) return;
+                var title = button.getAttribute('data-title') || 'Update Handover Field';
+                var field = button.getAttribute('data-field') || '';
+                var type = textFields.indexOf(field) !== -1 ? 'textarea' : (selectFields.indexOf(field) !== -1 ? 'select' : (button.getAttribute('data-type') || 'select'));
+                var value = button.getAttribute('data-value') || '';
+                var selectWrap = document.getElementById('handoverSelectWrap');
+                var textareaWrap = document.getElementById('handoverTextareaWrap');
+                var select = document.getElementById('handoverFieldSelect');
+                var textarea = document.getElementById('handoverFieldTextarea');
 
-    var id   = btn.getAttribute('data-leave-id') || '';
-    var step = btn.getAttribute('data-step-id')  || '';
-    var role = (btn.getAttribute('data-role') || '').toLowerCase();
-    var appr = (btn.getAttribute('data-approver') || '');
+                document.getElementById('handoverFieldEditTitle').textContent = title;
+                select.removeAttribute('name');
+                textarea.removeAttribute('name');
 
-    var f1 = document.getElementById('act_leave_id');
-    var f2 = document.getElementById('act_step_id');
-    var f3 = document.getElementById('act_role');
+                if (type === 'textarea') {
+                    selectWrap.classList.add('d-none');
+                    textareaWrap.classList.remove('d-none');
+                    textarea.setAttribute('name', field);
+                    textarea.value = value;
+                } else {
+                    textareaWrap.classList.add('d-none');
+                    selectWrap.classList.remove('d-none');
+                    select.setAttribute('name', field);
+                    select.value = value === 'Yes' ? 'Yes' : 'No';
+                }
+            }
 
-    if (f1) f1.value = id;
-    if (f2) f2.value = step;
-    if (f3) f3.value = role;
+            $(document)
+                .off('click.handoverFieldEdit')
+                .on('click.handoverFieldEdit', '.handover-field-edit', function () {
+                    $('#handoverFieldEditModal').data('handover-trigger', this);
+                    configureHandoverFieldModal(this);
+                });
 
-    var hdr = document.getElementById('act_header');
-    if (hdr) {
-      hdr.style.display = 'block';
-      hdr.innerHTML = '<strong>Step for:</strong> ' + (appr || '—')
-        + ' &nbsp; | &nbsp; <strong>Role:</strong> ' + (btn.getAttribute('data-role') || '—')
-        + ' &nbsp; | &nbsp; <strong>Leave #</strong> ' + (id || '—');
-    }
+            $(document)
+                .off('show.bs.modal.handoverFieldEdit')
+                .on('show.bs.modal.handoverFieldEdit', '#handoverFieldEditModal', function (event) {
+                    var button = event.relatedTarget || (event.originalEvent && event.originalEvent.relatedTarget) || $(this).data('handover-trigger') || document.activeElement;
+                    configureHandoverFieldModal(button);
+                });
 
-    // hide all role sections
-    var secs = document.querySelectorAll('.level-section');
-    for (var i = 0; i < secs.length; i++) secs[i].classList.add('d-none');
+            $(document)
+                .off('hidden.bs.modal.handoverFieldEdit')
+                .on('hidden.bs.modal.handoverFieldEdit', '#handoverFieldEditModal', function () {
+                    $('.modal-backdrop').remove();
+                    if (!$('.modal.show').length) {
+                        $('body').removeClass('modal-open').css({ overflow: '', paddingRight: '' });
+                    }
+                });
 
-    // show matched role
-    if (role.indexOf('report') !== -1) {
-      var l1 = document.querySelector('.level-l1'); if (l1) l1.classList.remove('d-none');
-    } else if (role.indexOf('finance') !== -1) {
-      var l2 = document.querySelector('.level-l2'); if (l2) l2.classList.remove('d-none');
-    } else {
-      var l3 = document.querySelector('.level-l3'); if (l3) l3.classList.remove('d-none');
-    }
-  });
+            $(document)
+                .off('submit.handoverFieldAjax')
+                .on('submit.handoverFieldAjax', '.handover-update-form', function (event) {
+                    event.preventDefault();
 
-  // Optional: hard safety close if something goes wrong
-  modalEl.addEventListener('hidden.bs.modal', function () {
-    // remove stray backdrops if any (defensive)
-    var bds = document.querySelectorAll('.modal-backdrop');
-    if (bds.length > 1) {
-      for (var i=1; i<bds.length; i++) bds[i].parentNode.removeChild(bds[i]);
-    }
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('padding-right');
-  });
-});
-</script>
-@endpush
+                    var form = $(this);
+                    var button = form.find('button[type="submit"]');
+                    var originalHtml = button.html();
+
+                    button.prop('disabled', true);
+
+                    $.ajax({
+                        url: form.attr('action'),
+                        method: 'POST',
+                        data: form.serialize(),
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        success: function () {
+                            var updatedField = null;
+                            var updatedValue = '';
+
+                            form.serializeArray().forEach(function (item) {
+                                if (item.name !== '_token' && item.name !== 'leave_id') {
+                                    updatedField = item.name;
+                                    updatedValue = item.value;
+                                }
+                            });
+
+                            if (updatedField) {
+                                $('[data-handover-field="' + updatedField + '"]').text(updatedValue || '-');
+                                $('[data-field="' + updatedField + '"]').attr('data-value', updatedValue);
+                            }
+
+                            var modalEl = form.closest('.modal')[0];
+                            if (modalEl && window.bootstrap && bootstrap.Modal.getInstance(modalEl)) {
+                                bootstrap.Modal.getInstance(modalEl).hide();
+                            } else {
+                                form.closest('.modal').modal('hide');
+                            }
+
+                            $('.modal-backdrop').remove();
+                            if (!$('.modal.show').length) {
+                                $('body').removeClass('modal-open').css({ overflow: '', paddingRight: '' });
+                            }
+                        },
+                        error: function (xhr) {
+                            var message = 'Unable to update handover information.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                message = xhr.responseJSON.message;
+                            }
+                            alert(message);
+                        },
+                        complete: function () {
+                            button.prop('disabled', false).html(originalHtml);
+                        }
+                    });
+                });
+        })();
+    </script>
+@endif

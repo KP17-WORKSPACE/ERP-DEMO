@@ -1,404 +1,464 @@
-{{-- resources/views/backEnd/employee/leaves/index.blade.php --}}
 @extends('backEnd.newmasterpage')
 
 @section('mainContent')
-    @php
-        use Illuminate\Support\Str;
-    @endphp
+@php
+    use Illuminate\Support\Str;
 
-    <?php
-    $module_links = [];
-    $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
-    ?>
+    $isTrack = $isTrack ?? false;
+    $screenRoute = $isTrack ? route('approvals.leave-track') : route('approvals.inbox');
+    $screenTitle = $isTrack ? 'Leave Track' : 'Leave Request';
+    $emptyTitle = $isTrack ? 'No leave requests' : 'Add Leave';
+@endphp
 
-    <script>
-        function setLeavesView(mode) {
-            var leftNav = document.getElementById('leftSidebar');
-            var content = document.querySelector('.content-container');
-            var shortList = document.getElementById('leaveShortList');
-            var longTable = document.getElementById('long-list');
-            var filtersShort = document.getElementById('filters-short');
-            var filtersLong = document.getElementById('filters-long');
+<script>
+    function setLeavesView(mode) {
+        var leftNav = document.getElementById('leftSidebar');
+        var content = document.querySelector('.content-container');
+        var shortList = document.getElementById('leaveShortList');
+        var longTable = document.getElementById('long-list');
+        var filtersShort = document.getElementById('filters-short');
+        var filtersLong = document.getElementById('filters-long');
 
-            if (mode === 'full') {
-                leftNav.classList.remove('col-3');
-                leftNav.classList.add('col-12');
-                leftNav.style.width = '100%';
-                content.classList.add('d-none');
-                if (longTable) longTable.classList.remove('d-none');
-                if (shortList) shortList.classList.add('d-none');
-                if (filtersLong) filtersLong.classList.remove('d-none');
-                if (filtersShort) filtersShort.classList.add('d-none');
-                leftNav.setAttribute('data-view', 'full');
-            } else {
-                leftNav.classList.remove('col-12');
-                leftNav.classList.add('col-3');
-                leftNav.style.width = '';
-                content.classList.remove('d-none');
-                if (longTable) longTable.classList.add('d-none');
-                if (shortList) shortList.classList.remove('d-none');
-                if (filtersShort) filtersShort.classList.remove('d-none');
-                if (filtersLong) filtersLong.classList.add('d-none');
-                leftNav.setAttribute('data-view', 'compact');
-            }
+        if (!leftNav || !content) return;
+
+        if (mode === 'full') {
+            leftNav.classList.remove('col-3');
+            leftNav.classList.add('col-12');
+            leftNav.style.width = '100%';
+            content.classList.add('d-none');
+            if (longTable) longTable.classList.remove('d-none');
+            if (shortList) shortList.classList.add('d-none');
+            if (filtersLong) filtersLong.classList.remove('d-none');
+            if (filtersShort) filtersShort.classList.add('d-none');
+            leftNav.setAttribute('data-view', 'full');
+        } else {
+            leftNav.classList.remove('col-12');
+            leftNav.classList.add('col-3');
+            leftNav.style.width = '';
+            content.classList.remove('d-none');
+            if (longTable) longTable.classList.add('d-none');
+            if (shortList) shortList.classList.remove('d-none');
+            if (filtersShort) filtersShort.classList.remove('d-none');
+            if (filtersLong) filtersLong.classList.add('d-none');
+            leftNav.setAttribute('data-view', 'compact');
         }
+    }
 
-        function list_style_new_leaves() {
-            var leftNav = document.getElementById('leftSidebar');
-            var cur = leftNav.getAttribute('data-view') || 'compact';
-            setLeavesView(cur === 'compact' ? 'full' : 'compact');
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            var leftNav = document.getElementById('leftSidebar');
-            if (!leftNav.getAttribute('data-view')) leftNav.setAttribute('data-view', 'compact');
-        });
-    </script>
+    function list_style_new_leaves() {
+        var leftNav = document.getElementById('leftSidebar');
+        var cur = leftNav ? (leftNav.getAttribute('data-view') || 'compact') : 'compact';
+        setLeavesView(cur === 'compact' ? 'full' : 'compact');
+    }
 
-    <style>
-        .truncate-text {
-            display: inline-block;
-            max-width: 100%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis
-        }
+    function search_box_show_hide_leaves() {
+        var box = document.getElementById('long-filters-box');
+        if (box) box.classList.toggle('d-none');
+    }
 
-        .xsmall {
-            font-size: .75rem
-        }
-    </style>
+    document.addEventListener('DOMContentLoaded', function() {
+        @if(request()->has('status') || request()->has('from') || request()->has('to'))
+            setLeavesView('full');
+            var box = document.getElementById('long-filters-box');
+            if (box) box.classList.remove('d-none');
+        @else
+            setLeavesView('compact');
+        @endif
+    });
+</script>
 
-    <aside class="left-nav col-3" id="leftSidebar">
-        <div class="resizer" id="sidebarResizer"></div>
+<style>
+    .truncate-text {
+        display: inline-block;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .xsmall { font-size: .75rem; }
+    #leaveShortList .nav-link { text-align: left; }
+    .leave-list-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .leave-list-search {
+        font-size: 13px;
+        width: min(350px, 100%);
+        max-width: 350px;
+    }
+    #long-list {
+        font-size: 12px;
+    }
+    #long-list th,
+    #long-list td {
+        padding: 6px 5px;
+        vertical-align: middle;
+        word-break: break-word;
+    }
+    #long-list .leave-ellipsis {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    #long-list .leave-action-cell {
+        white-space: nowrap;
+    }
+    #long-list .leave-action-buttons {
+        gap: 3px;
+    }
+</style>
 
-        {{-- SHORT FILTER --}}
-        <div class="short-list" id="filters-short">
-            <h4 class="mb-2">Leave Request</h4>
-            <form class="form-horizontal" method="get" action="{{ route('employee.leaves.index') }}" id="leave-search">
-                <div class="search-filter-container mb-4 d-flex">
-                    <div class="input-group flex-nowrap">
-                        <input type="text" name="q" class="form-control" placeholder="Search by ID / Reason"
-                            value="{{ request('q') }}">
-                    </div>
-                    {{-- <button type="submit" class="btn btn-light ms-2"><i class="ico icon-outline-magnifer"></i></button> --}}
-                    <button type="button" class="btn btn-light ms-2" onclick="list_style_new_leaves()"><i
-                            class="ico icon-outline-list-down"></i></button>
+<aside class="left-nav col-3" id="leftSidebar">
+    <div class="resizer" id="sidebarResizer"></div>
+
+    <div class="short-list" id="filters-short">
+        <h4 class="mb-2" style=" margin-left: -6px;">{{ $screenTitle }}</h4>
+        <form class="form-horizontal" method="get" action="{{ $screenRoute }}" id="leave-search">
+            <div class="search-filter-container mb-4" style=" margin-left: -6px;">
+                <div class="input-group flex-nowrap">
+                    <input type="text" name="q" class="form-control" placeholder="Search by ID / Reason" value="{{ request('q') }}">
                 </div>
-            </form>
-        </div>
+                <button type="button" class="btn btn-light" id="list_style_button" onclick="list_style_new_leaves()">
+                    <i class="ico icon-outline-list-down"></i>
+                </button>
+            </div>
+        </form>
+    </div>
 
-        {{-- LONG FILTER --}}
-        <div class="long-list d-none" id="filters-long">
-            <div class="d-flex align-items-center justify-content-between">
-                <h4 class="mb-2">Leave Requests</h4>
-                <div class="search-filter-container mb-0">
-                    <button class="btn btn-light"
-                        onclick="document.getElementById('long-filters-box').classList.toggle('d-none')">
-                        <i class="ico icon-outline-magnifer"></i>
+    <div class="long-list d-none" id="filters-long">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h4 class="mb-0">{{ $isTrack ? 'Leave Track List' : 'Leave Request List' }}</h4>
+            <div class="search-filter-container mb-0 leave-list-toolbar d-flex align-items-center gap-2">
+                <input type="text" id="tableSearch" class="form-control leave-list-search" placeholder="Search" style="width: auto; min-width: 200px;">
+                <button type="button" class="btn btn-light" id="exportExcelLeaves" title="Export to Excel">
+                    <i class="ico icon-outline-export text-success"></i> Export
+                </button>
+                <button type="button" class="btn btn-light" onclick="search_box_show_hide_leaves()" title="Search / Filter">
+                    <i class="ico icon-outline-magnifer"></i>
+                </button>
+                <button type="button" class="btn btn-light" onclick="list_style_new_leaves()" title="Compact list">
+                    <i class="ico icon-outline-list-down"></i>
+                </button>
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu">
+                        <i class="ico icon-outline-hamburger-menu"></i>
                     </button>
-                    <button class="btn btn-light" onclick="list_style_new_leaves()">
-                        <i class="ico icon-outline-list-down"></i>
-                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @if($isTrack)
+                            <li><a class="dropdown-item" href="{{ route('approvals.inbox') }}"><i class="ico icon-outline-list-down text-success"></i> Leaves</a></li>
+                        @else
+                            <li><a class="dropdown-item" href="{{ route('approvals.leave-track') }}"><i class="ico icon-outline-list-down text-success"></i> Leave Track</a></li>
+                        @endif
+                    </ul>
                 </div>
             </div>
+        </div>
 
-            <div id="long-filters-box" class="search-filter-container mt-1 mb-4 filter-field d-none border">
-                <div class="card" style="width:100%">
-                    <div class="card-body">
-                        <form class="form-horizontal" method="get" action="{{ route('employee.leaves.index') }}"
-                            id="leave-filter">
-                            <div class="row">
-                                <div class="col-2 mb-2">
-                                    <label class="form-label">Status</label>
-                                    <select class="form-control" name="status">
-                                        <option value="">All</option>
-                                        @foreach (['Pending', 'Approved', 'Rejected', 'Cancelled'] as $st)
-                                            <option value="{{ $st }}" {{ request('status') == $st ? 'selected' : '' }}>
-                                                {{ $st }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-2 mb-2">
-                                    <label class="form-label">Type</label>
-                                    <input class="form-control" type="number" name="type_id"
-                                        value="{{ request('type_id') }}">
-                                </div>
-                                <div class="col-2 mb-2">
-                                    <label class="form-label">From</label>
-                                    <input class="form-control" type="date" name="from" value="{{ request('from') }}">
-                                </div>
-                                <div class="col-2 mb-2">
-                                    <label class="form-label">To</label>
-                                    <input class="form-control" type="date" name="to" value="{{ request('to') }}">
-                                </div>
-                                <div class="col-2 mb-2">
-                                   <button type="submit" class="btn btn-light mt-4">
-                                    <i class="ico icon-outline-magnifer text-success"></i> Filter
-                                </button>
+        <div id="long-filters-box" class="search-filter-container mt-1 mb-4 filter-field d-none border">
+            <div class="card" style="width:100%">
+                <div class="card-body">
+                    <form class="form-horizontal" method="get" action="{{ $screenRoute }}" id="leave-filter">
+                        <div class="row">
+                            <div class="col-2 mb-2">
+                                <label class="form-label">Status</label>
+                                <select class="form-control" name="status">
+                                    <option value="">All</option>
+                                    @foreach (['New', 'Pending', 'Approved', 'Rejected', 'Returned'] as $st)
+                                        <option value="{{ $st }}" {{ strtoupper(request('status')) === strtoupper($st) ? 'selected' : '' }}>{{ $st }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-2 mb-2">
+                                <label class="form-label">From</label>
+                                <input class="form-control" type="date" name="from" value="{{ request('from') }}">
+                            </div>
+                            <div class="col-2 mb-2">
+                                <label class="form-label">To</label>
+                                <input class="form-control" type="date" name="to" value="{{ request('to') }}">
+                            </div>
+                            <div class="col-4 mb-2 filter-field">
+                                <div class="d-flex align-items-center mt-4">
+                                    <button type="submit" class="btn btn-light me-2" style="width:auto;">
+                                        <i class="ico icon-outline-magnifer text-success"></i> Filter
+                                    </button>
+                                    <a href="{{ $screenRoute }}" class="btn btn-light" style="width:auto;">
+                                        <i class="ico icon-outline-refresh text-success"></i> Reset
+                                    </a>
                                 </div>
                             </div>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
+    </div>
 
-        {{-- SHORT LIST --}}
-        <div class="left-nav-list">
-            @php $items = $leaves; @endphp
-            <ul id="leaveShortList" class="nav flex-column nav-pills" role="tablist">
-                @if ($items->count() > 0)
-                    @foreach ($items as $lv)
-                        <li class="nav-item w-100" role="presentation">
-                            <button
-                                class="nav-link lv-item {{ isset($selectedLeave) && $selectedLeave && $selectedLeave->id == $lv->id ? 'active' : '' }}"
-                                data-id="{{ $lv->id }}" type="button" role="tab">
-                                <div class="row w-100 align-items-center">
-                                    <div class="col-2 d-flex justify-content-center">
-                                        <div class="rounded-circle bg-light border"
-                                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:600;color:#555;">
-                                            {{ strtoupper(substr($lv->type->name ?? 'L', 0, 1)) }}
-                                        </div>
-                                    </div>
-                                    <div class="col-10 ps-0">
-                                        {{-- 🔹 Line 1: Name · Designation · Status --}}
-                                        @php
-                                            $name = optional($lv->staffs)->first_name ?? '—';
-                                            $desig =
-                                                optional(optional($lv->staffs)->designations)->title ??
-                                                optional(optional($lv->staffs)->designations)->name;
-                                        @endphp
-                                        <div class="form-control-plaintext">
-                                            {{ $name }}
-                                            @if ($desig)
-                                                · {{ $desig }}
-                                            @endif
-                                            ·
-                                            # {{ $lv->id }}
-                                        </div>
-
-                                        {{-- 🔹 Line 2: Date Range · ID --}}
-                                        <div
-                                            class="d-flex justify-content-between align-items-center text-muted xsmall mt-1">
-                                            <span class="form-control-plaintext truncate-text">
-                                                {{ optional($lv->leave_from)->format('d M') }} –
-                                                {{ optional($lv->leave_to)->format('d M, Y') }}
-                                            </span>
-                                            <span class="form-control-plaintext truncate-text">
-                                                <span class="text-{{ $lv->approve_status_badge }}">
-                                                    {{ $lv->approve_status_label }}
-                                                </span>
-                                            </span>
-                                        </div>
-                                    </div>
-
+    <div class="left-nav-list">
+        @php
+            $items = $leaves;
+            $formatName = function ($staff) {
+                if (!$staff) return 'Employee';
+                $firstWord = explode(' ', $staff->first_name ?? '')[0] ?? '';
+                return trim($firstWord . ' ' . ($staff->last_name ?? '')) ?: ($staff->full_name ?: 'Employee');
+            };
+        @endphp
+        <ul id="leaveShortList" class="nav flex-column nav-pills" role="tablist">
+            @if ($items->count() > 0)
+                @foreach ($items as $lv)
+                    @php
+                        $employeeName = $formatName(optional($lv->staffs));
+                        $leaveType = optional($lv->type)->name ?: 'Leave';
+                        $leaveNo = $lv->leave_application_no ?: ('LR' . optional($lv->company)->other_code . '-' . $lv->id);
+                        $leaveDate = optional($lv->leave_from)->format('d/m/Y') ?: optional($lv->apply_date)->format('d/m/Y') ?: optional($lv->created_at)->format('d/m/Y');
+                        $isActive = isset($selectedLeave) && $selectedLeave && $selectedLeave->id == $lv->id;
+                    @endphp
+                    <li class="nav-item w-100" role="presentation">
+                        <button class="nav-link lv-item {{ $isActive ? 'active' : '' }}" data-id="{{ $lv->id }}" type="button" role="tab">
+                            <div class="row w-100">
+                                <div class="col-12">
+                                    <label class="form-control-plaintext truncate-text">
+                                        {{ $employeeName }} - {{ $leaveType }}
+                                    </label>
                                 </div>
-                            </button>
-                        </li>
-                    @endforeach
-                @else
-                    <div class="p-3 text-muted">No leave requests</div>
-                @endif
-            </ul>
-
-            {{-- LONG LIST TABLE --}}
-            <div class="table-responsive mb-4 mt-4">
-                <table id="long-list" class="table table-hover d-none" style="table-layout:fixed;width:100%">
-                    <thead class="text-center">
-                        <tr>
-                            <th style="width:80px;">ID</th>
-                            <th style="width:160px;">Type</th>
-                            <th style="width:180px;">Staff</th> {{-- 👈 add this --}}
-                            <th style="width:180px;">Date Range</th>
-                            <th style="width:110px;">Days</th>
-                            <th style="width:140px;">Status</th>
-                            <th>Reason</th>
-                            <th class="text-center" style="width:110px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($items as $lv)
-                            <tr>
-                                <td class="text-center">
-                                    <a href="javascript:void(0);" onclick="list_style_new_leaves()" class="lv-item"
-                                        data-id="{{ $lv->id }}">#{{ $lv->id }}</a>
-                                </td>
-                                <td>{{ $lv->type->name ?? 'Type #' . $lv->type_id }}</td>
-
-                                {{-- 🧍 Staff Name --}}
-                                <td>
-                                    <div class="fw-semibold truncate-text">{{ optional($lv->staffs)->full_name ?? '—' }}
+                                <div class="col-4">
+                                    <div class="form-control-plaintext truncate-text" style="font-size:11px">{{ $leaveNo }}</div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="form-control-plaintext" style="font-size:11px">{{ $leaveDate ?: '-' }}</div>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <div class="form-control-plaintext truncate-text" style="font-size:11px">
+                                        <span class="text-{{ $lv->approve_status_badge }}">{{ $lv->approve_status_label }}</span>
                                     </div>
-                                    @php
-                                        $desig =
-                                            optional(optional($lv->staffs)->designations)->title ??
-                                            optional(optional($lv->staffs)->designations)->name;
-                                        $dept =
-                                            optional(optional($lv->staffs)->departments)->name ??
-                                            optional(optional($lv->staffs)->departments)->title;
-                                    @endphp
-                                    @if ($desig || $dept)
-                                        <div class="text-muted xsmall truncate-text">
-                                            {{ trim(($desig ? $desig : '') . ($dept ? ' · ' . $dept : '')) }}
-                                        </div>
-                                    @endif
-                                </td>
+                                </div>
+                                <span class="d-none">{{ $lv->reason }}</span>
+                            </div>
+                        </button>
+                    </li>
+                @endforeach
+            @else
+                <div class="p-3 text-muted">No leave requests</div>
+            @endif
+        </ul>
 
-                                <td>{{ optional($lv->leave_from)->format('d M Y') }} –
-                                    {{ optional($lv->leave_to)->format('d M Y') }}</td>
-                                <td>{{ number_format((float) $lv->days, 2) }}</td>
-                                <td>
-                                    <span
-                                        class="badge bg-{{ $lv->approve_status_badge }}">{{ $lv->approve_status_label }}</span>
-                                </td>
-                                <td class="truncate-text">{{ $lv->reason ?? '—' }}</td>
-                                <td class="text-center">
-                                    <button class="btn btn-sm btn-light lv-item" data-id="{{ $lv->id }}"
-                                        title="View">
-                                        <i class="ico icon-outline-eye" style="font-size:16px;"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-
-                </table>
-                <div class="mt-3">{{ $leaves->links() }}</div>
-            </div>
+        <div class="table-responsive mb-4 mt-4">
+            <table id="long-list" class="table table-hover d-none" style="table-layout:fixed;width:100%">
+                <thead class="text-center">
+                    <tr>
+                        <th style="width:7%;" title="Application Date">App. Date</th>
+                        <th style="width:9%;" title="Leave Application No.">Leave App. No.</th>
+                        <th style="width:10%;" title="Employee Name">Employee</th>
+                        <th style="width:8%;" title="Leave Type">Type</th>
+                        <th style="width:8%;" title="Leave Category">Category</th>
+                        <th style="width:7%;" title="Leave From">From</th>
+                        <th style="width:7%;" title="Leave To">To</th>
+                        <th style="width:5%;" title="Number of Leave Days">Days</th>
+                        <th style="width:12%;" title="Reason for Leave">Reason</th>
+                        <th style="width:9%;" title="Handover To">Handover To</th>
+                        <th style="width:7%;" title="Status">Status</th>
+                        <th style="width:5%;" title="Attachment">Attach.</th>
+                        <th style="width:6%;" title="Action">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($items as $lv)
+                        <tr class="lv-item" data-id="{{ $lv->id }}" style="cursor:pointer">
+                            <td title="{{ optional($lv->apply_date)->format('d/m/Y') ?: optional($lv->created_at)->format('d/m/Y') }}">{{ optional($lv->apply_date)->format('d/m/Y') ?: optional($lv->created_at)->format('d/m/Y') }}</td>
+                            <td title="{{ $lv->leave_application_no ?: ('LR' . optional($lv->company)->other_code . '-' . $lv->id) }}"><span class="leave-ellipsis">{{ $lv->leave_application_no ?: ('LR' . optional($lv->company)->other_code . '-' . $lv->id) }}</span></td>
+                            <td title="{{ optional($lv->staffs)->full_name ?: $formatName(optional($lv->staffs)) }}"><span class="leave-ellipsis">{{ $formatName(optional($lv->staffs)) }}</span></td>
+                            <td title="{{ optional($lv->type)->name ?: 'Type #' . $lv->type_id }}"><span class="leave-ellipsis">{{ optional($lv->type)->name ?: 'Type #' . $lv->type_id }}</span></td>
+                            <td title="{{ $lv->leave_category ?: '-' }}"><span class="leave-ellipsis">{{ $lv->leave_category ?: '-' }}</span></td>
+                            <td>{{ optional($lv->leave_from)->format('d/m/Y') }}</td>
+                            <td>{{ optional($lv->leave_to)->format('d/m/Y') }}</td>
+                            <td>{{ number_format((float) $lv->days, 2) }}</td>
+                            <td title="{{ $lv->reason ?: '-' }}"><span class="leave-ellipsis">{{ $lv->reason ?: '-' }}</span></td>
+                            <td title="{{ $lv->handover_to ?: '-' }}"><span class="leave-ellipsis">{{ $lv->handover_to ?: '-' }}</span></td>
+                            <td><span class="badge bg-{{ $lv->approve_status_badge }}">{{ $lv->approve_status_label }}</span></td>
+                            <td class="text-center">{{ !empty($lv->file) ? 'Yes' : '-' }}</td>
+                            <td class="text-center leave-action-cell">
+                                @php
+                                    $canEditLeaveRow = !$isTrack && in_array($lv->approve_status, ['D', 'P'], true);
+                                    $hasLeaveAttachment = !empty($lv->file);
+                                @endphp
+                                @if($canEditLeaveRow || $hasLeaveAttachment)
+                                    <div class="d-flex justify-content-center align-items-center leave-action-buttons flex-nowrap">
+                                        @if($canEditLeaveRow)
+                                            <a class="btn btn-sm btn-light"
+                                               href="{{ route('approvals.inbox', ['active' => $lv->id, 'leave_action' => 'edit']) }}"
+                                               title="Edit"
+                                               onclick="event.stopPropagation();">
+                                                <i class="ico icon-outline-pen-2 text-dark" style="font-size: 16px;"></i>
+                                            </a>
+                                        @endif
+                                        @if($hasLeaveAttachment)
+                                            <a class="btn btn-sm btn-light"
+                                               href="{{ \Illuminate\Support\Facades\Storage::url($lv->file) }}"
+                                               target="_blank"
+                                               download
+                                               title="Download Attachment"
+                                               onclick="event.stopPropagation();">
+                                                <i class="ico icon-bold-download-minimalistic text-dark" style="font-size: 16px;"></i>
+                                            </a>
+                                        @endif
+                                    </div>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <div class="mt-3">{{ $leaves->links() }}</div>
         </div>
-    </aside>
+    </div>
+</aside>
 
-    <div class="content-container col-9">
-        <div class="tab-content display-flex-tabs" id="leaveTabContent">
+<div class="content-container col-9">
+    <div class="tab-content display-flex-tabs" id="leaveTabContent">
+        <script>
+            (function() {
+                var detailsTpl = @json(route('approvals.show', ['id' => ':id']));
+                var baseRoute = @json($screenRoute);
+                var isTrack = @json($isTrack);
 
-            {{-- CLICK HANDLER --}}
-            <script>
-                (function() {
-                  var detailsTpl = @json(route('approvals.show', ['id' => ':id']));
+                function buildUrl(tpl, id) {
+                    return tpl.replace(':id', encodeURIComponent(id));
+                }
 
+                $(document).on('click', '.lv-item', function(e) {
+                    e.preventDefault();
+                    var id = $(this).data('id');
+                    if (!id) return;
 
-                    function buildUrl(tpl, id) {
-                        return tpl.replace(':id', encodeURIComponent(id));
+                    $('.lv-item').removeClass('active');
+                    $('.lv-item[data-id="' + id + '"]').addClass('active');
+
+                    var params = new URLSearchParams(window.location.search);
+                    params.delete('leave_action');
+                    params.set('active', id);
+                    var newUrl = baseRoute + '?' + params.toString();
+                    if (window.history && window.history.pushState) {
+                        window.history.pushState({ path: newUrl }, '', newUrl);
                     }
-                    $(document).on('click', '.lv-item', function(e) {
-                        e.preventDefault();
-                        var id = $(this).data('id');
-                        if (!id) return;
-                        $('.lv-item').removeClass('active');
-                        $('.lv-item[data-id="' + id + '"]').addClass('active');
-                        var newUrl =
-                            "{{ route('approvals.inbox') }}?{{ http_build_query(request()->except('active')) }}&active=" +
-                            encodeURIComponent(id);
-                        if (window.history && window.history.pushState) {
-                            window.history.pushState({
-                                path: newUrl
-                            }, '', newUrl);
-                        }
-                        var action = buildUrl(detailsTpl, id);
-                        var $loader = $('#loading_bg');
-                        if ($loader.length) $loader.show();
-                        $.ajax({
-                            url: action,
-                            method: 'GET',
-                            cache: false,
-                            success: function(html) {
-                                $('#lv-details').html(html && $.trim(html).length ? html :
-                                    '<p class="text-danger">No Details Available.</p>');
-                            },
-                            error: function(xhr) {
-                                console.error('leave-details error:', xhr.status);
-                                $('#lv-details').html('<p class="text-danger">No Details Available.</p>');
-                            },
-                            complete: function() {
-                                if ($loader.length) $loader.hide();
-                            }
-                        });
-                    });
-                })();
-            </script>
-            
-            <div role="tabpanel" id="lv-details">
-                @if ($selectedLeave)
-                    @include('backEnd.approvals._details', ['leave' => $selectedLeave])
-                @else
-                     <div class="container-fluid d-flex flex-column justify-content-center align-items-center"
-                        style="min-height: 90vh;">
 
-                        <!-- Icon + Heading -->
-                       <a href="{{ url('employee/leaves/create') }}" class="text-decoration-none text-dark">
+                    var action = buildUrl(detailsTpl, id);
+                    if (isTrack) action += '?context=track';
+
+                    var $loader = $('#loading_bg');
+                    if ($loader.length) $loader.show();
+                    $.ajax({
+                        url: action,
+                        method: 'GET',
+                        cache: false,
+                        success: function(html) {
+                            $('#lv-details').html(html && $.trim(html).length ? html : '<p class="text-danger">No Details Available.</p>');
+                        },
+                        error: function(xhr) {
+                            console.error('leave-details error:', xhr.status);
+                            $('#lv-details').html('<p class="text-danger">No Details Available.</p>');
+                        },
+                        complete: function() {
+                            if ($loader.length) $loader.hide();
+                        }
+                    });
+                });
+            })();
+        </script>
+
+        <div role="tabpanel" id="lv-details">
+            @if (!$isTrack && ($action ?? false) === 'add')
+                @include('backEnd.employee.leaves._application_panel', ['leave' => null])
+            @elseif (!$isTrack && ($action ?? false) === 'edit' && $editLeave)
+                @include('backEnd.employee.leaves._application_panel', ['leave' => $editLeave])
+            @elseif ($selectedLeave)
+                @include('backEnd.approvals._details', ['leave' => $selectedLeave, 'trackMode' => $isTrack])
+            @else
+                <div class="container-fluid d-flex flex-column justify-content-center align-items-center" style="min-height: 90vh;">
+                    @if (!$isTrack)
+                        <a href="{{ route('approvals.inbox', ['leave_action' => 'add']) }}" class="text-decoration-none text-dark">
                             <div class="text-center mb-4">
-                                <div 
-                                    class="rounded-circle bg-success text-white d-flex justify-content-center align-items-center mx-auto"
-                                    style="width: 80px; height: 80px; font-size: 36px; cursor:pointer">
+                                <div class="rounded-circle bg-success text-white d-flex justify-content-center align-items-center mx-auto" style="width: 80px; height: 80px; font-size: 36px; cursor:pointer">
                                     <i class="ico icon-outline-add-square"></i>
                                 </div>
                                 <h1 class="fw-bold mt-3">Add Leave</h1>
                                 <p class="text-muted">Create and track your leaves with ease</p>
                             </div>
                         </a>
-
-
-                    </div>
-                @endif
-            </div>
+                    @else
+                        <div class="text-center mb-4">
+                            <h1 class="fw-bold mt-3">{{ $emptyTitle }}</h1>
+                            <p class="text-muted">Submitted leave requests assigned to you will appear here.</p>
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
     </div>
+</div>
 
-    
+<script>
+    $(function() {
+        var $q = $('#leave-search input[name="q"]');
+        var $tableSearch = $('#tableSearch');
+        var $shortItems = $('#leaveShortList > li');
+        var $longRows = $('#long-list tbody > tr');
 
-    <script>
-        $(function() {
-            var $q = $('#leave-search input[name="q"]');
-            var $shortItems = $('#leaveShortList > li');
-            var $longRows = $('#long-list tbody > tr');
+        function norm(s) {
+            return (s || '').toString().toLowerCase();
+        }
 
-            function norm(s) {
-                return (s || '').toString().toLowerCase();
+        function textOf($el) {
+            return norm($el.text());
+        }
+
+        function applyFilter(needle) {
+            if (!needle) {
+                $shortItems.show();
+                $longRows.show();
+                return;
             }
-
-            function textOf($el) {
-                return norm($el.text());
-            }
-
-            function applyFilter(needle) {
-                if (!needle) {
-                    $shortItems.show();
-                    $longRows.show();
-                    return;
-                }
-                $shortItems.each(function() {
-                    $(this).toggle(textOf($(this)).indexOf(needle) !== -1);
-                });
-                $longRows.each(function() {
-                    $(this).toggle(textOf($(this)).indexOf(needle) !== -1);
-                });
-            }
-            var deb;
-            $q.on('input', function() {
-                clearTimeout(deb);
-                var needle = norm(this.value);
-                deb = setTimeout(function() {
-                    applyFilter(needle);
-                }, 120);
+            $shortItems.each(function() {
+                $(this).toggle(textOf($(this)).indexOf(needle) !== -1);
             });
+            $longRows.each(function() {
+                $(this).toggle(textOf($(this)).indexOf(needle) !== -1);
+            });
+        }
+
+        var deb;
+        $q.on('input', function() {
+            clearTimeout(deb);
+            var needle = norm(this.value);
+            deb = setTimeout(function() {
+                applyFilter(needle);
+            }, 120);
         });
-    </script>
-       <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            Your modal content goes here...
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary">Save changes</button>
-          </div>
-        </div>
-      </div>
-    </div>
+        $tableSearch.on('input', function() {
+            applyFilter(norm(this.value));
+        });
+
+        $('#exportExcelLeaves').on('click', function() {
+            var rows = [];
+            $('#long-list tr:visible').each(function() {
+                var cols = [];
+                $(this).find('th,td').each(function() {
+                    cols.push('"' + $(this).text().replace(/\s+/g, ' ').trim().replace(/"/g, '""') + '"');
+                });
+                if (cols.length) rows.push(cols.join(','));
+            });
+            if (!rows.length) return;
+            var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'leave_requests.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    });
+</script>
 @endsection
