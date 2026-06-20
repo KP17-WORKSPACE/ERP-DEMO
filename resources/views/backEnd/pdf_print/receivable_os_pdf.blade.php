@@ -30,7 +30,7 @@
 
   <style>
     @page {
-      margin: 20px 20px;
+      margin: 20px 20px 120px 20px;
     }
 
     header {
@@ -48,10 +48,15 @@
     footer {
       position: fixed;
       left: 0px;
-      bottom: -100px;
+      bottom: 0px;
       right: 0px;
       height: 100px;
       background-color: white;
+      background-image: url('{!! asset("public/".$company->pdf_watermark."") !!}');
+    }
+
+    .pagenum:before {
+      content: counter(page);
     }
 
     footer .page:after {
@@ -80,7 +85,7 @@
     }
 
     main {
-      margin: 0px 0px;
+      margin: 0px 0px 100px 0px;
     }
 
     .m1 table {
@@ -97,7 +102,7 @@
     }
 
     .bottom_b {
-      font-size: 12px;
+      font-size: 11px;
     }
 
     .page-break {
@@ -138,6 +143,22 @@
       {{-- <img  src="{!! asset('admin_assets/dist/img/pdf-footer.jpg') !!}" width="100%"> --}}
     </footer>
      */ ?>
+    <footer>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="border: none; line-height: 20px;" align="left" valign="top"><b class="bottom_b">Received By:</b><br >
+            <b class="bottom_b">Name:</b><br >
+            <b class="bottom_b">Phone:</b><br >
+            <b class="bottom_b">Signature and stamp:</b>
+          </td>
+          <td style="border: none; line-height: 20px;" align="right" valign="top"><b class="bottom_b" style="font-size: 10px;">For {!! str_replace('SYSCOM DISTRIBUTIONS LLC BRANCH ABU DHABI 1','SYSCOM DISTRIBUTIONS LLC<br />BRANCH ABU DHABI 1',$company->company_name) !!}</b>
+            <br />{{ auth()->check() ? auth()->user()->full_name : '' }}<br />
+            Page No <span style="" class="pagenum"></span> of Statement of Outstanding
+          </td>
+        </tr>
+      </table>
+
+    </footer>
   <main class="m2">
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
       <tr>
@@ -151,22 +172,24 @@
 
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
       <tr>
-        <td width="50%" valign="top" style="line-height: 18px;"><br />
-          <b style="font-size: 100%;">{{@$company->company_name}}</b>
-          <div>{!! nl2br($company->company_address) !!}</div>
-          Phone: {{@$company->telephone}}<br />
-          Email: {{@$company->email}}<br />
-          TRN No: {{@$company->vat_number}}
-        </td>
+
         <td width="50%" valign="top" style="line-height: 18px;">
-          <b>To,</b><br />
           <b style="font-size: 100%;">{{@$cust_detail->customer_name_display}}</b><br />
           {{ $cust_detail->customer_salutation }} {{ $cust_detail->first_name }} {{ $cust_detail->last_name }}<br />
-          <!-- {{ $cust_address->address }}<br />
-          {{ $cust_address->address2 }}, {{ $cust_address->city }}<br /> -->
           {{ $cust_address->statename->name }}, {{ $cust_address->countryname->name }}<br />
           Phone: {{@$cust_detail->contcat_number}}<br />
           Email: {{@$cust_detail->email}}<br />
+        </td>
+
+         @php
+             $customerCurrency = !empty($cust_detail->currency_id)
+                 ? \App\SysCurrencySettings::select('code')->find($cust_detail->currency_id)
+                 : null;
+         @endphp
+         <td width="50%" valign="top" style="line-height: 18px;">
+          Credit Limit: {{@$cust_detail->contcat_number}}<br />
+          Payment Terms: {{@$cust_detail->email}}<br />
+          Currency: {{ @$customerCurrency->code }}<br />
           TRN No: {{@$cust_detail->vat_number}}
         </td>
 
@@ -238,25 +261,26 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
     </table>
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
       <tr class="item-head-row">
-        <td style="width: 50px; text-align: center;">Doc Date</td>
-        <td style="width: 60px; text-align: center;">Doc No</td>
-        <td style="width: 50px; text-align: center;">LPO No</td>
-        <td style="width: 80px; text-align: center;">Amount</td>
-        <td style="width: 80px; text-align: center;">Adjustments</td>
-        <td style="width: 90px; text-align: center;">Balance</td>
-        <td style="width: 100px; text-align: center;">Total Balance</td>
-        <td style="width: 80px; text-align: center;">Due Date</td>
-        <td style="width: 80px; text-align: center;">Over Due</td>
-
-        <!-- <td style="text-align: center;">Due Date</td> -->
+        <td style="width: 100px; text-align: center;">Doc Date</td>
+        <td style="width: 100px; text-align: center;">Doc No</td>
+        <td style="width: 100px; text-align: center;">LPO No</td>
+        <td style="width: 100px; text-align: center;">Balance</td>
+        <td style="width: 100px; text-align: center;">Over Due</td>
       </tr>
     </table>
     @php
     $adjustments = 0;
     $b=0;
+    $dueNotDue=0;
+    $due0To30=0;
+    $due31To60=0;
+    $due61To90=0;
+    $dueOver90=0;
+    $dueRows = collect();
+    $mainSumOutstandingBalance = 0;
     @endphp
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
-      @foreach ($receivable as $dt)
+      @foreach (($receivable ?? collect([])) as $dt)
       <?php
       try { ?>
         @php
@@ -338,28 +362,85 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
 
 
       <tr>
-        <td class="item-row" style="width: 50px; text-align: center;">{{ date('d/m/Y', strtotime($dt->transaction_date)) }}</td>
-        <td class="item-row" style="width: 60px; text-align: center;">{{ $dt->transaction_no }}</td>
+        <td class="item-row" style="width: 100px; text-align: center;">{{ date('d/m/Y', strtotime($dt->transaction_date)) }}</td>
+        <td class="item-row" style="width: 100px; text-align: center;">{{ $dt->transaction_no }}</td>
         @php $lpono = @App\SysHelper::get_sales_invoice_details($dt->transaction_no); @endphp
-        <td class="item-row" style="width: 50px; text-align: center;">{{ @$lpono->lpo_number }}</td>
-        <td class="item-row" style="width: 80px; text-align: center;">@if(str_contains($dt->transaction_no,'SR')) - @endif {{ @App\SysHelper::com_curr_format($dt->debit_amount,2,'.',',') }}</td>
-        <td class="item-row" style="width: 80px; text-align: center;">{{ @App\SysHelper::com_curr_format($paid,2,'.',',') }}</td>
+        <td class="item-row" style="width: 100px; text-align: center;">{{ @$lpono->lpo_number }}</td>
 
-        @php $DueData = @App\SysHelper::get_due_date_sales_invoice($dt->transaction_no,$dt->transaction_date); @endphp
-        
+        @php $DueData = @App\SysHelper::get_due_date_sales_invoice($dt->transaction_no,$dt->transaction_date,$date); @endphp
+        @php
+            $rowDueAmount = str_contains($dt->transaction_no,'SR')
+                ? ((float) $dt->credit_amount - abs((float) $paid))
+                : ((float) $dt->debit_amount - abs((float) $paid));
+            $mainSumOutstandingBalance += $rowDueAmount;
+            $invoiceDate = $dt->transaction_date;
+            $effectivePaymentTerm = null;
+            $paymentTermsMapPdf = $payment_terms_map ?? collect();
+
+            if (($dt->transaction_type ?? '') == 'opbinvoice') {
+                $opbDet = isset($opbinvoice_map) ? $opbinvoice_map->get($dt->transaction_no) : null;
+                $effectivePaymentTerm = App\SysPaymentTerms::resolveOpbPaymentTerm(
+                    $opbDet->payment_terms ?? '',
+                    $invoiceDate,
+                    $opbDet->due_date ?? '',
+                    $paymentTermsMapPdf
+                );
+            } else {
+                $siRow = isset($sales_invoice_map) ? $sales_invoice_map->get($dt->transaction_no) : null;
+                if ($siRow) {
+                    $invoiceDate = $siRow->doc_date;
+                    $effectivePaymentTerm = $paymentTermsMapPdf->get($siRow->payment_terms);
+                }
+            }
+
+            $breakdown = App\SysPaymentTerms::buildOutstandingBreakdown(
+                $invoiceDate,
+                $rowDueAmount,
+                $effectivePaymentTerm,
+                $receivable_finance_rate ?? 0,
+                $date
+            );
+            $ageingRow = App\SysPaymentTerms::buildOsListAgeingBuckets(
+                $invoiceDate,
+                $rowDueAmount,
+                $effectivePaymentTerm,
+                $date,
+                $breakdown['max_overdue_days'] ?? null
+            );
+
+            if (($breakdown['max_overdue_days'] ?? 0) < 0) {
+                $dueNotDue += $rowDueAmount;
+                $dueRows->push([
+                    'not_due' => $rowDueAmount,
+                    '0_30' => 0,
+                    '31_60' => 0,
+                    '61_90' => 0,
+                    '90_plus' => 0,
+                ]);
+            } else {
+                $due0To30 += $ageingRow['0_30'];
+                $due31To60 += $ageingRow['31_60'];
+                $due61To90 += $ageingRow['61_90'];
+                $dueOver90 += $ageingRow['90_plus'];
+                $dueRows->push([
+                    'not_due' => 0,
+                    '0_30' => $ageingRow['0_30'],
+                    '31_60' => $ageingRow['31_60'],
+                    '61_90' => $ageingRow['61_90'],
+                    '90_plus' => $ageingRow['90_plus'],
+                ]);
+            }
+        @endphp
 
 
         @if (str_contains($dt->transaction_no,'SR'))
-        <td class="item-row" style="width: 90px; text-align: center;"> {{ @App\SysHelper::com_curr_format($b - $dt->debit_amount,2,'.',',') }}  @php if($b - $dt->debit_amount <= 0) {$b = ($b - $dt->debit_amount);} else{ $b += ($b - $dt->debit_amount); } @endphp</td>
-        <td class="item-row" style="width: 100px; text-align: center;">{{ @App\SysHelper::com_curr_format($b,2,'.',',') }} </td>
+        <td class="item-row" style="width: 100px; text-align: center;"> {{ @App\SysHelper::com_curr_format($b - $dt->debit_amount,2,'.',',') }}  @php if($b - $dt->debit_amount <= 0) {$b = ($b - $dt->debit_amount);} else{ $b += ($b - $dt->debit_amount); } @endphp</td>
         @else
-        <td class="item-row" style="width: 90px; text-align: center;">{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }} @php $b += $dt->debit_amount-abs($paid); @endphp </td>
-        <td class="item-row" style="width: 100px; text-align: center;">{{ @App\SysHelper::com_curr_format($b,2,'.',',') }} </td>          
+        <td class="item-row" style="width: 100px; text-align: center;">{{ @App\SysHelper::com_curr_format($dt->debit_amount-abs($paid),2,'.',',') }} @php $b += $dt->debit_amount-abs($paid); @endphp </td>
         @endif
 
 
-        <td class="item-row" style="width: 80px; text-align: center;">{{ $DueData[0] }}</td>
-        <td class="item-row" style="width: 80px; text-align: center;">{{ $DueData[1] }}</td>
+        <td class="item-row" style="width: 100px; text-align: center;">{{ $DueData[1] }}</td>
 
         <!-- <td class="item-row" style="text-align: center;"> -- </td> -->
       </tr>
@@ -369,51 +450,228 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
       @endforeach
 
       <tr>
-        <td colspan="6" class="item-row" style="width: 100px; text-align: center;">Grand total amount</td>
+        <td colspan="3" class="item-row" style="width: 100px; text-align: center;">Grand total amount</td>
 
         <td class="item-row" style="width: 100px; text-align: center;">{{ @App\SysHelper::com_curr_format($b,2,'.','') }}</td>
-        <td colspan="2" class="item-row" style="width: 100px; text-align: center;">&nbsp;</td>
+        <td class="item-row" style="width: 100px; text-align: center;">&nbsp;</td>
       </tr>
     </table>
 
 
-                  @if (count($list_of_unadjusted)>0 || count($list_of_unadjusted_jv_to_jv)>0)<br />
-                    <b>List of Unadjusted balance:-</b>
+                  @php
+                      $unadjustedBalanceTotal = collect($list_of_unadjusted)->sum(function ($p) {
+                          return (float) ($p->amount ?? 0) - (float) ($p->adj_amount ?? 0);
+                      }) + collect($list_of_unadjusted_jv_to_jv)->sum(function ($p) {
+                          return (float) ($p->amount ?? 0) - (float) ($p->adj_amount ?? 0);
+                      });
+                      $mainSumUnadjustedRows = collect($list_of_unadjusted ?? [])
+                          ->filter(function ($row) {
+                              $remaining = (float) ($row->amount ?? 0) - (float) ($row->adj_amount ?? 0);
+                              $isOpeningBalanceCredit = ($row->transaction_type ?? '') === 'openingbalance'
+                                  && (float) ($row->amount ?? 0) < 0;
+
+                              if ($isOpeningBalanceCredit) {
+                                  return round(abs($remaining), 2) > 0.00;
+                              }
+
+                              return round($remaining, 2) > 0.00;
+                          })
+                          ->values();
+                      $existingUnadjustedDocNos = $mainSumUnadjustedRows->pluck('doc_number')->filter()->unique();
+                      $mainSumUnadjustedJvRows = collect($list_of_unadjusted_jv_to_jv ?? [])
+                          ->groupBy('doc_number')
+                          ->map(function ($rows) {
+                              $first = $rows->first();
+                              $first->amount = collect($rows)->sum(function ($row) {
+                                  return (float) ($row->amount ?? 0);
+                              });
+                              $first->amount2 = collect($rows)->sum(function ($row) {
+                                  return (float) ($row->amount2 ?? 0);
+                              });
+                              $first->adj_amount = collect($rows)->sum(function ($row) {
+                                  return (float) ($row->adj_amount ?? 0);
+                              });
+                              return $first;
+                          })
+                          ->filter(function ($row) use ($existingUnadjustedDocNos) {
+                              if ($existingUnadjustedDocNos->contains($row->doc_number ?? null)) {
+                                  return false;
+                              }
+
+                              return round((float) (($row->amount ?? 0) - ($row->amount2 ?? 0) - ($row->adj_amount ?? 0)), 2) > 0.00;
+                          })
+                          ->values();
+                      $mainSumUnadjustedBalanceTotal = $mainSumUnadjustedRows->sum(function ($p) {
+                          $unadjustedAmount = (float) ($p->amount ?? 0);
+                          $unadjustedAdjustment = (float) ($p->adj_amount ?? 0);
+                          $isReceivableOpeningDebit = ($p->transaction_type ?? '') === 'openingbalance'
+                              && preg_match('/^OPB-\d+$/', (string) ($p->doc_number ?? ''))
+                              && (float) ($p->amount ?? 0) > 0
+                              && (float) ($p->debit_amount ?? 0) > (float) ($p->credit_amount ?? 0);
+
+                          if (!$isReceivableOpeningDebit && (float) ($p->credit_amount ?? 0) > (float) ($p->debit_amount ?? 0)) {
+                              $unadjustedAmount = -abs($unadjustedAmount);
+                              $unadjustedAdjustment = -abs($unadjustedAdjustment);
+                          }
+
+                          return $unadjustedAmount - $unadjustedAdjustment;
+                      }) + $mainSumUnadjustedJvRows->sum(function ($p) {
+                          return (float) ($p->amount ?? 0) - ((float) ($p->amount2 ?? 0) + (float) ($p->adj_amount ?? 0));
+                      });
+                      $normalizePdcRowsForPdf = function ($rows) {
+                          return collect($rows)
+                              ->groupBy('doc_number')
+                              ->map(function ($group) {
+                                  $first = $group->first();
+                                  $first->amount = (float) collect($group)->max(function ($row) {
+                                      return (float) ($row->amount ?? 0);
+                                  });
+                                  $first->adj_amount = (float) collect($group)->max(function ($row) {
+                                      return (float) ($row->adj_amount ?? 0);
+                                  });
+                                  $first->debit_amount = (float) collect($group)->max(function ($row) {
+                                      return (float) ($row->debit_amount ?? 0);
+                                  });
+                                  $first->credit_amount = (float) collect($group)->max(function ($row) {
+                                      return (float) ($row->credit_amount ?? 0);
+                                  });
+                                  return $first;
+                              })
+                              ->values();
+                      };
+                      $pdcRowsForPdf = $normalizePdcRowsForPdf($list_of_adjusted_pdc ?? [])
+                          ->merge($normalizePdcRowsForPdf($list_of_unadjusted_pdc ?? []))
+                          ->groupBy('doc_number')
+                          ->map(function ($group) {
+                              $first = $group->first();
+                              $first->amount = (float) collect($group)->max(function ($row) {
+                                  return (float) ($row->amount ?? 0);
+                              });
+                              $first->adj_amount = (float) collect($group)->max(function ($row) {
+                                  return (float) ($row->adj_amount ?? 0);
+                              });
+                              $first->debit_amount = (float) collect($group)->max(function ($row) {
+                                  return (float) ($row->debit_amount ?? 0);
+                              });
+                              $first->credit_amount = (float) collect($group)->max(function ($row) {
+                                  return (float) ($row->credit_amount ?? 0);
+                              });
+                              return $first;
+                          })
+                          ->values();
+                      $pdcInHandTotal = abs($pdcRowsForPdf->sum(function ($row) {
+                          $sign = ((float) ($row->credit_amount ?? 0) > (float) ($row->debit_amount ?? 0)) ? -1 : 1;
+                          return $sign * abs((float) ($row->amount ?? 0));
+                      }));
+                      $accountPdcAdjustedTotal = $pdcRowsForPdf->sum(function ($row) {
+                          return abs((float) ($row->adj_amount ?? 0));
+                      });
+                      $mainSumTotal = (float) $mainSumOutstandingBalance + (float) $mainSumUnadjustedBalanceTotal + (float) $accountPdcAdjustedTotal;
+                  @endphp
+                  <br />
+                  <table border="0" cellspacing="0" cellpadding="0" style="width: 320px;">
+                    <tr>
+                      <td style="width: 190px;"><b>Total Excluding PDC</b></td>
+                      <td style="width: 10px;"><b>:</b></td>
+                      <td style="width: 140px; text-align: right;"><b>{{ @App\SysHelper::com_curr_format($b,2,'.',',') }}</b></td>
+                    </tr>
+                    <tr>
+                      <td><b>PDC in Hand</b></td>
+                      <td><b>:</b></td>
+                      <td style="text-align: right;"><b>{{ @App\SysHelper::com_curr_format($pdcInHandTotal,2,'.',',') }}</b></td>
+                    </tr>
+                    @if (count($list_of_unadjusted)>0 || count($list_of_unadjusted_jv_to_jv)>0)
+                    <tr>
+                      <td><b>Unadjusted balance</b></td>
+                      <td><b>:</b></td>
+                      <td style="text-align: right;"><b>{{ @App\SysHelper::com_curr_format($unadjustedBalanceTotal,2,'.',',') }}</b></td>
+                    </tr>
+                    @endif
+                    <tr>
+                      <td><b>Closing Balance</b></td>
+                      <td><b>:</b></td>
+                      <td style="text-align: right;"><b>{{ @App\SysHelper::com_curr_format($mainSumTotal,2,'.',',') }}</b></td>
+                    </tr>
+                  </table>
+
+                  @php
+                      $companyIdForBanks = session('logged_session_data.company_id') ?? ($company->id ?? null);
+                      $bankSubgroupId = \App\SysAccountGroupSub2::whereRaw('LOWER(title) = ?', ['bank'])
+                          ->where('status', 1)
+                          ->value('id');
+                      $companyBanks = collect();
+
+                      if (!empty($bankSubgroupId) && !empty($companyIdForBanks)) {
+                          $companyBanks = \App\SysChartofAccounts::select(
+                                  'beneficiary_name',
+                                  'bank_name',
+                                  'acc_no',
+                                  'iban',
+                                  'swift_code',
+                                  'branch',
+                                  'account_name'
+                              )
+                              ->where('subgroup2', $bankSubgroupId)
+                              ->where('status', 1)
+                              ->where(function ($query) use ($companyIdForBanks) {
+                                  $query->where('company_id', $companyIdForBanks)
+                                      ->orWhereRaw('find_in_set(?, company_access)', [$companyIdForBanks]);
+                              })
+                              ->orderBy('bank_name', 'asc')
+                              ->orderBy('account_name', 'asc')
+                              ->get();
+                      }
+                  @endphp
+
+
+
+
+     
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+      <tr>
+        <td style="text-align: center;"><b>Amount Due Excluding PDC</b></td>
+      </tr>
+    </table>
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr class="item-head-row">
-                        <td style="width: 100px; text-align: center;">Doc Date</td>
-                        <td style="width: 100px; text-align: center;">Receipt No</td>
-                        <td style="width: 100px; text-align: right;">Amount</td>
-                        <td style="width: 100px; text-align: center;">Remarks</td>
-                      </tr>
-                    </table>
-                    @if (count($list_of_unadjusted)>0)
-                          @foreach ($list_of_unadjusted as $p)
-                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                              <tr>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ $p->doc_number }}</td>
-                                <td class="item-row" style="width: 100px; text-align: right;">{{ @App\SysHelper::com_curr_format($p->amount - $p->adj_amount,2,'.',',') }}</td>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ @$p->remarks }}&nbsp;</td>
-                              </tr>
-                            </table>
-                          @endforeach
-                    @endif
-                    @if (count($list_of_unadjusted_jv_to_jv)>0)
-                          @foreach ($list_of_unadjusted_jv_to_jv as $p)
-                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                              <tr>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ date('d/m/Y', strtotime($p->doc_date)) }}</td>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ $p->doc_number }}</td>
-                                <td class="item-row" style="width: 100px; text-align: right;">{{ @App\SysHelper::com_curr_format($p->amount - $p->adj_amount,2,'.',',') }}</td>
-                                <td class="item-row" style="width: 100px; text-align: center;">{{ @$p->remarks }}&nbsp;</td>
-                              </tr>
-                            </table>
-                          @endforeach
-                    @endif
-                  @endif
+                            <td style="width: 80px; text-align: center;">> 0</td>
+                            <td style="width: 80px; text-align: center;">0-30</td>
+                            <td style="width: 80px; text-align: center;">31-60</td>
+                            <td style="width: 80px; text-align: center;">61-90</td>
+                            <td style="width: 80px; text-align: center;">>90</td>
+                        </tr>
+                        </table>
+                        
+                        @forelse (($dueRows ?? collect([])) as $dueRow)
+                        @php
+                            $dueNotDueValue = (float) data_get($dueRow, 'not_due', 0);
+                            $due0To30Value = (float) data_get($dueRow, '0_30', 0);
+                            $due31To60Value = (float) data_get($dueRow, '31_60', 0);
+                            $due61To90Value = (float) data_get($dueRow, '61_90', 0);
+                            $dueOver90Value = (float) data_get($dueRow, '90_plus', 0);
+                        @endphp
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                          <tr>
+                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($dueNotDueValue) >= 0.01 ? App\SysHelper::com_curr_format($dueNotDueValue,2,'.',',') : '' }}</td>
+                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($due0To30Value) >= 0.01 ? App\SysHelper::com_curr_format($due0To30Value,2,'.',',') : '' }}</td>
+                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($due31To60Value) >= 0.01 ? App\SysHelper::com_curr_format($due31To60Value,2,'.',',') : '' }}</td>
+                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($due61To90Value) >= 0.01 ? App\SysHelper::com_curr_format($due61To90Value,2,'.',',') : '' }}</td>
+                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($dueOver90Value) >= 0.01 ? App\SysHelper::com_curr_format($dueOver90Value,2,'.',',') : '' }}</td>
+                          </tr>
+                        </table>
+                        @empty
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                          <tr>
+                              <td colspan="5" class="item-row" style="text-align: center;">&nbsp;</td>
+                          </tr>
+                        </table>
+                        @endforelse
+            
 
-                  @if (count($list_of_unadjusted_pdc)>0)<br />
+
+
+
+                  <!-- @if (count($list_of_unadjusted_pdc)>0)<br />
                   <b>List of Unadjusted PDC:-</b>
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr class="item-head-row">
@@ -497,13 +755,39 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
                         }
                         ?>
                         @endforeach
+                  @endif -->
+
+
+  @if (count($companyBanks)>0)
+                  <br />
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td style="text-align: center;"><b>Bank Details</b></td>
+                    </tr>
+                  </table>
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr class="item-head-row">
+                      <td style="width: 18%; text-align: center;">Beneficiary Name</td>
+                      <td style="width: 18%; text-align: center;">Bank Name</td>
+                      <td style="width: 15%; text-align: center;">Acc No</td>
+                      <td style="width: 22%; text-align: center;">IBAN No</td>
+                      <td style="width: 13%; text-align: center;">SWIFT Code</td>
+                      <td style="width: 14%; text-align: center;">Branch</td>
+                    </tr>
+                  </table>
+                  @foreach ($companyBanks as $bank)
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                      <td class="item-row" style="width: 18%; text-align: left; word-break: break-word;">{{ $bank->beneficiary_name ?: '-' }}</td>
+                      <td class="item-row" style="width: 18%; text-align: left; word-break: break-word;">{{ $bank->bank_name ?: '-' }}</td>
+                      <td class="item-row" style="width: 15%; text-align: center; word-break: break-word;">{{ $bank->acc_no ?: '-' }}</td>
+                      <td class="item-row" style="width: 22%; text-align: center; word-break: break-word;">{{ $bank->iban ?: '-' }}</td>
+                      <td class="item-row" style="width: 13%; text-align: center; word-break: break-word;">{{ $bank->swift_code ?: '-' }}</td>
+                      <td class="item-row" style="width: 14%; text-align: left; word-break: break-word;">{{ $bank->branch ?: '-' }}</td>
+                    </tr>
+                  </table>
+                  @endforeach
                   @endif
-
-
-
-
-
-
     {{-- <br /><br />
 <table width="100%" border="0" cellspacing="0" cellpadding="0">
   <tr>
