@@ -27,4 +27,9 @@ class HrmsApproverChain extends Model
         return $this->steps()->where('status', 'P')->orderBy('step_no')->first();
     }
 
+    public function leaveRequest()
+    {
+        return $this->belongsTo(SmLeaveRequest::class, 'leave_request_id');
+    }
+
 }

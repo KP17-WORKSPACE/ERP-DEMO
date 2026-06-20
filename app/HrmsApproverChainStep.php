@@ -17,9 +17,9 @@ class HrmsApproverChainStep extends Model
         'status',
         'comment',
         'acted_at',
-        'l1_workload', 'l1_coverage', 'l1_eligibility', 'l1_duration_ok', 'l1_notice_compliance', 'l1_decision', 'l1_remark',
-    'l2_balance', 'l2_unpaid', 'l2_encash', 'l2_cost', 'l2_policy', 'l2_decision', 'l2_remark',
-    'l3_docs', 'l3_policy', 'l3_system', 'l3_payroll', 'l3_legal', 'l3_decision', 'l3_remark'
+        'l1_workload', 'l1_coverage', 'l1_eligibility', 'l1_duration_ok', 'l1_notice_compliance', 'l1_emergency', 'l1_recommended_action', 'l1_decision', 'l1_remark',
+        'l2_balance', 'l2_unpaid', 'l2_encash', 'l2_cost', 'l2_policy', 'l2_docs', 'l2_decision', 'l2_remark', 'l2_balance_verify', 'l2_policy_verify', 'l2_docs_verify',
+        'l3_limits', 'l3_critical', 'l3_blackout', 'l3_exceptional', 'l3_docs', 'l3_policy', 'l3_system', 'l3_payroll', 'l3_legal', 'l3_decision', 'l3_remark'
     ];
 
     public function approver()

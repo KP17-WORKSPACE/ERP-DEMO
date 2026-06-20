@@ -36,10 +36,43 @@ class SmLeaveRequest extends Model
         'active_status',
 		'company_id',
         'created_by',
-        'updated_by',
+		'updated_by',
 		'reporting_manager_id',
 		'handover_to',
-		'emergency_contacts'
+		'emergency_contacts',
+        'leave_application_no',
+        'return_to_work_date',
+        'leave_category',
+        'urgency_level',
+        'nature_of_leave',
+        'notice_period',
+        'availability_during_leave',
+        'contact_number_during_leave',
+        'email_during_leave',
+        'handover_required',
+        'handover_employee_id',
+        'pending_tasks',
+        'client_responsibilities',
+        'access_transfer_required',
+        'handover_completion_confirmation',
+        'manager_verification_of_handover',
+        'handover_additional_remarks',
+        'leaving_country',
+        'destination_country',
+        'departure_date',
+        'expected_return_date',
+        'travel_ticket_file',
+        'accommodation_address',
+        'emergency_contact_person',
+        'emergency_contact_number',
+        'emergency_contact_relationship',
+        'submitted_at',
+        'management_approval_req',
+        'declaration_info_confirmed',
+        'declaration_handover_confirmed',
+        'declaration_policy_agreed',
+        'declaration_accepted_at',
+        'declaration_accepted_by',
     ];
 
 	protected $casts = [
@@ -52,7 +85,12 @@ class SmLeaveRequest extends Model
         'leave_year'   => 'integer',
 		'leave_from' => 'date',
         'leave_to'   => 'date',	
-		'emergency_contacts' => 'array'
+		'emergency_contacts' => 'array',
+        'return_to_work_date' => 'date',
+        'departure_date' => 'date',
+        'expected_return_date' => 'date',
+        'submitted_at' => 'datetime',
+        'declaration_accepted_at' => 'datetime',
     ];
 
 	
@@ -132,12 +170,24 @@ class SmLeaveRequest extends Model
         return $this->hasOne(HrmsApproverChain::class, 'leave_request_id');
     }
 
-    // Translate DB codes to human labels
     public function getApproveStatusLabelAttribute()
     {
-        $map = ['P'=>'Pending','A'=>'Approved','R'=>'Rejected'];
+        $map = ['D'=>'New','P'=>'Pending','A'=>'Approved','R'=>'Rejected','C'=>'Returned'];
         $v = $this->approve_status ?: 'P';
         return $map[$v] ?? $v;
+    }
+
+    public function getApproveStatusBadgeAttribute()
+    {
+        $map = [
+            'D' => 'primary',
+            'P' => 'warning',
+            'A' => 'success',
+            'R' => 'danger',
+            'C' => 'info',
+        ];
+        $v = $this->approve_status ?: 'P';
+        return $map[$v] ?? 'secondary';
     }
 
 	public function type()

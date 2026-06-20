@@ -1133,6 +1133,25 @@ $ret_val = '
         }
     }
 
+    public static function get_credit_card_account($status=null) {
+        $cc_group_id = SysAccountGroupSub2::select('id')->where('title','Credit Card')->where('status',1)->first();
+        if($cc_group_id == ""){
+            $query = SysChartofAccounts::select('id','account_name')
+                ->where('company_id',session('logged_session_data.company_id'))
+                ->where(function($q) {
+                    $q->where('account_name', 'like', '%Credit Card%')
+                      ->orWhere('account_name', 'like', '%CreditCard%');
+                });
+            if($status!="all") { $query->where('status',1); }
+            return $query->get();
+        } else {
+            $query = SysChartofAccounts::select('id','account_name')->where('subgroup2',$cc_group_id->id)->where('company_id',session('logged_session_data.company_id'));
+            if($status!="all") { $query->where('status',1); }
+            $data = $query->get();
+            return $data;
+        }
+    }
+
     public static function get_avg_price($part_no, $to_date)
     {
         try {
@@ -7541,7 +7560,7 @@ public static function professional_service_approval_access(){
         }
     }
 
-    public static function get_trial_balance_items($gid,$from_date,$to_date,$sub2,$sub3)
+    public static function get_trial_balance_items($gid,$from_date,$to_date,$sub2,$sub3,$intervals=[])
     {
         try {
             $r = SysHelper::get_data_by_role();
@@ -7555,10 +7574,8 @@ public static function professional_service_approval_access(){
                 ->where('company_id',session('logged_session_data.company_id'))
                 ->where('main_account_id',0)->orderby('account_name','asc')->get();
             } else {
-
                 if($gid == 7 || $gid == 19){
                 $data = DB::table('sys_chartofaccounts')->select('id','account_name','group','subgroup2','status')->where('subgroup2',$gid)
-                //->whereRaw("find_in_set($com_id,sys_chartofaccounts.company_access)")
                 ->wherenotin('subgroup2',$subgroup2)->where('main_account_id',0)->orderby('account_name','asc')->get();
                 } else {
                 $data = DB::table('sys_chartofaccounts')->select('id','account_name','group','subgroup2','status')->where('subgroup2',$gid)
@@ -7566,58 +7583,67 @@ public static function professional_service_approval_access(){
                 ->wherenotin('subgroup2',$subgroup2)->where('main_account_id',0)->orderby('account_name','asc')->get();
                 }
             }
-
             if(count($data)>0){
                 foreach ($data as $dt) {
-
-                    // if($dt->id==10)
-                    // {
-                    //     $dat = SysHelper::get_gross_profit_or_loss($from_date,$to_date);
-                    //     if($dat['type']=="profit"){
-                    //         $retData .= "<tr class='collapse' id='collapse_sub_".$gid."'><td class='border pl-4'>".$dt->account_name."</td><td class='pr-2 border text-right'>".$dat['value']."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$dat['value']."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".SysHelper::com_curr_format($dat['value'], 2, '.', '')."</td><td class='pr-2 border text-right'>0.00</td></tr>";
-                    //     }
-                    //     else {
-                    //         $retData .= "<tr class='collapse' id='collapse_sub_".$gid."'><td class='border pl-4'>".$dt->account_name."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$dat['value']."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$dat['value']."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".SysHelper::com_curr_format($dat['value'], 2, '.', '')."</td></tr>";
-                    //     }
-                    // }
-
-                    
                     $purchase_return_account_id = SysHelper::get_purchase_return_account_id();
-
-                    $sub_acc_det = SysHelper::get_trial_balance_items_sub($dt->id,$from_date,$to_date,$sub3);
-                    //$sub2 = "1";
-
+                    $sub_acc_det = SysHelper::get_trial_balance_items_sub($dt->id,$from_date,$to_date,$sub3,$intervals);
                     $total=SysHelper::get_account_balance_opening_by_account_id($dt->id,$from_date,$to_date,$dt->group);
-
                     if(($total[0] != "0.00" || $total[1] != "0.00") || $sub_acc_det != ""){
-                        if($dt->group == 1 || $dt->group == 3){ // 1 Assets, 3 Expenses
+                        $bg_class = ($dt->status != 1 ? "bg-gray" : "");
+                        $sum = $total[0] + $total[1];
+                        $t_dr = "0.00";
+                        $t_cr = "0.00";
+                        $s_dr = "0.00";
+                        $s_cr = "0.00";
+                        if($dt->group == 1 || $dt->group == 3){
                             if($dt->id == $purchase_return_account_id){
-                                $sum=$total[0] + $total[1];
-                                $retData .= "<tr class='collapse ".$sub2."' id='collapse_sub_".$gid."'><td class='border pl-4 text-primary ".($dt->status != 1 ? "bg-gray" : "")."'><a class='text-primary ".($dt->status != 1 ? "bg-gray" : "")."' data-bs-toggle='collapse' href='#collapse_sub2_".$dt->id."'>".$dt->account_name."</a> <a href=".url('get-url-generalledger'."/".$dt->id).">Ledger</a></td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','))."</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','))."</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','))."</td></tr>";
-                                //$retData .= $sub_acc_det;
-                            } else {                                
-                                $sum=$total[0] + $total[1];
-                                $t=0; $c=0; $s=0;
-                                if($dt->group==1){
-                                    $t=SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
-                                    $c=SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','));
-                                    $s=SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','));
+                                $t_cr = SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
+                                $s_cr = SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','));
+                            } else {
+                                $t_dr = SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
+                                $s_dr = SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','));
+                            }
+                        } else {
+                            $t_cr = SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
+                            $s_cr = SysHelper::minus_format(SysHelper::com_curr_format(($sum), 2, '.', ','));
+                        }
+                        $transaction_cols = "";
+                        if (!empty($intervals)) {
+                            foreach ($intervals as $seg) {
+                                $seg_total = SysHelper::get_account_balance_opening_by_account_id($dt->id, $seg['from'], $seg['to'], $dt->group);
+                                $c_seg = SysHelper::minus_format(SysHelper::com_curr_format($seg_total[0], 2, '.', ','));
+                                if($dt->group == 1 || $dt->group == 3){
+                                    if($dt->id == $purchase_return_account_id){
+                                        $transaction_cols .= "<td class=' border text-end text-primary ".$bg_class."'>0.00</td><td class=' border text-end text-primary ".$bg_class."'>".$c_seg."</td>";
+                                    } else {
+                                        $transaction_cols .= "<td class=' border text-end text-primary ".$bg_class."'>".$c_seg."</td><td class=' border text-end text-primary ".$bg_class."'>0.00</td>";
+                                    }
                                 } else {
-                                    $t=SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
-                                    $c=SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','));
-                                    $s=SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','));
+                                    $transaction_cols .= "<td class=' border text-end text-primary ".$bg_class."'>0.00</td><td class=' border text-end text-primary ".$bg_class."'>".$c_seg."</td>";
                                 }
-                            $retData .= "<tr class='collapse ".$sub2."' id='collapse_sub_".$gid."'><td class='border pl-4 text-primary ".($dt->status != 1 ? "bg-gray" : "")."'><a class='text-primary ".($dt->status != 1 ? "bg-gray" : "")."' data-bs-toggle='collapse' href='#collapse_sub2_".$dt->id."'>".$dt->account_name."</a> <a href=".url('get-url-generalledger'."/".$dt->id).">Ledger</a></td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>".$t."</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>".$c."</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>".$s."</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td></tr>";
-                            $retData .= $sub_acc_det;
+                            }
+                        } else {
+                            $c_val = SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','));
+                            if($dt->group == 1 || $dt->group == 3){
+                                if($dt->id == $purchase_return_account_id){
+                                    $transaction_cols .= "<td class=' border text-end text-primary ".$bg_class."'>0.00</td><td class=' border text-end text-primary ".$bg_class."'>".$c_val."</td>";
+                                } else {
+                                    $transaction_cols .= "<td class=' border text-end text-primary ".$bg_class."'>".$c_val."</td><td class=' border text-end text-primary ".$bg_class."'>0.00</td>";
+                                }
+                            } else {
+                                $transaction_cols .= "<td class=' border text-end text-primary ".$bg_class."'>0.00</td><td class=' border text-end text-primary ".$bg_class."'>".$c_val."</td>";
                             }
                         }
-                        if($dt->group == 2 || $dt->group == 4 || $dt->group == 5){ // 2 Liabilities, 4 Incomes, 5 Equity
-                            $sum=$total[0] + $total[1];
-                            $retData .= "<tr class='collapse ".$sub2."' id='collapse_sub_".$gid."'><td class='border pl-4 text-primary ".($dt->status != 1 ? "bg-gray" : "")."'><a class='text-primary ".($dt->status != 1 ? "bg-gray" : "")."' data-bs-toggle='collapse' href='#collapse_sub2_".$dt->id."'>".$dt->account_name."</a> <a href=".url('get-url-generalledger'."/".$dt->id).">Ledger</a></td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','))."</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','))."</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-primary ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format(($sum), 2, '.', ','))."</td></tr>";
-                            //$retData .= $sub_acc_det;
-                        }
+                        $retData .= "<tr class='collapse ".$sub2."' id='collapse_sub_".$gid."'>";
+                        $retData .= "<td class='border pl-4 text-primary ".$bg_class."'><a class='text-primary ".$bg_class."' data-bs-toggle='collapse' href='#collapse_sub2_".$dt->id."'>".$dt->account_name."</a> <a href=".url('get-url-generalledger'."/".$dt->id).">Ledger</a></td>";
+                        $retData .= "<td class=' border text-end text-primary ".$bg_class."'>".$t_dr."</td>";
+                        $retData .= "<td class=' border text-end text-primary ".$bg_class."'>".$t_cr."</td>";
+                        $retData .= $transaction_cols;
+                        $retData .= "<td class=' border text-end text-primary ".$bg_class."'>".$s_dr."</td>";
+                        $retData .= "<td class=' border text-end text-primary ".$bg_class."'>".$s_cr."</td>";
+                        $retData .= "</tr>";
+                        $retData .= $sub_acc_det;
                     }
-
                 }
             }
             return $retData;
@@ -7625,7 +7651,8 @@ public static function professional_service_approval_access(){
             return $th;
         }
     }
-    public static function get_trial_balance_items_sub($mid,$from_date,$to_date,$sub3)
+
+    public static function get_trial_balance_items_sub($mid,$from_date,$to_date,$sub3,$intervals=[])
     {
         try {
             $r = SysHelper::get_data_by_role();
@@ -7633,55 +7660,65 @@ public static function professional_service_approval_access(){
             $com_id = session('logged_session_data.company_id');
             $retData ="";
             $subgroup2 = SysAccountGroupSub2::wherein('title',['Opening Stock','Closing Stock'])->pluck('id');
-            
-                $data = DB::table('sys_chartofaccounts')->select('id','account_name','group','subgroup2','status')
-                //->whereRaw("find_in_set($com_id,sys_chartofaccounts.company_access)")
+            $data = DB::table('sys_chartofaccounts')->select('id','account_name','group','subgroup2','status')
                 ->wherenotin('subgroup2',$subgroup2)->where('main_account_id',$mid)->orderby('account_name','asc')->get();
-
             if(count($data)>0){
                 foreach ($data as $dt) {
-
-                    // if($dt->id==10)
-                    // {
-                    //     $dat = SysHelper::get_gross_profit_or_loss($from_date,$to_date);
-                    //     if($dat['type']=="profit"){
-                    //         $retData .= "<tr class='collapse' id='collapse_sub_".$gid."'><td class='border pl-4'>".$dt->account_name."</td><td class='pr-2 border text-right'>".$dat['value']."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$dat['value']."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".SysHelper::com_curr_format($dat['value'], 2, '.', '')."</td><td class='pr-2 border text-right'>0.00</td></tr>";
-                    //     }
-                    //     else {
-                    //         $retData .= "<tr class='collapse' id='collapse_sub_".$gid."'><td class='border pl-4'>".$dt->account_name."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$dat['value']."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".$dat['value']."</td><td class='pr-2 border text-right'>0.00</td><td class='pr-2 border text-right'>".SysHelper::com_curr_format($dat['value'], 2, '.', '')."</td></tr>";
-                    //     }
-                    // }
-
-                    
                     $purchase_return_account_id = SysHelper::get_purchase_return_account_id();
-                    
-
                     $total=SysHelper::get_account_balance_opening_by_account_id($dt->id,$from_date,$to_date,$dt->group);
-                    
-                        if($dt->group == 1 || $dt->group == 3){ // 1 Assets, 3 Expenses
-                            if($dt->id == $purchase_return_account_id){
-                                $sum=$total[0] + $total[1];
-                                $retData .= "<tr class='collapse ".$sub3."' id='collapse_sub2_".$mid."'><td class='border pl-6 text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".$dt->account_name." <a href=".url('get-url-generalledger'."/".$dt->id).">Ledger</a></td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','))."</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','))."</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','))."</td></tr>";
-                            } else {                                
-                                $sum=$total[0] + $total[1];
-                                $t=0; $c=0; $s=0;
-                                if($dt->group==1){
-                                    $t=SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
-                                    $c=SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','));
-                                    $s=SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','));
+                    $bg_class = ($dt->status != 1 ? "bg-gray" : "");
+                    $sum = $total[0] + $total[1];
+                    $t_dr = "0.00";
+                    $t_cr = "0.00";
+                    $s_dr = "0.00";
+                    $s_cr = "0.00";
+                    if($dt->group == 1 || $dt->group == 3){
+                        if($dt->id == $purchase_return_account_id){
+                            $t_cr = SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
+                            $s_cr = SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','));
+                        } else {
+                            $t_dr = SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
+                            $s_dr = SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','));
+                        }
+                    } else {
+                        $t_cr = SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
+                        $s_cr = SysHelper::minus_format(SysHelper::com_curr_format(($sum), 2, '.', ','));
+                    }
+                    $transaction_cols = "";
+                    if (!empty($intervals)) {
+                        foreach ($intervals as $seg) {
+                            $seg_total = SysHelper::get_account_balance_opening_by_account_id($dt->id, $seg['from'], $seg['to'], $dt->group);
+                            $c_seg = SysHelper::minus_format(SysHelper::com_curr_format($seg_total[0], 2, '.', ','));
+                            if($dt->group == 1 || $dt->group == 3){
+                                if($dt->id == $purchase_return_account_id){
+                                    $transaction_cols .= "<td class=' border text-end text-info ".$bg_class."'>0.00</td><td class=' border text-end text-info ".$bg_class."'>".$c_seg."</td>";
                                 } else {
-                                    $t=SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','));
-                                    $c=SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','));
-                                    $s=SysHelper::minus_format(SysHelper::com_curr_format($sum, 2, '.', ','));
+                                    $transaction_cols .= "<td class=' border text-end text-info ".$bg_class."'>".$c_seg."</td><td class=' border text-end text-info ".$bg_class."'>0.00</td>";
                                 }
-                            $retData .= "<tr class='collapse ".$sub3."' id='collapse_sub2_".$mid."'><td class='border pl-6 text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".$dt->account_name." <a href=".url('get-url-generalledger'."/".$dt->id).">Ledger</a></td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".$t."</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".$c."</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".$s."</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td></tr>";
+                            } else {
+                                $transaction_cols .= "<td class=' border text-end text-info ".$bg_class."'>0.00</td><td class=' border text-end text-info ".$bg_class."'>".$c_seg."</td>";
                             }
                         }
-                        if($dt->group == 2 || $dt->group == 4 || $dt->group == 5){ // 2 Liabilities, 4 Incomes, 5 Equity
-                            $sum=$total[0] + $total[1];
-                            $retData .= "<tr class='collapse ".$sub3."' id='collapse_sub2_".$mid."'><td class='border pl-6 text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".$dt->account_name." <a href=".url('get-url-generalledger'."/".$dt->id).">Ledger</a></td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($total[1], 2, '.', ','))."</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','))."</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>0.00</td><td class=' border text-end text-info ".($dt->status != 1 ? "bg-gray" : "")."'>".SysHelper::minus_format(SysHelper::com_curr_format(($sum), 2, '.', ','))."</td></tr>";
+                    } else {
+                        $c_val = SysHelper::minus_format(SysHelper::com_curr_format($total[0], 2, '.', ','));
+                        if($dt->group == 1 || $dt->group == 3){
+                            if($dt->id == $purchase_return_account_id){
+                                $transaction_cols .= "<td class=' border text-end text-info ".$bg_class."'>0.00</td><td class=' border text-end text-info ".$bg_class."'>".$c_val."</td>";
+                            } else {
+                                $transaction_cols .= "<td class=' border text-end text-info ".$bg_class."'>".$c_val."</td><td class=' border text-end text-info ".$bg_class."'>0.00</td>";
+                            }
+                        } else {
+                            $transaction_cols .= "<td class=' border text-end text-info ".$bg_class."'>0.00</td><td class=' border text-end text-info ".$bg_class."'>".$c_val."</td>";
                         }
-
+                    }
+                    $retData .= "<tr class='collapse ".$sub3."' id='collapse_sub2_".$mid."'>";
+                    $retData .= "<td class='border pl-6 text-info ".$bg_class."'>".$dt->account_name." <a href=".url('get-url-generalledger'."/".$dt->id).">Ledger</a></td>";
+                    $retData .= "<td class=' border text-end text-info ".$bg_class."'>".$t_dr."</td>";
+                    $retData .= "<td class=' border text-end text-info ".$bg_class."'>".$t_cr."</td>";
+                    $retData .= $transaction_cols;
+                    $retData .= "<td class=' border text-end text-info ".$bg_class."'>".$s_dr."</td>";
+                    $retData .= "<td class=' border text-end text-info ".$bg_class."'>".$s_cr."</td>";
+                    $retData .= "</tr>";
                 }
             }
             return $retData;
