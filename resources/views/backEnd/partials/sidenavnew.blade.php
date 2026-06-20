@@ -56,6 +56,11 @@
                         </div>
                     @endif
                     @if (count($crm->where('is_read', 1)->where('module_link_id', 4)) > 0 || Auth::user()->role_id == 1)
+                        <div class="sub-nav-item {{ @App\SysHelper::isActiveRoute('creditcard') }}">
+                            <a href="{{ url('creditcard') }}" class="sub-nav-link ">Credit Card</a>
+                        </div>
+                    @endif
+                    @if (count($crm->where('is_read', 1)->where('module_link_id', 4)) > 0 || Auth::user()->role_id == 1)
                         <div class="sub-nav-item {{ @App\SysHelper::isActiveRoute('chequebook') }}">
                             <a href="{{ url('chequebook') }}" class="sub-nav-link">Cheque Book</a>
                         </div>
