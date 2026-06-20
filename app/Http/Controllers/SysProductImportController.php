@@ -18,6 +18,7 @@ use App\SysItemStock;
 use App\SysPaymentTerms;
 use App\SysShipping;
 use App\SmItemsCart;
+use App\Support\PHPExcelValueBinder;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +28,7 @@ use Illuminate\Support\Facades\Input;
 //use Maatwebsite\Excel\Concerns\ToModel;
 use Validator;
 use PHPExcel; 
+use PHPExcel_Cell;
 use PHPExcel_IOFactory;
 
 class SysProductImportController extends Controller
@@ -69,6 +71,9 @@ class SysProductImportController extends Controller
                 //return  $selected_file;
             }
 
+            // PHPExcel 1.8 checks numeric values as strings before checking their type.
+            // Newer PHP versions turn that warning into an ErrorException.
+            PHPExcel_Cell::setValueBinder(new PHPExcelValueBinder());
             $objPHPExcel = PHPExcel_IOFactory::load($selected_file);
             $objWorksheet = $objPHPExcel->getActiveSheet();
             $highestRow = $objWorksheet->getHighestRow();
@@ -83,6 +88,7 @@ class SysProductImportController extends Controller
             TRUE         // Should the array be indexed by cell row and cell column
             );*/
 
+            $data = [];
             for($i=1; $i < count($dataArray); $i++){
                 
                     //for($j=0; $j < count($dataArray[0]); $j++){
