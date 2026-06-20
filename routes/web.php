@@ -1351,6 +1351,10 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::get('bankbook', 'SysBankbookController@index');
         Route::post('bankbook', 'SysBankbookController@index');
 
+        //Credit Card Book
+        Route::get('creditcard', 'SysCreditcardbookController@index');
+        Route::post('creditcard', 'SysCreditcardbookController@index');
+
         //Cheque Book
         Route::get('chequebook', 'ChequeBookController@index');
         Route::post('chequebook', 'ChequeBookController@index');
