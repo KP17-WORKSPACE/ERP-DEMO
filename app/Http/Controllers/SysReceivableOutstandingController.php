@@ -557,11 +557,11 @@ class SysReceivableOutstandingController extends Controller
             $cust_address = SysCustSupplAddressbook::where('cust_suppl_id', $cust_detail->id)->orderby('id', 'desc')->first();
 
             if (count($transaction_no) > 0) {
-                $data_query = SysChartofAccountsTransaction::select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw($account . ' as account_id'))->where('company_id', $com_id);
+                $data_query = SysChartofAccountsTransaction::select('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw($account . ' as account_id'))->where('company_id', $com_id);
                 $data_query->wherein('transaction_no', $transaction_no)->where('status', 1);
                 $data_query->wherein('transaction_type', ['salesinvoice', 'opbinvoice', 'openingbalance111']);
                 $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $date . "'");
-                $receivable = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no')->orderby('transaction_date', 'asc')->get();
+                $receivable = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type')->orderby('transaction_date', 'asc')->get();
 
 
                 // $data_adjestment = SysSalesReturnAdjestment::select('srn_no',DB::raw('sum(paid_amount) as paid_amount'))->wherein('srn_no',$receivable->pluck("transaction_no"))->groupby('srn_no')->get();
@@ -629,8 +629,9 @@ class SysReceivableOutstandingController extends Controller
                 'list_of_unadjusted_pdc' => $list_of_unadjusted_pdc,
                 'list_of_adjusted_pdc' => $list_of_adjusted_pdc,
             ];
+            $data = array_merge($data, $this->loadReceivableOutstandingViewData($com_id));
 
-            //return view('backEnd.pdf_print.receivable_os_pdf',$data);
+            // return view('backEnd.pdf_print.receivable_os_pdf',$data);
             $pdf = PDF::loadView('backEnd.pdf_print.receivable_os_pdf', $data);
             $pdf->setPaper('A4', 'portrait');
             return $pdf->download($cust_detail->name . " - receivable_outstanding.pdf");
