@@ -125,6 +125,18 @@
                         <option value="4" @if($type=="4") selected @endif>Type 4</option>
                     </select>
                 </div>
+                <div class="col-md-1 mb-20">
+                    <label for="" class="form-check-label">Show</label>
+                    <select class="form-control" name="show" id="show">
+                        <option value="" @if($show=="") selected @endif>None</option>
+                        <option value="1" @if($show=="1") selected @endif>Day</option>
+                        <option value="2" @if($show=="2") selected @endif>Week</option>
+                        <option value="3" @if($show=="3") selected @endif>Month</option>
+                        <option value="4" @if($show=="4") selected @endif>Quarter</option>
+                        <option value="5" @if($show=="5") selected @endif>Half Year</option>
+                        <option value="6" @if($show=="6") selected @endif>Year</option>
+                    </select>
+                </div>
                 
                                     {{--  <div class="col-md-2 mb-20">
                                         <div class="input-effect">
@@ -167,27 +179,45 @@
                 </div>
             </div>
             <div class="card mb-3">
-                <div class="card-body">
-<table class="table table-hover data-table" id="long-list" style="border: solid 1px #e3e6f0;">
+                <div class="card-body" style="overflow-x: auto;">
+<table class="table table-hover data-table" id="long-list" style="border: solid 1px #e3e6f0; min-width: 1000px;">
                 <thead>
                     <tr>
-                        <th class="border text-center"></th>
+                        <th class="border text-center" rowspan="2" style="vertical-align: middle;">Particular</th>
                         <th class="border text-center" colspan="2">Opening</th>
+                        @if(!empty($intervals))
+                            @foreach($intervals as $seg)
+                                <th class="border text-center" colspan="2">{{ $seg['label'] }}</th>
+                            @endforeach
+                        @endif
                         <th class="border text-center" colspan="2">Transaction</th>
                         <th class="border text-center" colspan="2">Closing</th>
                     </tr>
-                  <tr>
-                      <th class="border text-center" width="30%">Particular</th>
-                      <th class="border text-center" width="10%">Debit</th>
-                      <th class="border text-center" width="10%">Credit</th>
-                      <th class="border text-center" width="10%">Debit</th>
-                      <th class="border text-center" width="10%">Credit</th>
-                      <th class="border text-center" width="10%">Debit</th>
-                      <th class="border text-center" width="10%">Credit</th>
-                  </tr>
+                    <tr>
+                        <th class="border text-center">Debit</th>
+                        <th class="border text-center">Credit</th>
+                        @if(!empty($intervals))
+                            @foreach($intervals as $seg)
+                                <th class="border text-center">Debit</th>
+                                <th class="border text-center">Credit</th>
+                            @endforeach
+                        @endif
+                        <th class="border text-center">Debit</th>
+                        <th class="border text-center">Credit</th>
+                        <th class="border text-center">Debit</th>
+                        <th class="border text-center">Credit</th>
+                    </tr>
                 </thead>
                 <tbody>
-                    <?php $tot = 0; $total=0; $total_dr=0; $total_cr=0; $total_cls_dr=0; $total_cls_cr=0; $total_opn_dr=0; $total_opn_cr=0; ?>
+                    <?php 
+                    $tot = 0; $total=0; $total_dr=0; $total_cr=0; $total_cls_dr=0; $total_cls_cr=0; $total_opn_dr=0; $total_opn_cr=0; 
+                    $total_dr_intervals = [];
+                    $total_cr_intervals = [];
+                    if (!empty($intervals)) {
+                        $total_dr_intervals = array_fill(0, count($intervals), 0);
+                        $total_cr_intervals = array_fill(0, count($intervals), 0);
+                    }
+                    ?>
                     @foreach ($group as $dt)
                     <?php $cls_dr=0; $cls_cr=0; ?>
                     <?php $cls_dr2=0; $cls_cr2=0; ?>
@@ -195,23 +225,28 @@
                         <td class="border font-weight-bold text-dark"><a class="text-dark" data-bs-toggle="collapse" href="#collapse_1{{ $dt->id }}">{{ $dt->title }}</a></td>
                         <?php $dt_open_val = App\SysHelper::get_trial_balance_opening_by_group_id($dt->id,$dt->group_id,$from_date,$to_date); ?>
                         <td class="border text-end font-weight-bold text-dark">@if($dt->group_id==1 || $dt->group_id==3){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt_open_val, 2, '.', ',')) }} 
-                            
-                            {{--  {{ $dt->id}},{{ $dt->group_id}},{{ $from_date }},{{ $to_date }}  --}}
-
                             @php $cls_dr=$dt_open_val; $total_opn_dr+=$dt_open_val; @endphp @else 0.00 @endif</td>
                         <td class="border text-end font-weight-bold text-dark">@if($dt->group_id==2 || $dt->group_id==4 || $dt->group_id==5){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt_open_val, 2, '.', ',')) }} 
-                            
-                            {{--  {{ $dt->id}},{{ $dt->group_id}},{{ $from_date }},{{ $to_date }}  --}}
-
                             @php $cls_cr=$dt_open_val; $total_opn_cr+=$dt_open_val; @endphp @else 0.00 @endif</td>
                         <?php $dt_val = App\SysHelper::get_trial_balance_by_group_id($dt->id,$dt->group_id,$from_date,$to_date); ?>
                         
-                        <td class="border text-end font-weight-bold text-dark ">@if($dt->group_id==1 || $dt->group_id==3){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt_val, 2, '.', ',')) }} @php $total_dr += $dt_val; $cls_dr+=$dt_val;  @endphp @else 0.00 @endif</td>
-                        <td class="border text-end font-weight-bold text-dark ">@if($dt->group_id==2 || $dt->group_id==4 || $dt->group_id==5){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt_val, 2, '.', ',')) }} 
-                            
-                            {{--  {{ $dt->id }}, {{ $dt->group_id }}, {{ $from_date }}, {{ $to_date }}  --}}
-                            
-                            @php $total_cr += $dt_val; $cls_cr+=$dt_val; @endphp @else 0.00 @endif</td>
+                        @if($dt->group_id==1 || $dt->group_id==3)
+                            @php $total_dr += $dt_val; $cls_dr+=$dt_val; @endphp
+                        @else
+                            @php $total_cr += $dt_val; $cls_cr+=$dt_val; @endphp
+                        @endif
+
+                        @if(!empty($intervals))
+                            @foreach($intervals as $idx => $seg)
+                                <?php $dt_val_seg = App\SysHelper::get_trial_balance_by_group_id($dt->id,$dt->group_id,$seg['from'],$seg['to']); ?>
+                                <td class="border text-end font-weight-bold text-dark ">@if($dt->group_id==1 || $dt->group_id==3){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt_val_seg, 2, '.', ',')) }} @php $total_dr_intervals[$idx] += $dt_val_seg; @endphp @else 0.00 @endif</td>
+                                <td class="border text-end font-weight-bold text-dark ">@if($dt->group_id==2 || $dt->group_id==4 || $dt->group_id==5){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt_val_seg, 2, '.', ',')) }} @php $total_cr_intervals[$idx] += $dt_val_seg; @endphp @else 0.00 @endif</td>
+                            @endforeach
+                        @endif
+
+                        <td class="border text-end font-weight-bold text-dark ">@if($dt->group_id==1 || $dt->group_id==3){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt_val, 2, '.', ',')) }} @else 0.00 @endif</td>
+                        <td class="border text-end font-weight-bold text-dark ">@if($dt->group_id==2 || $dt->group_id==4 || $dt->group_id==5){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt_val, 2, '.', ',')) }} @else 0.00 @endif</td>
+
                         <td class="border text-end font-weight-bold text-dark ">{{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($cls_dr, 2, '.', ',')) }} @php $total_cls_dr+=$cls_dr; @endphp</td>
                         <td class="border text-end font-weight-bold text-dark ">{{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($cls_cr, 2, '.', ',')) }} @php $total_cls_cr+=$cls_cr; @endphp</td>
                     </tr>
@@ -220,27 +255,35 @@
                       @foreach ($data2 as $dt2)
                       @if ($dt2->title != "Opening Stock exe" )
                       <tr class="collapse {{ $sub1 }}" id="collapse_1{{ $dt->id }}">
-                          <td class="border pl-2 font-weight-bold text-primary"><a class="text-success" data-bs-toggle="collapse" href="#collapse_sub_{{ $dt2->id }}">{{ $dt2->title }}
-                        
-                        </a></td>
+                          <td class="border pl-2 font-weight-bold text-primary"><a class="text-success" data-bs-toggle="collapse" href="#collapse_sub_{{ $dt2->id }}">{{ $dt2->title }}</a></td>
                           <?php $dt2_open_val = App\SysHelper::get_trial_balance_opening_by_group2_id($dt2->id,$dt2->group_id,$from_date,$to_date); ?>
                           <td class="border text-end font-weight-bold text-success ">@if($dt2->group_id==1 || $dt2->group_id==3){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt2_open_val, 2, '.', ',')) }} @php $cls_dr2=$dt2_open_val; @endphp @else 0.00 @endif </td>
                           <td class="border text-end font-weight-bold text-success ">@if($dt2->group_id==2 || $dt2->group_id==4 || $dt2->group_id==5){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt2_open_val, 2, '.', ',')) }} @php $cls_cr2=$dt2_open_val; @endphp @else 0.00 @endif </td>
                           <?php $dt2_val = App\SysHelper::get_trial_balance_by_group2_id($dt2->id,$dt2->group_id,$from_date,$to_date); ?>
-                          <td class="border text-end font-weight-bold text-success ">@if($dt2->group_id==1 || $dt2->group_id==3){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt2_val, 2, '.', ',')) }} @php $cls_dr2+=$dt2_val; @endphp @else 0.00 @endif </td>
                           
-                          <td class="border text-end font-weight-bold text-success ">@if($dt2->group_id==2 || $dt2->group_id==4 || $dt2->group_id==5){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt2_val, 2, '.', ',')) }} 
-                            
-                            {{--  {{ $dt2->id }}, {{ $dt2->group_id }}, {{ $from_date }}, {{ $to_date }} = {{ $dt2->group_id }}  --}}
+                          @if($dt2->group_id==1 || $dt2->group_id==3)
+                              @php $cls_dr2+=$dt2_val; @endphp
+                          @else
+                              @php $cls_cr2+=$dt2_val; @endphp
+                          @endif
+                          
+                          @if(!empty($intervals))
+                              @foreach($intervals as $seg)
+                                  <?php $dt2_val_seg = App\SysHelper::get_trial_balance_by_group2_id($dt2->id,$dt2->group_id,$seg['from'],$seg['to']); ?>
+                                  <td class="border text-end font-weight-bold text-success ">@if($dt2->group_id==1 || $dt2->group_id==3){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt2_val_seg, 2, '.', ',')) }} @else 0.00 @endif </td>
+                                  <td class="border text-end font-weight-bold text-success ">@if($dt2->group_id==2 || $dt2->group_id==4 || $dt2->group_id==5){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt2_val_seg, 2, '.', ',')) }} @else 0.00 @endif </td>
+                              @endforeach
+                          @endif
+                          
+                          <td class="border text-end font-weight-bold text-success ">@if($dt2->group_id==1 || $dt2->group_id==3){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt2_val, 2, '.', ',')) }} @else 0.00 @endif </td>
+                          <td class="border text-end font-weight-bold text-success ">@if($dt2->group_id==2 || $dt2->group_id==4 || $dt2->group_id==5){{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($dt2_val, 2, '.', ',')) }} @else 0.00 @endif </td>
 
-                            @php $cls_cr2+=$dt2_val; @endphp @else 0.00 @endif </td>
-                          
                           <td class="border text-end font-weight-bold text-success ">{{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($cls_dr2, 2, '.', ',')) }}</td>
                           <td class="border text-end font-weight-bold text-success ">{{ App\SysHelper::minus_format(@App\SysHelper::com_curr_format($cls_cr2, 2, '.', ',')) }}</td>
                       </tr>
                       @endif
                       
-                      {!! App\SysHelper::get_trial_balance_items($dt2->id,$from_date,$to_date,$sub2,$sub3) !!}
+                      {!! App\SysHelper::get_trial_balance_items($dt2->id,$from_date,$to_date,$sub2,$sub3,$intervals) !!}
 
                       @endforeach
                       @endif
@@ -252,9 +295,14 @@
                       <th class="border text-center font-weight-bold text-dark">Total</th>
                       <th class="border text-end font-weight-bold @if($total_opn_dr!=$total_opn_cr) text-danger @else text-dark @endif">{{ @App\SysHelper::com_curr_format($total_opn_dr, 2, '.', ',') }}</th>
                       <th class="border text-end font-weight-bold @if($total_opn_dr!=$total_opn_cr) text-danger @else text-dark @endif">{{ @App\SysHelper::com_curr_format($total_opn_cr, 2, '.', ',') }}</th>
+                      @if(!empty($intervals))
+                          @foreach($intervals as $idx => $seg)
+                              <th class="border text-end font-weight-bold @if($total_dr_intervals[$idx]!=$total_cr_intervals[$idx]) text-danger @else text-dark @endif">{{ @App\SysHelper::com_curr_format($total_dr_intervals[$idx], 2, '.', ',') }}</th>
+                              <th class="border text-end font-weight-bold @if($total_dr_intervals[$idx]!=$total_cr_intervals[$idx]) text-danger @else text-dark @endif">{{ @App\SysHelper::com_curr_format($total_cr_intervals[$idx], 2, '.', ',') }}</th>
+                          @endforeach
+                      @endif
                       <th class="border text-end font-weight-bold @if($total_dr!=$total_cr) text-danger @else text-dark @endif">{{ @App\SysHelper::com_curr_format($total_dr, 2, '.', ',') }}</th>
                       <th class="border text-end font-weight-bold @if($total_dr!=$total_cr) text-danger @else text-dark @endif">{{ @App\SysHelper::com_curr_format($total_cr, 2, '.', ',') }}</th>
-                      {{--  App\SysHelper::minus_format(@App\SysHelper::com_curr_format($total_cr, 2, '.', ''))  --}}
                       <th class="border text-end font-weight-bold @if($total_cls_dr!=$total_cls_cr) text-danger @else text-dark @endif">{{ @App\SysHelper::com_curr_format($total_cls_dr, 2, '.', ',') }}</th>
                       <th class="border text-end font-weight-bold @if($total_cls_dr!=$total_cls_cr) text-danger @else text-dark @endif">{{ @App\SysHelper::com_curr_format($total_cls_cr, 2, '.', ',') }}</th>
                   </tr>
@@ -264,7 +312,7 @@
                     if($to_date != "" ){ @$value =  \Carbon\Carbon::parse($to_date)->format('d/m/Y'); }
                     @endphp
 
-                    <th colspan="7">Closing Stock ({{ $value }}) : {{ App\SysHelper::com_curr_format($closing_stock, 2, '.', ',') }}</th>
+                    <th colspan="{{ 7 + 2 * count($intervals) }}">Closing Stock ({{ $value }}) : {{ App\SysHelper::com_curr_format($closing_stock, 2, '.', ',') }}</th>
                   </tr>
                 </thead>
               </table>
