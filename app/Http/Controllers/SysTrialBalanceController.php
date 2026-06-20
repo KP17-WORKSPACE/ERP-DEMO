@@ -188,7 +188,112 @@ class SysTrialBalanceController extends Controller
             $company_id = $r[0];
             $closing_stock = SysProfitAndLossAccountController::get_closing_stock_update($from_date,$to_date,$company_id);
 
-            return view('backEnd.trial-balance.trialbalancelist', compact('group','data','period','from_date','to_date','filter_by','type','sub1','sub2','sub3','closing_stock'));
+            $show = "";
+            $intervals = [];
+            if($_POST){
+                $show = $request->show;
+            } else if($request->show != ""){
+                $show = $request->show;
+            }
+
+            if ($show != "") {
+                $start = \Carbon\Carbon::parse($from_date);
+                $end = \Carbon\Carbon::parse($to_date);
+                
+                if ($show == "1") { // Day
+                    $i = 1;
+                    while ($start->lte($end)) {
+                        $intervals[] = [
+                            'label' => 'Day ' . $i . ' (' . $start->format('d/m/Y') . ')',
+                            'from' => $start->toDateString(),
+                            'to' => $start->toDateString(),
+                        ];
+                        $start->addDay();
+                        $i++;
+                    }
+                } elseif ($show == "2") { // Week
+                    $i = 1;
+                    while ($start->lte($end)) {
+                        $week_end = $start->copy()->endOfWeek();
+                        if ($week_end->gt($end)) {
+                            $week_end = $end->copy();
+                        }
+                        $intervals[] = [
+                            'label' => 'Week ' . $i . ' (' . $start->format('d/m/Y') . ' - ' . $week_end->format('d/m/Y') . ')',
+                            'from' => $start->toDateString(),
+                            'to' => $week_end->toDateString(),
+                        ];
+                        $start = $week_end->copy()->addDay();
+                        $i++;
+                    }
+                } elseif ($show == "3") { // Month
+                    $i = 1;
+                    while ($start->lte($end)) {
+                        $month_end = $start->copy()->endOfMonth();
+                        if ($month_end->gt($end)) {
+                            $month_end = $end->copy();
+                        }
+                        $intervals[] = [
+                            'label' => 'Month ' . $i . ' (' . $start->format('M Y') . ')',
+                            'from' => $start->toDateString(),
+                            'to' => $month_end->toDateString(),
+                        ];
+                        $start = $month_end->copy()->addDay();
+                        $i++;
+                    }
+                } elseif ($show == "4") { // Quarter
+                    $i = 1;
+                    while ($start->lte($end)) {
+                        $quarter_end = $start->copy()->endOfQuarter();
+                        if ($quarter_end->gt($end)) {
+                            $quarter_end = $end->copy();
+                        }
+                        $intervals[] = [
+                            'label' => 'Quarter ' . $i . ' (' . $start->format('d/m/Y') . ' - ' . $quarter_end->format('d/m/Y') . ')',
+                            'from' => $start->toDateString(),
+                            'to' => $quarter_end->toDateString(),
+                        ];
+                        $start = $quarter_end->copy()->addDay();
+                        $i++;
+                    }
+                } elseif ($show == "5") { // Half Year
+                    $i = 1;
+                    while ($start->lte($end)) {
+                        if ($start->month <= 6) {
+                            $half_end = \Carbon\Carbon::create($start->year, 6, 30);
+                        } else {
+                            $half_end = \Carbon\Carbon::create($start->year, 12, 31);
+                        }
+                        if ($half_end->gt($end)) {
+                            $half_end = $end->copy();
+                        }
+                        $intervals[] = [
+                            'label' => 'Half Year ' . $i . ' (' . $start->format('d/m/Y') . ' - ' . $half_end->format('d/m/Y') . ')',
+                            'from' => $start->toDateString(),
+                            'to' => $half_end->toDateString(),
+                        ];
+                        $start = $half_end->copy()->addDay();
+                        $i++;
+                    }
+                } elseif ($show == "6") { // Year
+                    $i = 1;
+                    while ($start->lte($end)) {
+                        $year_end = $start->copy()->endOfYear();
+                        if ($year_end->gt($end)) {
+                            $year_end = $end->copy();
+                        }
+                        $intervals[] = [
+                            'label' => 'Year ' . $i . ' (' . $start->format('Y') . ')',
+                            'from' => $start->toDateString(),
+                            'to' => $year_end->toDateString(),
+                        ];
+                        $start = $year_end->copy()->addDay();
+                        $i++;
+                    }
+                }
+            }
+
+            return view('backEnd.trial-balance.trialbalancelist', compact('group','data','period','from_date','to_date','filter_by','type','sub1','sub2','sub3','closing_stock', 'show', 'intervals'));
         }catch (\Exception $e) {
             return $e;
            Toastr::error('Operation Failed', 'Failed');
