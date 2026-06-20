@@ -72,6 +72,9 @@
                     @if(count($crm->where('is_read',1)->where('module_link_id',4)) > 0 ||  Auth::user()->role_id == 1)
                     <a href="{{ url('bankbook') }}" class="collapse-item">@lang('Bank Book')</a>
                     @endif
+                    @if(count($crm->where('is_read',1)->where('module_link_id',4)) > 0 ||  Auth::user()->role_id == 1)
+                    <a href="{{ url('creditcard') }}" class="collapse-item">@lang('Credit Card')</a>
+                    @endif
                     @if(count($crm->where('is_read',1)->where('module_link_id',60)) > 0 ||  Auth::user()->role_id == 1)
                     <a href="{{ url('stl-report') }}" class="collapse-item">@lang('STL Report')</a>
                     @endif
