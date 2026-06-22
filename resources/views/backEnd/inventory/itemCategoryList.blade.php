@@ -128,6 +128,9 @@
                         <button class="btn btn-light text-dark add-btn" data-bs-toggle="modal" data-bs-target="#addCategory"><i
                                 class="ico icon-outline-add-square text-success"></i>
                             Add</button>
+                        <a href="{{ url('category-import') }}" class="btn btn-light text-dark add-btn">
+                            <i class="ico icon-outline-import text-success"></i> Import
+                        </a>
                     @endif
                     <!-- <a href="{{ url('category-import') }}" class="btn btn-light text-black ms-2">Import Categories</a>
                     <a href="{{ url('subcategory-import') }}" class="btn btn-light text-black ms-2">Import Sub Categories</a> -->
@@ -229,7 +232,12 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title" id="poexcelimport">Add Category</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="d-flex align-items-center">
+                        <a href="{{ url('category-import') }}" class="btn btn-light btn-sm me-2">
+                            <i class="ico icon-outline-import text-success"></i> Import
+                        </a>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
                 {{ Form::open([
                     'class' => 'form-horizontal',

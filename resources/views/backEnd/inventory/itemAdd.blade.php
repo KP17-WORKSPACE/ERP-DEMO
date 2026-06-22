@@ -72,6 +72,9 @@
                     <a href="#" data-bs-toggle="modal" data-bs-target="#addproductModal" style="margin-right: 2px;"
                         class="btn btn-light text-dark add-btn"><i class="ico icon-outline-add-square text-success"></i>
                         Add</a>
+                    <a href="{{ url('product-import') }}" class="btn btn-light text-dark add-btn">
+                        <i class="ico icon-outline-import text-success"></i> Import
+                    </a>
 
                     <button type="button" class="btn btn-light list_style_search_bt mt-1n" id="exportExcelItems">
                         <i class="ico icon-outline-export text-success"></i> Export

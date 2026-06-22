@@ -16,7 +16,12 @@ $company = @App\SysHelper::get_company_names();
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title" id="lbladdproductModal">Add Product</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="d-flex align-items-center">
+                        <a href="{{ url('product-import') }}" class="btn btn-light btn-sm me-2">
+                            <i class="ico icon-outline-import text-success"></i> Import
+                        </a>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
                 <div class="modal-body m-0 p-0">
                     <div class="card mb-0 mt-0">
