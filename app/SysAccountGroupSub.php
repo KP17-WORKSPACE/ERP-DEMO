@@ -10,7 +10,7 @@ class SysAccountGroupSub extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'id','group_id','title','status','created_by','updated_by','created_at','updated_at'
+        'id','group_id','title','status','created_by','updated_by','created_at','updated_at','sort_id','group_code','company_id'
     ];
 
     public function groupid(){

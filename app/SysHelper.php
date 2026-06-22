@@ -1134,19 +1134,13 @@ $ret_val = '
     }
 
     public static function get_credit_card_account($status=null) {
-        $cc_group_id = SysAccountGroupSub2::select('id')->where('title','Credit Card')->where('status',1)->first();
-        if($cc_group_id == ""){
-            $query = SysChartofAccounts::select('id','account_name')
-                ->where('company_id',session('logged_session_data.company_id'))
-                ->where(function($q) {
-                    $q->where('account_name', 'like', '%Credit Card%')
-                      ->orWhere('account_name', 'like', '%CreditCard%');
-                });
-            if($status!="all") { $query->where('status',1); }
-            return $query->get();
-        } else {
-            $query = SysChartofAccounts::select('id','account_name')->where('subgroup2',$cc_group_id->id)->where('company_id',session('logged_session_data.company_id'));
-            if($status!="all") { $query->where('status',1); }
+        $bank_group_id = 20;
+        if($bank_group_id == ""){
+            return 0;
+        } else{
+            $query = SysChartofAccounts::select('id','account_name')->where('subgroup2',$bank_group_id)->where('company_id',session('logged_session_data.company_id'))->where('main_account_id','!=',0);
+            if($status=="all"){ }
+            else { $query->where('status',1); }
             $data = $query->get();
             return $data;
         }
@@ -2613,6 +2607,49 @@ public static function professional_service_approval_access(){
         }
 
         return trim($result);
+    }
+
+    public static function get_new_head_code(){
+        $code = DB::table('sys_company')->select('other_code')->where('id',session('logged_session_data.company_id'))->max('other_code');
+        $results =  DB::table('sys_account_group')->where('group_code','like','HD'.$code.'-%')->where('company_id',session('logged_session_data.company_id'))->max('group_code');
+        if($results=="") {
+            return "HD".$code."-1001";
+        } else {
+            $ret1 = preg_replace('~\D~', '', $results);
+            $ret2 = sprintf('%03d',$ret1+1);
+            return "HD".$code."-".$ret2;
+        }
+    }
+    public static function get_new_group_code(){
+        $code = DB::table('sys_company')->select('other_code')->where('id',session('logged_session_data.company_id'))->max('other_code');
+        $results =  DB::table('sys_account_group_sub')->where('group_code','like','GP'.$code.'-%')->where('company_id',session('logged_session_data.company_id'))->max('group_code');
+        if($results=="") {
+            return "GP".$code."-1001";
+        } else {
+            $ret1 = preg_replace('~\D~', '', $results);
+            $ret2 = sprintf('%03d',$ret1+1);
+            return "GP".$code."-".$ret2;
+        }
+    }
+    public static function get_new_sub_group_code(){
+        $code = DB::table('sys_company')->select('other_code')->where('id',session('logged_session_data.company_id'))->max('other_code');
+        $results =  DB::table('sys_account_group_sub2')->where('group_code','like','SG'.$code.'-%')->where('company_id',session('logged_session_data.company_id'))->max('group_code');
+        if($results=="") {
+            return "SG".$code."-1001";
+        } else {
+            $ret1 = preg_replace('~\D~', '', $results);
+            $ret2 = sprintf('%03d',$ret1+1);
+            return "SG".$code."-".$ret2;
+        }
+    }
+
+    public static function get_next_sort_id($table) {
+        $query = DB::table($table);
+        if (\Illuminate\Support\Facades\Schema::hasColumn($table, 'company_id')) {
+            $query->where('company_id', session('logged_session_data.company_id'));
+        }
+        $max_sort_id = $query->max('sort_id');
+        return $max_sort_id ? ($max_sort_id + 1) : 1;
     }
 
     public static function get_new_account_code(){
