@@ -123,6 +123,7 @@
 
 
 
+            @include('backEnd.accounts.accountgroupadd_form')
             @include('backEnd.accounts.accountgroupsubadd_form')
             @include('backEnd.accounts.accountgroupsub2add_form')
             @include('backEnd.chart-of-accounts.accountadd_form')
@@ -324,13 +325,31 @@
 
             {{-- Layer 1: Account Groups --}}
             <div class="col-2 border-end">
-                <h6 class="px-2 py-1 border-bottom text-center">Heads
-                </h6>
+                <div class="d-flex justify-content-between align-items-center px-2 py-1 border-bottom">
+                    <h6 class="mb-0 text-center flex-grow-1">
+                        Heads
+                        <i class="ico icon-outline-add-square text-success" data-bs-popover="popover"
+                            data-bs-trigger="hover"
+                            data-bs-delay="500"
+                            data-bs-content="Create Head"
+                            data-bs-placement="top" data-bs-toggle="modal" data-bs-target="#headModal"></i>
+                    </h6>
+                    <!-- Compact button to open modal -->
+                    <button type="button" class="btn btn-sm brn-light" data-bs-target="#HeadTableModal"
+                        data-bs-popover="popover"
+                        data-bs-trigger="hover"
+                        data-bs-delay="500"
+                        data-bs-content="View Heads"
+                        data-bs-placement="top"
+                        data-bs-toggle="modal">
+                        <i class="ico icon-outline-document-text title-15"></i>
+                    </button>
+                </div>
                 <ul class="list-group">
                     @foreach ($accountgroup as $g)
                         <li class="list-group-item heads d-flex justify-content-between align-items-center"
                             onclick="selectItem(this,'.heads');  showLayer(2, 'group{{ $g->id }}')">
-                            <span>{{ $g->title }}</span>
+                            <span>@if($g->group_code){{ $g->group_code }} - @endif{{ $g->title }}</span>
                             <i style="font-size: 16px" class="ico icon-outline-alt-arrow-right"></i>
                         </li>
                     @endforeach
@@ -341,7 +360,7 @@
             <div class="col-2 border-end tab-content">
                 @foreach ($accountgroup as $g)
                     @php
-                        $subs = App\SysAccountGroupSub::where('group_id', $g->id)->where('status', 1)->get();
+                        $subs = App\SysAccountGroupSub::where('group_id', $g->id)->where('status', 1)->orderBy('sort_id', 'asc')->get();
                     @endphp
                     <div class="tab-pane fade" id="group{{ $g->id }}">
 
@@ -376,7 +395,7 @@
                             @foreach ($subs as $s)
                                 <li class="list-group-item groups d-flex justify-content-between align-items-center"
                                     onclick="selectItem(this,'.groups'); showLayer(3, 'sub{{ $s->id }}')">
-                                    <span class="truncate-text-custom">{{ $s->title }}</span>
+                                    <span class="truncate-text-custom">@if($s->group_code){{ $s->group_code }} - @endif{{ $s->title }}</span>
                                     <i style="font-size: 16px" class="ico icon-outline-alt-arrow-right"></i>
 
                                 </li>
@@ -389,9 +408,9 @@
             {{-- Layer 3: Sub Group2 --}}
             <div class="col-2 border-end tab-content">
                 @foreach ($accountgroup as $g)
-                    @php $subs = App\SysAccountGroupSub::where('group_id', $g->id)->where('status',1)->get(); @endphp
+                    @php $subs = App\SysAccountGroupSub::where('group_id', $g->id)->where('status',1)->orderBy('sort_id', 'asc')->get(); @endphp
                     @foreach ($subs as $s)
-                        @php $subs2 = App\SysAccountGroupSub2::where('sub_id',$s->id)->where('status',1)->get(); @endphp
+                        @php $subs2 = App\SysAccountGroupSub2::where('sub_id',$s->id)->where('status',1)->orderBy('sort_id', 'asc')->get(); @endphp
                         <div class="tab-pane fade" id="sub{{ $s->id }}">
                             <div class="d-flex justify-content-between align-items-center px-2 py-1 border-bottom">
                                 <h6 class="mb-0 text-center flex-grow-1">
@@ -418,7 +437,7 @@
                                 @foreach ($subs2 as $s2)
                                     <li class="list-group-item subgroups d-flex justify-content-between align-items-center"
                                         onclick="selectItem(this,'.subgroups'); showLayer(4, 'sub2{{ $s2->id }}')">
-                                        <span class="truncate-text-custom">{{ $s2->title }}</span>
+                                        <span class="truncate-text-custom">@if($s2->group_code){{ $s2->group_code }} - @endif{{ $s2->title }}</span>
                                         <i style="font-size: 16px" class="ico icon-outline-alt-arrow-right"></i>
 
                                     </li>
@@ -432,9 +451,9 @@
             {{-- Layer 4: Accounts --}}
             <div class="col-3 border-end tab-content">
                 @foreach ($accountgroup as $g)
-                    @php $subs = App\SysAccountGroupSub::where('group_id',$g->id)->where('status',1)->get(); @endphp
+                    @php $subs = App\SysAccountGroupSub::where('group_id',$g->id)->where('status',1)->orderBy('sort_id', 'asc')->get(); @endphp
                     @foreach ($subs as $s)
-                        @php $subs2 = App\SysAccountGroupSub2::where('sub_id',$s->id)->where('status',1)->get(); @endphp
+                        @php $subs2 = App\SysAccountGroupSub2::where('sub_id',$s->id)->where('status',1)->orderBy('sort_id', 'asc')->get(); @endphp
                         @foreach ($subs2 as $s2)
                             @php
                                 $account = App\SysChartofAccounts::where([
@@ -453,7 +472,7 @@
                             data-bs-trigger="hover"
                             data-bs-delay="500"
                             data-bs-content="Create Account"
-                            data-bs-placement="top" data-bs-toggle="modal" data-bs-target="#accountModal"></i> 
+                            data-bs-placement="top" data-bs-toggle="modal" data-bs-target="#accountModal" data-subgroup2="{{ $s2->id }}"></i> 
 
                                     </h6>
                                     <!-- Compact button to open modal -->
@@ -512,9 +531,9 @@
             {{-- Layer 5: Sub Accounts --}}
             <div class="col-3 tab-content">
                 @foreach ($accountgroup as $g)
-                    @php $subs = App\SysAccountGroupSub::where('group_id',$g->id)->where('status',1)->get(); @endphp
+                    @php $subs = App\SysAccountGroupSub::where('group_id',$g->id)->where('status',1)->orderBy('sort_id', 'asc')->get(); @endphp
                     @foreach ($subs as $s)
-                        @php $subs2 = App\SysAccountGroupSub2::where('sub_id',$s->id)->where('status',1)->get(); @endphp
+                        @php $subs2 = App\SysAccountGroupSub2::where('sub_id',$s->id)->where('status',1)->orderBy('sort_id', 'asc')->get(); @endphp
                         @foreach ($subs2 as $s2)
                             @php
                                 $accounts = App\SysChartofAccounts::where([

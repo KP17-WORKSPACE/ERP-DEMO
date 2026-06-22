@@ -177,7 +177,7 @@ $(document).ready(function() {
                                             <option value="0"></option>
                                             @if (isset($accountgroupsub2))
                                                 @foreach ($accountgroupsub2 as $val)
-                                                    <option value="{{ @$val->id }}"
+                                                    <option value="{{ @$val->id }}" data-head-title="{{ strtolower(@$val->groupid->title ?? '') }}"
                                                         @if (isset($editData)) @if (@$editData->subgroup2 == @$val->id) selected @endif
                                                         @endif >{{ @$val->title }}
                                                     </option>
@@ -188,7 +188,7 @@ $(document).ready(function() {
                                 </div>
                             </div>
                             
-                            <div class="col-lg-3 mb-2">
+                            <div class="col-lg-3 mb-2" id="department_container">
                                 <div class="input-effect">
                                     <label class="form-label"> @lang('Department') <span>*</span> </label>
                                     <div class="input-effect" id="sectionDepartmentDiv">
@@ -205,7 +205,7 @@ $(document).ready(function() {
                                 </div>
                             </div>
 
-                            <div class="col-lg-2 mb-2">
+                            <div class="col-lg-2 mb-2" id="prepaid_container">
                                 <div class="input-effect">
                                     <label class="form-label"> @lang('Prepaid/Accrued Exp')  </label>
                                     <div class="input-effect" id="sectionCreditAccountDiv">
@@ -225,6 +225,22 @@ $(document).ready(function() {
                                         $('.bank_div, .cheque_div').css('display', '');
                                     } else {
                                         $('.bank_div, .cheque_div').css('display', 'none');
+                                    }
+
+                                    // Get Head Title from option data attribute
+                                    var headTitle = $('#subgroup2 option:selected').data('head-title') || '';
+                                    if (headTitle === 'expenses' || headTitle === 'incomes') {
+                                        $('#department_container').hide();
+                                        $('#department_id').prop('required', false).val('').trigger('change');
+                                        
+                                        $('#prepaid_container').hide();
+                                        $('#credit_account_status').prop('required', false).val('0').trigger('change');
+                                    } else {
+                                        $('#department_container').show();
+                                        $('#department_id').prop('required', true);
+                                        
+                                        $('#prepaid_container').show();
+                                        $('#credit_account_status').prop('required', true);
                                     }
                                 }
 
@@ -304,17 +320,6 @@ $(document).ready(function() {
                                     $('#stl').change();
                                 </script>
                             @endif
-                            <!-- toggle for opening balance inputs -->
-                            <div class="col-12 mb-2 mt-2">
-                                <div class="form-check" >
-                                    <input class="form-check-input" data-bs-popover="popover"
-                            data-bs-trigger="hover"
-                            data-bs-delay="500"
-                            data-bs-content="Add Opening Balance"
-                            data-bs-placement="top" type="checkbox" id="toggleOpeningBalance">
-                                   
-                                </div>
-                            </div>
 
                             <div class="col-4 mb-2 opening-balance">
                                 <div class="input-effect">
@@ -426,19 +431,30 @@ $(document).ready(function() {
                         <input type="hidden" name="cheque_amount_left" value="{{ $ct->amount_left ?? '834px' }}">
                         <input type="hidden" name="cheque_font_size" value="{{ $ct->font_size ?? '13px' }}">
 
-                        <script>
-                            $('#subgroup2').change();
-                        </script>
+                            <script>
+                                // Will be triggered by modal show event and on document ready
+                            </script>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-               
-                    <button class="btn btn-light" id="btnAccountSubmit">
-                        <i class="ico icon-outline-bookmark-opened text-success"></i> Save
-                    </button>
-               
-            </div>
+            <div class="modal-footer d-flex justify-content-between align-items-center">
+    
+    <!-- Left side -->
+    <div>
+        <input class="form-check-input" data-bs-popover="popover"
+            data-bs-trigger="hover"
+            data-bs-delay="500"
+            data-bs-content="Add Opening Balance"
+            data-bs-placement="top" type="checkbox" id="toggleOpeningBalance">
+        Add Opening Balance
+    </div>
+
+    <!-- Right side -->
+    <button class="btn btn-light" id="btnAccountSubmit">
+        <i class="ico icon-outline-bookmark-opened text-success"></i> Save
+    </button>
+
+</div>
             {{ Form::close() }}
         </div>
     </div>
@@ -567,6 +583,33 @@ $(document).ready(function(){
     });    
     // ensure opening balance fields start hidden
     $('.opening-balance').hide();
+
+    // Set subgroup selection and run hide/show logic when modal opens
+    $('#accountModal').on('show.bs.modal', function(event) {
+        var button = $(event.relatedTarget);
+        var subgroup2Id = button.data('subgroup2');
+        if (subgroup2Id) {
+            $('#subgroup2').val(subgroup2Id);
+        }
+        
+        // Trigger fn_subgroup() by triggering change
+        fn_subgroup();
+        
+        // Update styled select plugins if they exist
+        if ($.fn.niceSelect) {
+            $('#subgroup2').niceSelect('update');
+            $('#department_id').niceSelect('update');
+            $('#credit_account_status').niceSelect('update');
+        }
+        if ($.fn.select2) {
+            $('#subgroup2').trigger('change.select2');
+            $('#department_id').trigger('change.select2');
+            $('#credit_account_status').trigger('change.select2');
+        }
+    });
+
+    // Run initial state setup
+    fn_subgroup();
 
     // opening balance toggle logic
     $('#toggleOpeningBalance').change(function() {
