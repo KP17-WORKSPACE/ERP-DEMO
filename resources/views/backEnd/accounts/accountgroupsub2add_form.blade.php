@@ -1,6 +1,6 @@
 <?php
-$accountgroupsub = @App\SysAccountGroupSub::where('status', 1)->get();
-$accountgroupsub2 = @App\SysAccountGroupSub2::where('status', 1)->orderBy('group_id', 'asc')->get();
+$accountgroupsub = @App\SysAccountGroupSub::where('status', 1)->orderBy('sort_id', 'asc')->get();
+$accountgroupsub2 = @App\SysAccountGroupSub2::where('status', 1)->orderBy('sort_id', 'asc')->get();
 
 ?>
 <div class="modal modal-draggable side-panel fade" id="subgroupModal" data-bs-backdrop="false" tabindex="-1"
@@ -34,6 +34,39 @@ $accountgroupsub2 = @App\SysAccountGroupSub2::where('status', 1)->orderBy('group
                                     @if ($errors->has('title'))
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $errors->first('title') }}</strong>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-lg-12 mb-4">
+                                <div class="input-effect">
+                                    <label class="txtlbl"> @lang('Group Code') </label>
+                                    <input
+    class="txtbx primary-input form-control {{ $errors->has('group_code') ? 'is-invalid' : ' ' }}"
+    type="text" id="group_code" name="group_code"
+    value="{{ isset($editData) ? $editData->group_code : (old('group_code') ?? @App\SysHelper::get_new_sub_group_code()) }}" readonly>
+                                    <span class="focus-border"></span>
+
+                                    @if ($errors->has('group_code'))
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $errors->first('group_code') }}</strong>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12 mb-4">
+                                <div class="input-effect">
+                                    <label class="txtlbl"> @lang('Sequence') <span>*</span> </label>
+                                    <input
+                                        class="txtbx primary-input form-control {{ $errors->has('sort_id') ? 'is-invalid' : ' ' }}"
+                                        type="number" id="sort_id" name="sort_id"
+                                        value="{{ isset($editData) ? @$editData->sort_id : (old('sort_id') ?: App\SysHelper::get_next_sort_id('sys_account_group_sub2')) }}" required>
+                                    <span class="focus-border"></span>
+
+                                    @if ($errors->has('sort_id'))
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $errors->first('sort_id') }}</strong>
                                         </span>
                                     @endif
                                 </div>
@@ -103,11 +136,16 @@ $(document).on('click', '#subgroupModal .btn-close', function() {
             var $form = $(this);
             var title = $.trim($form.find('input[name="title"]').val());
             var head  = $form.find('#sub_group_id').val();
-            console.log("[subgroupModal] title=", title, "head=", head);
-            if (title === '' || head === '' || head === null || head === '0') {
+            var sort_id = $.trim($form.find('#sort_id').val());
+            console.log("[subgroupModal] title=", title, "head=", head, "sort_id=", sort_id);
+            if (title === '' || head === '' || head === null || head === '0' || sort_id === '') {
                 e.preventDefault();
                 toastr.error('Please fill in all required fields.', 'Error');
-                $form.find('input[name="title"]').focus();
+                if (title === '') {
+                    $form.find('input[name="title"]').focus();
+                } else if (sort_id === '') {
+                    $form.find('#sort_id').focus();
+                }
             }
         });
     });
@@ -153,6 +191,8 @@ $(document).on('click', '#subgroupModal .btn-close', function() {
                                 <tr class="">
                                     <th style="padding-left: 14px"> @lang('Main Heads')</th>
                                     <th> @lang('Group')</th>
+                                    <th> @lang('Group Code')</th>
+                                    <th> @lang('Sequence')</th>
                                     <th> @lang('Sub Group Name')</th>
                                     <th width="100px" class="text-center"> @lang('Status')</th>
                                     <th width="100px" class="text-center"> @lang('lang.action')</th>
@@ -169,6 +209,12 @@ $(document).on('click', '#subgroupModal .btn-close', function() {
                                             </td>
                                             <td>
                                                 {{ @$value->subid->title }}
+                                            </td>
+                                            <td>
+                                                {{ @$value->group_code }}
+                                            </td>
+                                            <td>
+                                                {{ @$value->sort_id }}
                                             </td>
                                             <td>
                                                 {{ @$value->title }}
@@ -254,6 +300,24 @@ $(document).on('click', '#subgroupModal .btn-close', function() {
                                     </div>
                                 </div>
 
+                                <div class="col-12 mb-4">
+                                    <div class="input-effect">
+                                        <label class="txtlbl"> @lang('Group Code') </label>
+                                        <input class="txtbx primary-input form-control" type="text" id="edit_group_code"
+                                            name="group_code" value="" readonly>
+                                        <span class="focus-border"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mb-4">
+                                    <div class="input-effect">
+                                        <label class="txtlbl"> @lang('Sequence') <span>*</span> </label>
+                                        <input class="txtbx primary-input form-control" type="number" id="edit_sort_id"
+                                            name="sort_id" value="" required>
+                                        <span class="focus-border"></span>
+                                    </div>
+                                </div>
+
                                 <div class="col-12">
                                     <div class="input-effect">
                                         <label class="txtlbl"> @lang('Select Group') <span>*</span> </label>
@@ -297,7 +361,8 @@ $(document).on('click', '#subgroupModal .btn-close', function() {
                 $("#loading_bg").show();
 
                 $.ajax({
-                    url: '/accountgroupsub2/' + subgroupid + '/get-edit',
+                    url: '{{ url("accountgroupsub2") }}/' + subgroupid + '/get-edit',
+                    //url: '/accountgroupsub2/' + subgroupid + '/get-edit',
                     type: 'GET',
                     dataType: 'json',
                     success: function(response) {
@@ -311,12 +376,18 @@ $(document).on('click', '#subgroupModal .btn-close', function() {
 
                         // Fill the form fields with proper IDs
                         $('#editSubGroupModal2 #edit_title').val(editData.title);
+                        $('#editSubGroupModal2 #edit_group_code').val(editData.group_code);
+                    
+                        var newHeadCode = "{{ App\SysHelper::get_new_sub_group_code() }}";
+                        $('#editSubGroupModal2 #edit_group_code').val(editData.group_code || newHeadCode);
+
+                        $('#editSubGroupModal2 #edit_sort_id').val(editData.sort_id);
                         $('#editSubGroupModal2 #edit_sub_group_id').val(editData.sub_id).trigger(
                             'change');
 
                         // Set the form's action dynamically
-                        $('#editSubGroupForm2').attr('action', '/accountgroupsub2-update/' +
-                            editData.id);
+                        //$('#editSubGroupForm2').attr('action', '/accountgroupsub2-update/' + editData.id);
+                        $('#editSubGroupForm2').attr('action', '{{ url("accountgroupsub2-update") }}/' + editData.id);
 
                         $("#loading_bg").hide();
                         $('#editSubGroupModal2').modal('show');

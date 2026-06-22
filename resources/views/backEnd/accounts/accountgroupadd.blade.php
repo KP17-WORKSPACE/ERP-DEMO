@@ -184,7 +184,7 @@
                         <input type="hidden" name="date_of_joining" id="date_of_joining" value="{{ date('Y-m-d') }}">
 
                         <div class="row">
-                            <div class="col-lg-6 mb-4">
+                            <div class="col-lg-4 mb-4">
                                 <div class="input-effect">
                                     <label class="form-label"> @lang('Main Heads') <span>*</span> </label>
                                     <input class="form-control {{ $errors->has('title') ? 'is-invalid' : ' ' }}"
@@ -199,7 +199,39 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-lg-4 mb-4 mt-4">
+
+                            <div class="col-lg-4 mb-4">
+                                <div class="input-effect">
+                                    <label class="form-label"> @lang('Group Code') </label>
+                                    <input class="form-control {{ $errors->has('group_code') ? 'is-invalid' : ' ' }}"
+                                        type="text" id="group_code" name="group_code"
+                                        value="{{ isset($editData) ? $editData->group_code : (old('group_code') ?? @App\SysHelper::get_new_head_code()) }}" readonly>
+                                    <span class="focus-border"></span>
+
+                                    @if ($errors->has('group_code'))
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $errors->first('group_code') }}</strong>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="col-lg-2 mb-4">
+                                <div class="input-effect">
+                                    <label class="form-label"> @lang('Sequence') <span>*</span> </label>
+                                    <input class="form-control {{ $errors->has('sort_id') ? 'is-invalid' : ' ' }}"
+                                        type="number" id="sort_id" name="sort_id"
+                                        value="{{ isset($editData) ? @$editData->sort_id : (old('sort_id') ?: App\SysHelper::get_next_sort_id('sys_account_group')) }}" required>
+                                    <span class="focus-border"></span>
+
+                                    @if ($errors->has('sort_id'))
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $errors->first('sort_id') }}</strong>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-lg-2 mb-4 mt-4">
                                 <button class="btn btn-light" type="submit" id="btnSubmit">
                                     <i class="ico icon-outline-bookmark-opened text-success"></i>
                                     @if (isset($editData))
@@ -234,6 +266,8 @@
                                 @endif
                                 <tr>
                                     <th> @lang('Main Heads')</th>
+                                    <th> @lang('Group Code')</th>
+                                    <th> @lang('Sequence')</th>
                                     <th style="width:100px"> @lang('Status')</th>
                                     <th style="width:100px" class="text-center"> @lang('lang.action')</th>
                                 </tr>
@@ -245,6 +279,12 @@
                                         <tr>
                                             <td>
                                                 {{ @$value->title }}
+                                            </td>
+                                            <td>
+                                                {{ @$value->group_code }}
+                                            </td>
+                                            <td>
+                                                {{ @$value->sort_id }}
                                             </td>
                                             <td>
                                                 @if (@$value->status == 1)
