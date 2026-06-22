@@ -2179,6 +2179,40 @@ $(document).ready(function() {
                 return;
             }
             $inp.val(keys.join(', '));
+            applyPrLicenseQtyHighlightForRow($inp.closest('tr'));
+        }
+
+        function getPrLicenseKeyCount($row) {
+            var seen = {};
+            var count = 0;
+            String($row.find('input[name="serial_no[]"]').val() || '').split(/[,\r\n]+/).forEach(function(key) {
+                key = key.trim().toLowerCase();
+                if (key && !seen[key]) {
+                    seen[key] = true;
+                    count++;
+                }
+            });
+            return count;
+        }
+
+        function applyPrLicenseQtyHighlightForRow($row) {
+            if (!$row || !$row.length) {
+                return;
+            }
+            var $qty = $row.find('input[name="qty[]"]').first();
+            var productType = parseInt(String($row.find('input[name="product_type[]"]').first().val() || '').trim(), 10);
+            var qty = parseFloat(String($qty.val() || '0').replace(/,/g, '')) || 0;
+            var invalid = productType === 2 && qty > 0 && getPrLicenseKeyCount($row) !== qty;
+
+            $qty.toggleClass('license-qty-invalid', invalid);
+            $qty.css('color', invalid ? '#dc3545' : '');
+        }
+
+        function validatePurchaseReturnLicenseQuantities() {
+            $('#myTable > tbody > tr').each(function() {
+                applyPrLicenseQtyHighlightForRow($(this));
+            });
+            return $('#myTable input[name="qty[]"].license-qty-invalid').length === 0;
         }
 
         function set_license_key_normal(e, el) {
@@ -2401,6 +2435,29 @@ $(document).ready(function() {
                 }
             });
         }
+
+        $(function() {
+            $('#myTable > tbody > tr').each(function() {
+                applyPrLicenseQtyHighlightForRow($(this));
+            });
+            $(document).on('change input', '#myTable tbody input[name="qty[]"], #myTable tbody input[name="serial_no[]"]', function() {
+                applyPrLicenseQtyHighlightForRow($(this).closest('tr'));
+            });
+            $('#purchase-return-store').on('submit.licenseQtyValidation', function(e) {
+                if (validatePurchaseReturnLicenseQuantities()) {
+                    return true;
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                $('#myTable input[name="qty[]"].license-qty-invalid').first().focus();
+                if (window.toastr) {
+                    toastr.error('Add license keys equal to Qty for every red item before saving.');
+                } else {
+                    alert('Add license keys equal to Qty for every red item before saving.');
+                }
+                return false;
+            });
+        });
     </script>
 
 
