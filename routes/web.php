@@ -2443,7 +2443,10 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::get('delete-sucategory/{id}', 'SmItemCategoryController@deleteSucategory');
 
         // sub category import
-        
+        Route::get('subcategory-import', 'SmItemCategoryController@importSubCategory');
+        Route::post('subcategory-import-list', 'SmItemCategoryController@importSubCategoryList');
+        Route::post('subcategory-import-data', 'SmItemCategoryController@importSubCategoryData');
+        Route::get('subcategory-import-clear', 'SmItemCategoryController@importSubCategoryClear');
 
         // notification
         Route::get('notification-read', 'SysNotificationController@notificationread');
