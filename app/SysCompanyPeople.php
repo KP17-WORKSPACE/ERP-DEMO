@@ -37,5 +37,10 @@ class SysCompanyPeople extends Model
     {
         return $this->hasMany(SysCompanyPeopleDocument::class, 'people_id', 'id');
     }
+
+    public function designationDetails()
+    {
+        return $this->belongsTo(SmDesignation::class, 'designation', 'id');
+    }
     
 }
