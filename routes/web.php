@@ -1817,6 +1817,7 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::get('chartofaccounts-sub/{id}/get-edit', ['as' => 'edit-sub', 'uses' => 'SysChartofAccountsController@edit_subaccounts']);
         Route::get('accountgroupsub/{id}/get-edit', ['as' => 'edit', 'uses' => 'SysAccountGroupSubController@getEdit']);
         Route::get('accountgroupsub2/{id}/get-edit', ['as' => 'edit', 'uses' => 'SysAccountGroupSub2Controller@getEdit']);
+        Route::get('accountgroup/{id}/get-edit', ['as' => 'edit', 'uses' => 'SysAccountGroupController@getEdit']);
 
 
         Route::get('vat-settings', ['as' => 'vat-settings', 'uses' => 'SysVatController@vatadd']);
