@@ -1192,8 +1192,8 @@
                                                                             value="{{ old('ext_no_2', $job->ext_no ?? '') }}">
                                                                     </div>
                                 <div class="col-lg-2">
-                                    <label class="form-label">Finger Print ID<span>*</span></label>
-                                    <input class="form-control form-control-sm" type="number" id="finger_print_id" name="finger_print_id" required>
+                                    <label class="form-label">Finger Print ID</label>
+                                    <input class="form-control form-control-sm" type="number" id="finger_print_id" name="finger_print_id">
                                 </div>
 
                                                                     <div class="col">

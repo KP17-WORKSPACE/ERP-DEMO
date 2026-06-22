@@ -132,7 +132,7 @@ if (strpos($employee->staff_photo, 'public/') === 0) {
                     <div class="col">
                         <label class="form-label">First Name</label>
                         <div class="form-control-plaintext truncate-text-custom">
-                        {{ $employee->employee_salutation ? $employee->employee_salutation . '.' : '' }} {{ $employee->first_name_full ?? '' }}
+                        {{ $employee->employee_salutation ? $employee->employee_salutation . ' ' : '' }} {{ $employee->first_name_full ?? '' }}
 
                         </div>
                     </div>

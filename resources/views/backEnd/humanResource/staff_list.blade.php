@@ -221,10 +221,9 @@
                                             class="d-flex justify-content-between align-items-center text-muted xsmall mt-1">
                                             <span class="form-control-plaintext truncate-text">{{ $s->first_name_full }}
                                                 {{ $s->last_name }}</span>
-                                            @if (!empty($s->ext_no))
-                                                <span
-                                                    class="form-control-plaintext truncate-text">{{ $s->email ?? '—' }}</span>
-                                            @endif
+                                            <span class="form-control-plaintext truncate-text">
+                                                {{ optional($s->jobDetail)->company_email ?: '—' }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -295,8 +294,8 @@
                                 </td>
                                 <td>{{ optional($s->departments)->name ?? '—' }}</td>
                                 <td>{{ optional($s->designations)->title ?? '—' }}</td>
-                                <td>{{ $s->mobile ?? '—' }}</td>
-                                <td class="truncate-text">{{ $s->email ?? '—' }}</td>
+                                <td>{{ optional($s->jobDetail)->company_mobile ?: '—' }}</td>
+                                <td class="truncate-text">{{ optional($s->jobDetail)->company_email ?: '—' }}</td>
                                 <td class="text-center">
                                     @if (($s->active_status ?? 0) == 1)
                                         <i class="ico icon-outline-check-read text-success"></i>

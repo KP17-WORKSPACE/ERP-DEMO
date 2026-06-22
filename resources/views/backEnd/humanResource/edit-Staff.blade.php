@@ -1361,8 +1361,8 @@
 
                                                                     
                                 <div class="col-lg-2">
-                                    <label class="form-label">Finger Print ID<span>*</span></label>
-                                    <input class="form-control form-control-sm" type="number" id="finger_print_id" name="finger_print_id" required value="{{ $staffRow->finger_print_id }}">
+                                    <label class="form-label">Finger Print ID</label>
+                                    <input class="form-control form-control-sm" type="number" id="finger_print_id" name="finger_print_id"  value="{{ $staffRow->finger_print_id }}">
                                 </div>
 
                                                                     <div class="col">
