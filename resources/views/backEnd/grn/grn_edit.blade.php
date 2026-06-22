@@ -2300,6 +2300,7 @@ $('#goods-receipt-note-update').on('keypress', function (e) {
             var $qty = $row.find('input[name="qty[]"]');
             var rawPt = $row.find('input[name="product_type[]"]').first().val();
             if (!isGrnLicenseProductType(rawPt)) {
+                $qty.removeClass('license-qty-invalid');
                 $qty.css('color', '');
                 return;
             }
@@ -2310,11 +2311,20 @@ $('#goods-receipt-note-update').on('keypress', function (e) {
             } else {
                 keyCount = getLicenseKeyTokensFromSerial($row.find('input[name="serial_no[]"]').val()).length;
             }
-            if (lineQty > 0 && keyCount < lineQty) {
+            if (lineQty > 0 && keyCount !== lineQty) {
+                $qty.addClass('license-qty-invalid');
                 $qty.css('color', '#dc3545');
             } else {
+                $qty.removeClass('license-qty-invalid');
                 $qty.css('color', '');
             }
+        }
+
+        function validateGrnLicenseQuantities() {
+            $('#myTable > tbody > tr').each(function() {
+                applyLicenseQtyHighlightForRow($(this));
+            });
+            return $('#myTable input[name="qty[]"].license-qty-invalid').length === 0;
         }
 
         function applyLicenseKeysToSerialInput(itemId, rows) {
@@ -2760,6 +2770,20 @@ $('#goods-receipt-note-update').on('keypress', function (e) {
             });
             $(document).on('change input', '#myTable tbody input[name="serial_no[]"]', function () {
                 applyLicenseQtyHighlightForRow($(this).closest('tr'));
+            });
+            $('#goods-receipt-note-update').on('submit.licenseQtyValidation', function(e) {
+                if (validateGrnLicenseQuantities()) {
+                    return true;
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                $('#myTable input[name="qty[]"].license-qty-invalid').first().focus();
+                if (window.toastr) {
+                    toastr.error('Add license keys equal to Qty for every red item before updating.');
+                } else {
+                    alert('Add license keys equal to Qty for every red item before updating.');
+                }
+                return false;
             });
         });
     </script>
