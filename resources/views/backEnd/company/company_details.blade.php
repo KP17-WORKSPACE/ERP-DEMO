@@ -974,7 +974,7 @@
                             <div class="col">
                                 <label class="form-label"> Designation</label>
                                 <div class="form-control-plaintext truncate-text-custom">
-                                    {{ $contact->designation ?? '' }}
+                                    {{ optional($contact->designationDetails)->title ?: ($contact->designation ?? '') }}
                                 </div>
                             </div>
                             <div class="col">
