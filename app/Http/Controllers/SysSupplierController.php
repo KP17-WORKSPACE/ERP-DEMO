@@ -35,6 +35,7 @@ use App\SysCustSupplForm;
 use App\SysCustSupplSTL;
 use App\SysHelper;
 use App\SysPurchaseType;
+use App\SysCurrencySettings;
 use App\SysStates;
 use App\SysSupplierType;
 use App\SysSupplImport;
@@ -358,6 +359,7 @@ class SysSupplierController extends Controller
             $accounttype = SysAccountType::all();
             $roles = Role::where('active_status', '=', '1')->where('id', 2)->get();
             $paymentterms = SysPaymentTerms::where('active_status', '=', '1')->get();
+            $currency = SysCurrencySettings::select('id', 'code')->where('status', 1)->orderBy('code', 'ASC')->get();
 
             $supplier_type = SysSupplierType::where('status', '=', '1')->get();
             $purchase_type = SysPurchaseType::where('status', '=', '1')->get();
@@ -375,7 +377,7 @@ class SysSupplierController extends Controller
 
             $stl_bank = SysChartofAccounts::select('id', 'account_name')->where('status', 1)->wherein('company_id', $company_id)->where('stl', 1)->get();
 
-            return compact('roles', 'paymentterms', 'staffs', 'accounts', 'accounttype', 'countries', 'vattype', 'supplier_type', 'purchase_type', 'vat', 'address_cart', 'designation', 'department', 'company', 'stl_bank');
+            return compact('roles', 'paymentterms', 'currency', 'staffs', 'accounts', 'accounttype', 'countries', 'vattype', 'supplier_type', 'purchase_type', 'vat', 'address_cart', 'designation', 'department', 'company', 'stl_bank');
 
         } catch (\Throwable $th) {
             return $th;
@@ -465,6 +467,7 @@ class SysSupplierController extends Controller
             $new_supplier->payment_terms = $request->payment_terms;
             $new_supplier->payment_terms_txt = $request->payment_terms_txt;
             $new_supplier->transaction_type = $request->transaction_type;
+            $new_supplier->currency_id = $request->transaction_type == 'Cash' ? null : $request->currency_id;
             $new_supplier->company_access = $company_access;
             //$new_supplier->customer_documents = $supplier_documents;
             $new_supplier->status = 1;
@@ -577,7 +580,7 @@ class SysSupplierController extends Controller
             $address->flat_office_no = $request->billing_flat_office_shop_no;
             $address->city = $request->city;
             $address->country = $request->country;
-            $address->state = $request->state;
+            $address->state = (int) ($request->state ?: 0);
             $address->zip_code = $request->zip_code;
             $address->set_default = 1;
             $address->company_id = session('logged_session_data.company_id');
@@ -594,7 +597,7 @@ class SysSupplierController extends Controller
                 $address->flat_office_no = $request->billing_flat_office_shop_no;
                 $address->city = $request->city;
                 $address->country = $request->country;
-                $address->state = $request->state;
+                $address->state = (int) ($request->state ?: 0);
                 $address->zip_code = $request->zip_code;
                 $address->set_default = 1;
                 $address->company_id = session('logged_session_data.company_id');
@@ -613,7 +616,7 @@ class SysSupplierController extends Controller
 
                 $address->city = $request->city_ship;
                 $address->country = $request->country_ship;
-                $address->state = $request->state_ship;
+                $address->state = (int) ($request->state_ship ?: 0);
                 $address->zip_code = $request->zip_code_ship;
                 $address->set_default = 1;
                 $address->company_id = session('logged_session_data.company_id');
@@ -635,7 +638,7 @@ class SysSupplierController extends Controller
                     $address->flat_office_no = $key->flat_office_no;
                     $address->city = $key->city;
                     $address->country = $key->country;
-                    $address->state = $key->state;
+                    $address->state = (int) ($key->state ?: 0);
                     $address->zip_code = $key->zip_code;
                     $address->set_default = $key->set_default;
                     $address->company_id = session('logged_session_data.company_id');
@@ -754,6 +757,7 @@ class SysSupplierController extends Controller
             $accounttype = SysAccountType::all();
             $roles = Role::where('active_status', '=', '1')->where('id', 2)->get();
             $paymentterms = SysPaymentTerms::where('active_status', '=', '1')->get();
+            $currency = SysCurrencySettings::select('id', 'code')->where('status', 1)->orderBy('code', 'ASC')->get();
 
             $supplier_type = SysSupplierType::where('status', '=', '1')->get();
             $purchase_type = SysPurchaseType::all();
@@ -772,7 +776,7 @@ class SysSupplierController extends Controller
             $stl_bank = SysChartofAccounts::select('id', 'account_name')->where('status', 1)->wherein('company_id', $company_id)->where('stl', 1)->get();
             $stl_det = SysCustSupplSTL::where('status', 1)->where('cust_suppl_id', $id)->get();
 
-            return compact('roles', 'paymentterms', 'staffs', 'accounts', 'accounttype', 'countries', 'vattype', 'supplier_type', 'purchase_type', 'vat', 'editData', 'editAddressbook', 'editContact', 'editDoc', 'editAssign', 'states', 'designation', 'department', 'company', 'stl_bank', 'stl_det');
+            return compact('roles', 'paymentterms', 'currency', 'staffs', 'accounts', 'accounttype', 'countries', 'vattype', 'supplier_type', 'purchase_type', 'vat', 'editData', 'editAddressbook', 'editContact', 'editDoc', 'editAssign', 'states', 'designation', 'department', 'company', 'stl_bank', 'stl_det');
         } catch (\Exception $e) {
             Toastr::error('Operation Failed', 'Failed');
             return redirect()->back();
@@ -911,6 +915,7 @@ class SysSupplierController extends Controller
             $new_customer->payment_terms = $request->payment_terms;
             $new_customer->payment_terms_txt = $request->payment_terms_txt;
             $new_customer->transaction_type = $request->transaction_type;
+            $new_customer->currency_id = $request->transaction_type == 'Cash' ? null : $request->currency_id;
 
             $new_customer->country_telephone = $request->country_telephone ?: null;
 
@@ -1038,11 +1043,7 @@ class SysSupplierController extends Controller
 
             $address->city = $request->city;
             $address->country = $request->country;
-            if ($request->state == "") {
-                $address->state = 0;
-            } else {
-                $address->state = $request->state;
-            }
+            $address->state = (int) ($request->state ?: 0);
             $address->zip_code = $request->zip_code;
             $address->set_default = 1;
             $address->company_id = session('logged_session_data.company_id');
@@ -1065,11 +1066,7 @@ class SysSupplierController extends Controller
             $address_s->flat_office_no = $request->shipping_flat_office_shop_no;
             $address_s->city = $request->city_ship;
             $address_s->country = $request->country_ship;
-            if ($request->state_ship == "") {
-                $address_s->state = 0;
-            } else {
-                $address_s->state = $request->state_ship;
-            }
+            $address_s->state = (int) ($request->state_ship ?: 0);
             $address_s->zip_code = $request->zip_code_ship;
             $address_s->set_default = 1;
             $address_s->company_id = session('logged_session_data.company_id');
@@ -1109,7 +1106,7 @@ class SysSupplierController extends Controller
             $address->flat_office_no = $request->flat_office_shop_no;
             $address->city = $request->city;
             $address->country = $request->country;
-            $address->state = $request->state;
+            $address->state = (int) ($request->state ?: 0);
             $address->zip_code = $request->zip_code;
             $address->set_default = $request->set_default;
             $address->company_id = session('logged_session_data.company_id');
@@ -1383,7 +1380,7 @@ class SysSupplierController extends Controller
                     $address->address2 = $dt->address2;
                     $address->city = $dt->city;
                     $address->country = $country_id;
-                    $address->state = $state_id;
+                    $address->state = (int) ($state_id ?: 0);
                     $address->zip_code = $dt->zip_code;
                     $address->set_default = 1;
                     $address->company_id = $dt->company_id;
@@ -1643,7 +1640,7 @@ class SysSupplierController extends Controller
                     $address->address2 = $key->address2;
                     $address->city = $key->city;
                     $address->country = $key->country;
-                    $address->state = $key->state;
+                    $address->state = (int) ($key->state ?: 0);
                     $address->zip_code = $key->zip_code;
                     $address->set_default = $key->set_default;
                     $address->company_id = session('logged_session_data.company_id');
@@ -1808,7 +1805,7 @@ class SysSupplierController extends Controller
                     $address->address2 = $key->address2;
                     $address->city = $key->city;
                     $address->country = $key->country;
-                    $address->state = $key->state;
+                    $address->state = (int) ($key->state ?: 0);
                     $address->zip_code = $key->zip_code;
                     $address->set_default = $key->set_default;
                     $address->company_id = $key->company_id;

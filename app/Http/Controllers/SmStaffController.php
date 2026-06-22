@@ -1615,7 +1615,9 @@ class SmStaffController extends Controller
             $staff->company_id = $request->input('visa_company_name');
             $staff->main_company = $request->input('visa_company_name');
             $staff->mobile = $request->input('mobile');
-            $staff->finger_print_id = $request->input('finger_print_id');
+            $staff->finger_print_id = $request->filled('finger_print_id')
+    ? $request->finger_print_id
+    : null;
             $staff->email = $request->input('email');
             $staff->marital_status = $request->input('marital_status');
             $staff->blood_group = $request->input('blood_group');
@@ -2364,7 +2366,9 @@ class SmStaffController extends Controller
             $staff->designation_id = (int) ($request->input('designation_id') ?: 0);
             $staff->role_id = (int) ($request->input('role_id') ?: $staff->role_id ?: 2);
             $staff->mobile = $request->input('mobile');
-            $staff->finger_print_id = $request->input('finger_print_id');
+            $staff->finger_print_id = $request->filled('finger_print_id')
+    ? $request->finger_print_id
+    : null;
 
             // Only update email if changed (validation already checked uniqueness)
             if ($request->filled('email'))
@@ -3019,7 +3023,7 @@ class SmStaffController extends Controller
             Toastr::success('Staff updated successfully', 'Success');
             return redirect('staff-directory/' . $staff->id);
         } catch (\Exception $e) {
-            
+            dd($e);
             DB::rollBack();
             \Log::error('Failed to update staff: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             Toastr::error('Operation Failed. Please try again.', 'Failed');
@@ -5539,7 +5543,7 @@ class SmStaffController extends Controller
                         [$gradeInt]
                     );
                 })
-                ->whereIn('department_id', $departmentIds)
+                // ->whereIn('department_id', $departmentIds)
                 ->orderBy('full_name', 'asc')
                 ->get();
 

@@ -146,7 +146,7 @@ class SysBalancesheetController extends Controller
                 ->get();
             //return $sub_group;
 
-            $sub_group_2 = DB::table('sys_account_group_sub2 as sub')
+            /*$sub_group_2 = DB::table('sys_account_group_sub2 as sub')
                 ->select('sub.id', 'sub.sub_id', 'sub.title', db::raw('
                 (CASE WHEN ca.group = 1 THEN SUM(cat.debit_amount) - SUM(cat.credit_amount)
                 WHEN ca.group = 2 THEN SUM(cat.credit_amount) - SUM(cat.debit_amount)
@@ -162,10 +162,27 @@ class SysBalancesheetController extends Controller
                 ->whereRaw("DATE_FORMAT(cat.transaction_date, '%Y-%m-%d') <= '" . $to_date . "'")
                 ->where('cat.status', 1)->wherenotin('cat.transaction_type', ['opbinvoice'])
                 ->groupby('sub.id', 'sub.title', 'ca.group')
+                ->get();*/
+                $sub_group_2 = DB::table('sys_account_group_sub2 as sub')
+                ->select('sub.id', 'sub.sub_id', 'sub.title', db::raw('
+                (CASE WHEN ca.group = 1 THEN COALESCE(SUM(cat.debit_amount), 0) - COALESCE(SUM(cat.credit_amount), 0)
+                WHEN ca.group = 2 THEN COALESCE(SUM(cat.credit_amount), 0) - COALESCE(SUM(cat.debit_amount), 0)
+                WHEN ca.group = 5 THEN COALESCE(SUM(cat.credit_amount), 0) - COALESCE(SUM(cat.debit_amount), 0)
+                ELSE COALESCE(SUM(cat.debit_amount), 0) - COALESCE(SUM(cat.credit_amount), 0) END) as amount'))
+                ->join('sys_chartofaccounts as ca', 'ca.subgroup2', '=', 'sub.id')
+                ->leftJoin('sys_chartofaccounts_transaction as cat', function($join) use ($com_id, $to_date) {
+                    $join->on('cat.account_id', '=', 'ca.id')
+                         ->where('cat.company_id', $com_id)
+                         ->whereRaw("DATE_FORMAT(cat.transaction_date, '%Y-%m-%d') <= '" . $to_date . "'")
+                         ->where('cat.status', 1)
+                         ->whereNotIn('cat.transaction_type', ['opbinvoice']);
+                })
+                ->whereIn('sub.group_id', [1, 2, 5])
+                ->groupBy('sub.id', 'sub.title', 'ca.group')
                 ->get();
             //return $sub_group_2;
 
-            $accounts = DB::table('sys_chartofaccounts as ca')
+            /*$accounts = DB::table('sys_chartofaccounts as ca')
                 ->select('ca.subgroup2', 'ca.account_name', db::raw('
                 (CASE WHEN ca.group = 1 THEN SUM(cat.debit_amount) - SUM(cat.credit_amount)
                 WHEN ca.group = 2 THEN SUM(cat.credit_amount) - SUM(cat.debit_amount)
@@ -180,6 +197,23 @@ class SysBalancesheetController extends Controller
                 ->whereRaw("DATE_FORMAT(cat.transaction_date, '%Y-%m-%d') <= '" . $to_date . "'")
                 ->where('cat.status', 1)->wherenotin('cat.transaction_type', ['opbinvoice'])
                 ->groupby('ca.subgroup2', 'ca.account_name', 'ca.group')
+                ->get();*/
+
+                $accounts = DB::table('sys_chartofaccounts as ca')
+                ->select('ca.subgroup2', 'ca.account_name', db::raw('
+                (CASE WHEN ca.group = 1 THEN COALESCE(SUM(cat.debit_amount), 0) - COALESCE(SUM(cat.credit_amount), 0)
+                WHEN ca.group = 2 THEN COALESCE(SUM(cat.credit_amount), 0) - COALESCE(SUM(cat.debit_amount), 0)
+                WHEN ca.group = 5 THEN COALESCE(SUM(cat.credit_amount), 0) - COALESCE(SUM(cat.debit_amount), 0)
+                ELSE COALESCE(SUM(cat.debit_amount), 0) - COALESCE(SUM(cat.credit_amount), 0) END) as amount'))
+                ->leftJoin('sys_chartofaccounts_transaction as cat', function($join) use ($com_id, $to_date) {
+                    $join->on('cat.account_id', '=', 'ca.id')
+                         ->where('cat.company_id', $com_id)
+                         ->whereRaw("DATE_FORMAT(cat.transaction_date, '%Y-%m-%d') <= '" . $to_date . "'")
+                         ->where('cat.status', 1)
+                         ->whereNotIn('cat.transaction_type', ['opbinvoice']);
+                })
+                ->whereIn('ca.group', [1, 2, 5])
+                ->groupBy('ca.subgroup2', 'ca.account_name', 'ca.group')
                 ->get();
 
             //return $accounts;
@@ -214,6 +248,7 @@ class SysBalancesheetController extends Controller
             $liability_sum -= abs($net_loss);
             $liability_sum += abs($net_profit_till);
             $liability_sum -= abs($net_loss_till);
+            
 
             return view('backEnd.balancesheet.view', compact('sub_group', 'sub_group_2', 'accounts', 'period', 'from_date', 'to_date', 'net_profit', 'net_loss', 'asset_sum', 'liability_sum', 'isPL', 'stock', 'net_profit_till', 'net_loss_till','filter_by'));
         } catch (\Exception $e) {

@@ -204,7 +204,7 @@ class SysCompanyController extends Controller
             'warehouses.state',
             'documents',
             'documentItems',
-            'people',
+            'people.designationDetails',
             'countryRelation',
             'stateRelation',
             'businessEntity',
@@ -7566,4 +7566,3 @@ class SysCompanyController extends Controller
     }
 
 } 
-
