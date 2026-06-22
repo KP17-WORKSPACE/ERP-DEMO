@@ -31,7 +31,7 @@ class SysAccountGroupController extends Controller
     public function accountgroupAdd(Request $request)
     {
         try{
-            $accountgroup = SysAccountGroup::where('status',1)->get();
+            $accountgroup = SysAccountGroup::where('status',1)->orderBy('sort_id', 'asc')->get();
             if (ApiBaseMethod::checkUrl($request->fullUrl())) {
                 return ApiBaseMethod::sendResponse($accountgroup, null);
             }
@@ -49,6 +49,7 @@ class SysAccountGroupController extends Controller
         $input = $request->all();
         $validator = Validator::make($input, [
             'title'=> "required",
+            'sort_id'=> "required",
         ]);
 
         if ($validator->fails()) {
@@ -64,6 +65,8 @@ class SysAccountGroupController extends Controller
         try{
             $accountgroup = new SysAccountGroup();
             $accountgroup->title = $request->title;
+            $accountgroup->group_code = $request->group_code ?: SysHelper::get_new_head_code();
+            $accountgroup->sort_id = $request->sort_id;
             $accountgroup->status = 1;
             $accountgroup->created_by = Auth::user()->id;
             
@@ -96,6 +99,8 @@ class SysAccountGroupController extends Controller
         try{
             $accountgroup = new SysAccountGroup();
             $accountgroup->title = $request->title;
+            $accountgroup->group_code = $request->group_code ?: SysHelper::get_new_head_code();
+            $accountgroup->sort_id = $request->sort_id ?: SysHelper::get_next_sort_id('sys_account_group');
             $accountgroup->status = 1;
             $accountgroup->created_by = Auth::user()->id;
             $results = $accountgroup->save();
@@ -127,11 +132,34 @@ class SysAccountGroupController extends Controller
         }
     }
 
+    public function getEdit(Request $request, $id)
+    {
+        try {
+            $editData = SysAccountGroup::find($id);
+
+            if (!$editData) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Data not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'error' => false,
+                'editData' => $editData
+            ]);
+        } catch (\Exception $e) {
+            Toastr::error('Operation Failed', 'Failed');
+            return redirect()->back();
+        }
+    }
+
     public function update(Request $request, $id)
     {
         $input = $request->all();
         $validator = Validator::make($input, [
             'title'=> "required",
+            'sort_id'=> "required",
         ]);
 
         if ($validator->fails()) {
@@ -145,6 +173,8 @@ class SysAccountGroupController extends Controller
         try{
             $accountgroup = SysAccountGroup::find($id);            
             $accountgroup->title = $request->title;
+            $accountgroup->group_code = $request->group_code ?: SysHelper::get_new_head_code();
+            $accountgroup->sort_id = $request->sort_id;
             $accountgroup->status = 1;            
             $accountgroup->updated_by = Auth()->user()->id;
             $results = $accountgroup->update();

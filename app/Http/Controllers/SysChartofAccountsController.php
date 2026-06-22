@@ -78,7 +78,7 @@ class SysChartofAccountsController extends Controller
             $com_id = session('logged_session_data.company_id');
 
             // direct queries without caching
-            $accountgroup = SysAccountGroup::where('status', 1)->get();
+            $accountgroup = SysAccountGroup::where('status', 1)->orderBy('sort_id', 'asc')->get();
 
             $account_sub = SysChartofAccounts::select('id', 'account_code', 'account_name', 'main_account_id', 'group', 'subgroup', 'subgroup2', 'status')
                 ->where('main_account_id', '!=', 0)
@@ -253,8 +253,9 @@ class SysChartofAccountsController extends Controller
                 $accounts->group = $groups->group_id;
                 $accounts->subgroup = $groups->sub_id;
                 $accounts->subgroup2 = $request->subgroup2;
-                $accounts->department_id = $request->department_id;
-                $accounts->yes_no = $request->credit_account_status;
+                $accounts->department_id = $request->department_id ? (int)$request->department_id : null;
+                $accounts->yes_no = $request->credit_account_status ? (int)$request->credit_account_status : 0;
+
                 //$accounts->account_type = $request->account_type;
                 //$accounts->billwise = $request->billwise;
                 //$accounts->debitlimit = $request->debitlimit;
@@ -527,9 +528,10 @@ class SysChartofAccountsController extends Controller
                 $accounts->group = $groups->group_id;
                 $accounts->subgroup = $groups->sub_id;
                 $accounts->subgroup2 = $request->subgroup2;
-                $accounts->status = 1;
-                $accounts->department_id = $request->department_id;
-                $accounts->yes_no = $request->credit_account_status;
+                $accounts->status = 1;                
+                $accounts->department_id = $request->department_id ? (int)$request->department_id : null;
+                $accounts->yes_no = $request->credit_account_status ? (int)$request->credit_account_status : 0;
+                
                 //$accounts->company_id = session('logged_session_data.company_id');
                 //$accounts->company_access = session('logged_session_data.company_id');
                 $accounts->updated_by = Auth()->user()->id;

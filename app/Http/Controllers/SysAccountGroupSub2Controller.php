@@ -56,20 +56,20 @@ class SysAccountGroupSub2Controller extends Controller
     public function store(Request $request)
     {
         $input = $request->all();
-        // $validator = Validator::make($input, [
-        //     'group_id'=> "required",
-        //     'sub_id'=> "required",
-        //     'title'=> "required",
-        // ]);
+        $validator = Validator::make($input, [
+            'sub_id'=> "required",
+            'title'=> "required",
+            'sort_id'=> "required",
+        ]);
 
-        // if ($validator->fails()) {
-        //     if (ApiBaseMethod::checkUrl($request->fullUrl())) {
-        //         return ApiBaseMethod::sendError('Validation Error.', $validator->errors());
-        //     }
-        //     return redirect()->back()
-        //         ->withErrors($validator)
-        //         ->withInput();
-        // }
+        if ($validator->fails()) {
+            if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+                return ApiBaseMethod::sendError('Validation Error.', $validator->errors());
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
         try {
             $accountgroup2 = new SysAccountGroupSub2();
@@ -78,6 +78,8 @@ class SysAccountGroupSub2Controller extends Controller
             $accountgroup2->group_id = $groupid->group_id;
 
             $accountgroup2->sub_id = $request->sub_id;
+            $accountgroup2->group_code = $request->group_code ?: SysHelper::get_new_sub_group_code();
+            $accountgroup2->sort_id = $request->sort_id;
             $accountgroup2->title = $request->title;
             $accountgroup2->status = 1;
             $accountgroup2->created_by = Auth::user()->id;
@@ -115,6 +117,8 @@ class SysAccountGroupSub2Controller extends Controller
             $accountgroup2->group_id = $groupid->group_id;
 
             $accountgroup2->sub_id = $request->sub_id;
+            $accountgroup2->group_code = $request->group_code ?: SysHelper::get_new_sub_group_code();
+            $accountgroup2->sort_id = $request->sort_id ?: SysHelper::get_next_sort_id('sys_account_group_sub2');
             $accountgroup2->title = $request->title;
             $accountgroup2->status = 1;
             $accountgroup2->created_by = Auth::user()->id;
@@ -183,21 +187,21 @@ class SysAccountGroupSub2Controller extends Controller
 
     public function update(Request $request, $id)
     {
-        // $input = $request->all();
-        // $validator = Validator::make($input, [
-        //     'group_id'=> "required",
-        //     'sub_id'=> "required",
-        //     'title'=> "required",
-        // ]);
+        $input = $request->all();
+        $validator = Validator::make($input, [
+            'sub_id'=> "required",
+            'title'=> "required",
+            'sort_id'=> "required",
+        ]);
 
-        // if ($validator->fails()) {
-        //     if (ApiBaseMethod::checkUrl($request->fullUrl())) {
-        //         return ApiBaseMethod::sendError('Validation Error.', $validator->errors());
-        //     }
-        //     return redirect()->back()
-        //         ->withErrors($validator)
-        //         ->withInput();
-        // }
+        if ($validator->fails()) {
+            if (ApiBaseMethod::checkUrl($request->fullUrl())) {
+                return ApiBaseMethod::sendError('Validation Error.', $validator->errors());
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
         try {
           
             $accountgroup2 = SysAccountGroupSub2::find($id);
@@ -206,6 +210,8 @@ class SysAccountGroupSub2Controller extends Controller
             $accountgroup2->group_id = $groupid->group_id;
 
             $accountgroup2->sub_id = $request->sub_id;
+            $accountgroup2->group_code = $request->group_code ?: SysHelper::get_new_sub_group_code();
+            $accountgroup2->sort_id = $request->sort_id;
             $accountgroup2->title = $request->title;
             $accountgroup2->status = 1;
             $accountgroup2->updated_by = Auth()->user()->id;
