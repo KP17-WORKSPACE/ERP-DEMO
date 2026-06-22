@@ -980,11 +980,15 @@ $(document).ready(function() {
                                     $('#payment_terms_cash').show();
                                     $('#payment_terms_normal').hide();
                                     $('.credit-fields input').prop('required', false).val('');
+                                    $('.currency-fields').hide();
+                                    $('#currency_id').prop('disabled', true).val('').trigger('change');
                                 } else if (type === 'Credit') {
                                     $('.credit-fields').show();
                                     $('.credit-fields input').prop('required', true);
                                     $('#payment_terms_cash').hide();
                                     $('#payment_terms_normal').show();
+                                    $('.currency-fields').show();
+                                    $('#currency_id').prop('disabled', false);
                                 }
                             }
 
@@ -1019,6 +1023,19 @@ $(document).ready(function() {
                                 }
                             });
                         </script> </div>
+                </div>
+                <div class="row mt-2 currency-fields">
+                    <div class="col-md-3">Currency</div>
+                    <div class="col-md-8">
+                        <select class="form-control js-example-basic-single" name="currency_id" id="currency_id">
+                            <option value="">Select</option>
+                            @foreach ($currency as $value)
+                                <option value="{{ $value->id }}" @if ($editData->currency_id == $value->id) selected @endif>
+                                    {{ $value->code }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1631,6 +1648,18 @@ $(document).ready(function() {
 <script src="{{ asset('public/js/form-validation-toastr.js') }}"></script>
 <script>
     $(document).ready(function() {
+
+        $("select[name='salutation']").change(function() {
+            const salutation = String($(this).val() || '').replace(/\.$/, '');
+            const $firstContactSalutation = $("select[name='e_salutation[]']").first();
+            const matchingValue = $firstContactSalutation.find('option').filter(function() {
+                return String($(this).val() || '').replace(/\.$/, '') === salutation;
+            }).first().val();
+
+            if (matchingValue !== undefined) {
+                $firstContactSalutation.val(matchingValue).trigger('change');
+            }
+        });
 
 
          $(document).on('keydown',

@@ -1110,6 +1110,17 @@
                             </script>
                         </div>
                     </div>
+                    <div class="row mt-2 currency-fields">
+                        <div class="col-md-3">Currency</div>
+                        <div class="col-md-8">
+                            <select class="form-control js-example-basic-single" name="currency_id" id="currency_id">
+                                <option value="">Select</option>
+                                @foreach ($currency as $value)
+                                    <option value="{{ $value->id }}">{{ $value->code }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1721,17 +1732,16 @@
 
 <script>
     $(document).ready(function() {
-        // 1. Target the element with ID 'salutation' and attach a 'change' event handler
-        $("#salutation").change(function() {
+        $("select[name='salutation']").change(function() {
+            const salutation = String($(this).val() || '').replace(/\.$/, '');
+            const $firstContactSalutation = $("select[name='e_salutation[]']").first();
+            const matchingValue = $firstContactSalutation.find('option').filter(function() {
+                return String($(this).val() || '').replace(/\.$/, '') === salutation;
+            }).first().val();
 
-            // 2. Get the new value of the changed element (#salutation)
-            const newSalutationValue = $(this).val();
-
-            // 3. Set the value of the target element (#e_salutation_1)
-            $("#e_salutation_1").val(newSalutationValue).trigger('change');
-
-            console.log("Salutation changed to:", newSalutationValue);
-            console.log("#e_salutation_1 is now set to:", $("#e_salutation_1").val());
+            if (matchingValue !== undefined) {
+                $firstContactSalutation.val(matchingValue).trigger('change');
+            }
         });
 
         $("#company_designation").change(function() {
@@ -1890,9 +1900,13 @@
             if (type === 'Cash') {
                 $('.credit-fields').hide();
                 $('.credit-fields input').prop('required', false).val('');
+                $('.currency-fields').hide();
+                $('#currency_id').prop('disabled', true).val('').trigger('change');
             } else if (type === 'Credit') {
                 $('.credit-fields').show();
                 $('.credit-fields input').prop('required', true);
+                $('.currency-fields').show();
+                $('#currency_id').prop('disabled', false);
             }
         }
 
