@@ -32,11 +32,13 @@
     .m1 td { border: 1px solid #9e9e9e; }
     .tmc ol {padding: 0px; margin: 0px;}
     .bottom_b {font-size:12px; }
-    .page-break { page-break-after: always; }
     .m-0{margin: 0px;}
     .p-0{padding: 0px;}
     .item-head-row {background: #2c2b6d; color: #ffffff; }
     .item-row {border-bottom: solid 1px #2c2b6d;}
+    .items-table {border-collapse: collapse;}
+    .items-table thead {display: table-header-group;}
+    .items-table tr {page-break-inside: avoid;}
 
    
  
@@ -152,18 +154,20 @@
         </tr>
     </table>
     <br />
-    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <table class="items-table" width="100%" border="0" cellspacing="0" cellpadding="0">
+      <thead>
         <tr class="item-head-row">
-          <td style="width: 20px;">No</td>
-          <td>Description</td>
-          <td style="width: 20px; text-align: center;">Qty</td>
-          <td style="width: 70px; text-align: right;">Rate</td>
-          <td style="width: 70px; text-align: right;">Taxable</td>
-          <td style="width: 30px; text-align: right;">VAT%</td>
-          <td style="width: 80px; text-align: right;">VAT Amount</td>
-          <td style="width: 80px; text-align: right;">Amount</td>
+            <td style="width: 20px;">No</td>
+            <td>Description</td>
+            <td style="width: 20px; text-align: center;">Qty</td>
+            <td style="width: 70px; text-align: right;">Rate</td>
+            <td style="width: 70px; text-align: right;">Taxable</td>
+            <td style="width: 30px; text-align: right;">VAT%</td>
+            <td style="width: 80px; text-align: right;">VAT Amount</td>
+            <td style="width: 80px; text-align: right;">Amount</td>
         </tr>
-    </table>
+      </thead>
+      <tbody>
         <?php
             $i=1;
             $sub_total=0;
@@ -175,11 +179,6 @@
         ?>
         @if(count($po_item)>0)
         @foreach ($po_item as $item)
-
-
-
-
-        <table width="100%" border="0" cellspacing="0" cellpadding="0">
         <tr>
             <td class="item-row" style="width: 20px;">{{$i}} <?php $i++;?>  <span id="spn_"{{ $i }}></span></td>
             <td class="item-row" >
@@ -200,78 +199,10 @@
             $total_amount += $item->taxableamount + $item->vatamount;
             ?>
         </tr>
-    </table>
-    
-    {{-- @if($i == 11 || $i == 33 || $i == 55 || $i == 76 || $i == 98 || $i == 121 || $i == 143) --}}
-    
-    
-            @if($po->id == 3837)
-                @if($i == 10 || $i == 27)
-                <div class="page-break"></div>
-                <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                    <tr class="item-head-row">
-                    <td style="width: 20px;">No</td>
-                    <td>Description</td>
-                    <td style="width: 20px; text-align: center;">Qty</td>
-                    <td style="width: 70px; text-align: right;">Rate</td>
-                    <td style="width: 70px; text-align: right;">Taxable</td>
-                    <td style="width: 30px; text-align: right;">VAT%</td>
-                    <td style="width: 80px; text-align: right;">VAT Amount</td>
-                    <td style="width: 80px; text-align: right;">Amount</td>
-                    </tr>
-                </table>
-                @endif
-            @elseif($po->id == 3942)
-                @if($i == 8 || $i == 27)
-                <div class="page-break"></div>
-                <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                    <tr class="item-head-row">
-                    <td style="width: 20px;">No</td>
-                    <td>Description</td>
-                    <td style="width: 20px; text-align: center;">Qty</td>
-                    <td style="width: 70px; text-align: right;">Rate</td>
-                    <td style="width: 70px; text-align: right;">Taxable</td>
-                    <td style="width: 30px; text-align: right;">VAT%</td>
-                    <td style="width: 80px; text-align: right;">VAT Amount</td>
-                    <td style="width: 80px; text-align: right;">Amount</td>
-                    </tr>
-                </table>
-                @endif
-            @elseif($po->id == 3713)
-                @if($i == 10 || $i == 30)
-                <div class="page-break"></div>
-                <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                    <tr class="item-head-row">
-                    <td style="width: 20px;">No</td>
-                    <td>Description</td>
-                    <td style="width: 20px; text-align: center;">Qty</td>
-                    <td style="width: 70px; text-align: right;">Rate</td>
-                    <td style="width: 70px; text-align: right;">Taxable</td>
-                    <td style="width: 30px; text-align: right;">VAT%</td>
-                    <td style="width: 80px; text-align: right;">VAT Amount</td>
-                    <td style="width: 80px; text-align: right;">Amount</td>
-                    </tr>
-                </table>
-                @endif
-            @else
-                @if($i == 15 || $i == 37 || $i == 59 || $i == 80 || $i == 102 || $i == 125)
-                <div class="page-break"></div>
-                <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                    <tr class="item-head-row">
-                    <td style="width: 20px;">No</td>
-                    <td>Description</td>
-                    <td style="width: 20px; text-align: center;">Qty</td>
-                    <td style="width: 70px; text-align: right;">Rate</td>
-                    <td style="width: 70px; text-align: right;">Taxable</td>
-                    <td style="width: 30px; text-align: right;">VAT%</td>
-                    <td style="width: 80px; text-align: right;">VAT Amount</td>
-                    <td style="width: 80px; text-align: right;">Amount</td>
-                    </tr>
-                </table>
-                @endif
-            @endif
         @endforeach
         @endif
+      </tbody>
+    </table>
 
         <table width="100%" border="0" cellspacing="0" cellpadding="0">
             <tr>
