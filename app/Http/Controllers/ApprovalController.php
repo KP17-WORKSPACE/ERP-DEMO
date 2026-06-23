@@ -6,6 +6,7 @@ use App\HrmsApproverChain;
 use App\HrmsApproverChainStep;
 use App\SmLeaveRequest;
 use App\SmLeaveType;
+use App\SmRolePermission;
 use App\SmStaff;
 use App\User;
 use Carbon\Carbon;
@@ -99,6 +100,7 @@ class ApprovalController extends Controller
 
         $formData = $this->leaveFormData($authUser);
         $isTrack = $isTrack;
+        $permissions = SmRolePermission::where('role_id', $authUser->role_id)->get();
 
         return view('backEnd.approvals.inbox', array_merge($formData, compact(
             'leaves',
@@ -106,7 +108,8 @@ class ApprovalController extends Controller
             'action',
             'editLeave',
             'authUser',
-            'isTrack'
+            'isTrack',
+            'permissions'
         )));
     }
 
@@ -502,6 +505,11 @@ class ApprovalController extends Controller
         $qText = trim((string) $request->get('q', ''));
         $fromDate = $this->toDate($request->get('from', ''));
         $toDate = $this->toDate($request->get('to', ''));
+        $appNo = trim((string) $request->get('app_no', ''));
+        $type = (int) $request->get('type', 0);
+        $category = trim((string) $request->get('category', ''));
+        $attachment = (int) $request->get('attachment', 0);
+        $filterBy = trim((string) $request->get('filter_by', ''));
 
         if ($status !== '' && $status !== 'ALL') {
             $map = ['NEW' => 'D', 'PENDING' => 'P', 'APPROVED' => 'A', 'REJECTED' => 'R', 'RETURNED' => 'C'];
@@ -513,6 +521,44 @@ class ApprovalController extends Controller
         }
         if ($toDate) {
             $q->whereDate('leave_to', '<=', $toDate);
+        }
+
+        if ($appNo !== '') {
+            $q->where('leave_application_no', 'like', '%' . $appNo . '%');
+        }
+        if ($type > 0) {
+            $q->where('type_id', $type);
+        }
+        if ($category !== '') {
+            $q->where('leave_category', $category);
+        }
+        if ($attachment === 1) {
+            $q->whereNotNull('file')->where('file', '!=', '');
+        } elseif ($attachment === 2) {
+            $q->where(function ($w) {
+                $w->whereNull('file')->orWhere('file', '');
+            });
+        }
+        if ($filterBy !== '') {
+            if ($filterBy === 'today') {
+                $q->whereDate('leave_from', \Carbon\Carbon::today());
+            } elseif ($filterBy === 'this_week') {
+                $q->whereBetween('leave_from', [\Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY), \Carbon\Carbon::now()->endOfWeek(\Carbon\Carbon::SATURDAY)]);
+            } elseif ($filterBy === 'last_week') {
+                $q->whereBetween('leave_from', [\Carbon\Carbon::now()->subWeek()->startOfWeek(\Carbon\Carbon::SUNDAY), \Carbon\Carbon::now()->subWeek()->endOfWeek(\Carbon\Carbon::SATURDAY)]);
+            } elseif ($filterBy === 'this_month') {
+                $q->whereBetween('leave_from', [\Carbon\Carbon::now()->startOfMonth(), \Carbon\Carbon::now()->endOfMonth()]);
+            } elseif ($filterBy === 'last_month') {
+                $q->whereBetween('leave_from', [\Carbon\Carbon::now()->subMonth()->startOfMonth(), \Carbon\Carbon::now()->subMonth()->endOfMonth()]);
+            } elseif ($filterBy === 'this_quarter') {
+                $q->whereBetween('leave_from', [\Carbon\Carbon::now()->firstOfQuarter(), \Carbon\Carbon::now()->lastOfQuarter()]);
+            } elseif ($filterBy === 'pre_quarter') {
+                $q->whereBetween('leave_from', [\Carbon\Carbon::now()->subQuarter()->firstOfQuarter(), \Carbon\Carbon::now()->subQuarter()->lastOfQuarter()]);
+            } elseif ($filterBy === 'this_year') {
+                $q->whereBetween('leave_from', [\Carbon\Carbon::now()->startOfYear(), \Carbon\Carbon::now()->endOfYear()]);
+            } elseif ($filterBy === 'last_year') {
+                $q->whereBetween('leave_from', [\Carbon\Carbon::now()->subYear()->startOfYear(), \Carbon\Carbon::now()->subYear()->endOfYear()]);
+            }
         }
 
         if ($qText !== '') {

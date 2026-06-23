@@ -170,8 +170,9 @@ class SmAdvanceloanController extends Controller
         $loanPermissions = $this->loanPermissionSet('request');
         $trackPermissions = $this->loanPermissionSet('track');
         $reportPermissions = $this->loanPermissionSet('report');
+        $permissions = SmRolePermission::where('role_id', Auth::user()->role_id)->get();
 
-        return view('backEnd.humanResource.loans.index', compact('loans', 'selectedLoan', 'loanTypes', 'loanCategories', 'employees', 'employee', 'requestNumber', 'loanPermissions', 'trackPermissions', 'reportPermissions'));
+        return view('backEnd.humanResource.loans.index', compact('loans', 'selectedLoan', 'loanTypes', 'loanCategories', 'employees', 'employee', 'requestNumber', 'loanPermissions', 'trackPermissions', 'reportPermissions', 'permissions'));
     }
 
     public function show($id)
@@ -495,8 +496,9 @@ class SmAdvanceloanController extends Controller
         $loanPermissions = $this->loanPermissionSet('request');
         $trackPermissions = $this->loanPermissionSet('track');
         $reportPermissions = $this->loanPermissionSet('report');
+        $permissions = SmRolePermission::where('role_id', Auth::user()->role_id)->get();
 
-        return view('backEnd.humanResource.loans.report', compact('loans', 'employees', 'loanPermissions', 'trackPermissions', 'reportPermissions'));
+        return view('backEnd.humanResource.loans.report', compact('loans', 'employees', 'loanPermissions', 'trackPermissions', 'reportPermissions', 'permissions'));
     }
 
     public function reportExport(Request $request)
@@ -580,7 +582,8 @@ class SmAdvanceloanController extends Controller
         }
 
         $trackPermissions = $this->loanPermissionSet('track');
-        return view('backEnd.humanResource.loans.approvals', compact('loans', 'active_id', 'trackPermissions'));
+        $permissions = SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+        return view('backEnd.humanResource.loans.approvals', compact('loans', 'active_id', 'trackPermissions', 'permissions'));
     }
 
     public function track($id)

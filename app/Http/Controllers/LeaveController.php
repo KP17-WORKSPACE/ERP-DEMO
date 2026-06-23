@@ -819,4 +819,28 @@ class LeaveController extends Controller
     }
 
 
+    public function destroy(\App\SmLeaveRequest $leave)
+    {
+        $action = request()->input('leave_action', '');
+        
+        if (!$leave->can_be_deleted) {
+            return redirect()->back()->with('error', 'This leave request cannot be deleted because it has already been processed by an approver.');
+        }
+
+        if ($leave->file && \Illuminate\Support\Facades\Storage::disk('public')->exists($leave->file)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($leave->file);
+        }
+        if ($leave->travel_ticket_file && \Illuminate\Support\Facades\Storage::disk('public')->exists($leave->travel_ticket_file)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($leave->travel_ticket_file);
+        }
+
+        if ($leave->chain) {
+            $leave->chain->steps()->delete();
+            $leave->chain()->delete();
+        }
+        
+        $leave->delete();
+
+        return redirect()->back()->with('success', 'Leave request deleted successfully.');
+    }
 }
