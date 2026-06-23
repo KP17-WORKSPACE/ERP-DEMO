@@ -1181,6 +1181,53 @@
 
 <script>
     let stockInLicenseRows = [];
+    var stockInProductTypes = @json($items->pluck('product_type', 'id'));
+
+    function getStockInRowProductType($row) {
+        var $productType = $row.find('input[name="product_type[]"]').first();
+        var productType = parseInt(String($productType.val() || '').trim(), 10);
+        if (!isNaN(productType)) return productType;
+
+        var partId = String($row.find('select[name="part_number[]"]').first().val() || '').trim();
+        productType = parseInt(stockInProductTypes[partId], 10);
+        if (!isNaN(productType)) {
+            $productType.val(productType);
+        }
+        return productType;
+    }
+
+    function getStockInLicenseKeyCount($row) {
+        var seen = {};
+        var count = 0;
+        String($row.find('input[name="serial_no[]"]').first().val() || '').split(/[,\r\n]+/).forEach(function(key) {
+            key = key.trim().toLowerCase();
+            if (key && !seen[key]) {
+                seen[key] = true;
+                count++;
+            }
+        });
+        return count;
+    }
+
+    function applyStockInLicenseQtyState($row) {
+        if (!$row || !$row.length) return;
+        var $qty = $row.find('input[name="qty[]"]').first();
+        var qty = parseFloat(String($qty.val() || '0').replace(/,/g, '')) || 0;
+        var invalid = getStockInRowProductType($row) === 2
+            && qty > 0
+            && getStockInLicenseKeyCount($row) !== qty;
+
+        $qty.toggleClass('license-qty-invalid', invalid);
+        $qty.css('color', invalid ? '#dc3545' : '');
+    }
+
+    function validateStockInLicenseQuantities($form) {
+        var $table = $form.find('table#myTable').first();
+        $table.children('tbody').children('tr').each(function() {
+            applyStockInLicenseQtyState($(this));
+        });
+        return $table.find('input[name="qty[]"].license-qty-invalid').length === 0;
+    }
 
     function set_license_key(el, e) {
         var key = e.which || e.keyCode;
@@ -1189,14 +1236,9 @@
         }
 
         var $row = $(el).closest("tr");
-        var pt = $row.find('input[name="product_type[]"]').first().val();
         var partId = $row.find('select[name="part_number[]"]').val();
-        var hasValidPart = partId !== undefined && partId !== null && String(partId).trim() !== '';
-        var isLicenseType = parseInt(String(pt == null ? '' : pt).trim(), 10) === 2;
 
-        // Existing edit rows may not have product_type populated, so allow modal
-        // when a valid part number is selected as a fallback.
-        if (isLicenseType || hasValidPart) {
+        if (getStockInRowProductType($row) === 2) {
             $('#part_number_id').val(partId);
             $('#license_row_index').val($('#myTable > tbody > tr').index($row));
             $('#license_qty').val($(el).val());
@@ -1326,6 +1368,7 @@
         var $targetRow = getActiveLicenseTargetRow(itemId);
         if (!$targetRow.length) return;
         $targetRow.find('input[name="serial_no[]"]').val(getCommaSeparatedLicenseKeys(rows).join(', '));
+        applyStockInLicenseQtyState($targetRow);
     }
 
     function updateLicenseAddState() {
@@ -1601,6 +1644,38 @@
             }
         });
     }
+
+    $(function() {
+        var $form = $('#tender-create-form');
+        var $table = $form.find('table#myTable').first();
+
+        $table.children('tbody').children('tr').each(function() {
+            applyStockInLicenseQtyState($(this));
+        });
+
+        $form.on('change input', 'table#myTable tbody input[name="qty[]"], table#myTable tbody input[name="serial_no[]"]', function() {
+            applyStockInLicenseQtyState($(this).closest('tr'));
+        });
+
+        $form.on('change', 'table#myTable tbody select[name="part_number[]"]', function() {
+            applyStockInLicenseQtyState($(this).closest('tr'));
+        });
+
+        $form.on('submit.stockInLicenseQtyValidation', function(e) {
+            if (validateStockInLicenseQuantities($form)) return true;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $table.find('input[name="qty[]"].license-qty-invalid').first().focus();
+            var message = 'Add license keys equal to Qty for every red item before updating.';
+            if (window.toastr) {
+                toastr.error(message);
+            } else {
+                alert(message);
+            }
+            return false;
+        });
+    });
 </script>
 
 
