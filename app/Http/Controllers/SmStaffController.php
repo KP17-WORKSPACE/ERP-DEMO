@@ -227,18 +227,16 @@ class SmStaffController extends Controller
                 Toastr::success('Username / Email is already excist!', 'Warning');
                 return redirect()->back();
             }
-            $companyAccess = $request->input('company_access');
-            if (is_string($companyAccess)) {
-                $companyAccess = array_filter(array_map('trim', explode(',', $companyAccess)));
+            $company_access = "";
+            if ($request->company_access != "") {
+                $company_access = is_array($request->company_access) ? implode(",", $request->company_access) : $request->company_access;
             }
-            $job->company_access = $companyAccess ? array_values((array) $companyAccess) : null;
 
             // brands may come as array OR comma string
-            $brands = $request->input('brands');
-            if (is_string($brands)) {
-                $brands = array_filter(array_map('trim', explode(',', $brands)));
+            $brands = "";
+            if ($request->brands != "") {
+                $brands = is_array($request->brands) ? implode(",", $request->brands) : $request->brands;
             }
-            $job->brand_ids = $brands ? array_values((array) $brands) : null;
 
             $user = new User();
             $user->role_id = $request->role_id;
@@ -1615,9 +1613,7 @@ class SmStaffController extends Controller
             $staff->company_id = $request->input('visa_company_name');
             $staff->main_company = $request->input('visa_company_name');
             $staff->mobile = $request->input('mobile');
-            $staff->finger_print_id = $request->filled('finger_print_id')
-    ? $request->finger_print_id
-    : null;
+            $staff->finger_print_id = $request->input('finger_print_id');
             $staff->email = $request->input('email');
             $staff->marital_status = $request->input('marital_status');
             $staff->blood_group = $request->input('blood_group');
@@ -2366,9 +2362,7 @@ class SmStaffController extends Controller
             $staff->designation_id = (int) ($request->input('designation_id') ?: 0);
             $staff->role_id = (int) ($request->input('role_id') ?: $staff->role_id ?: 2);
             $staff->mobile = $request->input('mobile');
-            $staff->finger_print_id = $request->filled('finger_print_id')
-    ? $request->finger_print_id
-    : null;
+            $staff->finger_print_id = $request->input('finger_print_id');
 
             // Only update email if changed (validation already checked uniqueness)
             if ($request->filled('email'))
@@ -3023,7 +3017,7 @@ class SmStaffController extends Controller
             Toastr::success('Staff updated successfully', 'Success');
             return redirect('staff-directory/' . $staff->id);
         } catch (\Exception $e) {
-            dd($e);
+            
             DB::rollBack();
             \Log::error('Failed to update staff: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             Toastr::error('Operation Failed. Please try again.', 'Failed');
@@ -4428,7 +4422,11 @@ class SmStaffController extends Controller
             }
         }
 
-        return view('backEnd.humanResource.resignation.index', compact('editMode', 'staffData', 'job', 'staffs', 'departments', 'eosData'));
+        $requestNo = $editMode && isset($eosData['main'])
+            ? $this->displayEosRequestNo($eosData['main'])
+            : $this->nextEosRequestNo();
+
+        return view('backEnd.humanResource.resignation.index', compact('editMode', 'staffData', 'job', 'staffs', 'departments', 'eosData', 'requestNo'));
     }
 
 
@@ -4488,8 +4486,24 @@ class SmStaffController extends Controller
         try {
             $companyId = session()->get('logged_session_data.company_id');
 
-            $q = EndOfService::with(['employee', 'employee.departments', 'employee.designations'])
-                ->when($companyId, function ($query) use ($companyId) {
+            $q = EndOfService::with([
+                'employee',
+                'employee.departments',
+                'employee.designations',
+                'reportingManager',
+                'department',
+                'designation',
+                'notice',
+                'handover',
+                'assetClearance',
+                'assetClearance.assets',
+                'finance',
+                'finalSettlement',
+                'exitInterview',
+                'approvals',
+                'documents'
+            ])
+                ->when($companyId && (int) $companyId !== 1, function ($query) use ($companyId) {
                     $query->whereHas('employee', function ($empQuery) use ($companyId) {
                         $empQuery->where('company_id', $companyId);
                     });
@@ -4498,12 +4512,29 @@ class SmStaffController extends Controller
             // Filter by employee name/staff no
             if ($request->filled('staff_name')) {
                 $term = trim($request->input('staff_name'));
-                $q->whereHas('employee', function ($empQuery) use ($term) {
-                    $empQuery->where('staff_no', 'like', "%{$term}%")
-                        ->orWhere('first_name', 'like', "%{$term}%")
-                        ->orWhere('last_name', 'like', "%{$term}%")
-                        ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) LIKE ?", ["%{$term}%"]);
+                $hasRequestNo = Schema::hasColumn('sm_end_of_service', 'request_no');
+                $q->where(function ($query) use ($term, $hasRequestNo) {
+                    if ($hasRequestNo) {
+                        $query->where('request_no', 'like', "%{$term}%")
+                            ->orWhereHas('employee', function ($empQuery) use ($term) {
+                                $empQuery->where('staff_no', 'like', "%{$term}%")
+                                    ->orWhere('first_name', 'like', "%{$term}%")
+                                    ->orWhere('last_name', 'like', "%{$term}%")
+                                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) LIKE ?", ["%{$term}%"]);
+                            });
+                    } else {
+                        $query->whereHas('employee', function ($empQuery) use ($term) {
+                            $empQuery->where('staff_no', 'like', "%{$term}%")
+                                ->orWhere('first_name', 'like', "%{$term}%")
+                                ->orWhere('last_name', 'like', "%{$term}%")
+                                ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) LIKE ?", ["%{$term}%"]);
+                        });
+                    }
                 });
+            }
+
+            if ($request->filled('request_no') && Schema::hasColumn('sm_end_of_service', 'request_no')) {
+                $q->where('request_no', 'like', '%' . trim($request->input('request_no')) . '%');
             }
 
             // Filter by status
@@ -4516,10 +4547,44 @@ class SmStaffController extends Controller
                 $q->where('separation_type', $request->separation_type);
             }
 
-            $resignations = $q->orderBy('created_at', 'desc')->get();
-            $departments = SmHumanDepartment::where('active_status', 1)->get();
+            if ($request->filled('resignation_type')) {
+                $q->where('resignation_type', $request->resignation_type);
+            }
 
-            return view('backEnd.humanResource.resignation.list', compact('resignations', 'departments'));
+            if ($request->filled('from')) {
+                $q->whereDate('created_at', '>=', $request->input('from'));
+            }
+
+            if ($request->filled('to')) {
+                $q->whereDate('created_at', '<=', $request->input('to'));
+            }
+
+            if ($request->filled('attachment') && $request->input('attachment') !== 'all') {
+                if ($request->input('attachment') === '1') {
+                    $q->whereHas('documents');
+                } elseif ($request->input('attachment') === '2') {
+                    $q->whereDoesntHave('documents');
+                }
+            }
+
+            if ($request->filled('filter_by')) {
+                $range = $this->getEosDateRange($request->input('filter_by'));
+                if ($range) {
+                    $q->whereDate('created_at', '>=', $range[0])
+                        ->whereDate('created_at', '<=', $range[1]);
+                }
+            }
+
+            $resignations = $q->orderBy('created_at', 'desc')->get();
+            $resignations->each(function ($resignation) {
+                $this->normalizeEosNoApproverStatus($resignation);
+                $resignation->display_request_no = $this->displayEosRequestNo($resignation);
+            });
+            $departments = SmHumanDepartment::where('active_status', 1)->get();
+            $active_id = $request->filled('active') ? (int) $request->active : optional($resignations->first())->id;
+            $selectedResignation = $active_id ? $resignations->firstWhere('id', $active_id) : null;
+
+            return view('backEnd.humanResource.resignation.list', compact('resignations', 'departments', 'selectedResignation', 'active_id'));
         } catch (\Exception $e) {
             return redirect()->back()->with('message-danger', 'Error loading resignation list: ' . $e->getMessage());
         }
@@ -4590,8 +4655,27 @@ class SmStaffController extends Controller
 
     public function storeResignation(Request $request)
     {
+        $request->validate([
+            'eos_id' => 'nullable|integer',
+            'employee_id' => 'required|integer',
+            'separation_type' => 'required|string|in:resignation,termination,end_of_contract,retirement,absconding,death',
+            'resignation_type' => 'nullable|string|in:voluntary,involuntary,mutual_separation',
+            'initiated_by' => 'nullable|string|in:employee,company,management',
+            'reason_category' => 'nullable|string|in:personal,performance,misconduct,redundancy,health,relocation,better_opportunity,other',
+        ], [
+            'separation_type.in' => 'Invalid Separation Type selected.',
+            'resignation_type.in' => 'Invalid Resignation Type selected.',
+            'initiated_by.in' => 'Invalid Initiator selected.',
+            'reason_category.in' => 'Invalid Reason Category selected.',
+        ]);
+
         try {
             DB::beginTransaction();
+            $isEdit = $request->filled('eos_id');
+            $statusValue = $this->getStatusValue($request->input('status'));
+            if ($statusValue === 'draft') {
+                $statusValue = 'submitted';
+            }
 
             // Step 1: Create or Update Master Record (sm_end_of_service)
             $endOfServiceData = [
@@ -4604,17 +4688,30 @@ class SmStaffController extends Controller
                 'initiated_by' => $this->getInitiatedByValue($request->initiated_by),
                 'reason_category' => $this->getReasonCategoryValue($request->reason_category),
                 'detailed_reason' => $request->detailed_reason ?: 'N/A',
-                'status' => $this->getStatusValue($request->status),
-                'created_by' => Auth::id() ?: 1,
+                'status' => $statusValue,
                 'updated_by' => Auth::id() ?: 1,
-                'created_at' => now(),
                 'updated_at' => now(),
             ];
 
-            $endOfService = EndOfService::updateOrCreate(
-                ['employee_id' => $request->employee_id],
-                $endOfServiceData
-            );
+            if ($isEdit) {
+                $endOfService = EndOfService::findOrFail($request->eos_id);
+                if (Schema::hasColumn('sm_end_of_service', 'request_no') && $this->shouldAssignEosRequestNo($endOfService->request_no)) {
+                    $endOfServiceData['request_no'] = $this->nextEosRequestNo();
+                }
+                $endOfService->fill($endOfServiceData);
+                $endOfService->save();
+            } else {
+                $endOfService = EndOfService::firstOrNew(['employee_id' => $request->employee_id]);
+                if (!$endOfService->exists) {
+                    $endOfService->created_by = Auth::id() ?: 1;
+                    $endOfService->created_at = now();
+                }
+                if (Schema::hasColumn('sm_end_of_service', 'request_no') && $this->shouldAssignEosRequestNo($endOfService->request_no)) {
+                    $endOfServiceData['request_no'] = $this->nextEosRequestNo();
+                }
+                $endOfService->fill($endOfServiceData);
+                $endOfService->save();
+            }
 
             $endOfServiceId = $endOfService->id;
 
@@ -4722,26 +4819,27 @@ class SmStaffController extends Controller
             );
 
             // Step 7: Final Settlement Data (sm_end_of_service_final_settlement)
-            EndOfServiceFinalSettlement::updateOrCreate(
-                ['end_of_service_id' => $endOfServiceId],
-                [
+            $finalSettlementData = [
                     'end_of_service_id' => $endOfServiceId,
                     'visa_type' => $request->visa_type ?: null,
-                    'visa_cancellation_required' => $request->visa_cancellation_required ? 1 : 0,
+                    'visa_cancellation_required' => $this->getYesNoValue($request->visa_cancellation_required),
                     'visa_cancellation_date' => $this->formatDateOrNull($request->visa_cancellation_date),
                     'labour_card_cancellation_date' => $this->formatDateOrNull($request->labour_card_cancellation_date),
                     'immigration_clearance_status' => $this->getImmigrationClearanceStatusValue($request->immigration_clearance_status),
-                    'exit_permit_issued' => $request->exit_permit_issued ? 1 : 0,
-                    'mohre_clearance_document' => $request->hasFile('mohre_clearance_document') ?
-                        $request->file('mohre_clearance_document')->store('eos/documents') : null,
-                    'visa_cancellation_document' => $request->hasFile('visa_cancellation_document') ?
-                        $request->file('visa_cancellation_document')->store('eos/documents') : null,
-                    'labour_cancellation_document' => $request->hasFile('labour_cancellation_document') ?
-                        $request->file('labour_cancellation_document')->store('eos/documents') : null,
+                    'exit_permit_issued' => $this->getYesNoValue($request->exit_permit_issued),
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]
-            );
+            ];
+            if ($request->hasFile('mohre_clearance_document')) {
+                $finalSettlementData['mohre_clearance_document'] = $request->file('mohre_clearance_document')->store('eos/documents');
+            }
+            if ($request->hasFile('visa_cancellation_document')) {
+                $finalSettlementData['visa_cancellation_document'] = $request->file('visa_cancellation_document')->store('eos/documents');
+            }
+            if ($request->hasFile('labour_cancellation_document')) {
+                $finalSettlementData['labour_cancellation_document'] = $request->file('labour_cancellation_document')->store('eos/documents');
+            }
+            EndOfServiceFinalSettlement::updateOrCreate(['end_of_service_id' => $endOfServiceId], $finalSettlementData);
 
             // Step 8: Exit Interview Data (sm_end_of_service_exit_interview)
             EndOfServiceExitInterview::updateOrCreate(
@@ -4817,14 +4915,110 @@ class SmStaffController extends Controller
                 );
             }
 
+            $this->normalizeEosNoApproverStatus($endOfService);
+
             DB::commit();
 
-            return redirect()->route('staff.resignation.edit', $endOfServiceId)->with('message-success', 'End of Service record saved successfully! You can now edit the saved data.');
+            if ($isEdit) {
+                return redirect()->route('staff.resignation.edit', $endOfServiceId)->with('message-success', 'End of Service record updated successfully.');
+            }
+
+            return redirect()->route('staff.resignation.list', ['active' => $endOfServiceId])->with('message-success', 'End of Service record saved successfully.');
 
         } catch (\Exception $e) {
             DB::rollback();
-            return redirect()->back()->with('message-danger', 'Error saving record: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('message-danger', 'Unable to save End of Service record. Please check the highlighted fields and try again.');
         }
+    }
+
+    public function deleteResignation($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $endOfService = EndOfService::findOrFail($id);
+            $documents = EndOfServiceDocument::where('end_of_service_id', $id)->get();
+            foreach ($documents as $document) {
+                if (!empty($document->attachment) && Storage::exists($document->attachment)) {
+                    Storage::delete($document->attachment);
+                }
+            }
+
+            $finalSettlement = EndOfServiceFinalSettlement::where('end_of_service_id', $id)->first();
+            if ($finalSettlement) {
+                foreach (['mohre_clearance_document', 'visa_cancellation_document', 'labour_cancellation_document'] as $field) {
+                    if (!empty($finalSettlement->{$field}) && Storage::exists($finalSettlement->{$field})) {
+                        Storage::delete($finalSettlement->{$field});
+                    }
+                }
+            }
+
+            $assetClearanceIds = EndOfServiceAssetClearance::where('end_of_service_id', $id)->pluck('id');
+            if ($assetClearanceIds->isNotEmpty()) {
+                EndOfServiceAsset::whereIn('asset_clearance_id', $assetClearanceIds)->delete();
+            }
+
+            EndOfServiceNotice::where('end_of_service_id', $id)->delete();
+            EndOfServiceHandover::where('end_of_service_id', $id)->delete();
+            EndOfServiceAssetClearance::where('end_of_service_id', $id)->delete();
+            EndOfServiceFinance::where('end_of_service_id', $id)->delete();
+            EndOfServiceFinalSettlement::where('end_of_service_id', $id)->delete();
+            EndOfServiceExitInterview::where('end_of_service_id', $id)->delete();
+            EndOfServiceApproval::where('end_of_service_id', $id)->delete();
+            EndOfServiceDocument::where('end_of_service_id', $id)->delete();
+            $endOfService->delete();
+
+            DB::commit();
+
+            return redirect()->route('staff.resignation.list', ['view' => 'full'])
+                ->with('message-success', 'End of Service record deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('message-danger', 'Unable to delete End of Service record.');
+        }
+    }
+
+    public function downloadResignationAttachment(Request $request, $id)
+    {
+        if ($request->filled('field')) {
+            $field = $request->input('field');
+            $allowedFields = [
+                'mohre_clearance_document',
+                'visa_cancellation_document',
+                'labour_cancellation_document',
+            ];
+
+            abort_unless(in_array($field, $allowedFields, true), 404);
+
+            $finalSettlement = EndOfServiceFinalSettlement::where('end_of_service_id', $id)->firstOrFail();
+            $path = $finalSettlement->{$field};
+
+            if (!empty($path) && Storage::exists($path)) {
+                return Storage::download($path, basename($path));
+            }
+
+            abort(404);
+        }
+
+        if ($request->filled('document_id')) {
+            $document = EndOfServiceDocument::where('end_of_service_id', $id)
+                ->where('id', $request->input('document_id'))
+                ->whereNotNull('attachment')
+                ->where('attachment', '!=', '')
+                ->firstOrFail();
+        } else {
+            $document = EndOfServiceDocument::where('end_of_service_id', $id)
+                ->whereNotNull('attachment')
+                ->where('attachment', '!=', '')
+                ->orderBy('id')
+                ->firstOrFail();
+        }
+
+        if (Storage::exists($document->attachment)) {
+            return Storage::download($document->attachment, basename($document->attachment));
+        }
+
+        abort(404);
     }
 
 
@@ -5075,17 +5269,17 @@ class SmStaffController extends Controller
      */
     private function getSeparationTypeValue($value)
     {
-        // Map form values to database ENUM values
         $valueMap = [
-            'resignation' => 'Resignation',
-            'termination' => 'Termination',
-            'end_of_contract' => 'End of Contract',
-            'retirement' => 'Retirement',
-            'absconding' => 'Absconding',
-            'death' => 'Death'
+            'resignation' => 'resignation',
+            'termination' => 'termination',
+            'end_of_contract' => 'end_of_contract',
+            'retirement' => 'retirement',
+            'absconding' => 'absconding',
+            'death' => 'death',
+            'end of contract' => 'end_of_contract'
         ];
 
-        return isset($valueMap[strtolower($value)]) ? $valueMap[strtolower($value)] : 'Resignation';
+        return isset($valueMap[strtolower($value)]) ? $valueMap[strtolower($value)] : 'resignation';
     }
 
     /**
@@ -5093,14 +5287,14 @@ class SmStaffController extends Controller
      */
     private function getResignationTypeValue($value)
     {
-        // Map form values to database ENUM values
         $valueMap = [
-            'voluntary' => 'Voluntary',
-            'involuntary' => 'Involuntary',
-            'mutual_separation' => 'Mutual Separation'
+            'voluntary' => 'voluntary',
+            'involuntary' => 'involuntary',
+            'mutual_separation' => 'mutual_separation',
+            'mutual separation' => 'mutual_separation'
         ];
 
-        return isset($valueMap[strtolower($value)]) ? $valueMap[strtolower($value)] : 'Voluntary';
+        return isset($valueMap[strtolower($value)]) ? $valueMap[strtolower($value)] : null;
     }
 
     /**
@@ -5108,11 +5302,8 @@ class SmStaffController extends Controller
      */
     private function getInitiatedByValue($value)
     {
-        $validValues = ['Employee', 'Company', 'Management'];
-        if (in_array($value, $validValues)) {
-            return $value;
-        }
-        return 'Employee'; // Default fallback
+        $validValues = ['employee', 'company', 'management'];
+        return in_array(strtolower($value), $validValues) ? strtolower($value) : 'employee';
     }
 
     /**
@@ -5120,11 +5311,18 @@ class SmStaffController extends Controller
      */
     private function getReasonCategoryValue($value)
     {
-        $validValues = ['Personal', 'Performance', 'Misconduct', 'Redundancy', 'Health', 'Relocation', 'Better Opportunity', 'Other'];
-        if (in_array($value, $validValues)) {
-            return $value;
-        }
-        return 'Other'; // Default fallback
+        $valueMap = [
+            'personal' => 'personal',
+            'performance' => 'performance',
+            'misconduct' => 'misconduct',
+            'redundancy' => 'redundancy',
+            'health' => 'health',
+            'relocation' => 'relocation',
+            'better_opportunity' => 'better_opportunity',
+            'better opportunity' => 'better_opportunity',
+            'other' => 'other'
+        ];
+        return isset($valueMap[strtolower($value)]) ? $valueMap[strtolower($value)] : 'other';
     }
 
     /**
@@ -5244,11 +5442,14 @@ class SmStaffController extends Controller
      */
     private function getImmigrationClearanceStatusValue($value)
     {
-        $validValues = ['Cleared', 'Pending', 'Rejected'];
-        if (in_array($value, $validValues)) {
-            return $value;
-        }
-        return 'Pending'; // Default fallback
+        $valueMap = [
+            'cleared' => 'cleared',
+            'completed' => 'cleared',
+            'pending' => 'pending',
+            'in_progress' => 'pending',
+            'not_applicable' => 'pending'
+        ];
+        return isset($valueMap[strtolower($value)]) ? $valueMap[strtolower($value)] : 'pending';
     }
 
     /**
@@ -5274,11 +5475,8 @@ class SmStaffController extends Controller
      */
     private function getApprovalStatusValue($value)
     {
-        $validValues = ['Approved', 'Pending', 'Rejected'];
-        if (in_array($value, $validValues)) {
-            return $value;
-        }
-        return 'Pending'; // Default fallback
+        $validValues = ['approved', 'pending', 'rejected'];
+        return in_array(strtolower($value), $validValues) ? strtolower($value) : 'pending';
     }
 
     /**
@@ -5399,6 +5597,124 @@ class SmStaffController extends Controller
         ];
 
         return isset($valueMap[strtolower($value)]) ? $valueMap[strtolower($value)] : 'pending';
+    }
+
+    private function displayEosRequestNo($endOfService)
+    {
+        if (
+            $endOfService
+            && Schema::hasColumn('sm_end_of_service', 'request_no')
+            && !$this->shouldAssignEosRequestNo($endOfService->request_no)
+        ) {
+            return $this->formatEosRequestNo($endOfService->request_no);
+        }
+
+        if ($endOfService && $endOfService->id) {
+            return $this->eosRequestPrefix(optional($endOfService->employee)->company_id) . (1000 + (int) $endOfService->id);
+        }
+
+        return $this->nextEosRequestNo();
+    }
+
+    private function nextEosRequestNo($companyId = null)
+    {
+        $companyId = $companyId ?: session('logged_session_data.company_id') ?: (Auth::user()->company_id ?? 1);
+        $prefix = $this->eosRequestPrefix($companyId);
+
+        if (!Schema::hasColumn('sm_end_of_service', 'request_no')) {
+            return $prefix . (((int) EndOfService::max('id')) + 1001);
+        }
+
+        $numbers = DB::table('sm_end_of_service')
+            ->lockForUpdate()
+            ->pluck('request_no');
+
+        $max = 1000;
+        foreach ($numbers as $number) {
+            if (preg_match('/(\d+)$/', (string) $number, $match)) {
+                $max = max($max, (int) $match[1]);
+            }
+        }
+
+        return $prefix . ($max + 1);
+    }
+
+    private function eosRequestPrefix($companyId = null)
+    {
+        $companyId = $companyId ?: session('logged_session_data.company_id') ?: (Auth::user()->company_id ?? 1);
+        $code = DB::table('sys_company')->where('id', $companyId)->value('other_code') ?: 'D';
+
+        return 'ES' . $code . '-';
+    }
+
+    private function formatEosRequestNo($requestNo)
+    {
+        $requestNo = trim((string) $requestNo);
+
+        if (preg_match('/^RE[A-Z0-9]*-(\d+)$/i', $requestNo, $match)) {
+            return $this->eosRequestPrefix() . $match[1];
+        }
+
+        return $requestNo;
+    }
+
+    private function shouldAssignEosRequestNo($requestNo)
+    {
+        $requestNo = trim((string) $requestNo);
+
+        return $requestNo === '' || preg_match('/^RES-\d+$/i', $requestNo);
+    }
+
+    private function normalizeEosNoApproverStatus(EndOfService $endOfService)
+    {
+        if ($endOfService->status !== 'draft') {
+            return;
+        }
+
+        $hasApprovals = $endOfService->relationLoaded('approvals')
+            ? $endOfService->approvals->isNotEmpty()
+            : EndOfServiceApproval::where('end_of_service_id', $endOfService->id)->exists();
+
+        if ($hasApprovals) {
+            return;
+        }
+
+        $endOfService->status = 'submitted';
+        $endOfService->updated_by = Auth::id() ?: $endOfService->updated_by;
+        $endOfService->updated_at = now();
+        $endOfService->save();
+
+        if ($endOfService->relationLoaded('approvals')) {
+            $endOfService->setRelation('approvals', collect());
+        }
+    }
+
+    private function getEosDateRange($filterBy)
+    {
+        $today = now();
+
+        switch ($filterBy) {
+            case 'today':
+                return [$today->copy()->startOfDay()->toDateString(), $today->copy()->endOfDay()->toDateString()];
+            case 'this_week':
+                return [$today->copy()->startOfWeek()->toDateString(), $today->copy()->endOfWeek()->toDateString()];
+            case 'last_week':
+                return [$today->copy()->subWeek()->startOfWeek()->toDateString(), $today->copy()->subWeek()->endOfWeek()->toDateString()];
+            case 'this_month':
+                return [$today->copy()->startOfMonth()->toDateString(), $today->copy()->endOfMonth()->toDateString()];
+            case 'last_month':
+                return [$today->copy()->subMonth()->startOfMonth()->toDateString(), $today->copy()->subMonth()->endOfMonth()->toDateString()];
+            case 'this_quarter':
+                return [$today->copy()->startOfQuarter()->toDateString(), $today->copy()->endOfQuarter()->toDateString()];
+            case 'pre_quarter':
+                return [$today->copy()->subQuarter()->startOfQuarter()->toDateString(), $today->copy()->subQuarter()->endOfQuarter()->toDateString()];
+            case 'this_year':
+                return [$today->copy()->startOfYear()->toDateString(), $today->copy()->endOfYear()->toDateString()];
+            case 'last_year':
+                return [$today->copy()->subYear()->startOfYear()->toDateString(), $today->copy()->subYear()->endOfYear()->toDateString()];
+            default:
+                return null;
+        }
     }
 
 
@@ -5543,7 +5859,7 @@ class SmStaffController extends Controller
                         [$gradeInt]
                     );
                 })
-                // ->whereIn('department_id', $departmentIds)
+                ->whereIn('department_id', $departmentIds)
                 ->orderBy('full_name', 'asc')
                 ->get();
 

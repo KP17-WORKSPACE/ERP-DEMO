@@ -585,6 +585,15 @@ class SysReceivableOutstandingController extends Controller
                 $data_receipt = DB::table('sys_receipt as r')->select('ra.bi_doc_no', 'r.doc_number', 'ra.bi_amount', 'r.receipt_through', 'r.receipt_date', 'r.cheque_number', 'r.cheque_bank_name')
                     ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', 'r.doc_number')->where('ra.account_id', $account)->wherein('bi_doc_no', $receivable->pluck("transaction_no"))->where('r.status', 1)->get();
 
+                $data_receipt6 = DB::table('sys_receipt_adjustments as ra')
+                    ->select('ra.bi_doc_no', 'ra.bi_doc_number as doc_number', 'ra.bi_amount', 'ra.bi_doc_date as receipt_date')
+                    ->where('ra.transaction_type', 'openingbalance')
+                    ->where('ra.company_id', $com_id)
+                    ->where('ra.account_id', $account)
+                    ->whereIn('ra.bi_doc_no', $receivable->pluck('transaction_no'))
+                    ->where('ra.status', 1)
+                    ->get();
+
                 $data_receipt2 = DB::table('sys_journalvoucher as j')->select('ra.bi_doc_no', 'j.doc_number', 'ra.bi_amount', 'j.doc_date')
                     ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', 'j.doc_number')->where('ra.account_id', $account)->wherein('bi_doc_no', $receivable->pluck("transaction_no"))->where('j.status', 1)->where('ra.status', 1)->get();
 
@@ -619,6 +628,7 @@ class SysReceivableOutstandingController extends Controller
                 'receivable' => $receivable,
                 'data_adjestment' => $data_adjestment,
                 'data_receipt' => $data_receipt,
+                'data_receipt6' => $data_receipt6,
                 'data_receipt2' => $data_receipt2,
                 'data_receipt3' => $data_receipt3,
                 'data_return' => $data_return,
