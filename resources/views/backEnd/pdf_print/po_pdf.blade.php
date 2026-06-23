@@ -26,8 +26,7 @@
     th, td {padding: 5px 5px;}
     .tdd{border:dashed 1px #9e9e9e; border-width:0 0 1px 0;}
     b{font-size:14px;}
-    /* Make room for the footer (must match footer height) */
-    main{margin:0px 0px 140px 0px;}
+    main{margin:0px;}
     .m1 table { border: 0px solid #9e9e9e; }
     .m1 td { border: 1px solid #9e9e9e; }
     .tmc ol {padding: 0px; margin: 0px;}
@@ -39,6 +38,7 @@
     .items-table {border-collapse: collapse;}
     .items-table thead {display: table-header-group;}
     .items-table tr {page-break-inside: avoid;}
+    .totals-section {page-break-inside: avoid;}
 
    
  
@@ -204,7 +204,8 @@
       </tbody>
     </table>
 
-        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <div class="totals-section">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0">
             <tr>
               <td>{{ $po->currency_name->code }}  <?php echo ucwords(@App\SysHelper::convertAmountToWords($total_amount,$po->currency_name->r_code,$po->currency_name->p_code));?></td>
               <td style="width: 110px; text-align: left; font-weight: bold; border-bottom: solid 1px #2c2b6d;">Sub Total {{ $po->currency_name->code }}</td>
@@ -252,8 +253,9 @@
               <td style="width: 80px; text-align: right; font-weight: bold; border-bottom: solid 1px #2c2b6d;">{{ @App\SysHelper::com_curr_format($total_amount, 2, '.', ',') }}</td>
             </tr>
           </table>
+        </div>
           
-<div style="bottom: 0px; height:200px;">
+<div>
     <table width="70%" border="0" cellspacing="0" cellpadding="0">
     <tr>
         <td>
