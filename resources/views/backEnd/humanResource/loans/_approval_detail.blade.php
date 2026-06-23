@@ -109,7 +109,7 @@
 
     {{-- Info Grid --}}
     <div class="row mb-3">
-      <div class="col-md-3"><strong>ID:</strong> LN{{ $loan->id }}</div>
+      <div class="col-md-3"><strong>ID:</strong> {{ $loan->document_number }}</div>
       <div class="col-md-3"><strong>Applied On:</strong> {{ optional($loan->created_at)->format('d M Y') }}</div>
       <div class="col-md-3"><strong>Employee:</strong> {{ optional($staff)->first_name ?? '—' }}</div>
       <div class="col-md-3"><strong>Type:</strong> {{ $types[$loan->type_id] ?? '—' }}</div>
