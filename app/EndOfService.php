@@ -14,6 +14,21 @@ class EndOfService extends Model
         return $this->belongsTo(SmStaff::class, 'employee_id');
     }
 
+    public function reportingManager()
+    {
+        return $this->belongsTo(SmStaff::class, 'reporting_manager_id');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(SmHumanDepartment::class, 'department_id');
+    }
+
+    public function designation()
+    {
+        return $this->belongsTo(SmDesignation::class, 'designation_id');
+    }
+
     public function notice()
     {
         return $this->hasOne(EndOfServiceNotice::class, 'end_of_service_id');
