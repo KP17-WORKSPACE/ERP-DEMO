@@ -1245,8 +1245,7 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::post('/company/bank/session/get', 'SysCompanyController@getBankSession');
         Route::post('/company/bank/session/delete', 'SysCompanyController@deleteBankSession');
         
-
-       Route::group(['prefix' => 'employee', 'middleware' => ['auth']], function () {
+Route::group(['prefix' => 'employee', 'middleware' => ['auth']], function () {
             // List + Create + Store
             Route::get('leaves', 'LeaveController@index')->name('employee.leaves.index');
             Route::get('leaves/create', 'LeaveController@create')->name('employee.leaves.create');
@@ -1262,6 +1261,7 @@ Route::get('/industry', 'SmIndustryController@index');
 
             // Show (keep after edit to avoid conflicts)
             Route::get('leaves/{leave}', 'LeaveController@show')->name('employee.leaves.show');
+            Route::delete('leaves/{leave}', 'LeaveController@destroy')->name('employee.leaves.destroy');
 
 
 
@@ -1817,7 +1817,6 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::get('chartofaccounts-sub/{id}/get-edit', ['as' => 'edit-sub', 'uses' => 'SysChartofAccountsController@edit_subaccounts']);
         Route::get('accountgroupsub/{id}/get-edit', ['as' => 'edit', 'uses' => 'SysAccountGroupSubController@getEdit']);
         Route::get('accountgroupsub2/{id}/get-edit', ['as' => 'edit', 'uses' => 'SysAccountGroupSub2Controller@getEdit']);
-        Route::get('accountgroup/{id}/get-edit', ['as' => 'edit', 'uses' => 'SysAccountGroupController@getEdit']);
 
 
         Route::get('vat-settings', ['as' => 'vat-settings', 'uses' => 'SysVatController@vatadd']);
