@@ -81,7 +81,7 @@
     }
 
     b {
-      font-size: 14px;
+      font-size: 12px;
     }
 
     main {
@@ -102,7 +102,7 @@
     }
 
     .bottom_b {
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .page-break {
@@ -143,27 +143,15 @@
       {{-- <img  src="{!! asset('admin_assets/dist/img/pdf-footer.jpg') !!}" width="100%"> --}}
     </footer>
      */ ?>
-    <footer>
-      <table width="100%" border="0" cellspacing="0" cellpadding="0">
-        <tr>
-          <td style="border: none; line-height: 20px;" align="left" valign="top"><b class="bottom_b">Received By:</b><br >
-            <b class="bottom_b">Name:</b><br >
-            <b class="bottom_b">Phone:</b><br >
-            <b class="bottom_b">Signature and stamp:</b>
-          </td>
-          <td style="border: none; line-height: 20px;" align="right" valign="top"><b class="bottom_b" style="font-size: 10px;">For {!! str_replace('SYSCOM DISTRIBUTIONS LLC BRANCH ABU DHABI 1','SYSCOM DISTRIBUTIONS LLC<br />BRANCH ABU DHABI 1',$company->company_name) !!}</b>
-            <br />{{ auth()->check() ? auth()->user()->full_name : '' }}<br />
-            Page No <span style="" class="pagenum"></span> of Statement of Outstanding
-          </td>
-        </tr>
-      </table>
 
+    <footer>
+      <img src="{!! asset('public/' . $company->pdf_footer . '') !!}" width="100%" />
     </footer>
   <main class="m2">
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
       <tr>
         <td align="left"><img src="{{asset('public/'.$company->company_logo)}}" width="200px" /></td>
-        <td align="right"><b style="font-size: 30px; font-weight: 400;">Statement of Outstanding</b></td>
+        <td align="right"><b style="font-size: 12px; font-weight: 400;">Statement of Outstanding</b></td>
       </tr>
     </table>
     <br />
@@ -173,24 +161,31 @@
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
       <tr>
 
-        <td width="50%" valign="top" style="line-height: 18px;">
-          <b style="font-size: 100%;">{{@$cust_detail->customer_name_display}}</b><br />
-          {{ $cust_detail->customer_salutation }} {{ $cust_detail->first_name }} {{ $cust_detail->last_name }}<br />
-          {{ $cust_address->statename->name }}, {{ $cust_address->countryname->name }}<br />
-          Phone: {{@$cust_detail->contcat_number}}<br />
-          Email: {{@$cust_detail->email}}<br />
+        @php
+          $customerCurrency = !empty($cust_detail->currency_id)
+              ? \App\SysCurrencySettings::select('code')->find($cust_detail->currency_id)
+              : null;
+          $paymentTerms = optional($cust_detail->paymentterms)->title;
+          $creditLimit = $cust_detail->credit_limit !== null && $cust_detail->credit_limit !== ''
+              ? number_format((float) $cust_detail->credit_limit, 2, '.', ',')
+              : '';
+        @endphp
+        <td width="50%" valign="top">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="line-height: 18px;">
+            <tr><td width="135px" style="padding:0;">Customer Name</td><td width="8" style="padding:0;">:</td><td style="padding:0;"><b style="font-size:100%;">{{ @$cust_detail->customer_name_display }}</b></td></tr>
+            <tr><td style="padding:0;">Contact Person</td><td style="padding:0;">:</td><td style="padding:0;">{{ $cust_detail->customer_salutation }} {{ $cust_detail->first_name }} {{ $cust_detail->last_name }}</td></tr>
+            <tr><td style="padding:0;">Address</td><td style="padding:0;">:</td><td style="padding:0;">{{ optional(optional($cust_address)->statename)->name }}, {{ optional(optional($cust_address)->countryname)->name }}</td></tr>
+            <tr><td style="padding:0;">Phone</td><td style="padding:0;">:</td><td style="padding:0;">{{ @$cust_detail->contcat_number }}</td></tr>
+            <tr><td style="padding:0;">Email</td><td style="padding:0;">:</td><td style="padding:0;">{{ @$cust_detail->email }}</td></tr>
+          </table>
         </td>
-
-         @php
-             $customerCurrency = !empty($cust_detail->currency_id)
-                 ? \App\SysCurrencySettings::select('code')->find($cust_detail->currency_id)
-                 : null;
-         @endphp
-         <td width="50%" valign="top" style="line-height: 18px;">
-          Credit Limit: {{@$cust_detail->contcat_number}}<br />
-          Payment Terms: {{@$cust_detail->email}}<br />
-          Currency: {{ @$customerCurrency->code }}<br />
-          TRN No: {{@$cust_detail->vat_number}}
+        <td width="50%" valign="top">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="line-height: 18px;">
+            <tr><td width="135px" style="padding:0;">Credit Limit</td><td width="8" style="padding:0;">:</td><td style="padding:0;">{{ $creditLimit }}</td></tr>
+            <tr><td style="padding:0;">Payment Terms</td><td style="padding:0;">:</td><td style="padding:0;">{{ $paymentTerms }}</td></tr>
+            <tr><td style="padding:0;">Currency</td><td style="padding:0;">:</td><td style="padding:0;">{{ optional($customerCurrency)->code }}</td></tr>
+            <tr><td style="padding:0;">TRN No</td><td style="padding:0;">:</td><td style="padding:0;">{{ @$cust_detail->vat_number }}</td></tr>
+          </table>
         </td>
 
       </tr>
@@ -271,12 +266,10 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
     @php
     $adjustments = 0;
     $b=0;
-    $dueNotDue=0;
     $due0To30=0;
     $due31To60=0;
     $due61To90=0;
     $dueOver90=0;
-    $dueRows = collect();
     $mainSumOutstandingBalance = 0;
     @endphp
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -293,6 +286,7 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
         $bi_amount2=0;
         $bi_amount3=0;
         $bi_return1=0;
+        $bi_amount6=0;
         $paid=0;
         @endphp
         @php
@@ -341,7 +335,20 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
             }
         }
 
-        $paid += $adjustments+$bi_amount-$bi_amount2+$bi_amount3+$bi_return1;
+        $receipt6 = $data_receipt6->where('bi_doc_no',$dt->transaction_no);
+        if(count($receipt6)>0){
+            foreach($receipt6 as $p){
+                $receipt_date .= date('d/m/Y', strtotime($p->receipt_date)).',';
+                $doc_number .= $p->doc_number.',';
+                $bi_amount6 += $p->bi_amount;
+            }
+        }
+
+        $opb_import_paid = ($dt->transaction_type ?? '') == 'opbinvoice'
+            ? (float) ($dt->credit_amount ?? 0)
+            : 0;
+        $jvInvoiceAdjustment = ((float) ($dt->debit_amount ?? 0) > 0) ? $bi_amount2 : 0;
+        $paid += ($adjustments + $bi_amount + $jvInvoiceAdjustment + $bi_return1 + $bi_amount6 + $opb_import_paid) - $bi_amount3;
 
         @endphp
       <?php
@@ -407,29 +414,10 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
                 $date,
                 $breakdown['max_overdue_days'] ?? null
             );
-
-            if (($breakdown['max_overdue_days'] ?? 0) < 0) {
-                $dueNotDue += $rowDueAmount;
-                $dueRows->push([
-                    'not_due' => $rowDueAmount,
-                    '0_30' => 0,
-                    '31_60' => 0,
-                    '61_90' => 0,
-                    '90_plus' => 0,
-                ]);
-            } else {
-                $due0To30 += $ageingRow['0_30'];
-                $due31To60 += $ageingRow['31_60'];
-                $due61To90 += $ageingRow['61_90'];
-                $dueOver90 += $ageingRow['90_plus'];
-                $dueRows->push([
-                    'not_due' => 0,
-                    '0_30' => $ageingRow['0_30'],
-                    '31_60' => $ageingRow['31_60'],
-                    '61_90' => $ageingRow['61_90'],
-                    '90_plus' => $ageingRow['90_plus'],
-                ]);
-            }
+            $due0To30 += $ageingRow['0_30'];
+            $due31To60 += $ageingRow['31_60'];
+            $due61To90 += $ageingRow['61_90'];
+            $dueOver90 += $ageingRow['90_plus'];
         @endphp
 
 
@@ -571,26 +559,26 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
                   <br />
                   <table border="0" cellspacing="0" cellpadding="0" style="width: 320px;">
                     <tr>
-                      <td style="width: 190px;"><b>Total Excluding PDC</b></td>
-                      <td style="width: 10px;"><b>:</b></td>
-                      <td style="width: 140px; text-align: right;"><b>{{ @App\SysHelper::com_curr_format($b,2,'.',',') }}</b></td>
+                      <td style="width: 200px;">Total Excluding PDC</td>
+                      <td style="width: 10px;">:</td>
+                      <td style="width: 140px; text-align: right;">{{ @App\SysHelper::com_curr_format($b,2,'.',',') }}</td>
                     </tr>
                     <tr>
-                      <td><b>PDC in Hand</b></td>
-                      <td><b>:</b></td>
-                      <td style="text-align: right;"><b>{{ @App\SysHelper::com_curr_format($pdcInHandTotal,2,'.',',') }}</b></td>
+                      <td>PDC in Hand</td>
+                      <td>:</td>
+                      <td style="text-align: right;">{{ @App\SysHelper::com_curr_format($pdcInHandTotal,2,'.',',') }}</td>
                     </tr>
                     @if (count($list_of_unadjusted)>0 || count($list_of_unadjusted_jv_to_jv)>0)
                     <tr>
-                      <td><b>Unadjusted balance</b></td>
-                      <td><b>:</b></td>
-                      <td style="text-align: right;"><b>{{ @App\SysHelper::com_curr_format($unadjustedBalanceTotal,2,'.',',') }}</b></td>
+                      <td>Unadjusted balance</td>
+                      <td>:</td>
+                      <td style="text-align: right;">{{ @App\SysHelper::com_curr_format($unadjustedBalanceTotal,2,'.',',') }}</td>
                     </tr>
                     @endif
                     <tr>
-                      <td><b>Closing Balance</b></td>
-                      <td><b>:</b></td>
-                      <td style="text-align: right;"><b>{{ @App\SysHelper::com_curr_format($mainSumTotal,2,'.',',') }}</b></td>
+                      <td>Closing Balance</td>
+                      <td>:</td>
+                      <td style="text-align: right;">{{ @App\SysHelper::com_curr_format($mainSumTotal,2,'.',',') }}</td>
                     </tr>
                   </table>
 
@@ -632,40 +620,20 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
         <td style="text-align: center;"><b>Amount Due Excluding PDC</b></td>
       </tr>
     </table>
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="table-layout: fixed;">
                       <tr class="item-head-row">
-                            <td style="width: 80px; text-align: center;">> 0</td>
-                            <td style="width: 80px; text-align: center;">0-30</td>
-                            <td style="width: 80px; text-align: center;">31-60</td>
-                            <td style="width: 80px; text-align: center;">61-90</td>
-                            <td style="width: 80px; text-align: center;">>90</td>
+                            <td style="width: 25%; text-align: right;">0-30</td>
+                            <td style="width: 25%; text-align: right;">31-60</td>
+                            <td style="width: 25%; text-align: right;">61-90</td>
+                            <td style="width: 25%; text-align: right;">>90</td>
                         </tr>
-                        </table>
-                        
-                        @forelse (($dueRows ?? collect([])) as $dueRow)
-                        @php
-                            $dueNotDueValue = (float) data_get($dueRow, 'not_due', 0);
-                            $due0To30Value = (float) data_get($dueRow, '0_30', 0);
-                            $due31To60Value = (float) data_get($dueRow, '31_60', 0);
-                            $due61To90Value = (float) data_get($dueRow, '61_90', 0);
-                            $dueOver90Value = (float) data_get($dueRow, '90_plus', 0);
-                        @endphp
-                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
                           <tr>
-                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($dueNotDueValue) >= 0.01 ? App\SysHelper::com_curr_format($dueNotDueValue,2,'.',',') : '' }}</td>
-                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($due0To30Value) >= 0.01 ? App\SysHelper::com_curr_format($due0To30Value,2,'.',',') : '' }}</td>
-                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($due31To60Value) >= 0.01 ? App\SysHelper::com_curr_format($due31To60Value,2,'.',',') : '' }}</td>
-                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($due61To90Value) >= 0.01 ? App\SysHelper::com_curr_format($due61To90Value,2,'.',',') : '' }}</td>
-                              <td class="item-row" style="width: 80px; text-align: right;">{{ abs($dueOver90Value) >= 0.01 ? App\SysHelper::com_curr_format($dueOver90Value,2,'.',',') : '' }}</td>
+                              <td class="item-row" style="width: 25%; text-align: right;">{{ App\SysHelper::com_curr_format($due0To30,2,'.',',') }}</td>
+                              <td class="item-row" style="width: 25%; text-align: right;">{{ App\SysHelper::com_curr_format($due31To60,2,'.',',') }}</td>
+                              <td class="item-row" style="width: 25%; text-align: right;">{{ App\SysHelper::com_curr_format($due61To90,2,'.',',') }}</td>
+                              <td class="item-row" style="width: 25%; text-align: right;">{{ App\SysHelper::com_curr_format($dueOver90,2,'.',',') }}</td>
                           </tr>
                         </table>
-                        @empty
-                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                          <tr>
-                              <td colspan="5" class="item-row" style="text-align: center;">&nbsp;</td>
-                          </tr>
-                        </table>
-                        @endforelse
             
 
 
@@ -762,31 +730,30 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
                   <br />
                   <table width="100%" border="0" cellspacing="0" cellpadding="0">
                     <tr>
-                      <td style="text-align: center;"><b>Bank Details</b></td>
+                      <td style="text-align: start;"><b>Bank Details</b></td>
                     </tr>
                   </table>
                   <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                    <tr class="item-head-row">
-                      <td style="width: 18%; text-align: center;">Beneficiary Name</td>
-                      <td style="width: 18%; text-align: center;">Bank Name</td>
-                      <td style="width: 15%; text-align: center;">Acc No</td>
-                      <td style="width: 22%; text-align: center;">IBAN No</td>
-                      <td style="width: 13%; text-align: center;">SWIFT Code</td>
-                      <td style="width: 14%; text-align: center;">Branch</td>
-                    </tr>
-                  </table>
-                  @foreach ($companyBanks as $bank)
-                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  @foreach ($companyBanks->chunk(2) as $bankRow)
                     <tr>
-                      <td class="item-row" style="width: 18%; text-align: left; word-break: break-word;">{{ $bank->beneficiary_name ?: '-' }}</td>
-                      <td class="item-row" style="width: 18%; text-align: left; word-break: break-word;">{{ $bank->bank_name ?: '-' }}</td>
-                      <td class="item-row" style="width: 15%; text-align: center; word-break: break-word;">{{ $bank->acc_no ?: '-' }}</td>
-                      <td class="item-row" style="width: 22%; text-align: center; word-break: break-word;">{{ $bank->iban ?: '-' }}</td>
-                      <td class="item-row" style="width: 13%; text-align: center; word-break: break-word;">{{ $bank->swift_code ?: '-' }}</td>
-                      <td class="item-row" style="width: 14%; text-align: left; word-break: break-word;">{{ $bank->branch ?: '-' }}</td>
+                      @foreach ($bankRow as $bank)
+                      <td width="50%" valign="top" style="padding: 4px 8px 4px 0;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="line-height: 18px;">
+                          <tr><td width="155px">Beneficiary Name</td><td width="8px">:</td><td style="word-break: break-word;">{{ $bank->beneficiary_name ?: '-' }}</td></tr>
+                          <tr><td>Bank Name</td><td>:</td><td style="word-break: break-word;">{{ $bank->bank_name ?: '-' }}</td></tr>
+                          <tr><td>Acc No</td><td>:</td><td style="word-break: break-word;">{{ $bank->acc_no ?: '-' }}</td></tr>
+                          <tr><td>IBAN No</td><td>:</td><td style="word-break: break-word;">{{ $bank->iban ?: '-' }}</td></tr>
+                          <tr><td>SWIFT Code</td><td>:</td><td style="word-break: break-word;">{{ $bank->swift_code ?: '-' }}</td></tr>
+                          <tr><td>Branch</td><td>:</td><td style="word-break: break-word;">{{ $bank->branch ?: '-' }}</td></tr>
+                        </table>
+                      </td>
+                      @endforeach
+                      @if ($bankRow->count() < 2)
+                      <td width="50%"></td>
+                      @endif
                     </tr>
-                  </table>
                   @endforeach
+                  </table>
                   @endif
     {{-- <br /><br />
 <table width="100%" border="0" cellspacing="0" cellpadding="0">
