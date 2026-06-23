@@ -1039,6 +1039,7 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
         if (!$row || !$row.length) return;
         const $qty = $row.find('input[name="qty[]"]');
         if (!isLicenseProductType($row.find('input[name="product_type[]"]').first().val())) {
+            $qty.removeClass('license-qty-invalid');
             $qty.css('color', '');
             return;
         }
@@ -1046,7 +1047,17 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
         const keyCount = (typeof keyCountOverride === 'number' && !isNaN(keyCountOverride))
             ? keyCountOverride
             : getLicenseKeyTokensFromSerial($row.find('input[name="serial_no[]"]').val()).length;
-        $qty.css('color', (qty > 0 && keyCount < qty) ? '#dc3545' : '');
+        const invalid = qty > 0 && keyCount !== qty;
+        $qty.toggleClass('license-qty-invalid', invalid);
+        $qty.css('color', invalid ? '#dc3545' : '');
+    }
+
+    function validateSalesReturnLicenseQuantities($form) {
+        const $table = $form.find('table#myTable').first();
+        $table.children('tbody').children('tr').each(function() {
+            applyLicenseQtyHighlightForRow($(this));
+        });
+        return $table.find('input[name="qty[]"].license-qty-invalid').length === 0;
     }
 
     function applyLicenseKeysToSerialInput(itemId, rows) {
@@ -1056,22 +1067,148 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
     }
 
     function setDraftLicenseRows(rows) {
-        srLicenseDrafts = (rows || []).map((row, index) => ({
-            local_id: String(row.local_id || row.id || `draft-${index}-${Math.random().toString(36).substr(2, 5)}`),
-            id: row.id || null,
-            license_key: (row.license_key || '').toString().trim(),
-            exp_date: normalizeLicenseDateForStore(row.exp_date || ''),
-        }));
+        const seen = {};
+        srLicenseDrafts = [];
+        (rows || []).forEach((row, index) => {
+            const licenseKey = (row.license_key || '').toString().trim();
+            const normalizedKey = licenseKey.toLowerCase();
+            if (!licenseKey) return;
+
+            const expDate = normalizeLicenseDateForStore(row.exp_date || '');
+            const serverIds = (row.server_ids || []).concat(row.id || []).map(function(id) {
+                return parseInt(id, 10);
+            }).filter(function(id) {
+                return id > 0;
+            });
+            const candidate = {
+                local_id: String(row.local_id || row.id || `draft-${index}-${Math.random().toString(36).substr(2, 5)}`),
+                id: row.id || null,
+                server_ids: Array.from(new Set(serverIds)),
+                sales_return_id: parseInt(row.sales_return_id, 10) || 0,
+                license_key: licenseKey,
+                exp_date: expDate,
+                original_license_key: (row.original_license_key || licenseKey).toString().trim(),
+                original_exp_date: normalizeLicenseDateForStore(row.original_exp_date || expDate),
+            };
+
+            if (seen[normalizedKey] === undefined) {
+                seen[normalizedKey] = srLicenseDrafts.length;
+                srLicenseDrafts.push(candidate);
+                return;
+            }
+
+            const existingIndex = seen[normalizedKey];
+            const existing = srLicenseDrafts[existingIndex];
+            const mergedIds = Array.from(new Set((existing.server_ids || []).concat(candidate.server_ids || [])));
+            if (isSavedSalesReturnKey(candidate) && !isSavedSalesReturnKey(existing)) {
+                candidate.server_ids = mergedIds;
+                srLicenseDrafts[existingIndex] = candidate;
+            } else {
+                existing.server_ids = mergedIds;
+            }
+        });
         cancel_license_edit();
         renderLicenseRows(srLicenseDrafts);
     }
 
+    function isSavedSalesReturnKey(row) {
+        return !!(row && row.id && parseInt(row.sales_return_id, 10) > 0);
+    }
+
+    function isSavedSalesReturnKeyChanged(row) {
+        if (!isSavedSalesReturnKey(row)) return false;
+        return (row.license_key || '').toString().trim() !== (row.original_license_key || '').toString().trim()
+            || normalizeLicenseDateForStore(row.exp_date || '') !== normalizeLicenseDateForStore(row.original_exp_date || '');
+    }
+
+    function syncLicenseDraftsToActiveRow() {
+        const itemId = $('#item_id').val();
+        const $target = getActiveLicenseTargetRow(itemId);
+        applyLicenseKeysToSerialInput(itemId, srLicenseDrafts);
+        applyLicenseQtyHighlightForRow($target, getCommaSeparatedLicenseKeys(srLicenseDrafts).length);
+    }
+
+    function getStoredLicenseKeyIds(row) {
+        return Array.from(new Set((row && row.server_ids ? row.server_ids : []).concat(row && row.id ? [row.id] : []).map(function(id) {
+            return parseInt(id, 10);
+        }).filter(function(id) {
+            return id > 0;
+        })));
+    }
+
+    function deleteStoredLicenseKeyRequest(row) {
+        const deferred = $.Deferred();
+        const ids = getStoredLicenseKeyIds(row);
+
+        function deleteNext(index) {
+            if (index >= ids.length) {
+                deferred.resolve();
+                return;
+            }
+
+            $.ajax({
+                url: "{{ URL::to('delete-grn-license-key-cart') }}",
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    id: ids[index],
+                    item_id: $('#item_id').val(),
+                    context: 'sr',
+                },
+                cache: false,
+            }).done(function(dataResult) {
+                try {
+                    const response = typeof dataResult === 'string' ? JSON.parse(dataResult) : dataResult;
+                    if (response && (response.error || response.data === 'ERROR')) {
+                        deferred.reject(response.error || 'Unable to delete license key.');
+                        return;
+                    }
+                    deleteNext(index + 1);
+                } catch (error) {
+                    deferred.reject(error);
+                }
+            }).fail(function(error) {
+                deferred.reject(error);
+            });
+        }
+
+        deleteNext(0);
+        return deferred.promise();
+    }
+
+    function prepareSavedKeyReplacements(rows) {
+        const deferred = $.Deferred();
+
+        function removeNext(index) {
+            if (index >= rows.length) {
+                deferred.resolve();
+                return;
+            }
+
+            const row = rows[index];
+            deleteStoredLicenseKeyRequest(row).done(function() {
+                row.id = null;
+                row.server_ids = [];
+                row.sales_return_id = 0;
+                row.original_license_key = '';
+                row.original_exp_date = '';
+                removeNext(index + 1);
+            }).fail(function(error) {
+                deferred.reject(error);
+            });
+        }
+
+        removeNext(0);
+        return deferred.promise();
+    }
+
     function setLicenseAddButtonMode(mode) {
         if (mode === 'update') {
-            $('#license_add').html('<i class="ico icon-outline-pen-2 me-1"></i>Update');
+            $('#license_add').prop('disabled', false).html('<i class="ico icon-outline-pen-2 me-1"></i>Update');
             return;
         }
         $('#license_add').html('<i class="ico icon-outline-add-square text-success me-1"></i>Add');
+        updateLicenseAddState();
     }
 
     function updateLicenseAddState() {
@@ -1179,8 +1316,13 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
 
         srLicenseDrafts.push({
             local_id: `draft-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            id: null,
+            server_ids: [],
+            sales_return_id: 0,
             license_key: licenseKey,
             exp_date: expDate,
+            original_license_key: '',
+            original_exp_date: '',
         });
         $('#license_key').val('');
         $('#exp_date').val('');
@@ -1191,38 +1333,86 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
     function delete_license_key(id) {
         const idx = findDraftRowIndex(id);
         if (idx === -1) return;
-        srLicenseDrafts.splice(idx, 1);
-        renderLicenseRows(srLicenseDrafts);
+        const row = srLicenseDrafts[idx];
+
+        if (!getStoredLicenseKeyIds(row).length) {
+            srLicenseDrafts.splice(idx, 1);
+            renderLicenseRows(srLicenseDrafts);
+            syncLicenseDraftsToActiveRow();
+            showLicenseKeyMessage('License key removed.', 'success');
+            return;
+        }
+
+        const $tableRow = $('#lk-table tbody tr').filter(function() {
+            return String($(this).attr('data-local-id')) === String(id);
+        });
+        if (row.deleting) return;
+        row.deleting = true;
+        $tableRow.addClass('opacity-50').find('a').addClass('disabled');
+        $("#loading_bg").css("display", "block");
+        showLicenseKeyMessage('Deleting license key...', 'warning');
+
+        deleteStoredLicenseKeyRequest(row).done(function() {
+            const currentIndex = srLicenseDrafts.indexOf(row);
+            if (currentIndex !== -1) {
+                srLicenseDrafts.splice(currentIndex, 1);
+            }
+            cancel_license_edit();
+            renderLicenseRows(srLicenseDrafts);
+            syncLicenseDraftsToActiveRow();
+            showLicenseKeyMessage('License key deleted.', 'success');
+        }).fail(function() {
+            row.deleting = false;
+            $tableRow.removeClass('opacity-50').find('a').removeClass('disabled');
+            showLicenseKeyMessage('Unable to delete license key. Please try again.', 'danger');
+        }).always(function() {
+            $("#loading_bg").css("display", "none");
+        });
     }
 
     function view_license_key() {
         $("#loading_bg").css("display", "block");
         showLicenseKeyMessage('');
-        $.ajax({
+        const itemId = $('#item_id').val();
+        const salesReturnId = $('#sr_id').val();
+        const allKeysRequest = $.ajax({
             url: "{{ URL::to('view-grn-license-key-cart') }}",
             type: "POST",
             data: {
                 _token: '{{ csrf_token() }}',
-                item_id: $('#item_id').val(),
-                sales_return_id: $('#sr_id').val(),
+                item_id: itemId,
+                sales_return_id: salesReturnId,
                 context: 'sr',
             },
             cache: false,
-            success: function(dataResult) {
-                try {
-                    const response = typeof dataResult === 'string' ? JSON.parse(dataResult) : dataResult;
-                    setDraftLicenseRows(response.data || []);
-                    applyLicenseKeysToSerialInput($('#item_id').val(), response.data || []);
-                } catch (e) {
-                    showLicenseKeyMessage('Unable to load current license keys.', 'danger');
-                }
+        });
+        const savedKeysRequest = $.ajax({
+            url: "{{ URL::to('sales-return-get-license-key') }}",
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                item_id: itemId,
+                sales_return_id: salesReturnId,
             },
-            error: function() {
+            cache: false,
+        });
+
+        $.when(savedKeysRequest, allKeysRequest).done(function(savedResult, allResult) {
+            try {
+                const savedPayload = Array.isArray(savedResult) ? savedResult[0] : savedResult;
+                const allPayload = Array.isArray(allResult) ? allResult[0] : allResult;
+                const savedResponse = typeof savedPayload === 'string' ? JSON.parse(savedPayload) : savedPayload;
+                const allResponse = typeof allPayload === 'string' ? JSON.parse(allPayload) : allPayload;
+                const rows = (savedResponse.data || []).concat(allResponse.data || []);
+                setDraftLicenseRows(rows);
+                applyLicenseKeysToSerialInput(itemId, srLicenseDrafts);
+            } catch (e) {
                 showLicenseKeyMessage('Unable to load current license keys.', 'danger');
-            },
-            complete: function() {
-                $("#loading_bg").css("display", "none");
             }
+        }).fail(function() {
+            showLicenseKeyMessage('Unable to load current license keys.', 'danger');
+        }).always(function() {
+            $("#loading_bg").css("display", "none");
         });
     }
 
@@ -1297,9 +1487,14 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
                             return;
                         }
                         srLicenseDrafts.push({
-                            local_id: `draft-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                            local_id: String(row.id || `draft-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`),
+                            id: row.id || null,
+                            server_ids: row.id ? [row.id] : [],
+                            sales_return_id: parseInt(row.sales_return_id, 10) || -1,
                             license_key: key,
                             exp_date: normalizeLicenseDateForStore(row.exp_date || ''),
+                            original_license_key: key,
+                            original_exp_date: normalizeLicenseDateForStore(row.exp_date || ''),
                         });
                     });
 
@@ -1346,54 +1541,68 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
             return false;
         }
 
-        const rows = srLicenseDrafts.map(row => ({
-            license_key: row.license_key,
-            exp_date: normalizeLicenseDateForStore(row.exp_date),
-        }));
+        const replacements = srLicenseDrafts.filter(isSavedSalesReturnKeyChanged);
 
-        $.ajax({
-            url: "{{ URL::to('add-grn-license-key-cart') }}",
-            type: "POST",
-            data: {
-                _token: '{{ csrf_token() }}',
-                item_id: itemId,
-                license_qty: maxQty,
-                rows: JSON.stringify(rows),
-                context: 'sr',
-            },
-            cache: false,
-            success: function(dataResult) {
-                try {
-                    const response = typeof dataResult === 'string' ? JSON.parse(dataResult) : dataResult;
-                    if (response.error) {
-                        showLicenseKeyMessage(response.error, 'danger');
-                        return;
+        prepareSavedKeyReplacements(replacements).done(function() {
+            const savedRows = srLicenseDrafts.filter(isSavedSalesReturnKey);
+            const rows = srLicenseDrafts.filter(function(row) {
+                return !isSavedSalesReturnKey(row);
+            }).map(function(row) {
+                return {
+                    license_key: row.license_key,
+                    exp_date: normalizeLicenseDateForStore(row.exp_date),
+                };
+            });
+
+            $.ajax({
+                url: "{{ URL::to('add-grn-license-key-cart') }}",
+                type: "POST",
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    item_id: itemId,
+                    license_qty: maxQty,
+                    rows: JSON.stringify(rows),
+                    context: 'sr',
+                },
+                cache: false,
+                success: function(dataResult) {
+                    try {
+                        const response = typeof dataResult === 'string' ? JSON.parse(dataResult) : dataResult;
+                        if (response.error) {
+                            showLicenseKeyMessage(response.error, 'danger');
+                            return;
+                        }
+                        if (response.duplicate || (response.duplicate_keys && response.duplicate_keys.length)) {
+                            const duplicateText = response.message || ('Duplicate license keys were skipped: ' + (response.duplicate_keys || []).join(', '));
+                            showLicenseKeyMessage(duplicateText, 'warning');
+                            if (window.toastr) toastr.warning(duplicateText);
+                        }
+
+                        const mergedRows = savedRows.concat(response.data || []);
+                        setDraftLicenseRows(mergedRows);
+                        applyLicenseKeysToSerialInput(itemId, mergedRows);
+                        const $target = getActiveLicenseTargetRow(itemId);
+                        const savedCount = getCommaSeparatedLicenseKeys(mergedRows).length;
+                        const lineQty = parseLineQty($target);
+                        applyLicenseQtyHighlightForRow($target, savedCount);
+                        if (lineQty > 0 && savedCount < lineQty && window.toastr) {
+                            toastr.warning(`All qty license keys are not added. Added ${savedCount} of ${lineQty}.`);
+                        }
+                        $('#ModalLicenseKey').modal('hide');
+                    } catch (e) {
+                        showLicenseKeyMessage('Unable to save license keys. Please try again.', 'danger');
                     }
-                    if (response.duplicate || (response.duplicate_keys && response.duplicate_keys.length)) {
-                        const duplicateText = response.message || ('Duplicate license keys were skipped: ' + (response.duplicate_keys || []).join(', '));
-                        showLicenseKeyMessage(duplicateText, 'warning');
-                        toastr.warning(duplicateText);
-                    }
-                    setDraftLicenseRows(response.data || []);
-                    applyLicenseKeysToSerialInput(itemId, response.data || []);
-                    const $target = getActiveLicenseTargetRow(itemId);
-                    const savedCount = getCommaSeparatedLicenseKeys(response.data || []).length;
-                    const lineQty = parseLineQty($target);
-                    applyLicenseQtyHighlightForRow($target, savedCount);
-                    if (lineQty > 0 && savedCount < lineQty) {
-                        toastr.warning(`All qty license keys are not added. Added ${savedCount} of ${lineQty}.`);
-                    }
-                    $('#ModalLicenseKey').modal('hide');
-                } catch (e) {
+                },
+                error: function() {
                     showLicenseKeyMessage('Unable to save license keys. Please try again.', 'danger');
+                },
+                complete: function() {
+                    $("#loading_bg").css("display", "none");
                 }
-            },
-            error: function() {
-                showLicenseKeyMessage('Unable to save license keys. Please try again.', 'danger');
-            },
-            complete: function() {
-                $("#loading_bg").css("display", "none");
-            }
+            });
+        }).fail(function() {
+            $("#loading_bg").css("display", "none");
+            showLicenseKeyMessage('Unable to update existing license key. Please try again.', 'danger');
         });
         return false;
     }
@@ -1418,14 +1627,32 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
     }
 
     $(function() {
-        $('#myTable > tbody > tr').each(function() {
+        const $form = $('#sales-return-update');
+        const $table = $form.find('table#myTable').first();
+
+        $table.children('tbody').children('tr').each(function() {
             applyLicenseQtyHighlightForRow($(this));
         });
-        $(document).on('change', '#myTable tbody input[name="qty[]"]', function() {
+
+        $form.on('change input', 'table#myTable tbody input[name="qty[]"], table#myTable tbody input[name="serial_no[]"]', function() {
             applyLicenseQtyHighlightForRow($(this).closest('tr'));
         });
-        $(document).on('change input', '#myTable tbody input[name="serial_no[]"]', function() {
-            applyLicenseQtyHighlightForRow($(this).closest('tr'));
+
+        $form.on('submit.licenseQtyValidation', function(e) {
+            if (validateSalesReturnLicenseQuantities($form)) {
+                return true;
+            }
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $table.find('input[name="qty[]"].license-qty-invalid').first().focus();
+            const message = 'Add license keys equal to Qty for every red item before updating.';
+            if (window.toastr) {
+                toastr.error(message);
+            } else {
+                alert(message);
+            }
+            return false;
         });
     });
 </script>

@@ -1020,6 +1020,7 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
         if (!$row || !$row.length) return;
         const $qty = $row.find('input[name="qty[]"]');
         if (!isLicenseProductType($row.find('input[name="product_type[]"]').first().val())) {
+            $qty.removeClass('license-qty-invalid');
             $qty.css('color', '');
             return;
         }
@@ -1027,7 +1028,17 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
         const keyCount = (typeof keyCountOverride === 'number' && !isNaN(keyCountOverride))
             ? keyCountOverride
             : getLicenseKeyTokensFromSerial($row.find('input[name="serial_no[]"]').val()).length;
-        $qty.css('color', (qty > 0 && keyCount < qty) ? '#dc3545' : '');
+        const invalid = qty > 0 && keyCount !== qty;
+        $qty.toggleClass('license-qty-invalid', invalid);
+        $qty.css('color', invalid ? '#dc3545' : '');
+    }
+
+    function validateSalesReturnLicenseQuantities($form) {
+        const $table = $form.find('table#myTable').first();
+        $table.children('tbody').children('tr').each(function() {
+            applyLicenseQtyHighlightForRow($(this));
+        });
+        return $table.find('input[name="qty[]"].license-qty-invalid').length === 0;
     }
 
     function applyLicenseKeysToSerialInput(itemId, rows) {
@@ -1398,14 +1409,32 @@ document.getElementById("discount_add_btn").addEventListener("click", function (
     }
 
     $(function() {
-        $('#myTable > tbody > tr').each(function() {
+        const $form = $('#sales-return-store');
+        const $table = $form.find('table#myTable').first();
+
+        $table.children('tbody').children('tr').each(function() {
             applyLicenseQtyHighlightForRow($(this));
         });
-        $(document).on('change', '#myTable tbody input[name="qty[]"]', function() {
+
+        $form.on('change input', 'table#myTable tbody input[name="qty[]"], table#myTable tbody input[name="serial_no[]"]', function() {
             applyLicenseQtyHighlightForRow($(this).closest('tr'));
         });
-        $(document).on('change input', '#myTable tbody input[name="serial_no[]"]', function() {
-            applyLicenseQtyHighlightForRow($(this).closest('tr'));
+
+        $form.on('submit.licenseQtyValidation', function(e) {
+            if (validateSalesReturnLicenseQuantities($form)) {
+                return true;
+            }
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $table.find('input[name="qty[]"].license-qty-invalid').first().focus();
+            const message = 'Add license keys equal to Qty for every red item before saving.';
+            if (window.toastr) {
+                toastr.error(message);
+            } else {
+                alert(message);
+            }
+            return false;
         });
     });
 </script>
