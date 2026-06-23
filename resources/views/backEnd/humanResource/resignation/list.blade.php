@@ -1,608 +1,784 @@
 @extends('backEnd.newmasterpage')
 @section('mainContent')
 
-<script>
-  function setResignationView(mode) {
-    const leftNav = document.getElementById('leftSidebar');
-    const content = document.querySelector('.content-container');
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-    const shortList = document.getElementById('resignationShortList');   // UL
-    const longTable = document.getElementById('long-list');   // TABLE
+    <script>
+        function setResignationView(mode) {
+            const leftNav = document.getElementById('leftSidebar');
+            const content = document.querySelector('.content-container');
 
-    const filtersShort = document.getElementById('filters-short');
-    const filtersLong  = document.getElementById('filters-long');
+            const shortList = document.getElementById('resignationShortList');   // UL
+            const longTable = document.getElementById('long-list');   // TABLE
 
-    if (mode === 'full') {
-      // Sidebar full width, right pane hide
-      if (leftNav.classList.contains('col-3')) {
-        leftNav.classList.remove('col-3');
-        leftNav.classList.add('col-12');
-      }
-      leftNav.style.width = '100%';
-      content.classList.add('d-none');
+            const filtersShort = document.getElementById('filters-short');
+            const filtersLong = document.getElementById('filters-long');
 
-      longTable && longTable.classList.remove('d-none');
-      shortList && shortList.classList.add('d-none');
+            if (mode === 'full') {
+                // Sidebar full width, right pane hide
+                if (leftNav.classList.contains('col-3')) {
+                    leftNav.classList.remove('col-3');
+                    leftNav.classList.add('col-12');
+                }
+                leftNav.style.width = '100%';
+                content.classList.add('d-none');
 
-      filtersLong && filtersLong.classList.remove('d-none');
-      filtersShort && filtersShort.classList.add('d-none');
+                longTable && longTable.classList.remove('d-none');
+                shortList && shortList.classList.add('d-none');
 
-      leftNav.dataset.view = 'full';
-    } else {
-      // Compact: sidebar 3 cols, right pane show
-      if (leftNav.classList.contains('col-12')) {
-        leftNav.classList.remove('col-12');
-        leftNav.classList.add('col-3');
-      }
-      leftNav.style.width = '';
-      content.classList.remove('d-none');
+                filtersLong && filtersLong.classList.remove('d-none');
+                filtersShort && filtersShort.classList.add('d-none');
 
-      longTable && longTable.classList.add('d-none');
-      shortList && shortList.classList.remove('d-none');
+                leftNav.dataset.view = 'full';
+            } else {
+                // Compact: sidebar 3 cols, right pane show
+                if (leftNav.classList.contains('col-12')) {
+                    leftNav.classList.remove('col-12');
+                    leftNav.classList.add('col-3');
+                }
+                leftNav.style.width = '';
+                content.classList.remove('d-none');
 
-      filtersShort && filtersShort.classList.remove('d-none');
-      filtersLong && filtersLong.classList.add('d-none');
+                longTable && longTable.classList.add('d-none');
+                shortList && shortList.classList.remove('d-none');
 
-      leftNav.dataset.view = 'compact';
-    }
-  }
+                filtersShort && filtersShort.classList.remove('d-none');
+                filtersLong && filtersLong.classList.add('d-none');
 
-  function list_style_new() {
-    const leftNav = document.getElementById('leftSidebar');
-    const cur = leftNav.dataset.view || 'compact';
-    setResignationView(cur === 'compact' ? 'full' : 'compact');
-  }
+                leftNav.dataset.view = 'compact';
+            }
+        }
 
-  function toggleLongFilters() {
-    const filterField = document.querySelector('#filters-long .filter-field');
-    if (filterField) {
-      filterField.classList.toggle('d-none');
-    }
-  }
+        function list_style_new() {
+            const leftNav = document.getElementById('leftSidebar');
+            const cur = leftNav.dataset.view || 'compact';
+            setResignationView(cur === 'compact' ? 'full' : 'compact');
+        }
 
-  // optional: ensure initial state
-  document.addEventListener('DOMContentLoaded', function(){
-    const leftNav = document.getElementById('leftSidebar');
-    if (!leftNav.dataset.view) leftNav.dataset.view = 'compact';
-  });
-</script>
+        function toggleLongFilters() {
+            const filterField = document.getElementById('long-filters-box');
+            if (filterField) {
+                filterField.classList.toggle('d-none');
+            }
+        }
 
-<style>
-    .status-badge {
-        font-size: 11px;
-        padding: 0.25em 0.4em;
-        border-radius: 4px;
-    }
-    .status-draft { background-color: #f8f9fa; color: #6c757d; }
-    .status-submitted { background-color: #cff4fc; color: #055160; }
-    .status-approved { background-color: #d1e7dd; color: #0f5132; }
-    .status-rejected { background-color: #f8d7da; color: #721c24; }
-    .status-completed { background-color: #d4edda; color: #155724; }
+        // optional: ensure initial state
+        document.addEventListener('DOMContentLoaded', function () {
+            const leftNav = document.getElementById('leftSidebar');
+            const requestedView = @json(request('view'));
+            if (requestedView === 'full') {
+                setResignationView('full');
+            } else if (!leftNav.dataset.view) {
+                leftNav.dataset.view = 'compact';
+            }
+        });
+    </script>
 
-    .separation-badge {
-        font-size: 11px;
-        padding: 0.25em 0.4em;
-        border-radius: 4px;
-        background-color: #e9ecef;
-        color: #495057;
-    }
+    <style>
+        .status-badge {
+            font-size: 11px;
+            padding: 0.25em 0.4em;
+            border-radius: 4px;
+        }
 
-    .truncate-text {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-</style>
+        .status-draft {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
 
-<?php
-$module_links = [];
-$permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
-?>
+        .status-submitted {
+            background-color: #cff4fc;
+            color: #055160;
+        }
 
-<?php try { ?>
+        .status-approved {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
 
-<aside class="left-nav col-3" id="leftSidebar">
-    <div class="resizer" id="sidebarResizer"></div>
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
 
-    {{-- SHORT (Compact) --}}
-    <div class="short-list" id="filters-short">
-        <h4 class="mb-2">Resignations</h4>
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
 
-        {{ Form::open([
-          'class' => 'form-horizontal',
-          'files' => true,
-          'route' => 'staff.resignation.list',
-          'method' => 'get',
-          'id' => 'resignation-search'
+        .separation-badge {
+            font-size: 11px;
+            padding: 0.25em 0.4em;
+            border-radius: 4px;
+            background-color: #e9ecef;
+            color: #495057;
+        }
+
+        .truncate-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #long-list th,
+        #long-list td {
+            vertical-align: middle;
+            font-size: 12px;
+        }
+
+        #long-list .resignation-ellipsis {
+            display: block;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+
+    <?php
+    $module_links = [];
+    $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->get();
+    $permissionRoutes = $permissions->pluck('route')->filter()->toArray();
+    $hasRoutePermissions = count($permissionRoutes) > 0;
+    $canEditResignation = Auth::user()->role_id == 1 || !$hasRoutePermissions || in_array('staff.resignation.edit', $permissionRoutes);
+    $canDeleteResignation = Auth::user()->role_id == 1 || !$hasRoutePermissions || in_array('staff.resignation.delete', $permissionRoutes);
+    $canDownloadResignationAttachment = Auth::user()->role_id == 1 || !$hasRoutePermissions || in_array('staff.resignation.downloadAttachment', $permissionRoutes);
+        ?>
+
+    <?php try { ?>
+
+    <aside class="left-nav col-3" id="leftSidebar">
+        <div class="resizer" id="sidebarResizer"></div>
+
+        {{-- SHORT (Compact) --}}
+        <div class="short-list" id="filters-short">
+            <h4 class="mb-2" style=" margin-left: -6px;">End of Service</h4>
+
+            {{ Form::open([
+            'class' => 'form-horizontal',
+            'files' => true,
+            'route' => 'staff.resignation.list',
+            'method' => 'get',
+            'id' => 'resignation-search'
         ]) }}
-        <div class="search-filter-container mb-4 d-flex">
-            <div class="input-group flex-nowrap">
-                <input type="text" name="staff_name" class="form-control" placeholder="Search by name or staff no"
-                       aria-label="Search" aria-describedby="addon-wrapping" value="{{ request('staff_name') ?? '' }}">
-            </div>
-            <button type="submit" class="btn btn-light ms-2">
-                <i class="ico icon-outline-magnifer"></i>
-            </button>
-            @if(in_array('staff.resignation.add', array_column($permissions->toArray(), 'route')))
-            <a href="{{ route('staff.resignation.add') }}" class="btn btn-primary btn-sm ms-2" title="Add New">
-                <i class="ico icon-outline-plus"></i>
-            </a>
-            @endif
-            <button type="button" class="btn btn-light ms-2" id="list_style_button" onclick="list_style_new()">
-                <i class="ico icon-outline-list-down"></i>
-            </button>
-        </div>
-        {{ Form::close() }}
-    </div>
-
-    {{-- LONG (Full) --}}
-    <div class="long-list d-none" id="filters-long">
-        <div class="d-flex align-items-center justify-content-between">
-            <h4 class="mb-2">Resignation List</h4>
-            <div class="search-filter-container mb-0">
-                @if(in_array('staff.resignation.add', array_column($permissions->toArray(), 'route')))
-                <a href="{{ route('staff.resignation.add') }}" class="btn btn-primary btn-sm" title="Add New">
-                    <i class="ico icon-outline-plus"></i>
-                </a>
-                @endif
-                <button class="btn btn-light" onclick="toggleLongFilters()">
-                    <i class="ico icon-outline-magnifer"></i>
-                </button>
-                <button class="btn btn-light" id="list_style_button" onclick="list_style_new()">
+            <div class="search-filter-container mb-4" style=" margin-left: -6px;">
+                <div class="input-group flex-nowrap">
+                    <input type="text" name="staff_name" class="form-control" placeholder="Search by ID / Reason"
+                        aria-label="Search" aria-describedby="addon-wrapping" value="{{ request('staff_name') ?? '' }}">
+                </div>
+                <button type="button" class="btn btn-light" id="list_style_button" onclick="list_style_new()">
                     <i class="ico icon-outline-list-down"></i>
                 </button>
             </div>
+            {{ Form::close() }}
         </div>
 
-        <div class="search-filter-container mt-1 mb-4 filter-field d-none border">
-            <div class="card">
-                <div class="card-body">
-                    {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'route' => 'staff.resignation.list', 'method' => 'get', 'id' => 'resignation-filter']) }}
-                    <div class="row">
-                        <div class="col-md-4 mb-2 filter-field d-none">
-                            <label class="form-label">Employee Name</label>
-                            <input class="form-control" type="text" name="staff_name" value="{{ request('staff_name') }}" placeholder="Search by name or staff no">
-                        </div>
+        {{-- LONG (Full) --}}
+        <div class="long-list d-none" id="filters-long">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h4 class="mb-0">End of Service List</h4>
+                <div class="search-filter-container mb-0 d-flex align-items-center gap-2">
+                    <input type="text" id="tableSearch" class="form-control" placeholder="Search"
+                        style="width:auto; min-width:250px;">
+                    <button type="button" class="btn btn-light" id="exportExcelResignations" title="Export to Excel">
+                        <i class="ico icon-outline-export text-success"></i> Export
+                    </button>
+                    <button type="button" class="btn btn-light" onclick="toggleLongFilters()" title="Search / Filter">
+                        <i class="ico icon-outline-magnifer"></i>
+                    </button>
+                    <button type="button" class="btn btn-light" id="list_style_button" onclick="list_style_new()"
+                        title="Compact list">
+                        <i class="ico icon-outline-list-down"></i>
+                    </button>
+                    <!-- <div class="dropdown">
+                            <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false" title="Menu">
+                                <i class="ico icon-outline-hamburger-menu"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                @if(in_array('staff.resignation.add', array_column($permissions->toArray(), 'route')))
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('staff.resignation.add') }}">
+                                            <i class="ico icon-outline-add-square text-success"></i> New End of Service
+                                        </a>
+                                    </li>
+                                @endif
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('staff.resignation.list') }}">
+                                        <i class="ico icon-outline-list-down text-success"></i> End of Service List
+                                    </a>
+                                </li>
+                            </ul>
+                        </div> -->
+                </div>
+            </div>
 
-                        <div class="col-md-3 mb-2 filter-field d-none">
-                            <label class="form-label">Status</label>
-                            <select class="form-control" name="status" id="status">
-                                <option value="">All Status</option>
-                                <option value="draft" @if(request('status')=='draft') selected @endif>Draft</option>
-                                <option value="submitted" @if(request('status')=='submitted') selected @endif>Submitted</option>
-                                <option value="approved" @if(request('status')=='approved') selected @endif>Approved</option>
-                                <option value="rejected" @if(request('status')=='rejected') selected @endif>Rejected</option>
-                                <option value="completed" @if(request('status')=='completed') selected @endif>Completed</option>
-                            </select>
-                        </div>
+            <div id="long-filters-box" class="search-filter-container mt-1 mb-4 filter-field d-none border">
+                <div class="card" style="width:100%">
+                    <div class="card-body">
+                        {{ Form::open(['class' => 'form-horizontal', 'files' => true, 'route' => 'staff.resignation.list', 'method' => 'get', 'id' => 'resignation-filter']) }}
+                        <input type="hidden" name="view" value="full">
+                        <div class="row">
+                            <div class="col-2 mb-2">
+                                <label class="form-label">Request No.</label>
+                                <input class="form-control" type="text" name="request_no"
+                                    value="{{ request('request_no') }}" placeholder="Request No.">
+                            </div>
 
-                        <div class="col-md-3 mb-2 filter-field d-none">
-                            <label class="form-label">Separation Type</label>
-                            <select class="form-control" name="separation_type" id="separation_type">
-                                <option value="">All Types</option>
-                                <option value="Resignation" @if(request('separation_type')=='Resignation') selected @endif>Resignation</option>
-                                <option value="Termination" @if(request('separation_type')=='Termination') selected @endif>Termination</option>
-                                <option value="End of Contract" @if(request('separation_type')=='End of Contract') selected @endif>End of Contract</option>
-                                <option value="Retirement" @if(request('separation_type')=='Retirement') selected @endif>Retirement</option>
-                                <option value="Absconding" @if(request('separation_type')=='Absconding') selected @endif>Absconding</option>
-                                <option value="Death" @if(request('separation_type')=='Death') selected @endif>Death</option>
-                            </select>
-                        </div>
+                            <div class="col-2 mb-2">
+                                <label class="form-label">Type</label>
+                                <select class="form-control" name="separation_type" id="separation_type">
+                                    <option value="">All</option>
+                                    <option value="resignation" @if(request('separation_type') == 'resignation') selected
+                                    @endif>Resignation</option>
+                                    <option value="termination" @if(request('separation_type') == 'termination') selected
+                                    @endif>Termination</option>
+                                    <option value="end_of_contract" @if(request('separation_type') == 'end_of_contract')
+                                    selected @endif>End of Contract</option>
+                                    <option value="retirement" @if(request('separation_type') == 'retirement') selected
+                                    @endif>Retirement</option>
+                                    <option value="absconding" @if(request('separation_type') == 'absconding') selected
+                                    @endif>Absconding</option>
+                                    <option value="death" @if(request('separation_type') == 'death') selected @endif>Death
+                                    </option>
+                                </select>
+                            </div>
 
-                        <div class="col-md-2 filter-field d-none">
-                            <button type="submit" class="btn btn-success mt-4 rounded-0" id="btnSubmit">Filter</button>
+                            <div class="col-2 mb-2">
+                                <label class="form-label">Category</label>
+                                <select class="form-control" name="resignation_type">
+                                    <option value="">All</option>
+                                    <option value="voluntary" @if(request('resignation_type') == 'voluntary') selected @endif>
+                                        Voluntary</option>
+                                    <option value="involuntary" @if(request('resignation_type') == 'involuntary') selected
+                                    @endif>Involuntary</option>
+                                    <option value="mutual_separation" @if(request('resignation_type') == 'mutual_separation')
+                                    selected @endif>Mutual Separation</option>
+                                </select>
+                            </div>
+
+                            <div class="col-2 mb-2">
+                                <label class="form-label">Status</label>
+                                <select class="form-control" name="status" id="status">
+                                    <option value="">All</option>
+                                    <option value="draft" @if(request('status') == 'draft') selected @endif>Draft</option>
+                                    <option value="submitted" @if(request('status') == 'submitted') selected @endif>Submitted
+                                    </option>
+                                    <option value="approved" @if(request('status') == 'approved') selected @endif>Approved
+                                    </option>
+                                    <option value="rejected" @if(request('status') == 'rejected') selected @endif>Rejected
+                                    </option>
+                                    <option value="completed" @if(request('status') == 'completed') selected @endif>Completed
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-2 mb-2">
+                                <label class="form-label">From</label>
+                                <input class="form-control" type="date" name="from" value="{{ request('from') }}">
+                            </div>
+
+                            <div class="col-2 mb-2">
+                                <label class="form-label">To</label>
+                                <input class="form-control" type="date" name="to" value="{{ request('to') }}">
+                            </div>
+
+                            <div class="col-2 mb-2">
+                                <label class="form-label">Attachment</label>
+                                <select class="form-control" name="attachment">
+                                    <option value="">Select</option>
+                                    <option value="1" @if(request('attachment') == '1') selected @endif>With Attachments Only
+                                    </option>
+                                    <option value="2" @if(request('attachment') == '2') selected @endif>Without Attachments
+                                        Only</option>
+                                    <option value="all" @if(request('attachment') === 'all') selected @endif>All</option>
+                                </select>
+                            </div>
+
+                            <div class="col-2 mb-2">
+                                <label class="form-label">Filter By</label>
+                                <select class="form-control" name="filter_by">
+                                    <option value="">-Select-</option>
+                                    <option value="today" @if(request('filter_by') === 'today') selected @endif>Today</option>
+                                    <option value="this_week" @if(request('filter_by') === 'this_week') selected @endif>This
+                                        Week</option>
+                                    <option value="last_week" @if(request('filter_by') === 'last_week') selected @endif>Last
+                                        Week</option>
+                                    <option value="this_month" @if(request('filter_by') === 'this_month') selected @endif>This
+                                        Month</option>
+                                    <option value="last_month" @if(request('filter_by') === 'last_month') selected @endif>Last
+                                        Month</option>
+                                    <option value="this_quarter" @if(request('filter_by') === 'this_quarter') selected @endif>
+                                        This Quarter</option>
+                                    <option value="pre_quarter" @if(request('filter_by') === 'pre_quarter') selected @endif>
+                                        Pre Quarter</option>
+                                    <option value="this_year" @if(request('filter_by') === 'this_year') selected @endif>This
+                                        Year</option>
+                                    <option value="last_year" @if(request('filter_by') === 'last_year') selected @endif>Last
+                                        Year</option>
+                                </select>
+                            </div>
+
+                            <div class="col-4 mb-2 filter-field">
+                                <label class="form-label d-block">&nbsp;</label>
+                                <div class="d-flex align-items-center justify-content-start">
+                                    <button type="submit" class="btn btn-light me-2" id="btnSubmit" style="width:auto;">
+                                        <i class="ico icon-outline-magnifer text-success"></i> Filter
+                                    </button>
+                                    <a href="{{ route('staff.resignation.list') }}" class="btn btn-light"
+                                        style="width:auto;">
+                                        <i class="ico icon-outline-refresh text-success"></i> Reset
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {{ Form::close() }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- LEFT NAV LIST (Short) --}}
+        <div class="left-nav-list">
+            <ul id="resignationShortList" class="nav flex-column nav-pills" role="tablist">
+                @if ($resignations->count())
+                    @foreach ($resignations as $resignation)
+                        @php $requestNo = $resignation->display_request_no ?? ($resignation->request_no ?: 'N/A'); @endphp
+                        <li class="nav-item w-100" role="presentation">
+                            <button
+                                class="nav-link resignation-item {{ (isset($active_id) && $active_id == $resignation->id) ? 'active' : '' }}"
+                                data-id="{{ $resignation->id }}" type="button">
+                                <div class="row w-100 align-items-center">
+                                    <div class="col-12">
+                                        <div class="row">
+                                            <div class="col-4"><span
+                                                    class="form-control-plaintext fw-semibold">{{ $requestNo }}</span></div>
+                                            <div class="col-4"><span
+                                                    class="form-control-plaintext truncate-text">{{ $resignation->employee->departments->name ?? '—' }}</span>
+                                            </div>
+                                            <div class="col-4"><span class="form-control-plaintext text-end">
+                                                    <span
+                                                        class="status-badge status-{{ $resignation->status }}">{{ ucfirst($resignation->status) }}</span>
+                                                </span></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center text-muted xsmall mt-1">
+                                            <span
+                                                class="form-control-plaintext truncate-text">{{ $resignation->employee->full_name ?? '—' }}</span>
+                                            <span
+                                                class="form-control-plaintext truncate-text">{{ $resignation->created_at->format('d/m/Y') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        </li>
+                    @endforeach
+                @else
+                    <div class="p-3 text-muted">No Records</div>
+                @endif
+            </ul>
+
+            {{-- LONG LIST TABLE --}}
+            <div class="table-responsive mb-4 mt-4">
+                <table id="long-list" class="table table-hover d-none" style="table-layout: fixed;width:100%">
+                    <thead class="text-center">
+                        <tr>
+                            <th style="width: 9%;" title="Document No.">Document No.</th>
+                            <th style="width: 15%;" title="Employee Name">Employee Name</th>
+                            <th style="width: 10%;" title="Department">Department</th>
+                            <th style="width: 10%;" title="Designation">Designation</th>
+                            <th style="width: 13%;" title="Reporting Manager">Reporting Manager</th>
+                            <th style="width: 10%;" title="Separation Type">Separation Type</th>
+                            <th style="width: 8%;" title="Initiated By">Initiated By</th>
+                            <th style="width: 10%;" title="Reason Category">Reason Category</th>
+                            <th style="width: 7%;" title="Status">Status</th>
+                            <th class="text-center" style="width: 8%;" title="Action">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($resignations as $resignation)
+                            @php
+                                $requestNo = $resignation->display_request_no ?? ($resignation->request_no ?: 'N/A');
+                                $employeeName = optional($resignation->employee)->full_name ?: '-';
+                                $departmentName = optional($resignation->department)->name ?: optional(optional($resignation->employee)->departments)->name ?: '-';
+                                $designationName = optional($resignation->designation)->title ?: optional(optional($resignation->employee)->designations)->title ?: '-';
+                                $reportingManagerName = optional($resignation->reportingManager)->full_name ?: '-';
+                                $formatText = function ($value) {
+                                    return $value ? ucwords(str_replace('_', ' ', $value)) : '-';
+                                };
+                                $separationType = $formatText($resignation->separation_type);
+                                $initiatedBy = $formatText($resignation->initiated_by);
+                                $reasonCategory = $formatText($resignation->reason_category);
+                                $statusText = $formatText($resignation->status);
+                                $hasAttachment = $resignation->documents && $resignation->documents->filter(function ($document) {
+                                    return !empty($document->attachment);
+                                })->isNotEmpty();
+                            @endphp
+                            <tr>
+                                <td class="text-center">
+                                    <a href="javascript:void(0);" onclick="list_style_new()" class="resignation-item"
+                                        data-id="{{ $resignation->id }}" title="{{ $requestNo }}">{{ $requestNo }}</a>
+                                </td>
+                                <td>
+                                    <a href="javascript:void(0);" onclick="list_style_new()" class="resignation-item"
+                                        data-id="{{ $resignation->id }}" title="{{ $employeeName }}">
+                                        <span class="resignation-ellipsis">{{ $employeeName }}</span>
+                                    </a>
+                                </td>
+                                <td title="{{ $departmentName }}"><span
+                                        class="resignation-ellipsis">{{ $departmentName }}</span></td>
+                                <td title="{{ $designationName }}"><span
+                                        class="resignation-ellipsis">{{ $designationName }}</span></td>
+                                <td title="{{ $reportingManagerName }}"><span
+                                        class="resignation-ellipsis">{{ $reportingManagerName }}</span></td>
+                                <td title="{{ $separationType }}"><span
+                                        class="resignation-ellipsis">{{ $separationType }}</span></td>
+                                <td title="{{ $initiatedBy }}"><span class="resignation-ellipsis">{{ $initiatedBy }}</span></td>
+                                <td title="{{ $reasonCategory }}"><span
+                                        class="resignation-ellipsis">{{ $reasonCategory }}</span></td>
+                                <td class="text-center" title="{{ $statusText }}">
+                                    <span class="status-badge status-{{ $resignation->status }}">{{ $statusText }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                                        @if($canEditResignation)
+                                            <a href="{{ route('staff.resignation.edit', $resignation->id) }}"
+                                                class="btn btn-sm btn-light" title="Edit">
+                                                <i class="ico icon-outline-pen-2 text-dark" style="font-size:16px;"></i>
+                                            </a>
+                                        @endif
+                                        @if($canDeleteResignation)
+                                            <form action="{{ route('staff.resignation.delete', $resignation->id) }}" method="POST"
+                                                class="d-inline" onsubmit="return confirm('Delete this End of Service record?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-light" title="Delete">
+                                                    <i class="ico icon-outline-trash-bin-minimalistic text-dark"
+                                                        style="font-size:16px;"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                        @if($hasAttachment && $canDownloadResignationAttachment)
+                                            <a href="{{ route('staff.resignation.downloadAttachment', $resignation->id) }}"
+                                                class="btn btn-sm btn-light" title="Download Attachment">
+                                                <i class="ico icon-bold-download-minimalistic text-dark"
+                                                    style="font-size:16px;"></i>
+                                            </a>
+                                        @else
+                                            <button type="button" class="btn btn-sm btn-light" title="No Attachment" disabled>
+                                                <i class="ico icon-bold-download-minimalistic text-muted"
+                                                    style="font-size:16px;"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                </td>
+                                @if(false)
+                                    <td class="d-none">
+                                        <a href="javascript:void(0);" onclick="list_style_new()" class="resignation-item"
+                                            data-id="{{ $resignation->id }}">{{ $resignation->employee->full_name ?? '—' }}</a>
+                                    </td>
+                                    <td>{{ $resignation->employee->departments->name ?? '—' }}</td>
+                                    <td>{{ $resignation->employee->designations->title ?? '—' }}</td>
+                                    <td>
+                                        <span class="separation-badge">{{ $resignation->separation_type }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span
+                                            class="status-badge status-{{ $resignation->status }}">{{ ucfirst($resignation->status) }}</span>
+                                    </td>
+                                    <td>{{ $resignation->created_at->format('d/m/Y') }}</td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-start align-items-center gap-1">
+                                            <a href="{{ route('staff.resignation.edit', $resignation->id) }}"
+                                                class="btn btn-sm btn-light" title="Edit">
+                                                <i class="ico icon-outline-pen-2 text-dark" style="font-size:16px;"></i>
+                                            </a>
+
+
+                                            <form action="{{ route('staff.resignation.delete', $resignation->id) }}" method="POST"
+                                                class="d-inline" onsubmit="return confirm('Delete this End of Service record?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-light" title="Delete">
+                                                    <i class="ico icon-outline-trash-bin-minimalistic text-dark"
+                                                        style="font-size:16px;"></i>
+                                                </button>
+                                            </form>
+                                            @if($hasAttachment)
+                                                <a href="{{ route('staff.resignation.downloadAttachment', $resignation->id) }}"
+                                                    class="btn btn-sm btn-light" title="Download Attachment">
+                                                    <i class="ico icon-bold-download-minimalistic text-dark"
+                                                        style="font-size:16px;"></i>
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                @endif
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </aside>
+
+    <div class="content-container col-9">
+        <div class="tab-content display-flex-tabs" id="resignationTabContent">
+
+            {{-- Click handler: shortlist & longlist dono ke liye --}}
+            <script>
+                (function () {
+                    // Build URLs safely from Blade
+                    var indexUrl = @json(route('staff.resignation.list'));
+                    var currentParams = @json(request()->except('active'));
+
+                    function buildUrl(id) {
+                        var params = new URLSearchParams(currentParams);
+                        params.set('active', id);
+                        return indexUrl + '?' + params.toString();
+                    }
+
+                    // Event delegation (works for future DOM)
+                    $(document).on('click', '.resignation-item', function (e) {
+                        e.preventDefault();
+
+                        var id = $(this).data('id');
+                        if (!id) return;
+
+                        // Active UI
+                        $('.resignation-item').removeClass('active');
+                        $('.resignation-item[data-id="' + id + '"]').addClass('active');
+
+                        // Update URL without reload
+                        var newUrl = buildUrl(id);
+
+                        // Reload page to show details in right panel (no AJAX yet)
+                        window.location.href = newUrl;
+                    });
+                })();
+            </script>
+
+            <div role="tabpanel" aria-labelledby="resignation-tab" id="resignation-details">
+                @php
+                    $firstResignation = isset($selectedResignation) && $selectedResignation
+                        ? $selectedResignation
+                        : ($resignations->first() ?? null);
+                @endphp
+
+                @if ($firstResignation)
+                    {{-- Show resignation details with tabs --}}
+                    @include('backEnd.humanResource.resignation.partials._details', ['resignation' => $firstResignation, 'permissions' => $permissions])
+                @else
+                    <div class="container-fluid d-flex flex-column justify-content-center align-items-center"
+                        style="min-height: 90vh;">
+                        <div class="text-center mb-4">
+                            <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center mx-auto"
+                                style="width: 80px; height: 80px; font-size: 36px;">
+                                <i class="ico icon-outline-document"></i>
+                            </div>
+                            <h1 class="fw-bold mt-3">Resignations</h1>
+                            <p class="text-muted">Select a resignation record from the list to view details</p>
                         </div>
                     </div>
-                    {{ Form::close() }}
-                </div>
+                @endif
             </div>
         </div>
     </div>
 
-    {{-- LEFT NAV LIST (Short) --}}
-    <div class="left-nav-list">
-        <ul id="resignationShortList" class="nav flex-column nav-pills" role="tablist">
-            @if ($resignations->count())
-                @foreach ($resignations as $resignation)
-                    <li class="nav-item w-100" role="presentation">
-                        <button class="nav-link resignation-item {{ (isset($active_id) && $active_id == $resignation->id) ? 'active' : '' }}"
-                                data-id="{{ $resignation->id }}" type="button" role="tab">
-                            <div class="row w-100 align-items-center">
-                                <div class="col-12">
-                                    <div class="row">
-                                        <div class="col-4"><span class="form-control-plaintext fw-semibold">{{ $resignation->employee->staff_no ?? '—' }}</span></div>
-                                        <div class="col-4"><span class="form-control-plaintext truncate-text">{{ $resignation->employee->departments->name ?? '—' }}</span></div>
-                                        <div class="col-4"><span class="form-control-plaintext text-end">
-                                            <span class="status-badge status-{{ $resignation->status }}">{{ ucfirst($resignation->status) }}</span>
-                                        </span></div>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center text-muted xsmall mt-1">
-                                        <span class="form-control-plaintext truncate-text">{{ $resignation->employee->full_name ?? '—' }}</span>
-                                        <span class="form-control-plaintext truncate-text">{{ $resignation->created_at->format('d/m/Y') }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </button>
-                    </li>
-                @endforeach
-            @else
-                <div class="p-3 text-muted">No Records</div>
-            @endif
-        </ul>
+    {{-- Search & Filter functionality --}}
+    <script>
+        $(function () {
+            // short search input (left compact box)
+            var $q = $('#resignation-search input[name="staff_name"]');
+            var $tableSearch = $('#tableSearch');
 
-        {{-- LONG LIST TABLE --}}
-        <div class="table-responsive mb-4 mt-4">
-            <table id="long-list" class="table table-hover d-none" style="table-layout: fixed;width:100%">
-                <thead class="text-center">
-                    <tr>
-                        <th style="width: 100px;">Staff No</th>
-                        <th style="width: 160px;">Name</th>
-                        <th style="width: 140px;">Department</th>
-                        <th style="width: 140px;">Designation</th>
-                        <th style="width: 120px;">Separation Type</th>
-                        <th style="width: 100px;">Status</th>
-                        <th style="width: 120px;">Submitted Date</th>
-                        <th class="text-center" style="width: 110px;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($resignations as $resignation)
-                        <tr>
-                            <td class="text-center">
-                                <a href="javascript:void(0);" onclick="list_style_new()" class="resignation-item"
-                                   data-id="{{ $resignation->id }}">{{ $resignation->employee->staff_no ?? '—' }}</a>
-                            </td>
-                            <td>
-                                <a href="javascript:void(0);" onclick="list_style_new()" class="resignation-item"
-                                   data-id="{{ $resignation->id }}">{{ $resignation->employee->full_name ?? '—' }}</a>
-                            </td>
-                            <td>{{ $resignation->employee->departments->name ?? '—' }}</td>
-                            <td>{{ $resignation->employee->designations->title ?? '—' }}</td>
-                            <td>
-                                <span class="separation-badge">{{ $resignation->separation_type }}</span>
-                            </td>
-                            <td class="text-center">
-                                <span class="status-badge status-{{ $resignation->status }}">{{ ucfirst($resignation->status) }}</span>
-                            </td>
-                            <td>{{ $resignation->created_at->format('d/m/Y') }}</td>
-                            <td class="text-center">
-                                <div class="d-flex justify-content-start align-items-center gap-1">
-                                    @if(in_array('staff.resignation.edit', array_column($permissions->toArray(), 'route')))
-                                    <a href="{{ route('staff.resignation.edit', $resignation->id) }}" class="btn btn-sm btn-light" title="Edit">
-                                        <i class="ico icon-outline-pen-2" style="font-size:16px;"></i>
-                                    </a>
-                                    @endif
-                                    <a href="javascript:void(0);" class="btn btn-sm btn-light" title="View Details" onclick="viewResignationDetails({{ $resignation->id }})">
-                                        <i class="ico icon-outline-eye" style="font-size:16px;"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-</aside>
+            // cache current DOM nodes
+            var $shortItems = $('#resignationShortList > li');   // each resignation li item
+            var $longRows = $('#long-list tbody > tr');  // each table row
 
-<div class="content-container col-9">
-    <div class="tab-content display-flex-tabs" id="resignationTabContent">
+            function norm(s) { return (s || '').toString().toLowerCase(); }
+            function textOf($el) { return norm($el.text()); }
 
-        {{-- Click handler: shortlist & longlist dono ke liye --}}
-        <script>
-            (function () {
-                // Build URLs safely from Blade
-                var detailsTpl = @json(route('staff.resignation.edit', ['id' => ':id']));
-
-                function buildUrl(tpl, id) {
-                    return tpl.replace(':id', encodeURIComponent(id));
+            function applyFilter(needle) {
+                if (!needle) {
+                    $shortItems.show();
+                    $longRows.show();
+                    return;
                 }
 
-                // Event delegation (works for future DOM)
-                $(document).on('click', '.resignation-item', function (e) {
-                    e.preventDefault();
-
-                    var id = $(this).data('id');
-                    if (!id) return;
-
-                    // Active UI
-                    $('.resignation-item').removeClass('active');
-                    $('.resignation-item[data-id="' + id + '"]').addClass('active');
-
-                    // Update URL without reload
-                    var newUrl = buildUrl(detailsTpl, id);
-                    if (window.history && window.history.pushState) {
-                        window.history.pushState({ path: newUrl }, '', newUrl);
-                    }
-
-                    // AJAX load (for now, redirect to edit page)
-                    loadResignationDetails(id);
+                // shortlist filter
+                $shortItems.each(function () {
+                    var $li = $(this);
+                    var hit = textOf($li).indexOf(needle) !== -1;
+                    $li.toggle(hit);
                 });
-            })();
-        </script>
 
-        <div role="tabpanel" aria-labelledby="resignation-tab" id="resignation-details">
-            @php
-                $firstResignation = isset($selectedResignation) && $selectedResignation 
-                                ? $selectedResignation 
-                                : ($resignations->first() ?? null);
-            @endphp
+                // long table filter
+                $longRows.each(function () {
+                    var $tr = $(this);
+                    var hit = textOf($tr).indexOf(needle) !== -1;
+                    $tr.toggle(hit);
+                });
+            }
 
-            @if ($firstResignation)
-                {{-- Show resignation details with tabs --}}
-                <div class="container-fluid p-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">{{ $firstResignation->employee->full_name ?? 'N/A' }} - Resignation Details</h5>
-                                <div>
-                                    <span class="status-badge status-{{ $firstResignation->status }} me-2">{{ ucfirst($firstResignation->status) }}</span>
-                                    <a href="{{ route('staff.resignation.edit', $firstResignation->id) }}" class="btn btn-primary btn-sm">
-                                        <i class="ico icon-outline-pen-2"></i> Edit
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            {{-- Employee Quick Info --}}
-                            <div class="row mt-3">
-                                <div class="col-md-3">
-                                    <small class="text-muted">Staff No:</small><br>
-                                    <strong>{{ $firstResignation->employee->staff_no ?? 'N/A' }}</strong>
-                                </div>
-                                <div class="col-md-3">
-                                    <small class="text-muted">Department:</small><br>
-                                    <strong>{{ $firstResignation->employee->departments->name ?? 'N/A' }}</strong>
-                                </div>
-                                <div class="col-md-3">
-                                    <small class="text-muted">Designation:</small><br>
-                                    <strong>{{ $firstResignation->employee->designations->title ?? 'N/A' }}</strong>
-                                </div>
-                                <div class="col-md-3">
-                                    <small class="text-muted">Separation Type:</small><br>
-                                    <span class="separation-badge">{{ $firstResignation->separation_type }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tab-wrap mb-3">
-                            {{-- EOS Process Tabs --}}
-                            <ul class="nav nav-tabs" id="eosTab" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="notice-tab"
-                                        data-bs-toggle="tab" data-bs-target="#notice"
-                                        type="button" role="tab">
-                                        Resignation & Notice Period
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="handover-tab"
-                                        data-bs-toggle="tab" data-bs-target="#handover"
-                                        type="button" role="tab">
-                                        Handover Process
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="asset-tab"
-                                        data-bs-toggle="tab" data-bs-target="#asset"
-                                        type="button" role="tab">
-                                        Asset Clearance
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="it-tab"
-                                        data-bs-toggle="tab" data-bs-target="#it"
-                                        type="button" role="tab">
-                                        IT & Access Clearance
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="eos-calc-tab"
-                                        data-bs-toggle="tab" data-bs-target="#eos-calc"
-                                        type="button" role="tab">
-                                        EOS Calculation
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="final-settlement-tab"
-                                        data-bs-toggle="tab"
-                                        data-bs-target="#final-settlement" type="button"
-                                        role="tab">
-                                        Final Settlement
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="legal-tab"
-                                        data-bs-toggle="tab" data-bs-target="#legal"
-                                        type="button" role="tab">
-                                        Legal & Compliance
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="exit-interview-tab"
-                                        data-bs-toggle="tab" data-bs-target="#exit-interview"
-                                        type="button" role="tab">
-                                        Exit Interview
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="approval-tab"
-                                        data-bs-toggle="tab" data-bs-target="#approval"
-                                        type="button" role="tab">
-                                        Approval Status
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="documents-tab"
-                                        data-bs-toggle="tab" data-bs-target="#documents"
-                                        type="button" role="tab">
-                                        Documents
-                                    </button>
-                                </li>
-                            </ul>
+            // debounce for smooth typing
+            var deb;
+            $q.add($tableSearch).on('input', function () {
+                clearTimeout(deb);
+                var needle = norm(this.value);
+                deb = setTimeout(function () { applyFilter(needle); }, 120);
+            });
 
-                            {{-- Tab Content --}}
-                            <div class="tab-content mt-3" id="eosTabContent">
-                                <div class="tab-pane fade show active" id="notice" role="tabpanel">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="text-primary">Notice Information</h6>
-                                            <p><strong>Resignation Date:</strong> {{ $firstResignation->resignation_date ? \Carbon\Carbon::parse($firstResignation->resignation_date)->format('d/m/Y') : 'N/A' }}</p>
-                                            <p><strong>Last Working Date:</strong> {{ $firstResignation->last_working_date ? \Carbon\Carbon::parse($firstResignation->last_working_date)->format('d/m/Y') : 'N/A' }}</p>
-                                            <p><strong>Notice Period:</strong> {{ $firstResignation->notice_period ?? 'N/A' }} days</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <h6 class="text-primary">Reason & Details</h6>
-                                            <p><strong>Reason:</strong> {{ $firstResignation->reason ?? 'N/A' }}</p>
-                                            <p><strong>Remarks:</strong> {{ $firstResignation->remarks ?? 'N/A' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
+            // quick clear on ESC
+            $q.add($tableSearch).on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    $(this).val('');
+                    applyFilter('');
+                }
+            });
 
-                                <div class="tab-pane fade" id="handover" role="tabpanel">
-                                    <div class="alert alert-info">
-                                        <i class="ico icon-outline-info"></i>
-                                        Handover process details will be displayed here. This section tracks the transfer of responsibilities and tasks.
-                                    </div>
-                                </div>
+            $('#exportExcelResignations').on('click', function (e) {
+                e.preventDefault();
 
-                                <div class="tab-pane fade" id="asset" role="tabpanel">
-                                    <div class="alert alert-warning">
-                                        <i class="ico icon-outline-package"></i>
-                                        Asset clearance status and details will be shown here. This includes company property return tracking.
-                                    </div>
-                                </div>
+                var companyName = @json(@App\SysCompany::find(session('logged_session_data.company_id') ?? '')->trade_name ?? '');
+                var totalResignations = @json($resignations->count() ?? 0);
+                var dateFrom = @json(request('from') ?? '');
+                var dateTo = @json(request('to') ?? '');
 
-                                <div class="tab-pane fade" id="it" role="tabpanel">
-                                    <div class="alert alert-info">
-                                        <i class="ico icon-outline-computer"></i>
-                                        IT systems and access clearance details will be displayed here.
-                                    </div>
-                                </div>
+                var $table = $('#long-list');
 
-                                <div class="tab-pane fade" id="eos-calc" role="tabpanel">
-                                    <div class="alert alert-success">
-                                        <i class="ico icon-outline-calculator"></i>
-                                        End of Service benefits calculation and breakdown will be shown here.
-                                    </div>
-                                </div>
+                var visibleColIndexes = [];
+                var headerLabels = [];
+                var lastIndex = $table.find('thead tr th').length - 1;
 
-                                <div class="tab-pane fade" id="final-settlement" role="tabpanel">
-                                    <div class="alert alert-primary">
-                                        <i class="ico icon-outline-money"></i>
-                                        Final settlement details including payments and deductions will be displayed here.
-                                    </div>
-                                </div>
+                $table.find('thead tr th').each(function (i) {
+                    if (i === lastIndex) return; // skip actions
+                    if ($(this).css('display') !== 'none') {
+                        var label = $(this).text().trim();
+                        if (['actions', 'action', 'actions '].includes(label.toLowerCase().trim())) {
+                            return;
+                        }
+                        visibleColIndexes.push(i);
+                        headerLabels.push(label);
+                    }
+                });
 
-                                <div class="tab-pane fade" id="legal" role="tabpanel">
-                                    <div class="alert alert-secondary">
-                                        <i class="ico icon-outline-document"></i>
-                                        Legal compliance and regulatory requirements status will be shown here.
-                                    </div>
-                                </div>
+                function formatDMY(value) {
+                    if (!value) return '-';
+                    var normalized = value.trim().replace(/\s+/g, '');
+                    var parts = normalized.split(/[\/\-\.]/);
+                    if (parts.length === 3) {
+                        if (parts[0].length === 4) {
+                            return parts[2] + '/' + parts[1] + '/' + parts[0];
+                        }
+                        return parts[0] + '/' + parts[1] + '/' + parts[2];
+                    }
+                    return value;
+                }
 
-                                <div class="tab-pane fade" id="exit-interview" role="tabpanel">
-                                    <div class="alert alert-info">
-                                        <i class="ico icon-outline-user-speak"></i>
-                                        Exit interview details and feedback will be displayed here.
-                                    </div>
-                                </div>
+                var rows = [];
+                rows.push([companyName]);
+                rows.push(['End Of Service (' + totalResignations + ')']);
 
-                                <div class="tab-pane fade" id="approval" role="tabpanel">
-                                    <div class="alert alert-primary">
-                                        <i class="ico icon-outline-check"></i>
-                                        Approval workflow and status tracking will be shown here.
-                                    </div>
-                                </div>
+                if (dateFrom || dateTo) {
+                    var parts = [];
+                    if (dateFrom) { parts.push('From: ' + formatDMY(dateFrom)); }
+                    if (dateTo) { parts.push('To: ' + formatDMY(dateTo)); }
+                    rows.push([parts.join('  ')]);
+                }
 
-                                <div class="tab-pane fade" id="documents" role="tabpanel">
-                                    <div class="alert alert-warning">
-                                        <i class="ico icon-outline-folder"></i>
-                                        Related documents and attachments will be listed here.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @else
-                <div class="container-fluid d-flex flex-column justify-content-center align-items-center"
-                     style="min-height: 90vh;">
-                    <div class="text-center mb-4">
-                        <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center mx-auto"
-                             style="width: 80px; height: 80px; font-size: 36px;">
-                            <i class="ico icon-outline-document"></i>
-                        </div>
-                        <h1 class="fw-bold mt-3">Resignations</h1>
-                        <p class="text-muted">Select a resignation record from the list to view details</p>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-</div>
+                rows.push([]);
+                rows.push(headerLabels);
 
-{{-- Search & Filter functionality --}}
-<script>
-$(function(){
-    // short search input (left compact box)
-    var $q = $('#resignation-search input[name="staff_name"]');
+                $table.find('tbody tr').each(function () {
+                    var $cells = $(this).find('td');
+                    var rowData = [];
+                    visibleColIndexes.forEach(function (i) {
+                        var cellText = $cells.eq(i).text().trim().replace(/\s+/g, ' ');
+                        rowData.push(cellText);
+                    });
+                    rows.push(rowData);
+                });
 
-    // cache current DOM nodes
-    var $shortItems = $('#resignationShortList > li');   // each resignation li item
-    var $longRows   = $('#long-list tbody > tr');  // each table row
+                var hdrIdx = rows.indexOf(headerLabels);
+                if (hdrIdx < 0) hdrIdx = rows.length - 1;
 
-    function norm(s){ return (s || '').toString().toLowerCase(); }
-    function textOf($el){ return norm($el.text()); }
+                if (rows.length <= hdrIdx + 1) {
+                    alert('No data available for export');
+                    return;
+                }
 
-    function applyFilter(needle){
-        if (!needle) {
-            $shortItems.show();
-            $longRows.show();
-            return;
-        }
+                var N = headerLabels.length || 1;
+                var workbook  = new ExcelJS.Workbook();
+                var worksheet = workbook.addWorksheet('End Of Service');
+                var wsCols = [];
+                for (var ci = 0; ci < N; ci++) { wsCols.push({ width: 22 }); }
+                worksheet.columns = wsCols;
 
-        // shortlist filter
-        $shortItems.each(function(){
-            var $li = $(this);
-            var hit = textOf($li).indexOf(needle) !== -1;
-            $li.toggle(hit);
+                var wsRowNum = 0;
+                for (var ri = 0; ri < hdrIdx; ri++) {
+                    if (!(rows[ri] && rows[ri][0])) continue;
+                    wsRowNum++;
+                    var wsRow = worksheet.addRow([]);
+                    wsRow.height = ri === 0 ? 26 : ri === 1 ? 20 : 16;
+                    if (N > 1) worksheet.mergeCells(wsRowNum, 1, wsRowNum, N);
+                    wsRow.getCell(1).value = rows[ri][0] || '';
+                    if (ri === 0) wsRow.getCell(1).font = { bold: true, size: 14 };
+                    else if (ri === 1) wsRow.getCell(1).font = { bold: true, size: 12 };
+                    wsRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+                }
+
+                wsRowNum++;
+                worksheet.addRow([]);
+
+                wsRowNum++;
+                var wsHdrRow = worksheet.addRow(headerLabels);
+                wsHdrRow.height = 20;
+                wsHdrRow.eachCell({ includeEmpty: true }, function (cell) {
+                    cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+                    cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2D5496' } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.border    = {
+                        top:    { style: 'thin', color: { argb: 'FFB8C4D8' } },
+                        left:   { style: 'thin', color: { argb: 'FFB8C4D8' } },
+                        bottom: { style: 'thin', color: { argb: 'FFB8C4D8' } },
+                        right:  { style: 'thin', color: { argb: 'FFB8C4D8' } }
+                    };
+                });
+
+                for (var di = hdrIdx + 1; di < rows.length; di++) {
+                    var wsDataRow = worksheet.addRow(rows[di]);
+                    wsDataRow.eachCell({ includeEmpty: true }, function (cell) {
+                        cell.border = {
+                            top:    { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                            left:   { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+                            right:  { style: 'thin', color: { argb: 'FFCCCCCC' } }
+                        };
+                    });
+                }
+
+                workbook.xlsx.writeBuffer().then(function (buffer) {
+                    var blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    function pad(n) { return n < 10 ? '0' + n : n; }
+                    var d = new Date();
+                    var filename = 'end_of_service_' + pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear() + '.xlsx';
+                    saveAs(blob, filename);
+                });
+            });
         });
 
-        // long table filter
-        $longRows.each(function(){
-            var $tr = $(this);
-            var hit = textOf($tr).indexOf(needle) !== -1;
-            $tr.toggle(hit);
-        });
-    }
-
-    // debounce for smooth typing
-    var deb;
-    $q.on('input', function(){
-        clearTimeout(deb);
-        var needle = norm(this.value);
-        deb = setTimeout(function(){ applyFilter(needle); }, 120);
-    });
-
-    // quick clear on ESC
-    $q.on('keydown', function(e){
-        if (e.key === 'Escape') {
-            $(this).val('');
-            applyFilter('');
+        function loadResignationDetails(id) {
+            // For now, redirect to edit page
+            // In future, this can be replaced with AJAX to load details in right panel
+            window.location.href = '{{ route("staff.resignation.edit", ":id") }}'.replace(':id', id);
         }
-    });
-});
 
-function loadResignationDetails(id) {
-    // For now, redirect to edit page
-    // In future, this can be replaced with AJAX to load details in right panel
-    window.location.href = '{{ route("staff.resignation.edit", ":id") }}'.replace(':id', id);
-}
+        function viewResignationDetails(id) {
+            loadResignationDetails(id);
+        }
+    </script>
 
-function viewResignationDetails(id) {
-    loadResignationDetails(id);
-}
-</script>
-
-<?php } catch (\Exception $e) { ?> {{ $e }} <?php } ?>
+    <?php } catch (\Exception $e) { ?> {{ $e }} <?php } ?>
 
 @endsection
