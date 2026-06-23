@@ -170,6 +170,20 @@ class SmLeaveRequest extends Model
         return $this->hasOne(HrmsApproverChain::class, 'leave_request_id');
     }
 
+    public function getCanBeDeletedAttribute()
+    {
+        if ($this->approve_status === 'D') {
+            return true;
+        }
+        if ($this->approve_status === 'P') {
+            if ($this->chain && $this->chain->steps) {
+                return $this->chain->steps->whereIn('status', ['A', 'R', 'C'])->count() === 0;
+            }
+            return true;
+        }
+        return false;
+    }
+
     public function getApproveStatusLabelAttribute()
     {
         $map = ['D'=>'New','P'=>'Pending','A'=>'Approved','R'=>'Rejected','C'=>'Returned'];
