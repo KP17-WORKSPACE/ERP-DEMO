@@ -273,12 +273,12 @@
             <div class="row text-center">
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Request Type</p>{{ $loan->request_type ?: ($typeMap[$loan->type_id] ?? '-') }}</div>
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Loan Category</p>{{ $loan->loan_category ?: ($typeMap[$loan->type_id] ?? '-') }}</div>
-                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Request Date</p>{{ $loan->date ? date('d/m/Y', strtotime($loan->date)) : optional($loan->created_at)->format('d/m/Y') }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Request Date</p>{{ $loan->date ? \App\SysHelper::normalizeToDmy($loan->date) : \App\SysHelper::normalizeToDmy(optional($loan->created_at)->format('Y-m-d')) }}</div>
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Loan Amount</p>{{ number_format((float)$loan->amount, 2) }}</div>
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Purpose</p>{{ $loan->purpose ?: '-' }}</div>
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Urgency Level</p>{{ $loan->urgency_level ?: (Str::contains(strtolower($loan->purpose), 'urgent') ? 'Urgent' : 'Normal') }}</div>
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Current Status</p>{{ $loan->status ?: 'Pending' }}</div>
-                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Disbursement Date</p>{{ $loan->requested_disbursement_date ? date('d/m/Y', strtotime($loan->requested_disbursement_date)) : '-' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Disbursement Date</p>{{ $loan->requested_disbursement_date ? \App\SysHelper::normalizeToDmy($loan->requested_disbursement_date) : '-' }}</div>
             </div>
         </div>
 
@@ -324,7 +324,7 @@
         <div class="tab-pane fade" id="payment-tab">
             <div class="row text-center">
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Voucher No</p>{{ $loan->payment_voucher_no ?: '-' }}</div>
-                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Payment Date</p>{{ $loan->payment_date ? date('d/m/Y', strtotime($loan->payment_date)) : '-' }}</div>
+                <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Payment Date</p>{{ $loan->payment_date ? \App\SysHelper::normalizeToDmy($loan->payment_date) : '-' }}</div>
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Payment Method</p>{{ $loan->payment_method ?: '-' }}</div>
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Paid Amount</p>{{ $loan->paid_amount ? number_format((float)$loan->paid_amount, 2) : '-' }}</div>
                 <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 green-heading"><p class="mb-0">Payment Status</p>{{ $loan->payment_status ?: '-' }}</div>

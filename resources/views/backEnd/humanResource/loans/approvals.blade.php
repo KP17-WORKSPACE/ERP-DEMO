@@ -343,7 +343,7 @@ $permissions = App\SmRolePermission::where('role_id', $auth->role_id)->get();
                 <td class="text-end">{{ number_format($monthly, 2) }}</td>
                 <td title="{{ $loan->repayment_start ? \Carbon\Carbon::parse($loan->repayment_start)->format('M Y') : '-' }}">{{ $loan->repayment_start ? \Carbon\Carbon::parse($loan->repayment_start)->format('M Y') : '-' }}</td>
                 <td title="{{ $loan->repayment_mode ?: '-' }}">{{ $loan->repayment_mode ?: '-' }}</td>
-                <td class="text-center">{{ $loan->requested_disbursement_date ? date('d/m/Y', strtotime($loan->requested_disbursement_date)) : '-' }}</td>
+                <td class="text-center">{{ $loan->requested_disbursement_date ? \App\SysHelper::normalizeToDmy($loan->requested_disbursement_date) : '-' }}</td>
                 <td class="truncate-cell" title="{{ $loan->purpose }}">{{ $loan->purpose ?: '-' }}</td>
                 <td class="truncate-cell" title="{{ optional($guarantor)->full_name }}">{{ optional($guarantor)->full_name ?: '-' }}</td>
                 <td class="text-center" title="{{ $workflowStatus }}"><span class="{{ $statusBadgeClass }}">{{ $workflowStatus }}</span></td>

@@ -86,7 +86,7 @@
                         </div>
                         <div class="col">
                             <label class="form-label">Date of Joining</label>
-                            <input type="text" class="form-control form-control-sm" readonly value="{{ optional($employee)->date_of_joining ? date('d/m/Y', strtotime($employee->date_of_joining)) : '' }}">
+                            <input type="text" class="form-control form-control-sm" readonly value="{{ optional($employee)->date_of_joining ? \App\SysHelper::normalizeToDmy($employee->date_of_joining) : '' }}">
                         </div>
                         <div class="col">
                             <label class="form-label">Basic Salary</label>
