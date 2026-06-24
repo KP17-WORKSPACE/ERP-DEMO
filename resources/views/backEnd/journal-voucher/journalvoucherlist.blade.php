@@ -153,10 +153,32 @@
                     <input type="text" id="tableSearch" class="form-control d-inline-block"
                         style="font-size:13px;width: 350px;" placeholder="Search">
 
+                        
 
                     <button class="btn btn-light" onclick="toggleLongFilters()">
                         <i class="ico icon-outline-magnifer"></i>
                     </button>
+                            <div class="col-md-1">
+                                <div class="dropdown">
+                                    <button class="btn btn-light dropdown-toggle syscom-dropdown-toggle w-100" type="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ico icon-outline-file-download"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center text-dark" href="{{ url('journalvoucher-export') }}?export_type=list{{ request()->getQueryString() ? '&' . request()->getQueryString() : '' }}">
+                                                List Wise
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center text-dark" href="{{ url('journalvoucher-export') }}?export_type=account{{ request()->getQueryString() ? '&' . request()->getQueryString() : '' }}">
+                                                Account Wise
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
                     <button class="btn btn-light" id="list_style_button" onclick="list_style_new()">
                         <i class="ico icon-outline-list-down"></i>
                     </button>
@@ -175,6 +197,33 @@
                                 <label for="" class="form-label">Doc Number</label>
                                 <input class="form-control" type="text" autocomplete="off" name="documents_number"
                                     value="{{ $documents_number }}">
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label for="account_id" class="form-label">Account Name</label>
+                                <select class="form-control js-example-basic-single" name="account_id" id="account_id">
+                                    <option value="">-Select-</option>
+                                    @foreach ($accounts as $account)
+                                        <option value="{{ $account->id }}" @if ($account_id == $account->id) selected @endif>
+                                            {{ $account->account_name }} ({{ $account->account_code }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-2">
+                                <label for="created_by" class="form-label">Created By</label>
+                                <select class="form-control js-example-basic-single" name="created_by" id="created_by">
+                                    <option value="">-Select-</option>
+                                    @foreach ($staff as $person)
+                                        <option value="{{ $person->user_id }}" @if ($created_by_filter == $person->user_id) selected @endif>
+                                            {{ $person->full_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <label for="amount" class="form-label">Amount</label>
+                                <input class="form-control" type="number" step="any" autocomplete="off" name="amount" id="amount" value="{{ $amount_filter }}">
                             </div>
                             <div class="col-md-2 mb-2">
                                 <label for="" class="form-label">From Date</label>
@@ -209,6 +258,17 @@
                                     </option>
                                 </select>
                             </div>
+
+
+
+                            <div class="col-md-2 mb-2">
+                                <label for="attachment" class="form-label">Attachment</label>
+                                <select class="form-control js-example-basic-single" name="attachment" id="attachment">
+                                    <option value="">-Select-</option>
+                                    <option value="1" @if ($attachment_filter === '1') selected @endif>With Attachment</option>
+                                    <option value="0" @if ($attachment_filter === '0') selected @endif>Without Attachment</option>
+                                </select>
+                            </div>
                             <script>
                                 function set_filter() {
                                     if ($('#from_date').val() != "" || $('#to_date').val() != "") {
@@ -222,6 +282,7 @@
                                     <i class="ico icon-outline-magnifer"></i> Filter
                                 </button>
                             </div>
+
                         </div>
                         {{ Form::close() }}
 
@@ -274,8 +335,9 @@
                         <tr>
                             <th style="width: 100px;" class="text-center"> @lang('Doc Number')</th>
                             <th class="text-center" style="width: 100px;"> @lang('Doc Date')</th>
-                            <th class="text-start" style="width: 450px;"> @lang('Remarks')</th>
-                            <th class="text-end" style="width: 150px;"> @lang('Amount')</th>
+                            <th class="text-start"> @lang('Remarks')</th>
+                            <th class="text-center"> @lang('No of Account')</th>
+                            <th class="text-end"> @lang('Amount')</th>
                          
                              <th style="width:30px;" class="text-center"> <i class="ico icon-bold-paperclip"></i></th>
                             <th class="text-start" style="width:100px;"> @lang('Created By')</th>
@@ -303,12 +365,16 @@
                                         
                                             {{ @$value->narration }}
                                     </td>
+                                    <td class="text-center">
+                                        {{ @$value->no_of_accounts ?? 0 }}
+                                    </td>
                                     <td class="text-end">
                                         {{ @App\SysHelper::com_curr_format(@$value->credit_amount, '', '', ',') }}
                                         {{--  {{ @$value->debit_amount }}  --}}
                                     </td>
                                      <td class="text-center">
                                         @if (empty(@$value->attach))
+                                        --
                                         @else
                                             @foreach (explode(',', @$value->attach) as $att)
                                                 <a href="{{ url(trim($att)) }}" target="_blank"> <i
@@ -321,7 +387,7 @@
                                     </td>
                                    
 
-                                    <td class="text-center">
+                                    <td class="text-right">
                                         <div class="d-flex justify-content-center">
                                             @if ((Auth::user()->role_id == 1 || Auth::user()->id == @$value->created_by) && $value->status != 0)
                                                 <a class="btn btn=-sm btn-light"
@@ -495,32 +561,33 @@
 
     <?php } catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
 
+
+
     <script>
-$(document).ready(function() {
-    function setManualWidths() {
-        var $table = $('.table-fixed-header');
-        var $theadTh = $table.find('thead th');
-        var $tfootTh = $table.find('tfoot th');
-        var columnWidths = [100,100,450,150,30,100,100]; // 👈 define widths in px
+    $(document).ready(function() {
+        function setManualWidths() {
+            var $table = $('.table-fixed-header');
+            var $theadTh = $table.find('thead th');
+            var $tfootTh = $table.find('tfoot th');
+            var columnWidths = [100, 100, 450, 120, 150, 30, 100, 100]; // 👈 define widths in px
 
-        // Apply widths to <thead> and <tbody>
-        $theadTh.each(function(i) {
-            var w = columnWidths[i];
-            $(this).css('width', w + 'px');
-            $table.find('tbody td:nth-child(' + (i + 1) + ')').css('width', w + 'px');
-        });
+            // Apply widths to <thead> and <tbody>
+            $theadTh.each(function(i) {
+                var w = columnWidths[i];
+                $(this).css('width', w + 'px');
+                $table.find('tbody td:nth-child(' + (i + 1) + ')').css('width', w + 'px');
+            });
 
-        // Apply the same widths to <tfoot>
-        $tfootTh.each(function(i) {
-            var w = columnWidths[i];
-            $(this).css('width', w + 'px');
-        });
-    }
+            // Apply the same widths to <tfoot>
+            $tfootTh.each(function(i) {
+                var w = columnWidths[i];
+                $(this).css('width', w + 'px');
+            });
+        }
 
-    setManualWidths();
-    $(window).on('resize', setManualWidths);
-});
-</script>
-
+        setManualWidths();
+        $(window).on('resize', setManualWidths);
+    });
+    </script>
 
 @endsection
