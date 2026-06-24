@@ -73,7 +73,7 @@
                 </div>
                 <div class="col-md-3 mb-2">
                     <label for="" class="form-check-label">Customer</label>
-                        <select class="form-control js-account-select" name="customer" id="customer">
+                        <select class="form-control js-account-select" name="customer" id="">
                             <option value=""></option>
                             {{-- @foreach ($customer_list as $value)
                                 <option value="{{ @$value->id }}" >{{ @$value->account_name }}

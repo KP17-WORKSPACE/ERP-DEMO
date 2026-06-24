@@ -1521,6 +1521,37 @@ foreach ($customer_reference_list as $company) {
               	</div>
             </div>
         </div>
+<script>
+function parseAdjustAmount(value) {
+    value = (value || '').toString().replace(/,/g, '');
+    var amount = parseFloat(value);
+    return isNaN(amount) ? 0 : amount;
+}
+
+function set_adjust(amt, id) {
+    var $input = $('#set_amt_' + id);
+    if (!$input.length) {
+        return;
+    }
+
+    var maxAdjustable = parseAdjustAmount($("input[name='adj_piv_amount']").val());
+    var currentAdjusted = 0;
+
+    $("input[id^='set_amt_']").not($input).each(function () {
+        currentAdjusted += parseAdjustAmount($(this).val());
+    });
+
+    var remaining = maxAdjustable - currentAdjusted;
+    if (remaining <= 0) {
+        alert("No more amount left to adjust.");
+        return;
+    }
+
+    var adjustAmount = Math.min(parseAdjustAmount(amt), remaining);
+    $input.val(adjustAmount);
+    $("input[name='adj_piv_amount_adjusted']").val(currentAdjusted + adjustAmount);
+}
+</script>
 {{-- Models  --}}
 
 <script>

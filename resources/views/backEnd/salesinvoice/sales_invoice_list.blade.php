@@ -183,7 +183,7 @@
                             </div>
                             <div class="col-3 mb-2">
                                 <label for="" class="form-check-label">Customer</label>
-                                <select class="form-control js-account-select" name="customer" id="customer">
+                                <select class="form-control js-account-select" name="customer" id="customer3_">
                                     <option value=""></option>
 
                                 </select>
