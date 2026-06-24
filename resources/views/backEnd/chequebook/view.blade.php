@@ -681,7 +681,7 @@
                                 <table class="table table-hover table-sm" id="long-list" style="table-layout: fixed; width: 100%;">
                                     <thead class="position-sticky top-0 bg-white" style="z-index: 10;">
                                         <tr>
-                                            <th style="width:20px">#</th>
+                                            <th style="width:30px">#</th>
                                             <th class="text-center">Cheque Number</th>
                                             <th class="text-center">Doc Number</th>
                                             <th class="text-center">Doc Date</th>
@@ -742,12 +742,13 @@
                                     <div class="col">
                                         <label for="" class="form-label">No. of Cheques</label>
                                         <input class="form-control" type="text" autocomplete="off" name="no_of_cheques"
-                                            required>
+                                            inputmode="numeric" pattern="[0-9]+" required>
                                     </div>
 
                                     <div class="col">
                                         <label for="" class="form-label">Start No</label>
-                                        <input class="form-control" type="text" autocomplete="off" name="start_no" required>
+                                        <input class="form-control" type="text" autocomplete="off" name="start_no"
+                                            inputmode="numeric" pattern="[0-9]+" maxlength="255" required>
                                     </div>
 
                                     <div class="col">
@@ -770,12 +771,45 @@
                         </div>
                     </div>
                     <script>
-                        function updateEndNo() {
-                            var start = parseInt(document.querySelector('input[name="start_no"]').value, 10);
-                            var count = parseInt(document.querySelector('input[name="no_of_cheques"]').value, 10);
+                        function subtractOneDecimal(value) {
+                            var digits = value.split('');
 
-                            if (Number.isInteger(start) && Number.isInteger(count) && count > 0) {
-                                document.querySelector('input[name="end_no"]').value = start + count - 1;
+                            for (var i = digits.length - 1; i >= 0; i--) {
+                                if (digits[i] !== '0') {
+                                    digits[i] = String(Number(digits[i]) - 1);
+                                    break;
+                                }
+
+                                digits[i] = '9';
+                            }
+
+                            return digits.join('').replace(/^0+(?=\d)/, '');
+                        }
+
+                        function addDecimalStrings(left, right) {
+                            var result = '';
+                            var carry = 0;
+                            var leftIndex = left.length - 1;
+                            var rightIndex = right.length - 1;
+
+                            while (leftIndex >= 0 || rightIndex >= 0 || carry > 0) {
+                                var leftDigit = leftIndex >= 0 ? Number(left[leftIndex--]) : 0;
+                                var rightDigit = rightIndex >= 0 ? Number(right[rightIndex--]) : 0;
+                                var sum = leftDigit + rightDigit + carry;
+
+                                result = String(sum % 10) + result;
+                                carry = Math.floor(sum / 10);
+                            }
+
+                            return result;
+                        }
+
+                        function updateEndNo() {
+                            var start = document.querySelector('input[name="start_no"]').value.trim();
+                            var count = document.querySelector('input[name="no_of_cheques"]').value.trim();
+
+                            if (/^\d+$/.test(start) && /^\d+$/.test(count) && !/^0+$/.test(count)) {
+                                document.querySelector('input[name="end_no"]').value = addDecimalStrings(start, subtractOneDecimal(count));
                             } else {
                                 document.querySelector('input[name="end_no"]').value = '';
                             }
@@ -806,8 +840,8 @@
                                 e.preventDefault();
                                 var id = $(this).data('id');
                                 var accountId = $(this).data('account_id');
-                                var noOfCheques = $(this).data('no_of_cheques');
-                                var startNo = $(this).data('start_no');
+                                var noOfCheques = $(this).attr('data-no_of_cheques');
+                                var startNo = $(this).attr('data-start_no');
                                 var remarks = $(this).data('remarks');
 
                                 $('#chequebook-form').attr('action', chequebookUpdateBaseUrl + '/' + id);
@@ -816,7 +850,7 @@
                                 $('#modal_account_id').val(accountId).trigger('change');
                                 $('input[name="no_of_cheques"]').val(noOfCheques);
                                 $('input[name="start_no"]').val(startNo);
-                                $('input[name="end_no"]').val(parseInt(startNo, 10) + parseInt(noOfCheques, 10) - 1);
+                                updateEndNo();
                                 $('input[name="remarks"]').val(remarks);
 
                                 var editModal = new bootstrap.Modal(document.getElementById('addchequebook'));
