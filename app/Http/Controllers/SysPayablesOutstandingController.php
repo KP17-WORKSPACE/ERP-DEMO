@@ -507,18 +507,48 @@ class SysPayablesOutstandingController extends Controller
         $cust_detail = SysCustSuppl::select('sys_cust_suppl.*')->join('sys_chartofaccounts', 'sys_chartofaccounts.account_code', 'sys_cust_suppl.code')->where('sys_chartofaccounts.id', $account)->first();
         $cust_address = SysCustSupplAddressbook::where('cust_suppl_id', $cust_detail->id)->orderby('id', 'desc')->first();
 
+        $payable = collect();
+        $data_adjestment = collect();
+        $data_payment = collect();
+        $data_payment2 = collect();
+        $data_payment3 = collect();
+        $data_return = collect();
+        $list_of_unadjusted = collect();
+        $list_of_unadjusted_jv_to_jv = collect();
+        $list_of_unadjusted_pdc = collect();
+        $list_of_adjusted_pdc = collect();
+
         if (count($transaction_no) > 0) {
-            $data_query = SysChartofAccountsTransaction::select('transaction_date', 'transaction_id', 'transaction_no', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw($account . ' as account_id'))->where('company_id', $com_id);
+            $data_query = SysChartofAccountsTransaction::select('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type', DB::raw('sum(debit_amount) as debit_amount'), DB::raw('sum(credit_amount) as credit_amount'), DB::raw($account . ' as account_id'))
+                ->where('account_id', $account)
+                ->where('company_id', $com_id);
             $data_query->wherein('transaction_no', $transaction_no)->where('status', 1);
+            if ((int) $account === 7642) {
+                $cashSupplierList = SysHelper::get_cash_supplier($account);
+                if (count($cashSupplierList) > 0) {
+                    $data_query->whereIn('transaction_no', $cashSupplierList);
+                } else {
+                    $data_query->where('transaction_no', '0');
+                }
+            }
             $data_query->wherein('transaction_type', ['purchaseinvoice', 'purchasereturn', 'opbinvoice', 'openingbalance111', 'salesinvoice']);
             $data_query->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m-%d') <= '" . $date . "'");
-            $payable = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', $this->payableOsSalesInvoiceRowGroup())->orderby('transaction_date', 'asc')->get();
+            $payable = $data_query->groupby('transaction_date', 'transaction_id', 'transaction_no', 'transaction_type', $this->payableOsSalesInvoiceRowGroup())->orderby('transaction_date', 'asc')->get();
 
 
             $data_adjestment = SysPurchaseReturnAdjestment::select('piv_no', DB::raw('sum(paid_amount) as paid_amount'))->wherein('piv_no', $payable->pluck("transaction_no"))->groupby('piv_no')->get();
 
             $data_payment = DB::table('sys_payment as p')->select('pa.bi_doc_no', 'p.doc_number', 'pa.bi_amount', 'p.payment_through', 'p.payment_date', 'p.cheque_number', 'p.cheque_bank_name')
-                ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', 'p.doc_number')->where('pa.account_id', $payable[0]->account_id)->wherein('bi_doc_no', $payable->pluck("transaction_no"))->where('p.status', 1)->get();
+                ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', 'p.doc_number')->where('pa.account_id', $account)->wherein('bi_doc_no', $payable->pluck("transaction_no"))->where('p.status', 1)->get();
+
+            $data_payment2 = DB::table('sys_journalvoucher as j')->select('pa.bi_doc_no', 'j.doc_number', 'pa.bi_amount', 'j.doc_date')
+                ->join('sys_payment_adjustments as pa', 'pa.bi_doc_number', 'j.doc_number')->where('pa.account_id', $account)->whereIn('bi_doc_no', $payable->pluck('transaction_no'))->where('j.status', 1)->get();
+
+            $data_payment3 = DB::table('sys_journalvoucher as j')->select('ra.bi_doc_no', 'j.doc_number', 'ra.bi_amount', 'j.doc_date')
+                ->join('sys_receipt_adjustments as ra', 'ra.bi_doc_number', 'j.doc_number')->where('ra.account_id', $account)->whereIn('bi_doc_no', $payable->pluck('transaction_no'))->where('j.status', 1)->get();
+
+            $data_return = DB::table('sys_purchase_return as r')->select('ra.piv_no', 'r.doc_number', 'ra.paid_amount', 'r.doc_date')
+                ->join('sys_purchase_return_adjestment as ra', 'ra.pri_no', 'r.doc_number')->where('r.vendors', $account)->whereIn('pri_no', $payable->pluck('transaction_no'))->where('r.status', 1)->get();
 
 
             $list_of_unadjusted = SysHelper::get_list_of_payable_unadjusted([$account], $com_id, $date);
@@ -537,6 +567,9 @@ class SysPayablesOutstandingController extends Controller
             'payable' => $payable,
             'data_adjestment' => $data_adjestment,
             'data_payment' => $data_payment,
+            'data_payment2' => $data_payment2,
+            'data_payment3' => $data_payment3,
+            'data_return' => $data_return,
             'date' => $date,
             'generate_date' => $generate_date,
             'list_of_unadjusted' => $list_of_unadjusted,
@@ -544,8 +577,9 @@ class SysPayablesOutstandingController extends Controller
             'list_of_unadjusted_pdc' => $list_of_unadjusted_pdc,
             'list_of_adjusted_pdc' => $list_of_adjusted_pdc,
         ];
+        $data = array_merge($data, $this->loadPayableOutstandingViewData($com_id));
 
-        //return  view('backEnd.pdf_print.payable_os_pdf',$data);
+        // return  view('backEnd.pdf_print.payable_os_pdf',$data);
         $pdf = PDF::loadView('backEnd.pdf_print.payable_os_pdf', $data);
         $pdf->setPaper('A4', 'portrait');
         return $pdf->download($cust_detail->name . " - payable_outstanding.pdf");
