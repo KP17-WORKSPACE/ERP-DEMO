@@ -132,19 +132,19 @@ class SysCrmReimbursementRequest extends Controller
 
             if ($ctrl_from_date) {
                 try {
-                    $fromDate = Carbon::createFromFormat('d/m/Y', $ctrl_from_date)->format('Y-m-d');
+                    $fromDate = SysHelper::normalizeToYmd($ctrl_from_date);
                     $query->where('date', '>=', $fromDate);
                 } catch (\Exception $e) {}
             }
             if ($ctrl_to_date) {
                 try {
-                    $toDate = Carbon::createFromFormat('d/m/Y', $ctrl_to_date)->format('Y-m-d');
+                    $toDate = SysHelper::normalizeToYmd($ctrl_to_date);
                     $query->where('date', '<=', $toDate);
                 } catch (\Exception $e) {}
             }
             if ($ctrl_invoice_date) {
                 try {
-                    $invDate = \Carbon\Carbon::parse(str_replace('/', '-', $ctrl_invoice_date))->format('Y-m-d');
+                    $invDate = SysHelper::normalizeToYmd($ctrl_invoice_date);
                     $query->where('invoice_date', '=', $invDate);
                 } catch (\Exception $e) {}
             }
@@ -207,9 +207,7 @@ class SysCrmReimbursementRequest extends Controller
             
             $other_code = $company ? $company->other_code : 'M';
             
-            $last = SysCrmReimbursement::orderBy('id', 'desc')->first();
-            $next_id = ($last ? $last->id : 0) + 1000;
-            $next_reimbursement_no = 'RE' . $other_code . '-' . str_pad($next_id, 4, '0', STR_PAD_LEFT);
+            $next_reimbursement_no = \App\SysHelper::get_new_code_lead('sys_crm_reimbursement', 'RE', 'reimbursement_no', $company_id);
 
             $reimbursementPermissions = $this->reimbursementPermissionSet('request');
             $reimbursementTrackPermissions = $this->reimbursementPermissionSet('track');
@@ -312,17 +310,17 @@ class SysCrmReimbursementRequest extends Controller
 
             if ($ctrl_from_date) {
                 try {
-                    $query->where('date', '>=', Carbon::createFromFormat('d/m/Y', $ctrl_from_date)->format('Y-m-d'));
+                    $query->where('date', '>=', SysHelper::normalizeToYmd($ctrl_from_date));
                 } catch (\Exception $e) {}
             }
             if ($ctrl_to_date) {
                 try {
-                    $query->where('date', '<=', Carbon::createFromFormat('d/m/Y', $ctrl_to_date)->format('Y-m-d'));
+                    $query->where('date', '<=', SysHelper::normalizeToYmd($ctrl_to_date));
                 } catch (\Exception $e) {}
             }
             if ($request->invoice_date) {
                 try {
-                    $query->where('invoice_date', '=', Carbon::parse(str_replace('/', '-', $request->invoice_date))->format('Y-m-d'));
+                    $query->where('invoice_date', '=', SysHelper::normalizeToYmd($request->invoice_date));
                 } catch (\Exception $e) {}
             }
             if ($request->expense_category) {
@@ -797,12 +795,10 @@ class SysCrmReimbursementRequest extends Controller
                 }
             }
 
-            $last = SysCrmReimbursement::orderBy('id', 'desc')->first();
-            $next_id = ($last ? $last->id : 0) + 1000;
-            $r->reimbursement_no = 'RE' . $other_code . '-' . str_pad($next_id, 4, '0', STR_PAD_LEFT);
+            $r->reimbursement_no = \App\SysHelper::get_new_code_lead('sys_crm_reimbursement', 'RE', 'reimbursement_no', $company_id);
             
             $r->date = $request->date
-                ? Carbon::createFromFormat('d/m/Y', $request->date)->format('Y-m-d')
+                ? SysHelper::normalizeToYmd($request->date)
                 : null;
                 
             $r->deal_id = SysHelper::get_dealid_from_code($request->deal_id);
@@ -816,7 +812,7 @@ class SysCrmReimbursementRequest extends Controller
                 $r->remarks = $request->remarks;
             }
             $r->head_count_name = $request->head_count_name;
-            $r->invoice_date = $request->invoice_date ? Carbon::createFromFormat('d/m/Y', $request->invoice_date)->format('Y-m-d') : null;
+            $r->invoice_date = $request->invoice_date ? SysHelper::normalizeToYmd($request->invoice_date) : null;
             $r->reimbursable_amount = str_replace(',', '', $request->reimbursable_amount);
             $r->payment_method = $request->payment_method;
             $r->project_id = $request->project_id;
@@ -887,7 +883,7 @@ class SysCrmReimbursementRequest extends Controller
             }
             
             $r->date = $request->date
-                ? Carbon::createFromFormat('d/m/Y', $request->date)->format('Y-m-d')
+                ? SysHelper::normalizeToYmd($request->date)
                 : null;
             $r->deal_id = SysHelper::get_dealid_from_code($request->deal_id);
             $r->site_name = $request->site_name;
@@ -900,7 +896,7 @@ class SysCrmReimbursementRequest extends Controller
                 $r->remarks = $request->remarks;
             }
             $r->head_count_name = $request->head_count_name;
-            $r->invoice_date = $request->invoice_date ? Carbon::createFromFormat('d/m/Y', $request->invoice_date)->format('Y-m-d') : null;
+            $r->invoice_date = $request->invoice_date ? SysHelper::normalizeToYmd($request->invoice_date) : null;
             $r->reimbursable_amount = str_replace(',', '', $request->reimbursable_amount);
             $r->payment_method = $request->payment_method;
             $r->project_id = $request->project_id;

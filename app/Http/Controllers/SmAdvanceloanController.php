@@ -842,7 +842,7 @@ class SmAdvanceloanController extends Controller
             $nextDeductionDate = Carbon::parse($loan->repayment_start)->addMonths($recoveredInstallments)->format('d/m/Y');
         }
 
-        $loan->list_date = $loan->date ? date('d/m/Y', strtotime($loan->date)) : optional($loan->created_at)->format('d/m/Y');
+        $loan->list_date = $loan->date ? \App\SysHelper::normalizeToDmy($loan->date) : \App\SysHelper::normalizeToDmy(optional($loan->created_at)->format('Y-m-d'));
         $loan->list_employee_name = optional($staff)->full_name ?: trim(optional($staff)->first_name . ' ' . optional($staff)->last_name);
         $loan->list_guarantor_name = optional($guarantor)->full_name ?: trim(optional($guarantor)->first_name . ' ' . optional($guarantor)->last_name);
         $loan->list_original_amount = number_format($originalAmount, 2);
@@ -853,7 +853,7 @@ class SmAdvanceloanController extends Controller
         $loan->list_repayment_start = $loan->repayment_start ? Carbon::parse($loan->repayment_start)->format('M Y') : '-';
         $loan->list_edit_repayment_start = $loan->repayment_start ? Carbon::parse($loan->repayment_start)->format('Y-m') : '';
         $loan->list_edit_repayment_end = $loan->repayment_end_month ? Carbon::parse($loan->repayment_end_month)->format('Y-m') : '';
-        $loan->list_disbursement_date = $loan->requested_disbursement_date ? date('d/m/Y', strtotime($loan->requested_disbursement_date)) : '-';
+        $loan->list_disbursement_date = $loan->requested_disbursement_date ? \App\SysHelper::normalizeToDmy($loan->requested_disbursement_date) : '-';
         $loan->list_next_deduction_date = $nextDeductionDate ?: '-';
         $loan->list_approval_status = $loan->payment_approval === 'Approved' ? 'Payment Approved' :
             ($loan->hr_approval === 'Approved' ? 'HR Approved' :

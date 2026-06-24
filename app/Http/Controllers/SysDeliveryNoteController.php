@@ -56,6 +56,64 @@ class SysDeliveryNoteController extends Controller
     public function __construct(){
         $this->middleware('PM');
     }
+
+    private function normalizeDeliveryNoteSerials($value)
+    {
+        $serials = [];
+        $values = is_array($value) ? $value : [$value];
+
+        foreach ($values as $entry) {
+            if (is_array($entry)) {
+                $serials = array_merge($serials, $this->normalizeDeliveryNoteSerials($entry));
+                continue;
+            }
+
+            foreach (preg_split('/[,\r\n]+/', (string) $entry) as $serial) {
+                $serial = trim($serial);
+                if ($serial !== '') {
+                    $serials[] = $serial;
+                }
+            }
+        }
+
+        $unique = [];
+        foreach ($serials as $serial) {
+            $key = strtolower($serial);
+            if (!isset($unique[$key])) {
+                $unique[$key] = $serial;
+            }
+        }
+
+        return array_values($unique);
+    }
+
+    private function resolveDeliveryNoteLineSerials(Request $request, $index, $partNumber)
+    {
+        $serialInput = $request->input('serial_no', []);
+
+        if (is_array($serialInput)) {
+            if (array_key_exists($partNumber, $serialInput) && is_array($serialInput[$partNumber])) {
+                return $this->normalizeDeliveryNoteSerials($serialInput[$partNumber]);
+            }
+
+            $lineSerials = $serialInput[$index] ?? null;
+            if (!is_array($lineSerials)) {
+                $normalized = $this->normalizeDeliveryNoteSerials($lineSerials);
+                if (count($normalized) > 0) {
+                    return $normalized;
+                }
+            }
+        }
+
+        foreach (preg_split('/\s*\|\s*/', (string) $request->input('device_serial', '')) as $partSummary) {
+            $summary = explode(':', $partSummary, 2);
+            if (count($summary) === 2 && trim($summary[0]) === (string) $partNumber) {
+                return $this->normalizeDeliveryNoteSerials($summary[1]);
+            }
+        }
+
+        return [];
+    }
     
 
     /**
@@ -899,12 +957,14 @@ class SysDeliveryNoteController extends Controller
             //return count($request->part_number);
             for($i = 0; $i < count($request->part_number); $i++) {
                 if($request->part_number[$i] !="" && $request->qty[$i] !="" && $request->unitprice[$i] !=""){
+                    $serialNumbers = $this->resolveDeliveryNoteLineSerials($request, $i, $request->part_number[$i]);
+                    $serialNo = implode(', ', $serialNumbers);
                     $dnl = new SysDeliveryNoteItems();
                     $dnl->dn_id = $dn->id;
                     $dnl->ref_si_id = $dn->ref_si_id;
                     $dnl->part_number = $request->part_number[$i];
                     $dnl->description = $request->description[$i];
-                    $dnl->serial_no = $request->serial_no[$i];
+                    $dnl->serial_no = $serialNo;
                     $dnl->qty = $request->qty[$i];
                     $dnl->tax = $request->tax[$i];
                     $dnl->unitprice = (float) str_replace(',', '', $request->unitprice[$i] ?? 0);
@@ -937,11 +997,7 @@ class SysDeliveryNoteController extends Controller
                         }
                     }
 
-                    $str_arr = explode (",", $request->serial_no[$i]);
-                    /*$str_arr = collect(preg_split('/[\s,]+/', $request->srl[$i], -1, 'PREG_SPLIT_NO_EMPTY'))
-                    ->map(fn($s) => strtoupper(trim($s)))->unique()->values()->toArray();*/
-
-                    foreach($str_arr as $srl){
+                    foreach($serialNumbers as $srl){
                         $values = array('dn_id' => $dn->id,'part_number' => $request->part_number[$i],'srl_no' => $srl,'item_id' => $dnl->id);
                         DB::table('sys_delivery_note_items_srl')->insert($values);
                     }
@@ -984,7 +1040,7 @@ class SysDeliveryNoteController extends Controller
                     $istock->doc_number = $dn->doc_number;
                     $istock->doc_date = $dn->doc_date;
                     $istock->deal_id = $dn->deal_id;
-                    $istock->slno = $request->serial_no[$i];
+                    $istock->slno = $serialNo;
                     $istock->status = 1;
                     $istock->created_by = Auth::user()->id;
                     $istock->company_id = session('logged_session_data.company_id');
@@ -1401,12 +1457,14 @@ class SysDeliveryNoteController extends Controller
 
             for($i = 0; $i < count($request->part_number); $i++) {
                 if($request->part_number[$i] !="" && $request->qty[$i] !="" && $request->unitprice[$i] !=""){
+                    $serialNumbers = $this->resolveDeliveryNoteLineSerials($request, $i, $request->part_number[$i]);
+                    $serialNo = implode(', ', $serialNumbers);
                     $dnl = new SysDeliveryNoteItems();
                     $dnl->dn_id = $dn->id;
                     $dnl->ref_si_id = $dn->ref_si_id;
                     $dnl->part_number = $request->part_number[$i];
                     $dnl->description = $request->description[$i];
-                    $dnl->serial_no = $request->serial_no[$i];
+                    $dnl->serial_no = $serialNo;
                     $dnl->qty = $request->qty[$i];
                     $dnl->tax = $request->tax[$i];
                     $dnl->unitprice = (float) str_replace(',', '', $request->unitprice[$i] ?? 0);
@@ -1421,10 +1479,7 @@ class SysDeliveryNoteController extends Controller
                     $dnl->save();
                     $dnl->toArray();
 
-                    $str_arr = explode (",", $request->serial_no[$i]);
-                    /*$str_arr = collect(preg_split('/[\s,]+/', $request->srl[$i], -1, 'PREG_SPLIT_NO_EMPTY'))
-                    ->map(fn($s) => strtoupper(trim($s)))->unique()->values()->toArray();*/
-                    foreach($str_arr as $srl){
+                    foreach($serialNumbers as $srl){
                         $values = array('dn_id' => $dn->id,'part_number' => $request->part_number[$i],'srl_no' => $srl,'item_id' => $dnl->id);
                         DB::table('sys_delivery_note_items_srl')->insert($values);
                     }
@@ -1460,6 +1515,7 @@ class SysDeliveryNoteController extends Controller
                     $istock->doc_number = $dn->doc_number;
                     $istock->doc_date = $dn->doc_date;
                     $istock->deal_id = $dn->deal_id;
+                    $istock->slno = $serialNo;
                     $istock->item_id = $dnl->id;
                     $istock->status = 1;
                     $istock->created_by = Auth::user()->id;
@@ -1688,6 +1744,8 @@ class SysDeliveryNoteController extends Controller
     {
         try{
             db::beginTransaction();
+            $serialNumbers = $this->normalizeDeliveryNoteSerials($request->serial_no);
+            $serialNo = implode(', ', $serialNumbers);
             DB::table('sys_delivery_note_items')->where('id',$request->id)->update(
                 [
                     'part_number' => $request->part_number,
@@ -1699,7 +1757,7 @@ class SysDeliveryNoteController extends Controller
                     'discount' => $request->discount,
                     'taxableamount' => $request->taxableamount,
                     'vatamount' => $request->vatamount,
-                    'serial_no' => $request->serial_no,
+                    'serial_no' => $serialNo,
                     'status' => 1,
                     'updated_by' => Auth::user()->id,
                     'updated_at' => Carbon::now('+04:00'),
@@ -1709,6 +1767,7 @@ class SysDeliveryNoteController extends Controller
                     [
                         'qty_out' => $request->qty,
                         'price_out' => ($request->value-$request->discount)/$request->qty,
+                        'slno' => $serialNo,
                         'status' => 1,
                         'updated_by' => Auth::user()->id,
                         'updated_at' => Carbon::now('+04:00'),
@@ -1716,8 +1775,7 @@ class SysDeliveryNoteController extends Controller
                 );
                 
                 DB::table('sys_delivery_note_items_srl')->where('dn_id',$request->dln_id)->where('item_id',$request->id)->where('part_number',$request->part_number)->delete();
-                $str_arr = explode (",", $request->serial_no);
-                    foreach($str_arr as $srl){
+                    foreach($serialNumbers as $srl){
                         $values = array('dn_id' => $request->dln_id,'part_number' => $request->part_number,'srl_no' => $srl, 'item_id' => $request->id);
                         DB::table('sys_delivery_note_items_srl')->insert($values);
                     }
@@ -1735,6 +1793,8 @@ class SysDeliveryNoteController extends Controller
     {
         try{
             db::beginTransaction();
+            $serialNumbers = $this->normalizeDeliveryNoteSerials($request->serial_no);
+            $serialNo = implode(', ', $serialNumbers);
             $item_id = DB::table('sys_delivery_note_items')->insertGetId(
                 [
                     'dn_id' => $request->dln_id,
@@ -1747,7 +1807,7 @@ class SysDeliveryNoteController extends Controller
                     'discount' => $request->discount,
                     'taxableamount' => $request->taxableamount,
                     'vatamount' => $request->vatamount,
-                    'serial_no' => $request->serial_no,
+                    'serial_no' => $serialNo,
                     'status' => 1,
                     'created_by' => Auth::user()->id,
                     'created_at' => Carbon::now('+04:00'),
@@ -1762,7 +1822,7 @@ class SysDeliveryNoteController extends Controller
                         'doc_number' => $request->doc_number,
                         'doc_date' => $request->doc_date,
                         'deal_id' => SysHelper::get_dealid_from_code($request->deal_id),
-                        'slno' => $request->serial_no,
+                        'slno' => $serialNo,
                         'qty_out' => $request->qty,
                         'price_out' => ($request->value-$request->discount)/$request->qty,
                         'status' => 1,
@@ -1773,8 +1833,7 @@ class SysDeliveryNoteController extends Controller
                     ]
                 );
                 
-                $str_arr = explode (",", $request->serial_no);
-                foreach($str_arr as $srl){
+                foreach($serialNumbers as $srl){
                     $values = array('dn_id' => $request->dln_id,'part_number' => $request->part_number,'srl_no' => $srl,'item_id' => $item_id);
                     DB::table('sys_delivery_note_items_srl')->insert($values);
                 }

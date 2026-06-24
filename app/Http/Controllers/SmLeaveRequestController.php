@@ -89,10 +89,10 @@ class SmLeaveRequestController extends Controller
             $apply_leave = new SmLeaveRequest();
             $apply_leave->staff_id = $login_id;
             $apply_leave->role_id = $role_id;
-            $apply_leave->apply_date = date('Y-m-d', strtotime($request->apply_date));
+            $apply_leave->apply_date = \App\SysHelper::normalizeToYmd($request->apply_date);
             $apply_leave->leave_define_id = $request->leave_type;
-            $apply_leave->leave_from = date('Y-m-d', strtotime($request->leave_from));
-            $apply_leave->leave_to = date('Y-m-d', strtotime($request->leave_to));
+            $apply_leave->leave_from = \App\SysHelper::normalizeToYmd($request->leave_from);
+            $apply_leave->leave_to = \App\SysHelper::normalizeToYmd($request->leave_to);
             $apply_leave->approve_status = 'P';
             $apply_leave->reason = $request->reason;
             $apply_leave->file = $fileName;
@@ -206,10 +206,10 @@ class SmLeaveRequestController extends Controller
             $apply_leave = SmLeaveRequest::find($request->id);
             $apply_leave->staff_id = $login_id;
             $apply_leave->role_id = $role_id;
-            $apply_leave->apply_date = date('Y-m-d', strtotime($request->apply_date));
+            $apply_leave->apply_date = \App\SysHelper::normalizeToYmd($request->apply_date);
             $apply_leave->leave_define_id = $request->leave_type;
-            $apply_leave->leave_from = date('Y-m-d', strtotime($request->leave_from));
-            $apply_leave->leave_to = date('Y-m-d', strtotime($request->leave_to));
+            $apply_leave->leave_from = \App\SysHelper::normalizeToYmd($request->leave_from);
+            $apply_leave->leave_to = \App\SysHelper::normalizeToYmd($request->leave_to);
             $apply_leave->approve_status = 'P';
             $apply_leave->reason = $request->reason;
             if ($fileName != "") {
