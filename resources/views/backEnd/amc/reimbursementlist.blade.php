@@ -130,7 +130,7 @@
                                     <div class="form-control-plaintext" style="font-size:11px">{{ $value->reimbursement_no }}</div>
                                 </div>
                                 <div class="col-4 pl-2">
-                                    <div class="form-control-plaintext truncate-text" style="font-size:11px">{{ $value->date ? date('d/m/Y', strtotime($value->date)) : '' }}</div>
+                                    <div class="form-control-plaintext truncate-text" style="font-size:11px">{{ $value->date ? \App\SysHelper::normalizeToDmy($value->date) : '' }}</div>
                                 </div>
                                 <div class="col-4 text-end">
                                     <div class="form-control-plaintext truncate-text" style="font-size:11px">
@@ -324,7 +324,7 @@
                                         $canDownloadAttachment = !empty($reimbursementPermissions['attach']) || !empty($reimbursementPermissions['view']);
                                     @endphp
                                     <tr class="{{ $value->deleted_at ? 'bg-dark' : '' }}">
-                                        <td class="text-center">{{ $value->date ? date('d/m/Y', strtotime($value->date)) : '' }}</td>
+                                        <td class="text-center">{{ $value->date ? \App\SysHelper::normalizeToDmy($value->date) : '' }}</td>
                                         <td class="text-start"><a href="{{ url('crm-reimbursement-track/' . @$value->id) }}" target="_blank" class="text-success">{{ @$value->reimbursement_no }}</a></td>
                                         <td class="text-center"><a href="{{ url('get-url-deal-track', @$value->deal_code->code) }}" target="_blank" class="text-success">{{ @$value->deal_code->code }}</a></td>
                                         <td>{{ @$value->site_name }}</td>
@@ -436,12 +436,12 @@
 <div class="d-none" id="reimbursement-edit-data">
     @foreach($data as $value)
         <input type="hidden" id="edit_reimbursement_no_{{ $value->id }}" value="{{ $value->reimbursement_no }}">
-        <input type="hidden" id="edit_date_{{ $value->id }}" value="{{ $value->date ? date('d/m/Y', strtotime($value->date)) : '' }}">
+        <input type="hidden" id="edit_date_{{ $value->id }}" value="{{ $value->date ? \App\SysHelper::normalizeToDmy($value->date) : '' }}">
         <input type="hidden" id="edit_deal_id_{{ $value->id }}" value="{{ $value->deal_code->code ?? '' }}">
         <input type="hidden" id="edit_site_name_{{ $value->id }}" value="{{ $value->site_name }}">
         <input type="hidden" id="edit_scope_of_work_{{ $value->id }}" value="{{ $value->scope_of_work }}">
         <input type="hidden" id="edit_invoice_no_{{ $value->id }}" value="{{ $value->invoice_no }}">
-        <input type="hidden" id="edit_invoice_date_{{ $value->id }}" value="{{ $value->invoice_date ? \Carbon\Carbon::parse($value->invoice_date)->format('d/m/Y') : '' }}">
+        <input type="hidden" id="edit_invoice_date_{{ $value->id }}" value="{{ $value->invoice_date ? \App\SysHelper::normalizeToDmy($value->invoice_date) : '' }}">
         <input type="hidden" id="edit_amount_{{ $value->id }}" value="{{ $value->amount ? number_format((float)$value->amount, 2) : '' }}">
         <input type="hidden" id="edit_reimbursable_amount_{{ $value->id }}" value="{{ $value->reimbursable_amount ? number_format((float)$value->reimbursable_amount, 2) : '' }}">
         <input type="hidden" id="edit_payment_method_{{ $value->id }}" value="{{ $value->payment_method }}">

@@ -108,7 +108,7 @@
                                     <div class="form-control-plaintext" style="font-size:11px">{{ $value->reimbursement_no }}</div>
                                 </div>
                                 <div class="col-4 pl-2">
-                                    <div class="form-control-plaintext truncate-text" style="font-size:11px">{{ date('d/m/Y', strtotime($value->date)) }}</div>
+                                    <div class="form-control-plaintext truncate-text" style="font-size:11px">{{ \App\SysHelper::normalizeToDmy($value->date) }}</div>
                                 </div>
                                 <div class="col-4 text-end">
                                     <div class="form-control-plaintext truncate-text" style="font-size:11px">
@@ -302,7 +302,7 @@
                                 <tbody style="font-size:12px">
                                     @foreach($data as $value)
                                         <tr class="{{ $value->deleted_at ? 'bg-dark' : '' }}">
-                                            <td class="text-center">{{ date('d/m/Y', strtotime(@$value->date)) }}</td>
+                                            <td class="text-center">{{ \App\SysHelper::normalizeToDmy(@$value->date) }}</td>
                                             <td class="text-start data-item" data-id="{{ $value->id }}" onclick="list_style_search()"><a class="text-success" style="cursor: pointer;">{{ @$value->reimbursement_no }}</a></td>
                                             <td class="text-center"><a href="{{ url('get-url-deal-track', @$value->deal_code->code) }}" target="_blank" class="text-success">{{ @$value->deal_code->code }}</a></td>
                                             <td>{{ @$value->site_name }}</td>

@@ -145,11 +145,11 @@
                 <div class="row text-start">
                     <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
                         <p class="font-weight-600 mb-0">Expense Date</p>
-                        {{ $selectedReimbursement->date ? date('d/m/Y', strtotime($selectedReimbursement->date)) : '' }}
+                        {{ $selectedReimbursement->date ? \App\SysHelper::normalizeToDmy($selectedReimbursement->date) : '' }}
                     </div>
                     <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
                         <p class="font-weight-600 mb-0">Request Date</p>
-                        {{ $selectedReimbursement->created_at ? date('d/m/Y', strtotime($selectedReimbursement->created_at)) : '' }}
+                        {{ $selectedReimbursement->created_at ? \App\SysHelper::normalizeToDmy($selectedReimbursement->created_at) : '' }}
                     </div>
                     <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
                         <p class="font-weight-600 mb-0">Invoice No.</p>
@@ -157,7 +157,7 @@
                     </div>
                     <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
                         <p class="font-weight-600 mb-0">Invoice Date</p>
-                        {{ $selectedReimbursement->invoice_date ? date('d/m/Y', strtotime($selectedReimbursement->invoice_date)) : '' }}
+                        {{ $selectedReimbursement->invoice_date ? \App\SysHelper::normalizeToDmy($selectedReimbursement->invoice_date) : '' }}
                     </div>
                     <div class="col-xxl-2 col-lg-3 col-md-4 col-6 mb-3 truncate-text-custom green-heading">
                         <p class="font-weight-600 mb-0">Amount</p>
