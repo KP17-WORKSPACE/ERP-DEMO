@@ -2770,15 +2770,22 @@ class SysCustomerController extends Controller
             return redirect()->back();
         }
     }
+
     public function add_customer_detail_popup(Request $request) //kunal modified
     {
         try {
             
             DB::beginTransaction();
-                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                    
             //$check = SysCustSuppl::select('id','code','name')->where('email', $request->cust_email_add)->wherenotin('email', ['x','xx','xxx','xxxx'])->first();
             $company_name = $request->company_name_add;
-            if (SysHelper::check_customer_is_added($company_name) > 0) {
+            $is_supplier = ($request->type == 2);
+
+            $already_exists = $is_supplier
+                ? (SysHelper::check_supplier_is_added($company_name) > 0)
+                : (SysHelper::check_customer_is_added($company_name) > 0);
+
+            if ($already_exists) {
                 $retData = 'ERROR2';
                 return json_encode(array('data' => $retData));
             }
@@ -2810,13 +2817,17 @@ class SysCustomerController extends Controller
             }
 
             $new_customer = new SysCustSuppl();
-            $new_customer->group = SysHelper::get_customer_group('group');
+            $new_customer->group = $is_supplier ? SysHelper::get_supplier_group('group') : SysHelper::get_customer_group('group');
             $new_customer->customer_salutation = $request->customer_salutation_add ?: 'Mr.';
-            $new_customer->catid = 1;  // 1 customers, 2 suppliers
+            $new_customer->catid = $is_supplier ? 2 : 1;  // 1 customers, 2 suppliers
             $new_customer->account_type = $request->account_type;
+            if ($is_supplier) {
+                $new_customer->supplier_type = $request->supplier_type ?: ($request->account_type ?: 1);
+                $new_customer->purchase_type = 1;
+            }
             $new_customer->name = $request->company_name_add;
             $new_customer->customer_name_display = strtoupper($request->company_name_add);
-            $new_customer->code = SysHelper::get_new_customer_code();
+            $new_customer->code = $is_supplier ? SysHelper::get_new_supplier_code() : SysHelper::get_new_customer_code();
             $new_customer->address = $request->cust_address_add;
             $new_customer->address2 = $request->cust_address_add2;
             $new_customer->first_name = $fname;
@@ -2826,7 +2837,12 @@ class SysCustomerController extends Controller
             $new_customer->mobile = $request->cust_no_add;
 
             $new_customer->email = $request->cust_email_add;
-            $new_customer->sales_person = $request->sales_person;
+
+          $new_customer->sales_person = $is_supplier
+    ? Auth::id()
+    : ($request->filled('sales_person') ? (int) $request->sales_person : null);
+
+           
             $new_customer->vat_number = "";
             $new_customer->vat_country = $request->vat_country;
             $new_customer->vat_state = $request->vat_state;
@@ -2842,7 +2858,7 @@ class SysCustomerController extends Controller
             $new_customer->vat_percentage = $vat_percent;
             $new_customer->payment_terms = $request->payment_terms;
             $new_customer->status = 3;
-            $new_customer->type = 1;
+            $new_customer->type = $request->type ?: 1;
             $new_customer->zip_code = $request->zip_code;
             $new_customer->city = $request->city;
             $new_customer->company_access = $company_access;
@@ -2880,9 +2896,9 @@ class SysCustomerController extends Controller
             $accounts = new SysChartofAccounts();
             $accounts->account_code = $new_customer->code;
             $accounts->account_name = $request->company_name_add;
-            $accounts->group = SysHelper::get_customer_group('group');
-            $accounts->subgroup = SysHelper::get_customer_group('subgroup');
-            $accounts->subgroup2 = SysHelper::get_customer_group('subgroup2');
+            $accounts->group = $is_supplier ? SysHelper::get_supplier_group('group') : SysHelper::get_customer_group('group');
+            $accounts->subgroup = $is_supplier ? SysHelper::get_supplier_group('subgroup') : SysHelper::get_customer_group('subgroup');
+            $accounts->subgroup2 = $is_supplier ? SysHelper::get_supplier_group('subgroup2') : SysHelper::get_customer_group('subgroup2');
             $accounts->status = 1;
             $accounts->company_id = session('logged_session_data.company_id');
             $accounts->company_access = $company_access;
@@ -2890,11 +2906,15 @@ class SysCustomerController extends Controller
             $accounts->created_by = Auth::user()->id;
             $results = $accounts->save();
 
+            if(!$is_supplier){
+
             DB::table('sys_cust_suppl_assign')->insert([
                 'cust_supp_id' => $new_customer->id,
                 'user_id' => $request->sales_person,
-                'type' => 1, //1 customers, 2 suppliers
+                'type' =>  1, //1 customers, 2 suppliers
             ]);
+            }
+
 
             $address = new SysCustSupplAddressbook();
             $address->cust_suppl_id = $new_customer->id;
@@ -2973,9 +2993,36 @@ class SysCustomerController extends Controller
             $results = $contact->save();
 
 
-            $vendors = SysHelper::get_customer_list_deal_lead();
+            if ($is_supplier) {
+                // Query suppliers
+                $com_id = session('logged_session_data.company_id');
+                $vendors_query = SysCustSuppl::select('id', 'code', 'name', 'customer_name_display')->where('catid', 2);
+                if (Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && Auth::user()->role_id != 35) {
+                    $sales_person = DB::table('sys_cust_suppl_assign')->select('cust_supp_id')->where('user_id', Auth::user()->id)->get();
+                    if (count($sales_person) > 0) {
+                        $sp = [];
+                        foreach ($sales_person as $spid) {
+                            $sp[] = $spid->cust_supp_id;
+                        }
+                        $vendors_query->wherein('id', $sp);
+                    } else {
+                        $vendors_query->where('id', 0);
+                    }
+                }
+                $vendors_query->whereRaw("find_in_set($com_id,sys_cust_suppl.company_access)");
+                $vendors = $vendors_query->wherein('status', [1, 3])->orderby('name', 'asc')->get();
+            } else {
+                $vendors = SysHelper::get_customer_list_deal_lead();
+            }
+
             DB::commit();
-            return json_encode(['data' => $vendors, 'new_company_id' => $new_customer->id]);
+            return json_encode([
+                'data' => $vendors,
+                'new_company_id' => $new_customer->id,
+                'new_account_id' => $accounts->id,
+                'new_company_name' => $accounts->account_name,
+                'new_company_code' => $accounts->account_code,
+            ]);
         } catch (\Exception $e) {
             $retData = $e;
             DB::rollBack();

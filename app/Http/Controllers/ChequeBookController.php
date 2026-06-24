@@ -10,6 +10,7 @@ use App\SysPaymentCheque;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Brian2694\Toastr\Facades\Toastr;
 
 
@@ -75,6 +76,7 @@ class ChequeBookController extends Controller
 
     public function store(Request $request)
     {
+        $range = $this->validatedChequeRange($request);
 
         try {
             $attachmentPath = null;
@@ -87,9 +89,9 @@ class ChequeBookController extends Controller
             Chequebook::create([
                 'doc_number' => $docNumber,
                 'bank_id' => $request->input('account_id'),
-                'no_of_cheques' => $request->input('no_of_cheques'),
-                'start_no' => $request->input('start_no'),
-                'end_no' => $request->input('end_no'),
+                'no_of_cheques' => $range['no_of_cheques'],
+                'start_no' => $range['start_no'],
+                'end_no' => $range['end_no'],
                 'attachment' => $attachmentPath,
                 'remarks' => $request->input('remarks'),
                 'created_by' => Auth::id(),
@@ -262,13 +264,15 @@ class ChequeBookController extends Controller
 
     public function update(Request $request, $id)
     {
+        $range = $this->validatedChequeRange($request);
+
         try {
             $chequebook = Chequebook::withTrashed()->findOrFail($id);
 
             $chequebook->bank_id = $request->input('account_id');
-            $chequebook->no_of_cheques = $request->input('no_of_cheques');
-            $chequebook->start_no = $request->input('start_no');
-            $chequebook->end_no = $request->input('end_no');
+            $chequebook->no_of_cheques = $range['no_of_cheques'];
+            $chequebook->start_no = $range['start_no'];
+            $chequebook->end_no = $range['end_no'];
             $chequebook->remarks = $request->input('remarks');
 
             if ($request->hasFile('attachment')) {
@@ -295,5 +299,30 @@ class ChequeBookController extends Controller
             return redirect($url);
 
         }
+    }
+
+    private function validatedChequeRange(Request $request)
+    {
+        $validated = $request->validate([
+            'no_of_cheques' => 'required|integer|min:1',
+            'start_no' => ['required', 'string', 'max:255', 'regex:/^\d+$/'],
+        ]);
+
+        $startNo = $validated['start_no'];
+        $numericStart = ltrim($startNo, '0');
+        $numericStart = $numericStart === '' ? '0' : $numericStart;
+        $endNo = bcadd($numericStart, (string) ((int) $validated['no_of_cheques'] - 1), 0);
+
+        if (bccomp($endNo, '9223372036854775807', 0) === 1) {
+            throw ValidationException::withMessages([
+                'start_no' => 'Cheque number range exceeds the supported maximum.',
+            ]);
+        }
+
+        return [
+            'no_of_cheques' => (int) $validated['no_of_cheques'],
+            'start_no' => $startNo,
+            'end_no' => str_pad($endNo, strlen($startNo), '0', STR_PAD_LEFT),
+        ];
     }
 }

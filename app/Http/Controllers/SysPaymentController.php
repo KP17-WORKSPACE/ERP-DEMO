@@ -1848,22 +1848,29 @@ class SysPaymentController extends Controller
                     ->whereNotNull('cheque_number')
                     ->pluck('cheque_number')
                     ->map(function ($v) {
-                        return trim((string) $v);
+                        $number = ltrim(trim((string) $v), '0');
+
+                        return $number === '' ? '0' : $number;
                     })
                     ->unique()
                     ->flip()
                     ->toArray();
 
-                $startNo = (string) $book->start_no;
-                $endNo = (string) $book->end_no;
+                $startNo = trim((string) $book->start_no);
+                $endNo = trim((string) $book->end_no);
+                $numberWidth = strlen($startNo);
+                $numericStart = ltrim($startNo, '0');
+                $numericEnd = ltrim($endNo, '0');
+                $numericStart = $numericStart === '' ? '0' : $numericStart;
+                $numericEnd = $numericEnd === '' ? '0' : $numericEnd;
 
                 // bcmath handles arbitrary-precision (16-digit cheque numbers safe)
-                for ($num = $startNo; bccomp($num, $endNo) <= 0; $num = bcadd($num, '1')) {
+                for ($num = $numericStart; bccomp($num, $numericEnd) <= 0; $num = bcadd($num, '1')) {
                     if (!array_key_exists($num, $used)) {
                         return response()->json([
                             'success' => true,
                             'chequebook_id' => $book->id,
-                            'cheque_number' => $num,
+                            'cheque_number' => str_pad($num, $numberWidth, '0', STR_PAD_LEFT),
                             'chequebook_doc' => $book->doc_number,
                             'chequebook_start_no' => $book->start_no,
                             'chequebook_end_no' => $book->end_no,
