@@ -266,10 +266,7 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
     @php
     $adjustments = 0;
     $b=0;
-    $due0To30=0;
-    $due31To60=0;
-    $due61To90=0;
-    $dueOver90=0;
+    $dueRows = collect();
     $mainSumOutstandingBalance = 0;
     @endphp
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -414,10 +411,23 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
                 $date,
                 $breakdown['max_overdue_days'] ?? null
             );
-            $due0To30 += $ageingRow['0_30'];
-            $due31To60 += $ageingRow['31_60'];
-            $due61To90 += $ageingRow['61_90'];
-            $dueOver90 += $ageingRow['90_plus'];
+            if (($breakdown['max_overdue_days'] ?? 0) < 0) {
+                $dueRows->push([
+                    'not_due' => $rowDueAmount,
+                    '0_30' => 0,
+                    '31_60' => 0,
+                    '61_90' => 0,
+                    '90_plus' => 0,
+                ]);
+            } else {
+                $dueRows->push([
+                    'not_due' => 0,
+                    '0_30' => $ageingRow['0_30'],
+                    '31_60' => $ageingRow['31_60'],
+                    '61_90' => $ageingRow['61_90'],
+                    '90_plus' => $ageingRow['90_plus'],
+                ]);
+            }
         @endphp
 
 
@@ -613,7 +623,7 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
 
 
 
-
+<br>
      
                   <table width="100%" border="0" cellspacing="0" cellpadding="0">
       <tr>
@@ -622,17 +632,29 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
     </table>
                     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="table-layout: fixed;">
                       <tr class="item-head-row">
-                            <td style="width: 25%; text-align: right;">0-30</td>
-                            <td style="width: 25%; text-align: right;">31-60</td>
-                            <td style="width: 25%; text-align: right;">61-90</td>
-                            <td style="width: 25%; text-align: right;">>90</td>
+                            <td style="width: 20%; text-align: right;">> 0</td>
+                            <td style="width: 20%; text-align: right;">0-30</td>
+                            <td style="width: 20%; text-align: right;">31-60</td>
+                            <td style="width: 20%; text-align: right;">61-90</td>
+                            <td style="width: 20%; text-align: right;">>90</td>
                         </tr>
+                        @forelse ($dueRows as $dueRow)
                           <tr>
-                              <td class="item-row" style="width: 25%; text-align: right;">{{ App\SysHelper::com_curr_format($due0To30,2,'.',',') }}</td>
-                              <td class="item-row" style="width: 25%; text-align: right;">{{ App\SysHelper::com_curr_format($due31To60,2,'.',',') }}</td>
-                              <td class="item-row" style="width: 25%; text-align: right;">{{ App\SysHelper::com_curr_format($due61To90,2,'.',',') }}</td>
-                              <td class="item-row" style="width: 25%; text-align: right;">{{ App\SysHelper::com_curr_format($dueOver90,2,'.',',') }}</td>
+                              <td class="item-row" style="width: 20%; text-align: right;">{{ abs($dueRow['not_due']) >= 0.01 ? App\SysHelper::com_curr_format($dueRow['not_due'],2,'.',',') : '0.00' }}</td>
+                              <td class="item-row" style="width: 20%; text-align: right;">{{ abs($dueRow['0_30']) >= 0.01 ? App\SysHelper::com_curr_format($dueRow['0_30'],2,'.',',') : '0.00' }}</td>
+                              <td class="item-row" style="width: 20%; text-align: right;">{{ abs($dueRow['31_60']) >= 0.01 ? App\SysHelper::com_curr_format($dueRow['31_60'],2,'.',',') : '0.00' }}</td>
+                              <td class="item-row" style="width: 20%; text-align: right;">{{ abs($dueRow['61_90']) >= 0.01 ? App\SysHelper::com_curr_format($dueRow['61_90'],2,'.',',') : '0.00' }}</td>
+                              <td class="item-row" style="width: 20%; text-align: right;">{{ abs($dueRow['90_plus']) >= 0.01 ? App\SysHelper::com_curr_format($dueRow['90_plus'],2,'.',',') : '0.00' }}</td>
                           </tr>
+                        @empty
+                          <tr>
+                              <td class="item-row" style="width: 20%; text-align: right;">0.00</td>
+                              <td class="item-row" style="width: 20%; text-align: right;">0.00</td>
+                              <td class="item-row" style="width: 20%; text-align: right;">0.00</td>
+                              <td class="item-row" style="width: 20%; text-align: right;">0.00</td>
+                              <td class="item-row" style="width: 20%; text-align: right;">0.00</td>
+                          </tr>
+                        @endforelse
                         </table>
             
 
@@ -738,7 +760,7 @@ $formattedDate = (!empty($date) && date('d/m/Y', strtotime($date)) !== '01/01/19
                     <tr>
                       @foreach ($bankRow as $bank)
                       <td width="50%" valign="top" style="padding: 4px 8px 4px 0;">
-                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="line-height: 18px;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 12px; line-height: 18px;">
                           <tr><td width="155px">Beneficiary Name</td><td width="8px">:</td><td style="word-break: break-word;">{{ $bank->beneficiary_name ?: '-' }}</td></tr>
                           <tr><td>Bank Name</td><td>:</td><td style="word-break: break-word;">{{ $bank->bank_name ?: '-' }}</td></tr>
                           <tr><td>Acc No</td><td>:</td><td style="word-break: break-word;">{{ $bank->acc_no ?: '-' }}</td></tr>
