@@ -202,7 +202,7 @@ class SysCrmDealTrackController extends Controller
         if ($request->btnSubmit == "save") {
 
 
-            try {
+                    try {
 
 
                 DB::beginTransaction();
@@ -340,7 +340,7 @@ class SysCrmDealTrackController extends Controller
 
 
         DB::beginTransaction();
-        try {
+                try {
             $check = SysCrmDealTrack::select('id', 'accounts', 'sales', 'purchease', 'invoice', 'delivery', 'receivables', 'tech')->where('deal_id', $request->deal_id)->first();
 
             $deal_det_for_serv = SysCrmDeals::where('id', $request->deal_id)->first();
@@ -706,7 +706,7 @@ class SysCrmDealTrackController extends Controller
 
 
         DB::beginTransaction();
-        try {
+                try {
             $hasLpoNumber = trim((string) $request->reference_no) !== '';
             if ($hasLpoNumber) {
                 SysProformaInvoiceController::re_generate($request->deal_id, $request->reference_no, SysHelper::normalizeToYmd($request->reference_date));
@@ -856,7 +856,7 @@ class SysCrmDealTrackController extends Controller
         //     Toastr::error('Quotation Not Found. Please Create Quotation', 'Failed');
         //     return redirect()->back();
         // }
-        try {
+                try {
             //     $paymentterms = SysPaymentTerms::all();
             //     $edit = SysCrmDeals::where('id', $id)->first();
             //     $comments = SysCrmDealsComments::where('deal_id', $id)->orderBy('id', 'DESC')->get();
@@ -902,7 +902,7 @@ class SysCrmDealTrackController extends Controller
 
     public function crmdealtrackapprovallisting()
     {
-        try {
+                try {
             $dealtrack = session('deal_track_query.dealtrack');
             $vendors = session('deal_track_query.vendors');
             $staff = session('deal_track_query.staff');
@@ -912,8 +912,13 @@ class SysCrmDealTrackController extends Controller
             $ctrl_status_id = session('deal_track_query.ctrl_status_id');
             $ctrl_date = session('deal_track_query.ctrl_date');
             $ctrl_partial_delivery = session('deal_track_query.ctrl_partial_delivery');
+            $ctrl_brand = session('deal_track_query.ctrl_brand') ?? '';
+            $ctrl_processing_track = session('deal_track_query.ctrl_processing_track') ?? '';
+            $ctrl_amount = session('deal_track_query.ctrl_amount') ?? '';
+            $ctrl_sort = session('deal_track_query.ctrl_sort') ?? '';
+            $brand = SysBrand::select('id', 'title')->orderby('title', 'asc')->get();
 
-            return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date', 'ctrl_partial_delivery'));
+            return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date', 'ctrl_partial_delivery'));
         } catch (\Throwable $th) {
             return $th;
         }
@@ -950,8 +955,20 @@ class SysCrmDealTrackController extends Controller
         $ctrl_status_id = "10";
         $ctrl_date = '';
         $ctrl_partial_delivery = '';
-        try {
-            $query = SysCrmDealTrack::select('sys_crm_deal_track.*', 'sys_crm_deals.cust_id', 'sys_crm_deals.owner', 'sys_crm_deals.deal_value', 'sys_crm_deals.deal_currency')->join('sys_crm_deals', 'sys_crm_deals.id', 'sys_crm_deal_track.deal_id');
+        $ctrl_brand = '';
+        $ctrl_processing_track = '';
+        $ctrl_amount = '';
+        $ctrl_sort = '';
+        $brand = SysBrand::select('id', 'title')->orderby('title', 'asc')->get();
+
+        $ctrl_partial_delivery = '';
+        $ctrl_brand = '';
+        $ctrl_processing_track = '';
+        $ctrl_amount = '';
+        $ctrl_sort = '';
+        $brand = SysBrand::select('id', 'title')->orderby('title', 'asc')->get();
+                try {
+            $query = SysCrmDealTrack::select('sys_crm_deal_track.*', 'sys_crm_deals.cust_id', 'sys_crm_deals.owner', 'sys_crm_deals.deal_value', 'sys_crm_deals.deal_discount_vat', 'sys_crm_deals.deal_currency')->join('sys_crm_deals', 'sys_crm_deals.id', 'sys_crm_deal_track.deal_id');
             /*
             //accounts
             if(session('logged_session_data.designation_id')==8){
@@ -986,6 +1003,105 @@ class SysCrmDealTrackController extends Controller
             */
             //if($_POST){
             if (count($request->all()) > 0) {
+                if ($request->brand_id != "") {
+                    $brnd = SysCrmQuoteItems::select('deal_id')->join('sm_items', 'sm_items.id', 'sys_crm_quote_items.product_id')->where('sm_items.brand', $request->brand_id)->distinct()->get();
+                    if (count($brnd) > 0) {
+                        $b_ids = [];
+                        foreach ($brnd as $br) {
+                            $b_ids[] = $br->deal_id;
+                        }
+                        $query->wherein('sys_crm_deals.id', $b_ids);
+                    } else {
+                        $query->wherein('sys_crm_deals.id', [0]);
+                    }
+                    $ctrl_brand = $request->brand_id;
+                }
+
+                if ($request->partial_delivery != "") {
+                    $query->where('sys_crm_deal_track.partial_delivery', $request->partial_delivery);
+                    $ctrl_partial_delivery = $request->partial_delivery;
+                }
+
+                if ($request->amount != "") {
+                    $query->where('sys_crm_deals.deal_value', 'like', "%" . $request->amount . "%");
+                    $ctrl_amount = $request->amount;
+                }
+
+                if ($request->currency_id != "") {
+                    $query->where('sys_crm_deals.deal_currency', $request->currency_id);
+                }
+
+                if ($request->sort_id != "") {
+                    $ctrl_sort = $request->sort_id;
+                    if ($request->sort_id == 11) {
+                        $query->orderBy('sys_crm_deals.created_at', 'desc');
+                    } elseif ($request->sort_id == 12) {
+                        $query->whereDate('sys_crm_deals.estimated_close_date', '<', Carbon::today())
+                              ->whereIn('sys_crm_deals.stage', [1, 2, 3]);
+                    } elseif ($request->sort_id == 9) {
+                        $query->orderBy('sys_crm_deals.deal_value', 'desc');
+                    } elseif ($request->sort_id == 1) {
+                        $query->whereDate('sys_crm_deals.created_at', Carbon::today());
+                    } elseif ($request->sort_id == 2) {
+                        $query->whereBetween('sys_crm_deals.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                    } elseif ($request->sort_id == 3) {
+                        $query->whereBetween('sys_crm_deals.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                    } elseif ($request->sort_id == 4) {
+                        $query->whereMonth('sys_crm_deals.created_at', Carbon::now()->month)
+                              ->whereYear('sys_crm_deals.created_at', Carbon::now()->year);
+                    } elseif ($request->sort_id == 5) {
+                        $query->whereMonth('sys_crm_deals.created_at', Carbon::now()->subMonth()->month)
+                              ->whereYear('sys_crm_deals.created_at', Carbon::now()->subMonth()->year);
+                    }
+                }
+                
+                if ($request->processing_track != "") {
+                    $ctrl_processing_track = $request->processing_track;
+                    $processingTrackData_deal_id = $query->pluck('sys_crm_deals.id')->toArray();
+                    
+                    if ($ctrl_processing_track == 1) {
+                        $inputDealId1 = SysCrmDealTrack::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->where('purchease_required', 1)->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $inputDealId1);
+                    } elseif ($ctrl_processing_track == 2) {
+                        $inputDealId1 = SysCrmDealTrack::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->where('purchease_required', 2)->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $inputDealId1);
+                    } elseif ($ctrl_processing_track == 3) {
+                        $query->where('sys_crm_deals.deal_name', 'like', 'Internal Transfer%');
+                    } elseif ($ctrl_processing_track == 4) {
+                        $siDocNumber = SysCompany::pluck('sales_code')->filter()->unique()->toArray();
+                        $query->where(function ($q) use ($siDocNumber) {
+                            foreach ($siDocNumber as $docNum) {
+                                $q->orWhere('sys_crm_deals.deal_name', 'like', '%' . $docNum . '%');
+                            }
+                        });
+                    } elseif ($ctrl_processing_track == 5) {
+                        $poDocNumber = SysCompany::pluck('other_code')->filter()->unique()->toArray();
+                        $query->where(function ($q) use ($poDocNumber) {
+                            foreach ($poDocNumber as $docNum) {
+                                $q->orWhere('sys_crm_deals.deal_name', 'like', '%' . $docNum . '%');
+                            }
+                        });
+                    } elseif ($ctrl_processing_track == 6) {
+                        $quoteChargesDealIds = SysCrmQuoteCharges::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $quoteChargesDealIds);
+                    } elseif ($ctrl_processing_track == 7) {
+                        $aditionalPODealIds = DB::table('sys_purchase_auto')
+                            ->whereIn('deal_id', $processingTrackData_deal_id)
+                            ->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $aditionalPODealIds);
+                    } elseif ($ctrl_processing_track == 8) {
+                        $aditionalDODealIds = SysDeliveryNoteItems::select('deal_id')
+                            ->join('sys_delivery_note', 'sys_delivery_note.id', 'sys_delivery_note_items.dn_id')
+                            ->whereIn('sys_delivery_note.deal_id', $processingTrackData_deal_id)
+                            ->where('sys_delivery_note_items.is_deal_aditional', 1)->distinct()
+                            ->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $aditionalDODealIds);
+                    }
+                }
+
 
                 if ($request->company_id2 != "") {
                     $query->where('sys_crm_deals.company_id', $request->company_id2);
@@ -1135,7 +1251,7 @@ class SysCrmDealTrackController extends Controller
             $active_id = $id;
 
 
-            return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date', 'ctrl_partial_delivery', 'company_list', 'ctrl_company_id2', 'trackdata', 'active_id', 'from_date', 'to_date'));
+            return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date', 'ctrl_partial_delivery', 'company_list', 'ctrl_company_id2', 'trackdata', 'active_id', 'from_date', 'to_date'));
 
             /*$form_data = [
                 'dealtrack' => $dealtrack,
@@ -1150,7 +1266,7 @@ class SysCrmDealTrackController extends Controller
             ];
             session()->put('deal_track_query', $form_data);
             return redirect('crm-deal-track-approval-listing');*/
-            //return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            //return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
 
         } catch (\Exception $e) {
             return $e;
@@ -1162,7 +1278,7 @@ class SysCrmDealTrackController extends Controller
 
     public function search(Request $request)
     {
-        try {
+                try {
             $r = SysHelper::get_data_by_role();
             $company_id = $r[0];
             $query = $request->get('query');
@@ -1201,7 +1317,7 @@ class SysCrmDealTrackController extends Controller
     }
     public function get_deal_track_data($id)
     {
-        try {
+                try {
             SysPurchaseOrderItemsCart::where(['cart_id' => session('logged_session_data.cart_id')])->delete();
             SysDealPurchaseOrderItems::where(['cart_id' => session('logged_session_data.cart_id')])->delete();
 
@@ -1575,10 +1691,117 @@ class SysCrmDealTrackController extends Controller
         $ctrl_status_id = "10";
         $ctrl_date = '';
         $ctrl_partial_delivery = '';
-        try {
-            $query = SysCrmDealTrack::select('sys_crm_deal_track.*', 'sys_crm_deals.cust_id', 'sys_crm_deals.owner', 'sys_crm_deals.deal_value', 'sys_crm_deals.deal_currency')->join('sys_crm_deals', 'sys_crm_deals.id', 'sys_crm_deal_track.deal_id');
+        $ctrl_brand = '';
+        $ctrl_processing_track = '';
+        $ctrl_amount = '';
+        $ctrl_sort = '';
+        $brand = SysBrand::select('id', 'title')->orderby('title', 'asc')->get();
+
+        $ctrl_partial_delivery = '';
+        $ctrl_brand = '';
+        $ctrl_processing_track = '';
+        $ctrl_amount = '';
+        $ctrl_sort = '';
+        $brand = SysBrand::select('id', 'title')->orderby('title', 'asc')->get();
+                try {
+            $query = SysCrmDealTrack::select('sys_crm_deal_track.*', 'sys_crm_deals.cust_id', 'sys_crm_deals.owner', 'sys_crm_deals.deal_value', 'sys_crm_deals.deal_discount_vat', 'sys_crm_deals.deal_currency')->join('sys_crm_deals', 'sys_crm_deals.id', 'sys_crm_deal_track.deal_id');
 
             if (count($request->all()) > 0) {
+                if ($request->brand_id != "") {
+                    $brnd = SysCrmQuoteItems::select('deal_id')->join('sm_items', 'sm_items.id', 'sys_crm_quote_items.product_id')->where('sm_items.brand', $request->brand_id)->distinct()->get();
+                    if (count($brnd) > 0) {
+                        $b_ids = [];
+                        foreach ($brnd as $br) {
+                            $b_ids[] = $br->deal_id;
+                        }
+                        $query->wherein('sys_crm_deals.id', $b_ids);
+                    } else {
+                        $query->wherein('sys_crm_deals.id', [0]);
+                    }
+                    $ctrl_brand = $request->brand_id;
+                }
+
+                if ($request->partial_delivery != "") {
+                    $query->where('sys_crm_deal_track.partial_delivery', $request->partial_delivery);
+                    $ctrl_partial_delivery = $request->partial_delivery;
+                }
+
+                if ($request->amount != "") {
+                    $query->where('sys_crm_deals.deal_value', 'like', "%" . $request->amount . "%");
+                    $ctrl_amount = $request->amount;
+                }
+
+                if ($request->sort_id != "") {
+                    $ctrl_sort = $request->sort_id;
+                    if ($request->sort_id == 11) {
+                        $query->orderBy('sys_crm_deals.created_at', 'desc');
+                    } elseif ($request->sort_id == 12) {
+                        $query->whereDate('sys_crm_deals.estimated_close_date', '<', Carbon::today())
+                              ->whereIn('sys_crm_deals.stage', [1, 2, 3]);
+                    } elseif ($request->sort_id == 9) {
+                        $query->orderBy('sys_crm_deals.deal_value', 'desc');
+                    } elseif ($request->sort_id == 1) {
+                        $query->whereDate('sys_crm_deals.created_at', Carbon::today());
+                    } elseif ($request->sort_id == 2) {
+                        $query->whereBetween('sys_crm_deals.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                    } elseif ($request->sort_id == 3) {
+                        $query->whereBetween('sys_crm_deals.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                    } elseif ($request->sort_id == 4) {
+                        $query->whereMonth('sys_crm_deals.created_at', Carbon::now()->month)
+                              ->whereYear('sys_crm_deals.created_at', Carbon::now()->year);
+                    } elseif ($request->sort_id == 5) {
+                        $query->whereMonth('sys_crm_deals.created_at', Carbon::now()->subMonth()->month)
+                              ->whereYear('sys_crm_deals.created_at', Carbon::now()->subMonth()->year);
+                    }
+                }
+                
+                if ($request->processing_track != "") {
+                    $ctrl_processing_track = $request->processing_track;
+                    $processingTrackData_deal_id = $query->pluck('sys_crm_deals.id')->toArray();
+                    
+                    if ($ctrl_processing_track == 1) {
+                        $inputDealId1 = SysCrmDealTrack::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->where('purchease_required', 1)->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $inputDealId1);
+                    } elseif ($ctrl_processing_track == 2) {
+                        $inputDealId1 = SysCrmDealTrack::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->where('purchease_required', 2)->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $inputDealId1);
+                    } elseif ($ctrl_processing_track == 3) {
+                        $query->where('sys_crm_deals.deal_name', 'like', 'Internal Transfer%');
+                    } elseif ($ctrl_processing_track == 4) {
+                        $siDocNumber = SysCompany::pluck('sales_code')->filter()->unique()->toArray();
+                        $query->where(function ($q) use ($siDocNumber) {
+                            foreach ($siDocNumber as $docNum) {
+                                $q->orWhere('sys_crm_deals.deal_name', 'like', '%' . $docNum . '%');
+                            }
+                        });
+                    } elseif ($ctrl_processing_track == 5) {
+                        $poDocNumber = SysCompany::pluck('other_code')->filter()->unique()->toArray();
+                        $query->where(function ($q) use ($poDocNumber) {
+                            foreach ($poDocNumber as $docNum) {
+                                $q->orWhere('sys_crm_deals.deal_name', 'like', '%' . $docNum . '%');
+                            }
+                        });
+                    } elseif ($ctrl_processing_track == 6) {
+                        $quoteChargesDealIds = SysCrmQuoteCharges::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $quoteChargesDealIds);
+                    } elseif ($ctrl_processing_track == 7) {
+                        $aditionalPODealIds = DB::table('sys_purchase_auto')
+                            ->whereIn('deal_id', $processingTrackData_deal_id)
+                            ->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $aditionalPODealIds);
+                    } elseif ($ctrl_processing_track == 8) {
+                        $aditionalDODealIds = SysDeliveryNoteItems::select('deal_id')
+                            ->join('sys_delivery_note', 'sys_delivery_note.id', 'sys_delivery_note_items.dn_id')
+                            ->whereIn('sys_delivery_note.deal_id', $processingTrackData_deal_id)
+                            ->where('sys_delivery_note_items.is_deal_aditional', 1)->distinct()
+                            ->pluck('deal_id')->toArray();
+                        $query->whereIn('sys_crm_deals.id', $aditionalDODealIds);
+                    }
+                }
+
                 if ($request->company_id2 != "") {
                     $query->where('sys_crm_deals.company_id', $request->company_id2);
                     $ctrl_company_id2 = $request->company_id2;
@@ -1663,7 +1886,7 @@ class SysCrmDealTrackController extends Controller
 
             /*}*/
 
-            return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date', 'ctrl_partial_delivery', 'company_list', 'ctrl_company_id2'));
+            return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date', 'ctrl_partial_delivery', 'company_list', 'ctrl_company_id2'));
 
             /*$form_data = [
                 'dealtrack' => $dealtrack,
@@ -1678,7 +1901,7 @@ class SysCrmDealTrackController extends Controller
             ];
             session()->put('deal_track_query', $form_data);
             return redirect('crm-deal-track-approval-listing');*/
-            //return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
+            //return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack','vendors','staff','ctrl_deal_id','ctrl_company_id','ctrl_owner_id','ctrl_status_id','ctrl_date'));
 
         } catch (\Exception $e) {
             return $e;
@@ -1689,7 +1912,7 @@ class SysCrmDealTrackController extends Controller
 
     public function crmdealtrackapproval($id)
     {
-        try {
+                try {
             SysPurchaseOrderItemsCart::where(['cart_id' => session('logged_session_data.cart_id')])->delete();
             SysDealPurchaseOrderItems::where(['cart_id' => session('logged_session_data.cart_id')])->delete();
 
@@ -1923,7 +2146,7 @@ class SysCrmDealTrackController extends Controller
     public function crmdealtrackapprovalaccounts(Request $request)
     {
         $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
-        try {
+                try {
             $status = 1;
             if ($request->customer_status == 2 || $request->credit_limit == 2 || $request->payment_terms == 2 || $request->pending_payment == 2 || $request->other == 2) {
                 $status = 2;
@@ -2069,7 +2292,7 @@ class SysCrmDealTrackController extends Controller
     public function crmdealtrackapprovalsales(Request $request)
     {
         $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
-        try {
+                try {
             $status = 1;
             if ($request->margin == 2 || $request->stock == 2 || $request->purcease_quote == 2 || $request->other == 2) {
                 $status = 2;
@@ -2303,7 +2526,7 @@ class SysCrmDealTrackController extends Controller
             $filethree = $filethree;
         }
 
-        try {
+                try {
             $status = 1;
             if ($request->purchease_quote == 2 || $request->quote_request == 2 || $request->validation == 2 || $request->other == 2) {
                 $status = 2;
@@ -2455,7 +2678,7 @@ class SysCrmDealTrackController extends Controller
     public function crmdealtrackapprovalinvoice(Request $request)
     {
         $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
-        try {
+                try {
             $status = 1;
             if ($request->delivery_advice == 3 || $request->validation == 3 || $request->hold == 3 || $request->print == 3) {
                 $status = 3;
@@ -2607,7 +2830,7 @@ class SysCrmDealTrackController extends Controller
     public function crmdealtrackapprovalinvoiceupdate(Request $request)
     {
         $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
-        try {
+                try {
 
             DB::table('sys_crm_deal_track_approval_invoice')->where('id', $request->inv_id)->update(
                 [
@@ -2627,7 +2850,7 @@ class SysCrmDealTrackController extends Controller
     public function crmdealtrackapprovalaccountsupdate(Request $request)
     {
         $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
-        try {
+                try {
             DB::table('sys_crm_deal_track')->where('id', $request->acc_deal_id)->update(
                 [
                     'accounts' => $request->acc_status,
@@ -2659,7 +2882,7 @@ class SysCrmDealTrackController extends Controller
     public function crm_deal_track_approval_purchase_not_required(Request $request)
     {
         $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
-        try {
+                try {
             DB::table('sys_crm_deal_track')->where('deal_id', $request->purchase_not_required_deal_id)->update(
                 [
                     'purchease' => 1,
@@ -2690,7 +2913,7 @@ class SysCrmDealTrackController extends Controller
     public function crm_deal_track_approval_purchase_required(Request $request)
     {
         $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
-        try {
+                try {
             DB::table('sys_crm_deal_track')->where('deal_id', $request->purchase_required_deal_id)->update(
                 [
                     'purchease' => 0,
@@ -2789,7 +3012,7 @@ class SysCrmDealTrackController extends Controller
             $attach_file = $attach_file;
         }
 
-        try {
+                try {
             $status = 1;
             if ($request->do_status == 2 || $request->cheque_collection == 2) {
                 $status = 2;
@@ -2922,7 +3145,7 @@ class SysCrmDealTrackController extends Controller
 
     public function crmdealtrackapprovalprofessionalservice(Request $request)
     {
-        try {
+                try {
             $trn_time = Carbon::now('+04:00')->format('Y-m-d H:i:s');
             $status = 1;
             if ($request->technical_approve == 2) {
@@ -3043,7 +3266,7 @@ class SysCrmDealTrackController extends Controller
 
 
 
-        try {
+                try {
             $status = 1;
             $payment_status = 0;
             $amount = 0;
@@ -3191,7 +3414,7 @@ class SysCrmDealTrackController extends Controller
     }
     public function getdriverbyshipping(Request $request)
     {
-        try {
+                try {
             $shipping = SysShipping::select('id')->where('shipping_name', $request->deliver_by)->first();
             $driver = SysDriver::select('driver_name')->where('shipping_id', $shipping->id)->get();
             return json_encode(array('data' => $driver));
@@ -3202,7 +3425,7 @@ class SysCrmDealTrackController extends Controller
     }
     public function crmcustomercolor(Request $request)
     {
-        try {
+                try {
             DB::table('sys_cust_suppl')->where('id', $request->color_customer_id)->update(
                 [
                     'type' => $request->edit_color,
@@ -3218,7 +3441,7 @@ class SysCrmDealTrackController extends Controller
     }
     public function crmdealtrackapprovalreceivablespaymentmode(Request $request)
     {
-        try {
+                try {
             DB::table('sys_crm_deal_track')->where('deal_id', $request->edit_payment_mode_id)->update(
                 [
                     'payment_mode' => $request->edit_payment_mode,
@@ -3234,7 +3457,7 @@ class SysCrmDealTrackController extends Controller
     }
     public function crmdealtrackapprovalreceivablespaymenttermsmode(Request $request)
     {
-        try {
+                try {
             
             DB::table('sys_crm_deal_track')->where('deal_id', $request->edit_payment_mode_id)->update(
                 [
@@ -3261,7 +3484,14 @@ class SysCrmDealTrackController extends Controller
         $ctrl_owner_id = "";
         $ctrl_status_id = "10";
         $ctrl_date = '';
-        try {
+        $ctrl_partial_delivery = '';
+        $ctrl_brand = '';
+        $ctrl_processing_track = '';
+        $ctrl_amount = '';
+        $ctrl_sort = '';
+        $brand = SysBrand::select('id', 'title')->orderby('title', 'asc')->get();
+
+                try {
 
             if ($track == "pendingpayments") {
 
@@ -3272,7 +3502,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track_approval_receivables.id', 'asc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "orderinprocess") {
@@ -3280,7 +3510,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track.id', 'desc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "paymentreminder") {
@@ -3290,7 +3520,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('reminder_date', 'asc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "paymentpendingafterreminder") {
@@ -3300,7 +3530,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('reminder_date', 'asc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "salesorderinprocess") {
@@ -3312,7 +3542,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track.id', 'desc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "salesteamorderinprocess") {
@@ -3324,7 +3554,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track.id', 'desc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "salespendingpayments") {
@@ -3335,7 +3565,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track_approval_receivables.id', 'asc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "salesteampendingpayments") {
@@ -3348,7 +3578,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track_approval_receivables.id', 'asc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "partialdelivery") {
@@ -3356,7 +3586,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track.id', 'desc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "purchasecompleted") {
@@ -3366,7 +3596,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track.id', 'desc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "underpurchase") {
@@ -3377,7 +3607,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track.id', 'desc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "salesapprovedlist") {
@@ -3385,7 +3615,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track.id', 'desc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "doonprocess") {
@@ -3393,7 +3623,7 @@ class SysCrmDealTrackController extends Controller
                     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 $dealtrack->orderby('sys_crm_deal_track.id', 'desc')->paginate(50);
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "dopending") {
@@ -3403,7 +3633,7 @@ class SysCrmDealTrackController extends Controller
                 //     ->where('sys_crm_deal_track.company_id', session('logged_session_data.company_id'));
                 // $dealtrack->orderby('sys_crm_deal_track.id', 'asc')->get();
 
-                return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+                return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
             }
 
             if ($track == "0") {
@@ -3447,7 +3677,7 @@ class SysCrmDealTrackController extends Controller
                 }
                 //receivables
                 if (Auth::user()->role_id == 3) {
-                    $query = SysCrmDealTrack::select('sys_crm_deal_track.*', 'sys_crm_deals.cust_id', 'sys_crm_deals.owner', 'sys_crm_deals.deal_value', 'sys_crm_deals.deal_currency')->join('sys_crm_deals', 'sys_crm_deals.id', 'sys_crm_deal_track.deal_id')->where([['accounts', '=', 1], ['sales', '=', 1], ['purchease', '=', 1], ['invoice', '=', 1], ['delivery', '=', 1]]);
+                    $query = SysCrmDealTrack::select('sys_crm_deal_track.*', 'sys_crm_deals.cust_id', 'sys_crm_deals.owner', 'sys_crm_deals.deal_value', 'sys_crm_deals.deal_discount_vat', 'sys_crm_deals.deal_currency')->join('sys_crm_deals', 'sys_crm_deals.id', 'sys_crm_deal_track.deal_id')->where([['accounts', '=', 1], ['sales', '=', 1], ['purchease', '=', 1], ['invoice', '=', 1], ['delivery', '=', 1]]);
                 }
                 $ctrl_status_id = $track;
                 //accounts
@@ -3497,7 +3727,7 @@ class SysCrmDealTrackController extends Controller
                 // }
             }
 
-            return view('backEnd.crm.DealTrackApprovalList', compact('dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
+            return view('backEnd.crm.DealTrackApprovalList', compact('brand', 'ctrl_brand', 'ctrl_processing_track', 'ctrl_amount', 'ctrl_sort', 'dealtrack', 'vendors', 'staff', 'ctrl_deal_id', 'ctrl_company_id', 'ctrl_owner_id', 'ctrl_status_id', 'ctrl_date'));
         } catch (\Exception $e) {
             return $e;
             Toastr::error('Operation Failed', 'Failed');
@@ -3508,7 +3738,7 @@ class SysCrmDealTrackController extends Controller
 
     public function crmdealuploadimgview()
     {
-        try {
+                try {
             return view('backEnd.crm.uploadForm');
         } catch (\Exception $e) {
             return $e;
@@ -3516,7 +3746,7 @@ class SysCrmDealTrackController extends Controller
     }
     public function crmdealuploadimg(Request $request)
     {
-        try {
+                try {
 
             $lpo_file = "";
 
@@ -3552,7 +3782,7 @@ class SysCrmDealTrackController extends Controller
 
     public function crmdealsdeliveryupdateitems(Request $request)
     {
-        try {
+                try {
             foreach ($request->checkbx as $chk) {
                 $a = 'qty_' . $chk;
                 $quote_item_id = $chk;
@@ -3575,7 +3805,7 @@ class SysCrmDealTrackController extends Controller
 
      public function crmdealtrackGRN(Request $request)
     {
-        try {
+                try {
             $data = [
                 'deal_id' => $request->grn_deal_id,
                 'grn_status' => $request->grn_submitted,

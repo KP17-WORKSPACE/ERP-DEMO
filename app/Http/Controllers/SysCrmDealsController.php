@@ -35,6 +35,7 @@ use App\SysItemOpeningStock;
 use App\SysItemStock;
 use App\SysPaymentTerms;
 use App\SysPurchaseAuto;
+use App\SysPurchaseOrder;
 use App\SysPurchaseOrderItems;
 use App\SysShipping;
 use App\SysStates;
@@ -54,6 +55,7 @@ use App\SysCurrency;
 use App\SysCustomerType;
 use App\ReserveStock;
 use App\SysCurrencyRate;
+use App\SysDeliveryNoteItems;
 
 class SysCrmDealsController extends Controller
 {
@@ -635,11 +637,12 @@ class SysCrmDealsController extends Controller
             $filter_by = '';
             $ctrl_followup = '';
             $ctrl_sort_id = '';
+            $ctrl_processing_track = '';
+            $ctrl_amount = '';
 
             //if($_POST){
             if (SysHelper::get_pagination_post($request)) {
-                $ctrl_sort_id = $request->sort_id;
-                $query = SysCrmDeals::select('id', 'code', 'deal_name', 'estimated_close_date', 'date', 'stage', 'deal_currency', 'company_id', 'deal_value', 'deal_profit', 'created_at', 'updated_at', 'cust_id', 'owner', 'deleted_at', 'quote_id', 'followup_date')->where('stage', '!=', 0);
+                $query = SysCrmDeals::select('id', 'code', 'deal_name', 'estimated_close_date', 'date', 'stage', 'deal_currency', 'company_id', 'deal_value', 'deal_profit', 'deal_discount_vat', 'created_at', 'updated_at', 'cust_id', 'owner', 'deleted_at', 'quote_id', 'followup_date')->where('stage', '!=', 0);
 
                 if ($request->deal_id != "") {
                     $query->where('code', $request->deal_id);
@@ -682,6 +685,112 @@ class SysCrmDealsController extends Controller
                 if ($request->owner_id != "") {
                     $query->where('owner', $request->owner_id);
                     $ctrl_owner = $request->owner_id;
+                }
+
+                if ($request->amount != "") {
+                    $query->where('deal_value', $request->amount);
+                    $ctrl_amount = $request->amount;
+                }
+
+                if ($request->currency_id != "") {
+                    $query->where('deal_currency', $request->currency_id);
+                }
+
+                if($request->processing_track != ""){
+                    $ctrl_processing_track = $request->processing_track;                
+                    $processingTrackData_deal_id = $query->pluck('id')->toArray();
+
+                    if ($ctrl_processing_track == 1) { // 1 Back to Back
+                        $inputDealId1 = SysCrmDealTrack::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->where('purchease_required', 1)
+                            ->pluck('deal_id')
+                            ->toArray();
+                        $inputDealId2 = SysPurchaseOrder::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->pluck('deal_id')
+                            ->toArray();
+                        $backToBackDeals = array_unique(
+                            array_merge($inputDealId1, $inputDealId2)
+                        );
+                        $query->whereIn('sys_crm_deals.id', $backToBackDeals);
+                        //return $query->get();
+                    }
+                    
+                    if ($ctrl_processing_track == 2) { // 2 Stock Order
+                        $inputDealId1 = SysCrmDealTrack::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->where('purchease_required', 2)
+                            ->pluck('deal_id')
+                            ->toArray();
+                        $purchaseOrderDealIds = SysPurchaseOrder::whereIn('deal_id', $processingTrackData_deal_id)
+                            ->pluck('deal_id')
+                            ->toArray();
+                        $inputDealId2 = array_diff(
+                            $processingTrackData_deal_id,
+                            $purchaseOrderDealIds
+                        );
+                        $backToBackDeals = array_unique(
+                            array_merge($inputDealId1, $inputDealId2)
+                        );
+                        $query->whereIn('sys_crm_deals.id', $backToBackDeals);
+                        // return $query->get();
+                    }
+                    
+                    if ($ctrl_processing_track == 3) { // 3 Internal Transfer
+                        $query->where('sys_crm_deals.deal_name', 'like', 'Internal Transfer%');
+                    }
+                    
+                    if ($ctrl_processing_track == 4) { // 4 Direct Sales Invoice
+                        $siDocNumber = SysCompany::pluck('sales_code')->filter()->unique()->toArray();
+                        $query->where(function ($q) use ($siDocNumber) {
+                            foreach ($siDocNumber as $code) {
+                                $q->orWhere(
+                                    'sys_crm_deals.deal_name',
+                                    'like',
+                                    $code . '%'
+                                );
+                            }
+                        });
+                    }
+                    
+                    if($ctrl_processing_track==5){ //5 Direct Purchase Order
+                        $poDocNumber = SysCompany::pluck('other_code')->filter()->unique()->toArray();
+                        $query->where(function ($q) use ($poDocNumber) {
+                            foreach ($poDocNumber as $code) {
+                                $q->orWhere(
+                                    'sys_crm_deals.deal_name',
+                                    'like',
+                                    'PO' . $code . '%'
+                                );
+                            }
+                        });
+                    }
+                    
+                    if ($ctrl_processing_track == 6) { // 6 Expenses
+
+                        $quoteChargesDealIds = SysCrmQuoteCharges::whereIn('deal_id',$processingTrackData_deal_id)
+                            ->pluck('deal_id')
+                            ->toArray();
+                        $query->whereIn('sys_crm_deals.id', $quoteChargesDealIds);
+                    }
+
+                    if ($ctrl_processing_track == 7) { // 7 Additional PO
+                        $aditionalPODealIds = DB::table('sys_purchase_auto')
+                            ->whereIn('deal_id', $processingTrackData_deal_id)
+                            ->where('status', 2)
+                            ->distinct()
+                            ->pluck('deal_id')
+                            ->toArray();
+                        $query->whereIn('sys_crm_deals.id', $aditionalPODealIds);
+                    }
+                    
+                    if($ctrl_processing_track==8){ //8 Additional DO
+                        $aditionalDODealIds=SysDeliveryNoteItems::select('deal_id')
+                        ->join('sys_delivery_note', 'sys_delivery_note.id','sys_delivery_note_items.dn_id')
+                        ->whereIn('sys_delivery_note.deal_id',$processingTrackData_deal_id)
+                        ->where('sys_delivery_note_items.is_deal_aditional',1)->distinct()
+                            ->pluck('deal_id')
+                            ->toArray();
+                        $query->whereIn('sys_crm_deals.id', $aditionalDODealIds);                    
+                    }
                 }
 
                 // If a filter-by preset is selected, give it priority over manual date inputs.
@@ -839,7 +948,7 @@ class SysCrmDealsController extends Controller
                     //$deals = $query->orderby('estimated_close_date','asc')->orderby('stage','asc')->get();
                 }
             } else {
-                $query = SysCrmDeals::select('id', 'code', 'deal_name', 'estimated_close_date', 'date', 'stage', 'deal_currency', 'company_id', 'deal_value', 'deal_profit', 'created_at', 'updated_at', 'cust_id', 'owner', 'deleted_at', 'quote_id', 'followup_date')->where('stage', '!=', 0);
+                $query = SysCrmDeals::select('id', 'code', 'deal_name', 'estimated_close_date', 'date', 'stage', 'deal_currency', 'company_id', 'deal_value', 'deal_profit', 'deal_discount_vat', 'created_at', 'updated_at', 'cust_id', 'owner', 'deleted_at', 'quote_id', 'followup_date')->where('stage', '!=', 0);
 
 
                 if (Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && Auth::user()->role_id != 32 && Auth::user()->role_id != 35) {
@@ -944,7 +1053,7 @@ class SysCrmDealsController extends Controller
             //return $pdfdata;
 
 
-            return view('backEnd.crm.DealList', compact('deals', 'vendors', 'staff', 'ctrl_cust_id', 'ctrl_stage', 'ctrl_source', 'ctrl_owner', 'ctrl_date', 'ctrl_date2', 'ctrl_deal_id', 'ctrl_isproject', 'brand', 'ctrl_brand', 'filter_by', 'product', 'designation', 'country', 'company', 'paymentterms', 'sales_person', 'active_id', 'ctrl_followup', 'selectedDeal', 'action', 'editData', 'addData'));
+            return view('backEnd.crm.DealList', compact('ctrl_amount', 'ctrl_processing_track', 'deals', 'vendors', 'staff', 'ctrl_cust_id', 'ctrl_stage', 'ctrl_source', 'ctrl_owner', 'ctrl_date', 'ctrl_date2', 'ctrl_deal_id', 'ctrl_isproject', 'brand', 'ctrl_brand', 'filter_by', 'product', 'designation', 'country', 'company', 'paymentterms', 'sales_person', 'active_id', 'ctrl_followup', 'selectedDeal', 'action', 'editData', 'addData'));
 
             /*$form_data = [
             'deals' => $deals,

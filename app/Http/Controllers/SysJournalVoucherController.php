@@ -54,7 +54,15 @@ class SysJournalVoucherController extends Controller
             $ctrl_date="";
             $ctrl_date2="";
 
-            $query = SysJournalVoucher::select('sys_journalvoucher.id','sys_journalvoucher.deal_id','sys_journalvoucher.doc_date','sys_journalvoucher.doc_number','sys_journalvoucher.created_by','sys_journalvoucher.narration','sys_journalvoucher.status',DB::RAW('(SELECT GROUP_CONCAT(doc_file) FROM sys_journalvoucher_att WHERE doc_id = sys_journalvoucher.id) AS attach'),DB::RAW('sum(cat.debit_amount) as debit_amount'),DB::RAW('sum(cat.credit_amount) as credit_amount'))
+            $account_id = "";
+            $created_by_filter = "";
+            $amount_filter = "";
+            $attachment_filter = "";
+
+            $accounts = SysHelper::get_account_list2();
+            $staff = SysHelper::get_staff_list();
+
+            $query = SysJournalVoucher::select('sys_journalvoucher.id','sys_journalvoucher.deal_id','sys_journalvoucher.doc_date','sys_journalvoucher.doc_number','sys_journalvoucher.created_by','sys_journalvoucher.narration','sys_journalvoucher.status',DB::RAW('(SELECT GROUP_CONCAT(doc_file) FROM sys_journalvoucher_att WHERE doc_id = sys_journalvoucher.id) AS attach'),DB::RAW('sum(cat.debit_amount) as debit_amount'),DB::RAW('sum(cat.credit_amount) as credit_amount'),DB::RAW('COUNT(DISTINCT cat.account_id) as no_of_accounts'))
             ->leftjoin('sys_chartofaccounts_transaction as cat','cat.transaction_no','sys_journalvoucher.doc_number')
             ->wherein('sys_journalvoucher.company_id',$company_id);
 
@@ -126,6 +134,40 @@ class SysJournalVoucherController extends Controller
                 if ($ctrl_date == "" && $ctrl_date2 != "") {
                     $query->where('sys_journalvoucher.doc_date',$ctrl_date2);
                 }
+
+                if ($request->account_id != "") {
+                    $query->whereExists(function ($q) use ($request) {
+                        $q->select(DB::raw(1))
+                          ->from('sys_chartofaccounts_transaction as cat2')
+                          ->whereColumn('cat2.transaction_no', 'sys_journalvoucher.doc_number')
+                          ->where('cat2.account_id', $request->account_id);
+                    });
+                    $account_id = $request->account_id;
+                }
+                if ($request->created_by != "") {
+                    $query->where('sys_journalvoucher.created_by', $request->created_by);
+                    $created_by_filter = $request->created_by;
+                }
+                if ($request->amount != "") {
+                    $query->havingRaw('sum(cat.credit_amount) = ?', [$request->amount]);
+                    $amount_filter = $request->amount;
+                }
+                if ($request->attachment != "") {
+                    if ($request->attachment == "1") {
+                        $query->whereExists(function ($q) {
+                            $q->select(DB::raw(1))
+                              ->from('sys_journalvoucher_att')
+                              ->whereColumn('sys_journalvoucher_att.doc_id', 'sys_journalvoucher.id');
+                        });
+                    } else if ($request->attachment == "0") {
+                        $query->whereNotExists(function ($q) {
+                            $q->select(DB::raw(1))
+                              ->from('sys_journalvoucher_att')
+                              ->whereColumn('sys_journalvoucher_att.doc_id', 'sys_journalvoucher.id');
+                        });
+                    }
+                    $attachment_filter = $request->attachment;
+                }
             }
 
             $journalvoucher = $query->groupby('sys_journalvoucher.id','sys_journalvoucher.deal_id','sys_journalvoucher.doc_date','sys_journalvoucher.doc_number','sys_journalvoucher.created_by','sys_journalvoucher.narration','sys_journalvoucher.status')->orderby('sys_journalvoucher.id','desc')->get();
@@ -173,7 +215,7 @@ class SysJournalVoucherController extends Controller
 
 
             //return $journalvoucher;
-            return view('backEnd.journal-voucher.journalvoucherlist', compact('journalvoucher','data','filter_by','ctrl_date','ctrl_date2','documents_number','active_id','action','editData','addData'));
+            return view('backEnd.journal-voucher.journalvoucherlist', compact('journalvoucher','data','filter_by','ctrl_date','ctrl_date2','documents_number','active_id','action','editData','addData','accounts','staff','account_id','created_by_filter','amount_filter','attachment_filter'));
         }catch (\Exception $e) {
             return $e;
            Toastr::error('Operation Failed', 'Failed');
@@ -1961,6 +2003,187 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
         }catch (\Exception $e) {
             $ret = 'ERROR';
             return json_encode(array('data'=>$ret));
+        }
+    }
+
+    public function journalvoucherExport(Request $request)
+    {
+        try {
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+            $ctrl_date = "";
+            $ctrl_date2 = "";
+
+            $query = SysJournalVoucher::select('sys_journalvoucher.id','sys_journalvoucher.deal_id','sys_journalvoucher.doc_date','sys_journalvoucher.doc_number','sys_journalvoucher.created_by','sys_journalvoucher.narration','sys_journalvoucher.status',DB::RAW('(SELECT GROUP_CONCAT(doc_file) FROM sys_journalvoucher_att WHERE doc_id = sys_journalvoucher.id) AS attach'),DB::RAW('sum(cat.debit_amount) as debit_amount'),DB::RAW('sum(cat.credit_amount) as credit_amount'),DB::RAW('COUNT(DISTINCT cat.account_id) as no_of_accounts'))
+            ->leftjoin('sys_chartofaccounts_transaction as cat','cat.transaction_no','sys_journalvoucher.doc_number')
+            ->wherein('sys_journalvoucher.company_id',$company_id);
+
+            if ($request->from_date != "" && $request->filter_by == "") {
+                $ctrl_date= SysHelper::normalizeToYmd($request->from_date);
+            }
+            if ($request->to_date != "" && $request->filter_by == "") {
+                $ctrl_date2= SysHelper::normalizeToYmd($request->to_date);
+            }
+            if ($request->filter_by == "this_month") {
+                $ctrl_date=date('Y-m-01');
+                $ctrl_date2=date("Y-m-t", strtotime($ctrl_date));
+            }
+            if ($request->filter_by == "today") {
+                $ctrl_date=date('Y-m-d');
+                $ctrl_date2=date('Y-m-d');
+            }
+            if ($request->filter_by == "this_week") {
+                $ctrl_date = date('Y-m-d', strtotime('-1 week sunday 00:00:00'));
+                $ctrl_date2 = date('Y-m-d', strtotime('saturday 23:59:59'));
+            }
+            if ($request->filter_by == "last_week") {
+                $ctrl_date = date('Y-m-d', strtotime('-2 week sunday 00:00:00'));
+                $ctrl_date2 = date('Y-m-d', strtotime('-1 week saturday 23:59:59'));
+            }
+            if ($request->filter_by == "last_month") {
+                $ctrl_date = date('Y-m-d', strtotime('first day of previous month'));
+                $ctrl_date2 = date('Y-m-d', strtotime('last day of previous month'));
+            }
+            if ($request->filter_by == "this_quarter") {
+                $q_date = SysHelper::get_quarter(date('m'));
+                $ctrl_date = $q_date[0];
+                $ctrl_date2 = $q_date[1];
+            }
+            if ($request->filter_by == "pre_quarter") {
+                $q_date = SysHelper::get_pre_quarter(date('m'));
+                $ctrl_date = $q_date[0];
+                $ctrl_date2 = $q_date[1];
+            }
+            if ($request->filter_by == "this_year") {
+                $ctrl_date = date('Y-01-01');
+                $ctrl_date2 = date('Y-12-31');
+            }
+            if ($request->filter_by == "last_year") {
+                $ctrl_date = date("Y-01-01",strtotime("-1 year"));
+                $ctrl_date2 = date("Y-12-31",strtotime("-1 year"));
+            }
+
+            if ($request->documents_number != "") {
+                $query->where('sys_journalvoucher.doc_number','like','%'.$request->documents_number.'%');
+            }
+            if ($ctrl_date != "" && $ctrl_date2 != "") {
+                $query->whereBetween('sys_journalvoucher.doc_date', [$ctrl_date, $ctrl_date2]);
+            }                
+            if ($ctrl_date != "" && $ctrl_date2 == "") {
+                $query->where('sys_journalvoucher.doc_date',$ctrl_date);
+            }
+            if ($ctrl_date == "" && $ctrl_date2 != "") {
+                $query->where('sys_journalvoucher.doc_date',$ctrl_date2);
+            }
+
+            if ($request->account_id != "") {
+                $query->whereExists(function ($q) use ($request) {
+                    $q->select(DB::raw(1))
+                      ->from('sys_chartofaccounts_transaction as cat2')
+                      ->whereColumn('cat2.transaction_no', 'sys_journalvoucher.doc_number')
+                      ->where('cat2.account_id', $request->account_id);
+                });
+            }
+            if ($request->created_by != "") {
+                $query->where('sys_journalvoucher.created_by', $request->created_by);
+            }
+            if ($request->amount != "") {
+                $query->havingRaw('sum(cat.credit_amount) = ?', [$request->amount]);
+            }
+            if ($request->attachment != "") {
+                if ($request->attachment == "1") {
+                    $query->whereExists(function ($q) {
+                        $q->select(DB::raw(1))
+                          ->from('sys_journalvoucher_att')
+                          ->whereColumn('sys_journalvoucher_att.doc_id', 'sys_journalvoucher.id');
+                    });
+                } else if ($request->attachment == "0") {
+                    $query->whereNotExists(function ($q) {
+                        $q->select(DB::raw(1))
+                          ->from('sys_journalvoucher_att')
+                          ->whereColumn('sys_journalvoucher_att.doc_id', 'sys_journalvoucher.id');
+                    });
+                }
+            }
+
+            $journalvoucher = $query->groupby('sys_journalvoucher.id','sys_journalvoucher.deal_id','sys_journalvoucher.doc_date','sys_journalvoucher.doc_number','sys_journalvoucher.created_by','sys_journalvoucher.narration','sys_journalvoucher.status')->orderby('sys_journalvoucher.id','desc')->get();
+
+            $export_type = $request->input('export_type', 'list');
+
+            if ($export_type === 'account') {
+                $headers = ['Doc Number', 'Doc Date', 'Narration', 'Created By', 'Account Name', 'Debit', 'Credit', 'Narration'];
+
+                return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($journalvoucher, $headers) {
+                    $out = fopen('php://output', 'w');
+                    fwrite($out, "<table border='1'><thead><tr>");
+                    foreach ($headers as $header) {
+                        fwrite($out, "<th style='background-color:#2c2b6d; color:white;'>" . $header . "</th>");
+                    }
+                    fwrite($out, "</tr></thead><tbody>");
+
+                    foreach ($journalvoucher as $jv) {
+                        $lines = DB::table('sys_chartofaccounts_transaction as cat')
+                            ->join('sys_chartofaccounts as ca', 'ca.id', 'cat.account_id')
+                            ->where('cat.transaction_no', $jv->doc_number)
+                            ->select('ca.account_name', 'cat.debit_amount', 'cat.credit_amount', 'cat.remarks')
+                            ->get();
+
+                        $createdBy = optional($jv->createdby)->full_name ?: '';
+
+                        foreach ($lines as $line) {
+                            $row = "<tr>";
+                            $row .= "<td>" . htmlspecialchars($jv->doc_number) . "</td>";
+                            $row .= "<td>" . date('d/m/Y', strtotime($jv->doc_date)) . "</td>";
+                            $row .= "<td>" . htmlspecialchars($jv->narration ?? '') . "</td>";
+                            $row .= "<td>" . htmlspecialchars($createdBy) . "</td>";
+                            $row .= "<td>" . htmlspecialchars($line->account_name ?? '') . "</td>";
+                            $row .= "<td>" . htmlspecialchars($line->debit_amount ?? '') . "</td>";
+                            $row .= "<td>" . htmlspecialchars($line->credit_amount ?? '') . "</td>";
+                            $row .= "<td>" . htmlspecialchars($line->remarks ?? '') . "</td>";
+                            $row .= "</tr>";
+                            fwrite($out, $row);
+                        }
+                    }
+                    fwrite($out, "</tbody></table>");
+                    fclose($out);
+                }, 200, [
+                    'Content-Type' => 'application/vnd.ms-excel',
+                    'Content-Disposition' => 'attachment; filename="journalvoucher_account_export.xls"',
+                ]);
+            } else {
+                // List wise
+                $headers = ['Doc Number', 'Doc Date', 'Remarks', 'No of Account', 'Amount', 'Created By'];
+
+                return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($journalvoucher, $headers) {
+                    $out = fopen('php://output', 'w');
+                    fwrite($out, "<table border='1'><thead><tr>");
+                    foreach ($headers as $header) {
+                        fwrite($out, "<th style='background-color:#2c2b6d; color:white;'>" . $header . "</th>");
+                    }
+                    fwrite($out, "</tr></thead><tbody>");
+
+                    foreach ($journalvoucher as $jv) {
+                        $row = "<tr>";
+                        $row .= "<td>" . htmlspecialchars($jv->doc_number) . "</td>";
+                        $row .= "<td>" . date('d/m/Y', strtotime($jv->doc_date)) . "</td>";
+                        $row .= "<td>" . htmlspecialchars($jv->narration ?? '') . "</td>";
+                        $row .= "<td>" . htmlspecialchars($jv->no_of_accounts ?? '') . "</td>";
+                        $row .= "<td>" . htmlspecialchars($jv->credit_amount ?? '') . "</td>";
+                        $row .= "<td>" . htmlspecialchars(optional($jv->createdby)->full_name ?: '') . "</td>";
+                        $row .= "</tr>";
+                        fwrite($out, $row);
+                    }
+                    fwrite($out, "</tbody></table>");
+                    fclose($out);
+                }, 200, [
+                    'Content-Type' => 'application/vnd.ms-excel',
+                    'Content-Disposition' => 'attachment; filename="journalvoucher_list_export.xls"',
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Toastr::error('Export Failed: ' . $e->getMessage(), 'Failed');
+            return redirect()->back();
         }
     }
 }
