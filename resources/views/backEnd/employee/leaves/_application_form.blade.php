@@ -8,7 +8,7 @@
         if (empty($value))
             return '';
         try {
-            return \Carbon\Carbon::parse($value)->format('d/m/Y');
+            return \App\SysHelper::normalizeToDmy($value);
         } catch (\Exception $e) {
             return '';
         }

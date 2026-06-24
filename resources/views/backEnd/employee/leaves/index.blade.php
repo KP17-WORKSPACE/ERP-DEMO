@@ -148,7 +148,7 @@ $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->ge
                   </div>
                   <div class="d-flex justify-content-between align-items-center text-muted xsmall mt-1">
                     <span class="form-control-plaintext truncate-text">
-                      {{ optional($lv->leave_from)->format('d M') }} – {{ optional($lv->leave_to)->format('d M, Y') }}
+                      {{ optional($lv->leave_from)->format('d/m/Y') }} – {{ optional($lv->leave_to)->format('d/m/Y') }}
                     </span>
                     <span class="form-control-plaintext truncate-text">
                       #{{ $lv->id }}
@@ -198,10 +198,10 @@ $permissions = App\SmRolePermission::where('role_id', Auth::user()->role_id)->ge
           {{-- Department --}}
             <td>{{ $lv->staffs->departments->name ?? '—' }}</td>
           {{-- Leave From --}}
-          <td>{{ optional($lv->leave_from)->format('d M Y') ?: '—' }}</td>
+          <td>{{ optional($lv->leave_from)->format('d/m/Y') ?: '—' }}</td>
 
           {{-- Leave To --}}
-          <td>{{ optional($lv->leave_to)->format('d M Y') ?: '—' }}</td>
+          <td>{{ optional($lv->leave_to)->format('d/m/Y') ?: '—' }}</td>
 
           <td>{{ number_format((float)$lv->days, 2) }}</td>
 
