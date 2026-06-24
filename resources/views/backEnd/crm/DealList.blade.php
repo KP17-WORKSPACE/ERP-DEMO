@@ -301,19 +301,6 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-1-5">
-                        <label for="" class="form-label">From Date</label>
-                        <input class="form-control date-picker" id="date" type="text" autocomplete="off" name="date" value="{{ @App\SysHelper::normalizeToDmy($ctrl_date) }}">
-                    </div>
-                    <div class="col-1-5">
-                        <label for="" class="form-label">To Date</label>
-                        <input class="form-control date-picker" id="date2" type="text" autocomplete="off" name="date2" value="{{  @App\SysHelper::normalizeToDmy($ctrl_date2)}}">
-                    </div>
-
-                     <div class="col-1-5">
-                        <label for="" class="form-label">Follow Up</label>
-                        <input class="form-control date-picker" id="followup" type="text" autocomplete="off" name="followup" value="{{ @$ctrl_followup}}">
-                    </div>
 
                     <div class="col-1-5">
                         <label for="" class="form-label">Type</label>
@@ -326,6 +313,11 @@
                             <option value="0" @if(@$ctrl_isproject == "0") selected @endif >Lead</option>
                             <option value="5" @if(@$ctrl_isproject == "5") selected @endif >Marketing</option>
                         </select>
+                    </div>
+
+                     <div class="col-1-5">
+                        <label for="" class="form-label">Follow Up</label>
+                        <input class="form-control date-picker" id="followup" type="text" autocomplete="off" name="followup" value="{{ @$ctrl_followup}}">
                     </div>
                     <div class="col-1-5">
                         <label for="" class="form-label">Status</label>
@@ -355,7 +347,48 @@
                             <option value="Other" @if($ctrl_source == "Other") selected @endif>Other</option>
                         </select>
                     </div>
+                    <div class="col-1-5">
+                        <label for="" class="form-label">Processing Track</label>
+                        <select class="form-control" name="processing_track" id="processing_track">
+                            <option value="">-Select-</option>
+                            <option value="1" @if(@$ctrl_processing_track == 1) selected @endif>Back to Back</option>
+                            <option value="2" @if(@$ctrl_processing_track == 2) selected @endif>Stock Order</option>
+                            <option value="3" @if(@$ctrl_processing_track == 3) selected @endif>Internal Transfer</option>
+                            <option value="4" @if(@$ctrl_processing_track == 4) selected @endif>Direct Sales Invoice</option>
+                            <option value="5" @if(@$ctrl_processing_track == 5) selected @endif>Direct Purchase Order</option>
+                            <option value="6" @if(@$ctrl_processing_track == 6) selected @endif>Expenses</option>
+                            <option value="7" @if(@$ctrl_processing_track == 7) selected @endif>Additional PO</option>
+                            <option value="8" @if(@$ctrl_processing_track == 8) selected @endif>Additional DO</option>
+                        </select>
+                    </div>
+                    <div class="col-1-5">
+                        <label for="" class="form-label">Amount</label>
+                        <input type="text" class="form-control" name="amount" id="amount" value="{{ @$ctrl_amount }}" placeholder="Amount">
+                    </div>
 
+                    <div class="col-1-5">
+                        <label for="currency_id" class="form-label">Currency</label>
+                        @php
+                            $currency_list = App\SysCurrencySettings::select('id', 'code')->get();
+                        @endphp
+                        <select class="form-control js-example-basic-single" name="currency_id" id="currency_id">
+                            <option value="">-Select-</option>
+                            @foreach ($currency_list as $currency)
+                                <option value="{{ $currency->id }}" @if(request()->currency_id == $currency->id) selected @endif>
+                                    {{ $currency->code }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-1-5">
+                        <label for="" class="form-label">From Date</label>
+                        <input class="form-control date-picker" id="date" type="text" autocomplete="off" name="date" value="{{ @App\SysHelper::normalizeToDmy($ctrl_date) }}">
+                    </div>
+                    <div class="col-1-5">
+                        <label for="" class="form-label">To Date</label>
+                        <input class="form-control date-picker" id="date2" type="text" autocomplete="off" name="date2" value="{{  @App\SysHelper::normalizeToDmy($ctrl_date2)}}">
+                    </div>
                     <div class="col-1-5 mb-2 filter-field">
                                 <label for="" class="form-label">Filter By</label>
                                 <select class="form-control js-example-basic-single" name="sort_id" id="sort_id"
@@ -409,19 +442,22 @@
                             <div class="row">
                                 <div class="col-12">
                                       <div class="table-responsive">
-                        <table class="table table-hover mt-2 data-table table-fixed-header" id="long-list" style="table-layout: fixed;width:100%">
+                        <table class="table table-hover mt-2 data-table table-fixed-header" id="long-list" style="table-layout: fixed; min-width: 1600px;">
                             <thead>
                                 <tr>
-                            <th style="width: 80px;" class="text-center">@lang('Deal No')</th>
-                            <th class="text-center" style="width: 70px;">@lang('Date')</th>
-                            <th style="width: 150px;">@lang('Customer')</th>
-                            <th style="width: 150px;">@lang('Deal Name')</th>
-                            <th style="width: 120px;">@lang('Sales Person')</th>
+                            <th class="text-center">@lang('Deal No')</th>
+                            <th class="text-center">@lang('Date')</th>
+                            <th>@lang('Customer')</th>
+                            <th >@lang('Deal Name')</th>
+                            <th >@lang('Sales Person')</th>
 
-                            <th style="width: 120px" class="text-end">@lang('Deal Value')</th>
-                            <th style="width: 120px;" class="text-end">@lang('Deal Profit')</th>
+                            <th style="width: 120px" class="text-end text-nowrap">@lang('Deal Value')</th>
+                            <th style="width: 120px;" class="text-end text-nowrap">@lang('Tax')</th>
+                            <th style="width: 120px;" class="text-end text-nowrap">@lang('Amount')</th>
+                            <th style="width: 120px;" class="text-end text-nowrap">@lang('GP')</th>
+                            <th style="width: 100px;" class="text-end text-nowrap">@lang('GP%')</th>
 
-                            <th  style="width: 100px;">@lang('Stage')</th>
+                            <th>@lang('Stage')</th>
 
                             @if(session('logged_session_data.company_id') == 1)
                             <th style="width: 100px;">@lang('Company')</th>
@@ -430,7 +466,7 @@
                            
                             <th class="text-center" style="width: 75px;">@lang('Updated On')</th>
                             <th class="text-center" style="width: 80px;">@lang('Closing Date')</th>
-                            <th class="text-center" style="width: 75px;">@lang('Actions')</th>
+                            <th class="text-right" style="width: 75px;">@lang('Actions')</th>
 
                                                      
                                 </tr>
@@ -452,13 +488,25 @@
                                         <td>{{ $value->customername->code }} - {{@$value->customername->name}}</td>
                                         <td>{{@$value->deal_name}}</td>
                                         <td>{{@$value->ownername->full_name}}</td>
-                                          <td class="text-end" >
+                                          <td class="text-end text-nowrap" >
                                             @php $aed = $value->deal_value; @endphp
                                             {{@App\SysHelper::currancy_format_deal($aed,$value->company_id)}}
-                                            @php $total_amount += $aed; @endphp {{ $value->dealcurrency->code }} <?php        $deal_currency = $value->dealcurrency->code; ?>
+                                            @php $total_amount += $aed; @endphp <?php        $deal_currency = $value->dealcurrency->code; ?>
                                         </td>
-                                        <td class="text-end">{{@App\SysHelper::currancy_format_deal($value->deal_profit,$value->company_id)}} {{ $value->dealcurrency->code }}
+                                        <td class="text-end text-nowrap">{{@App\SysHelper::currancy_format_deal($value->deal_discount_vat ?: 0,$value->company_id)}}
                                         </td>
+                                        <td class="text-end text-nowrap">{{@App\SysHelper::currancy_format_deal(($value->deal_value ?: 0) - ($value->deal_discount_vat ?: 0),$value->company_id)}} {{ $value->dealcurrency->code }}
+                                        </td>
+                                        <td class="text-end text-nowrap">{{@App\SysHelper::currancy_format_deal($value->deal_profit ?: 0,$value->company_id)}}
+                                        </td>
+                                        <td class="text-end text-nowrap">
+                                            @php
+                                                $gp_val = $value->deal_profit ?: 0;
+                                                $deal_val = $value->deal_value ?: 0;
+                                                $gp_pct = $deal_val > 0 ? ($gp_val / $deal_val) * 100 : 0;
+                                            @endphp
+                                            {{ number_format($gp_pct, 2) }}%
+                                         </td>
 
                                           <td>
                                                      @php
@@ -518,7 +566,7 @@ if (!empty($followupDate)) {
                                       
                                         <td class="text-center">&nbsp;&nbsp; {{date('d/m/Y h:i A', strtotime(@$value->updated_at))}}</td>
                                         <td class="text-center">&nbsp; {{date('d/m/Y', strtotime(@$value->estimated_close_date))}}</td>
-                                        <td class="text-center">
+                                        <td class="text-right">
                                             <div class="d-flex justify-content-center">
                                                       <a class="btn btn-sm btn-light open-comments-modal" style="cursor: pointer;"
                                                                 data-deal-id="{{ $value->id }}"><i class="ico icon-outline-chat-round-dots" style="font-size:16px" aria-hidden="true"></i></a>
@@ -1058,9 +1106,9 @@ $(document).ready(function() {
         var  columnWidths = [
 
           @if (session('logged_session_data.company_id') == 1)
-            80, 100, 150, 150, 120, 100, 120, 110, 70, 75, 80, 75
+            80, 100, 150, 150, 120, 120, 120, 120, 120, 100, 110, 100, 75, 80, 75
             @else
-            80, 100, 150, 150, 120, 100, 120, 110, 70, 75, 75
+            80, 100, 150, 150, 120, 120, 120, 120, 120, 100, 110, 75, 80, 75
             @endif
 
             

@@ -260,6 +260,74 @@
 
                                 
                               
+                                    <div class="col-1-5 mb-2">
+                                        <label for="" class="form-label">Brand</label>
+                                        <select class="form-control js-example-basic-single" name="brand_id" id="brand_id">
+                                            <option value="">-Select-</option>
+                                            @foreach ($brand as $value)
+                                            <option value="{{ @$value->id }}" @if($ctrl_brand == $value->id) selected @endif>{{ @$value->title }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-1-5 mb-2">
+                                        <label for="" class="form-label">Partial Delivery</label>
+                                        <select class="form-control js-example-basic-single" name="partial_delivery" id="partial_delivery">
+                                            <option value="">-Select-</option>
+                                            <option value="1" @if(@$ctrl_partial_delivery == '1') selected @endif>Partial Delivery</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-1-5 mb-2">
+                                        <label for="" class="form-label">Processing Track</label>
+                                        <select class="form-control" name="processing_track" id="processing_track">
+                                            <option value="">-Select-</option>
+                                            <option value="1" @if(@$ctrl_processing_track == 1) selected @endif>Back to Back</option>
+                                            <option value="2" @if(@$ctrl_processing_track == 2) selected @endif>Stock Order</option>
+                                            <option value="3" @if(@$ctrl_processing_track == 3) selected @endif>Internal Transfer</option>
+                                            <option value="4" @if(@$ctrl_processing_track == 4) selected @endif>Direct Sales Invoice</option>
+                                            <option value="5" @if(@$ctrl_processing_track == 5) selected @endif>Direct Purchase Order</option>
+                                            <option value="6" @if(@$ctrl_processing_track == 6) selected @endif>Expenses</option>
+                                            <option value="7" @if(@$ctrl_processing_track == 7) selected @endif>Additional PO</option>
+                                            <option value="8" @if(@$ctrl_processing_track == 8) selected @endif>Additional DO</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-1-5 mb-2">
+                                        <label for="" class="form-label">Filter By</label>
+                                        <select class="form-control js-example-basic-single" name="sort_id" id="sort_id" onchange="this.form.submit()">
+                                            <option value="" >-Select-</option>
+                                            <option value="11" @if(@$ctrl_sort == 11) selected @endif>Latest Deals</option>
+                                            <option value="12" @if(@$ctrl_sort == 12) selected @endif>Expired Deals</option>
+                                            <option value="9" @if(@$ctrl_sort == 9) selected @endif>By Deal Value</option>
+                                            <option value="1" @if(@$ctrl_sort == 1) selected @endif>Today</option>
+                                            <option value="2" @if(@$ctrl_sort == 2) selected @endif>This Week</option>
+                                            <option value="3" @if(@$ctrl_sort == 3) selected @endif>Last Week</option>
+                                            <option value="4" @if(@$ctrl_sort == 4) selected @endif>This Month</option>
+                                            <option value="5" @if(@$ctrl_sort == 5) selected @endif>Last Month</option>
+                                        </select>
+                                    </div>
+
+                                     <div class="col-1-5 mb-2">
+                                         <label for="" class="form-label">Amount</label>
+                                         <input type="text" class="form-control" name="amount" id="amount" value="{{ @$ctrl_amount }}" placeholder="Amount">
+                                     </div>
+
+                                     <div class="col-1-5 mb-2">
+                                         <label for="currency_id" class="form-label">Currency</label>
+                                         @php
+                                             $currency_list = App\SysCurrencySettings::select('id', 'code')->get();
+                                         @endphp
+                                         <select class="form-control js-example-basic-single" name="currency_id" id="currency_id">
+                                             <option value="">-Select-</option>
+                                             @foreach ($currency_list as $currency)
+                                                 <option value="{{ $currency->id }}" @if(request()->currency_id == $currency->id) selected @endif>
+                                                     {{ $currency->code }}
+                                                 </option>
+                                             @endforeach
+                                         </select>
+                                     </div>
+
                                     <div class="col-1">
                                         <button type="submit" class="btn btn-light add-btn mt-4" id="btnSubmit">
                                             <i class="ico icon-outline-minimalistic-magnifer text-success"></i> Filter
@@ -276,7 +344,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="table-responsive">
-                            <table class="table table-hover mt-2 data-table table-fixed-header" id="long-list" style="table-layout: fixed;width:100%">
+                            <table class="table table-hover mt-2 data-table table-fixed-header" id="long-list" style="table-layout: fixed; min-width: 1600px;">
                                 <thead>
                                     <tr>
                                         <th style="width: 80px;" class="text-center">@lang('Deal ID')</th>
@@ -290,7 +358,11 @@
                                         <th style="width: 100px;" class="mobhd  text-center">@lang('Created Date')</th>
                                         <th style="width: 100px;" class="mobhd">@lang('Payment Terms')</th>
                                         <th style="width: 100px;">@lang('Status')</th>
-                                        <th style="width: 100px;" class="text-end">@lang('Value')</th>
+                                        <th style="width: 100px;" class="text-end text-nowrap">@lang('Value')</th>
+                                        <th style="width: 100px;" class="text-end text-nowrap">@lang('Tax')</th>
+                                        <th style="width: 100px;" class="text-end text-nowrap">@lang('Amount')</th>
+                                        <th style="width: 100px;" class="text-end text-nowrap">@lang('GP')</th>
+                                        <th style="width: 80px;" class="text-end text-nowrap">@lang('GP%')</th>
                                         {{-- <th></th> --}}
                                     </tr>
                                     </tr>
@@ -446,11 +518,34 @@
                                             </td>
 
 
-                                            <td class="text-end">
+                                            <td class="text-end text-nowrap">
                                                 @php $aed=@App\SysHelper::get_aed_amount($value->deal_currency,$value->deal_value); @endphp
-                                                {{ @App\SysHelper::com_curr_format($aed, 2, '.', ',') }}
+                                                {{ @App\SysHelper::com_curr_format($aed ?: 0, 2, '.', ',') }}
+                                            </td>
+                                            <td class="text-end text-nowrap">
+                                                @php $tax=@App\SysHelper::get_aed_amount($value->deal_currency,$value->deal_discount_vat); @endphp
+                                                {{ @App\SysHelper::com_curr_format($tax ?: 0, 2, '.', ',') }}
+                                            </td>
+                                            <td class="text-end text-nowrap">
+                                                @php $amount=@App\SysHelper::get_aed_amount($value->deal_currency, ($value->deal_value ?: 0) - ($value->deal_discount_vat ?: 0)); @endphp
+                                                {{ @App\SysHelper::com_curr_format($amount ?: 0, 2, '.', ',') }}
                                                 {{ @$value->deal_code->dealcurrency->code }}
                                             </td>
+                                            <td class="text-end text-nowrap">
+                                                @php
+                                                    $deal_profit_local = $value->deal_code ? ($value->deal_code->deal_profit ?: 0) : 0;
+                                                    $gp_val_aed = @App\SysHelper::get_aed_amount($value->deal_currency, $deal_profit_local);
+                                                @endphp
+                                                {{ @App\SysHelper::com_curr_format($gp_val_aed ?: 0, 2, '.', ',') }}
+                                             </td>
+                                             <td class="text-end text-nowrap">
+                                                @php
+                                                    $deal_profit_local = $value->deal_code ? ($value->deal_code->deal_profit ?: 0) : 0;
+                                                    $deal_val_local = $value->deal_value ?: 0;
+                                                    $gp_pct_local = $deal_val_local > 0 ? ($deal_profit_local / $deal_val_local) * 100 : 0;
+                                                @endphp
+                                                {{ number_format($gp_pct_local, 2) }}%
+                                             </td>
                                             {{-- <td class="text-end">
                                 <a class="btn-sm btn-success text-white" href="{{url('crm-deal-track-approval/'.$value->id)}}">View</a>
                             </td> --}}
@@ -802,9 +897,9 @@ $(document).ready(function() {
 
         var columnWidths = [
             @if (session('logged_session_data.company_id') == 1)
-                70, 100, 150, 150, 120, 100, 120, 120, 100, 75, 80, 75
+                80, 100, 200, 200, 100, 100, 100, 100, 100, 100, 100, 100, 100, 80
             @else
-                70, 100, 150, 150, 120, 100, 120, 120, 80, 75, 75
+                80, 200, 200, 100, 100, 100, 100, 100, 100, 100, 100, 100, 80
             @endif
         ];
 
