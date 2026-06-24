@@ -52,9 +52,8 @@
                 <div class="col-4">
                        <label class="form-label mb-0 d-flex justify-content-between align-items-center">
                                 <span>Vendor</span>
-                                <a href="{{ url('suppliers?supplier_action=add') }}" target="__blank" class="btn btn-sm p-0 ms-2" style="border:none;background:none;">
-                                    <i class="ico icon-outline-add-square text-success" style="font-size:18px;"></i>
-                                </a>
+                                <a style="float: right; cursor: pointer;" class="text-success" data-bs-toggle="modal" data-bs-target="#addcompany"><i class="ico icon-bold-buildings-2" aria-hidden="true"></i> Add
+                                            </a>
                             </label>
                     <select class=" js-account-select" name="vendors" id="vendors" required style="width: 100%;">
                         <option value=""></option>
@@ -1784,7 +1783,7 @@ $(document).on("keydown", 'input[name="tax[]"], input[name="qty[]"], input[name=
             });
         }
 
-        function get_vendors_detail(id) {
+        window.get_vendors_detail = function(id) {
             $("#loading_bg").css("display", "block");
             var action = "{{ URL::to('get-chartofaccounts-info') }}";
             $.ajax({
@@ -1857,7 +1856,7 @@ $("#contact_person_telephone").val(numbers.join(' / '));
                 }
             });
             $("#loading_bg").css("display", "none");
-        }
+        };
 
         $(document).on("change", "#shipping_supplier", function() {
             var id = $("#shipping_supplier").val();
@@ -2495,5 +2494,616 @@ document.getElementById('insertExtraNote').addEventListener('click', function ()
 });
 </script>
 
+
+<div class="modal side-panel fade" id="addcompany" data-bs-backdrop="false" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" style="top:25%;max-width:1000px!important;left: 37%;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="exampleModalLabel">Add Supplier</h4>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body m-0 p-0">
+                        <div class="card mb-0 mt-0">
+                    <div class="card-body">
+                        <div class="row gap-rows row-cols-5">
+                            
+                            <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">Supplier Name</label>
+                                    <input class="form-control" placeholder="" type="text" aria-describedby="" autocomplete="off" id="company_name_add" required>
+                                    <style>
+                                         #company_name_add_list ul {
+                                                width: 380px;
+                                                left:16rem
+                                            }
+                                    </style>
+                                    <div id="company_name_add_list">
+                                    </div>                            
+                                    <script>
+                                        $(document).ready(function(){
+
+                                         $('#company_name_add').keyup(function(){ 
+                                                var query = $(this).val();
+                                                if(query != '')
+                                                {
+                                                 var _token = $('input[name="_token"]').val();
+                                                 $.ajax({
+                                                  url:"{{ route('autocomplete.supplier_name') }}",
+                                                  method:"POST",
+                                                  data:{query:query, _token:_token},
+                                                  success:function(data){
+                                                   $('#company_name_add_list').fadeIn();  
+                                                            $('#company_name_add_list').html(data);
+                                                  }
+                                                 });
+                                                }
+                                            });
+
+                                            $(document).on('click', 'li', function(){  
+                                                $('#customer_name').val('');
+                                        $('#customer_name_display').val('');
+                                        // toastr.info('Customer Already Exists.', 'Info');
+
+
+
+                                        $('#company_name_add_list').fadeOut(); 
+                                            });  
+
+                                            $(document).click(function(e) {
+                                            if (!$(e.target).closest('#company_name_add, #company_name_add_list').length) {
+                                                $('#company_name_add_list').fadeOut();
+                                            }
+                                        });
+
+                                        });
+                                        </script>
+                                </div>
+                            </div>
+                          
+                            <div class="col">
+                                <label for="" class="form-label">Contact Person</label>
+                                <div class="d-flex gap-2 align-items-end">
+                                    <div style="min-width: 54px; max-width: 54px;">
+                                        <select class="form-control js-example-basic-single" id="salutation_cust" name="customer_salutation_add" required>
+                                            <option value="Mr.">Mr.</option>
+                                            <option value="Mrs.">Mrs.</option>
+                                            <option value="Miss.">Miss.</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <input class="form-control" type="text" autocomplete="off" id="cust_name_add" name="cust_name_add" required placeholder="Name">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">Mobile</label>
+                                    <input class="form-control" type="text" autocomplete="off" id="cust_no_add" required value="+971">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">Email</label>
+                                    <input class="form-control" type="text" autocomplete="off" id="cust_email_add" required >
+                                </div>
+                            </div>
+
+                            @php
+                                $country_1 = @App\SysCountries::select('id', 'name', 'iso2')->get();
+                                $designation_1 = @App\SmDesignation::select('title')->where('active_status', 1)->get();
+
+                                $sales_person = @App\SysHelper::get_only_sales_persons();
+                            @endphp
+
+                            <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">Country</label>
+                                    <select class="form-control js-example-basic-single" name="country_ship" id="country_ship">
+                                        <option value="">-Select-</option>
+                                        @foreach ($country_1 as $value)
+                                        <option value="{{ @$value->id }}" {{ trim(strtolower($value->name)) == 'united arab emirates' ? 'selected' : '' }}>{{ @$value->name }}</option>
+                                        @endforeach
+                                    </select>
+
+                                       <div style="display:none">
+
+                                           <select class="form-select js-example-basic-single" style="width:30px;display:none" name="country_telephone" id="country_telephone" required>
+                                                <option value="" disabled selected>Select Country</option>
+                                                @foreach ($country_1 as $key => $value)
+                                                    <option value="{{ @$value->iso2 }}|{{ @$value->id }}">{{ @$value->name }}</option>
+                                                @endforeach
+                                            </select>
+                                </div>
+
+                                </div>
+                            </div>
+                            
+                          
+                            <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">State</label>                                
+                                    <div id="sectionStateDiv_ship">
+                                        <select class="form-control js-example-basic-single" name="state_ship" id="state_ship">
+                                            <option data-display="" value=""></option>
+                                            <?php    try { ?>
+                                            @if (isset($editData) && $editData->vat_state != '')
+                                                <option data-display="{{ $editData->vatstate->name }}"
+                                                    value="{{ $editData->vat_state }}" selected>
+                                                    {{ $editData->vatstate->name }}</option>
+                                            @endif
+                                            <?php    } catch (\Exception $e) {
+        } ?>
+                                        </select>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                             <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">City</label>
+                                    <input class="form-control" type="text" autocomplete="off" id="cust_city" required>
+                                </div>
+                            </div>
+
+                            
+                             <div class="col">
+                                <label for="" class="form-label">Area</label>
+                                <input class="form-control" type="text" autocomplete="off" id="cust_area"
+                                    required>
+
+                            </div>
+
+                              <div class="col">
+                                <label for="" class="form-label">Building Name</label>
+                                <input class="form-control" type="text" autocomplete="off" id="cust_building_name"
+                                    required>
+
+                            </div>
+
+                              <div class="col">
+                                <label for="" class="form-label">Flat/Office No</label>
+                                <input class="form-control" type="text" autocomplete="off" id="cust_flat_office_no"
+                                    required>
+
+                            </div>
+                           
+                             <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">PO Box</label>
+                                    <input class="form-control" type="text" autocomplete="off" id="cust_pobox" required>
+                                </div>
+                            </div>
+                                <input type="hidden" name="place_id" id="place_id" value="">
+                            <input type="hidden" name="customer_website" id="customer_website" value="">
+                            <input type="hidden" name="maps_location" id="maps_location" value="">
+
+                           
+                            <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">Payment Terms</label>
+                                    <select class="form-control js-example-basic-single" id="customer_payment_terms" required>
+                                        @foreach ($paymentterms as $key => $value)
+                                            <option value="{{ @$value->id }}" @if ($value->id == 3) selected @endif>{{ @$value->title }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">Supplier Type</label>
+                                    <select class="form-control js-example-basic-single" id="account_type" required>
+                                        <option value="">-Select-</option>
+                                        <option value="1" selected>Vendor</option>
+                                        <option value="2">Forwader</option>
+                                        <option value="3">Courier</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <div class="">
+                                    <label for="" class="form-label">Designation</label>
+                                    <select class="form-control js-example-basic-single" name="designation_add" id="designation_add" required>
+                                        <option value="">--Designation--</option>
+                                        @if (count($designation_1) > 0)
+                                            @foreach ($designation_1 as $val)
+                                                <option value="{{ $val->title }}" {{ trim(strtolower($val->title)) == 'purchase' ? 'selected' : '' }}>{{ $val->title }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                            </div>
+
+                          
+
+
+                        </div>
+                        </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        
+						<button type="button" class="btn btn-light add-btn ms-2" id="btn_add_company">
+							<i class="ico icon-outline-bookmark-opened text-success"></i> Save & Close
+						</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBhC6fAWLvqoE4znv7d8ovf8y3pMR0OG7s&libraries=places&language=en">
+</script>
+
+
+
+ <script>
+        $(document).ready(function () {
+            const input = document.getElementById("company_name_add");
+            
+            const autocomplete = new google.maps.places.Autocomplete(input, {
+                types: ["establishment"],
+                fields: [
+                    "place_id",
+                    "name",
+                    "formatted_address",
+                    "address_components",
+                    "geometry",
+                    "plus_code",
+                    "international_phone_number",
+                    "formatted_phone_number",
+                    "website",
+                    "url"
+            ]
+                  
+            });
+            
+            autocomplete.addListener("place_changed", () => {
+                const place = autocomplete.getPlace();
+                
+                if (!place.place_id) {
+                    console.error("No place details found");
+                    return;
+                }
+
+                 $('#company_name_add_list').fadeOut();
+
+                
+                console.log("📍 COMPLETE PLACE DATA:", place);
+                
+                // Extract structured address
+                let address = {
+                    country: "",
+                    country_code: "",
+                    state: "",
+                    city: "",
+                    area: "",
+                    building_name: "",
+                    street_number: "",
+                    route: "",
+                    po_box: "",
+                    postal_code: ""
+                };
+                
+                if (place.address_components) {
+                    place.address_components.forEach(component => {
+                        const types = component.types;
+                        
+                        if (types.includes("country")) {
+                            address.country = component.long_name;
+                            address.country_code = component.short_name;
+                        }
+                        if (types.includes("administrative_area_level_1")) {
+                            address.state = component.long_name;
+                        }
+                        if (types.includes("locality")) {
+                            address.city = component.long_name;
+                        }
+                        if (types.includes("sublocality") || types.includes("sublocality_level_1")) {
+                            address.area = component.long_name;
+                        }
+                        if (types.includes("premise") || types.includes("neighborhood")) {
+                            address.building_name = component.long_name;
+                        }
+                        if (types.includes("street_number")) {
+                            address.street_number = component.long_name;
+                        }
+                        if (types.includes("route")) {
+                            address.route = component.long_name;
+                        }
+                        if (types.includes("post_box")) {
+                            address.po_box = component.long_name;
+                        }
+                        if (types.includes("postal_code")) {
+                            address.postal_code = component.long_name;
+                            console.log("Postal Code:", address.postal_code);
+                        }
+                    });
+                }
+                
+                // Extract country mobile code from phone number
+                let mobileCode = "";
+                if (place.international_phone_number) {
+                    const match = place.international_phone_number.match(/^\+(\d{1,4})/);
+                    if (match) {
+                        mobileCode = "+" + match[1];
+                    }
+                }
+                
+                // Get coordinates
+                const lat = place.geometry?.location?.lat() || "";
+                const lng = place.geometry?.location?.lng() || "";
+                
+                // Fill all form fields
+                setFieldvalue("company_name_add", place.name || "");
+                setFieldvalue("cust_no_add", place.international_phone_number || "");
+                // setFieldvalue("mobile_code", mobileCode);
+                setFieldvalue("customer_website", place.website || "");
+            
+                
+                setFieldvalue("maps_location", place.url || "");
+                
+                // setFieldvalue("country", address.country);
+                var targetName = address.country || ""; // or any value you want to match
+
+
+                function normalize(str) {
+    return str.toLowerCase().replace(/\s+/g, '');
+}
+
+                // Select the option based on its text (the visible name)
+                $('#country_ship option').each(function() {
+                     if (normalize($(this).text()) === normalize(targetName)) {
+        $(this).prop('selected', true);
+          $('#country_ship').trigger('change');
+    }
+                });
+
+                
+
+                var targetName = address.state || ""; // or any value you want to match
+
+
+              // Delay execution to ensure options are loaded
+setTimeout(function() {
+    var matched = false;
+
+    $('#state_ship option').each(function() {
+        if (normalize($(this).text()) === normalize(targetName)) {
+            $(this).prop('selected', true);
+            matched = true;
+            return false; // break the loop
+        }
+    });
+
+    if (matched) {
+        $('#state_ship').trigger('change');
+    }
+
+    console.log("State selection attempted for:", targetName);
+}, 600); // adjust 300ms as needed
+
+
+                setFieldvalue("cust_city", address.city);
+                setFieldvalue("cust_area", address.area);
+                setFieldvalue("cust_building_name", address.building_name);
+                setFieldvalue("cust_pobox", address.postal_code);
+                setFieldvalue("place_id", place.place_id);
+
+                setFieldvalue("longitude", lng);
+                setFieldvalue("latitude", lat);
+
+
+                // Show success message
+                $("#successAlert").addClass("show");
+                setTimeout(() => {
+                    $("#successAlert").removeClass("show");
+                }, 3000);
+                
+            });
+            
+            // Helper function to set field value and add visual feedback
+            function setFieldvalue(fieldId, value) {
+                const field = $("#" + fieldId);
+                if (field.length) {
+                    field.val(value);
+                    if (value) {
+                        field.addClass("filled");
+                    } else {
+                        field.removeClass("filled");
+                    }
+                }
+            }
+        });
+</script>
+
+
+        <!-- External JS for country codes -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+    $('#country_ship').on('change', function () {
+
+        console.log("!222121")
+
+        let shipId = $(this).val();    // example: "5"
+
+        if (!shipId) {
+            $('#country_telephone').val("").trigger('change');
+            return;
+        }
+
+        // Loop through telephone options
+        $('#country_telephone option').each(function () {
+            let value = $(this).val(); // example: "AE|5"
+
+            if (!value) return;
+
+            let parts = value.split('|');
+            let telId = parts[1]; // country ID
+
+            if (telId == shipId) {
+                $('#country_telephone').val(value).trigger('change');
+            }
+        });
+
+    });
+
+});
+
+</script>
+<script>
+$(document).ready(function() {
+    var countryCodes = {};
+
+    $.each(window.intlTelInputGlobals.getCountryData(), function(index, country) {
+        countryCodes[country.iso2.toLowerCase()] = country.dialCode;
+    });
+
+    $('#country_telephone').on('change', function() {
+        var fullValue = $(this).val();
+        var iso2 = fullValue ? fullValue.split('|')[0].toLowerCase() : '';
+        var code = countryCodes[iso2] || '';
+        var currentNumber = $('#cust_no_add').val().replace(/^\+\d+\s?/, '');
+
+        $('#cust_no_add').val(code ? '+' + code + ' ' + currentNumber : currentNumber);
+    });
+});
+</script>
+<script>
+$(document).ready(function() {
+    if ($('#country_ship').val() !== '') {
+        $('#country_ship').trigger('change');
+    }
+});
+
+
+  $(document).on("click", "#btn_add_company", function () {
+
+                //$("#btn_add_company").css("display", "none");
+
+                var company_name_add = $("#company_name_add").val();
+                var cust_name_add = $("#cust_name_add").val();
+                var designation_add = $("#designation_add").val();
+                var cust_no_add = $("#cust_no_add").val();
+                var cust_email_add = $("#cust_email_add").val();
+
+                var cust_area = $("#cust_area").val();
+                var place_id = $("#place_id").val();
+                var cust_building_name = $("#cust_building_name").val();
+                var cust_flat_office_no = $("#cust_flat_office_no").val();
+                var customer_website = $("#customer_website").val();
+                var maps_location = $("#maps_location").val();
+                var customer_salutation_add = $("#salutation_cust").val();
+
+
+            
+
+             
+                var country_add = $("#country_ship").val();
+
+                var cust_city = $("#cust_city").val();
+                var state_ship = $("#state_ship").val();
+                var cust_pobox = $("#cust_pobox").val();
+                var sales_person = $("#cust_sales_person").val();
+
+                var payment_terms = $("#customer_payment_terms").val();
+                var account_type = $("#account_type").val();
+                var company_id = $("#company").val();
+
+                var action = "{{ URL::to('add-customer-detail-popup') }}";
+            $("#loading_bg").show();
+
+                $.ajax({
+                    url: action,
+                    type: "GET",
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        company_name_add: company_name_add,
+                        cust_name_add: cust_name_add,
+                        customer_salutation_add: customer_salutation_add,
+                        designation_add: designation_add,
+                        cust_no_add: cust_no_add,
+                        cust_email_add: cust_email_add,
+                        vat_country: country_add,
+                        city: cust_city,
+                        vat_state: state_ship,
+                        zip_code: cust_pobox,
+                        payment_terms: payment_terms,
+                        account_type: account_type,
+                        supplier_type: account_type,
+                        company_id: company_id,
+                        customer_website: customer_website,
+                        maps_location: maps_location,
+                        place_id: place_id,
+                        area: cust_area,
+                        building_name: cust_building_name,
+                        flat_no: cust_flat_office_no,
+                        type : 2,
+                    },
+                    cache: false,
+                    success: function(dataResult) {
+                        //alert(dataResult);
+                        var dataResult = JSON.parse(dataResult);
+                        var len = 0;
+                        if(dataResult['data']=="ERROR")
+                        {
+                            alert("Error found in something!!");
+                            $("#btn_add_company").css("display", "block");
+                        }
+                        else if(dataResult['data']=="ERROR2")
+                        {
+                            alert("Supplier Name already exists!! Please Contact Support");
+                            $('#company_name_add').css("border", "1px solid red"); $('#company_name_add').focus();
+                            $("#btn_add_company").css("display", "block");
+                        }
+                        else{
+                            if(dataResult['data'] != null){
+                            len = dataResult['data'].length;
+                            }
+                            if(len > 0){
+
+                                var newAccountId = dataResult['new_account_id'];
+                                if (newAccountId) {
+                                    var showSupplierCode = typeof SHOW_SUPPLIER_CODE !== 'undefined' && SHOW_SUPPLIER_CODE;
+                                    var supplierText = dataResult['new_company_name'] + (showSupplierCode ? ' (' + dataResult['new_company_code'] + ')' : '');
+                                    var option = new Option(supplierText, newAccountId, true, true);
+                                    $("#vendors").append(option).val(newAccountId).trigger('change.select2');
+                                    get_vendors_detail(newAccountId);
+                                   
+                                }
+
+                                 $("#loading_bg").hide();
+                                $("#addcompany").modal('hide');
+
+                            toastr.success("Supplier added successfully", "Success");
+                                // $("#btn_add_company").css("display", "block");
+                                //location.reload();
+                                //$("#company_name").change();
+                            }
+                        }
+                      },
+                error: function(xhr, status, error) {
+                    // Optional: show error message
+                    alert("Failed To Add Supplier: " + error);
+                },
+                complete: function() {
+                    // This runs always, after success or error
+                    $("#loading_bg").hide();
+                }
+                });
+            });
+
+
+</script>
 
 <?php } catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
