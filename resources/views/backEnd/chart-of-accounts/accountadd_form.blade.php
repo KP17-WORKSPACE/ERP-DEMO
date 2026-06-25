@@ -230,17 +230,17 @@ $(document).ready(function() {
                                     // Get Head Title from option data attribute
                                     var headTitle = $('#subgroup2 option:selected').data('head-title') || '';
                                     if (headTitle === 'expenses' || headTitle === 'incomes') {
-                                        $('#department_container').hide();
-                                        $('#department_id').prop('required', false).val('').trigger('change');
-                                        
-                                        $('#prepaid_container').hide();
-                                        $('#credit_account_status').prop('required', false).val('0').trigger('change');
-                                    } else {
                                         $('#department_container').show();
                                         $('#department_id').prop('required', true);
                                         
                                         $('#prepaid_container').show();
                                         $('#credit_account_status').prop('required', true);
+                                    } else {
+                                        $('#department_container').hide();
+                                        $('#department_id').prop('required', false).val('').trigger('change');
+                                        
+                                        $('#prepaid_container').hide();
+                                        $('#credit_account_status').prop('required', false).val('0').trigger('change');
                                     }
                                 }
 

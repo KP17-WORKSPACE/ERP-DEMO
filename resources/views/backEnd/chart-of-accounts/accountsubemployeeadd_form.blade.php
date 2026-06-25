@@ -72,7 +72,10 @@ $employees = @App\SmStaff::select('id', 'full_name')
                                 <label for="account_id_emp9"><span id="accname_9"></span> Petrol Expenses</label><br>
                                 <input type="checkbox" id="account_id_emp10" name="account_id_emp[]"
                                     value="employee_vehicle_maintenance" checked>
-                                <label for="account_id_emp10"><span id="accname_10"></span> Vehicle Maintenance</label>
+                                <label for="account_id_emp10"><span id="accname_10"></span> Vehicle Maintenance</label><br>
+                                <input type="checkbox" id="account_id_emp11" name="account_id_emp[]"
+                                    value="employee_loans_add_advances" checked>
+                                <label for="account_id_emp11"><span id="accname_11"></span> Loans & Advances</label>
                             </div>
                         </div>
                     </div>
@@ -80,8 +83,7 @@ $employees = @App\SmStaff::select('id', 'full_name')
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" id="btnSubEEAccountSubmit" class="btn btn-light"
-                        onclick="return confirm('Are you sure you want to Create this Accounts?');"> <i class="ico icon-outline-bookmark-opened text-success"></i> Create Accounts</button>
+                    <button type="submit" id="btnSubEEAccountSubmit" class="btn btn-light"> <i class="ico icon-outline-bookmark-opened text-success"></i> Create Accounts</button>
                 </div>
                         {{ Form::close() }}
             </div>
@@ -89,7 +91,8 @@ $employees = @App\SmStaff::select('id', 'full_name')
     </div>
 <script>
     function set_acc_name() {
-            var ename = $('#employee_id option:selected').text();
+            //var ename = $('#employee_id option:selected').text();
+            var ename = ($('#employee_id option:selected').text().split(' ')[0]) || '';
             if (ename === 'Select Employee') {
                 ename = '';
             }
@@ -103,6 +106,7 @@ $employees = @App\SmStaff::select('id', 'full_name')
             $('#accname_8').text(ename);
             $('#accname_9').text(ename);
             $('#accname_10').text(ename);
+            $('#accname_11').text(ename);
         }
     $(document).ready(function() {
         $("#btnSubEEAccountSubmit").click(function() {
