@@ -301,14 +301,69 @@ class SysCustomerController extends Controller
         $ctrl_date = "";
         $ctrl_date2 = "";
         $assigned_filter = [];
+        $ctrl_mobile = "";
+        $ctrl_account_type = "";
+        $ctrl_cust_status = "";
+        $ctrl_information = "";
+        $ctrl_invoice_gap = "";
+        $ctrl_list_type = "normal";
+        $ctrl_outstanding = "all";
         try {
             //if($_POST){
-            $customer_query = SysCustSuppl::select('id', 'updated_by', 'created_by', 'name', 'code', 'contcat_person', 'mobile', 'email', 'vat_country', 'vat_percentage', 'vat_number', 'credit_limit', 'credit_days', 'payment_terms', 'transaction_type', 'customer_type', 'first_name', 'last_name', 'contcat_number', 'customer_salutation', 'status', 'is_file', 'internal', 'created_at', 'updated_at', 'customer_name_display')
-                ->where('catid', 1);
+            $customer_query = SysCustSuppl::select(
+                'sys_cust_suppl.id', 'sys_cust_suppl.updated_by', 'sys_cust_suppl.created_by', 'sys_cust_suppl.name', 
+                'sys_cust_suppl.code', 'sys_cust_suppl.contcat_person', 'sys_cust_suppl.mobile', 'sys_cust_suppl.email', 
+                'sys_cust_suppl.vat_country', 'sys_cust_suppl.vat_percentage', 'sys_cust_suppl.vat_number', 
+                'sys_cust_suppl.credit_limit', 'sys_cust_suppl.credit_days', 'sys_cust_suppl.payment_terms', 
+                'sys_cust_suppl.transaction_type', 'sys_cust_suppl.customer_type', 'sys_cust_suppl.first_name', 
+                'sys_cust_suppl.last_name', 'sys_cust_suppl.contcat_number', 'sys_cust_suppl.customer_salutation', 
+                'sys_cust_suppl.status', 'sys_cust_suppl.is_file', 'sys_cust_suppl.internal', 
+                'sys_cust_suppl.created_at', 'sys_cust_suppl.updated_at', 'sys_cust_suppl.customer_name_display',
+                'sys_cust_suppl.address', 'sys_cust_suppl.address2', 'sys_cust_suppl.sales_person', 'sys_cust_suppl.account_type'
+            )
+            ->selectSub(function($query) {
+                $query->select('doc_date')
+                    ->from('sys_sales_invoice')
+                    ->join('sys_chartofaccounts', 'sys_chartofaccounts.id', '=', 'sys_sales_invoice.customer')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code')
+                    ->orderBy('doc_date', 'desc')
+                    ->orderBy('sys_sales_invoice.id', 'desc')
+                    ->limit(1);
+            }, 'last_invoice_date')
+            ->selectSub(function($query) {
+                $query->selectRaw('count(*)')
+                    ->from('sys_sales_invoice')
+                    ->join('sys_chartofaccounts', 'sys_chartofaccounts.id', '=', 'sys_sales_invoice.customer')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code');
+            }, 'number_of_invoices')
+            ->selectSub(function($query) {
+                $query->selectRaw('COALESCE(SUM(debit_amount), 0)')
+                    ->from('sys_chartofaccounts_transaction')
+                    ->where('transaction_type', 'salesinvoice')
+                    ->where('sys_chartofaccounts_transaction.status', 1)
+                    ->join('sys_chartofaccounts', 'sys_chartofaccounts.id', '=', 'sys_chartofaccounts_transaction.account_id')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code');
+            }, 'total_invoice_amount')
+            ->selectSub(function($query) use ($com_id) {
+                $query->selectRaw('COALESCE(SUM(debit_amount) - SUM(credit_amount), 0)')
+                    ->from('sys_chartofaccounts_transaction')
+                    ->where('sys_chartofaccounts_transaction.status', 1)
+                    ->where('sys_chartofaccounts_transaction.company_id', $com_id)
+                    ->join('sys_chartofaccounts', 'sys_chartofaccounts.id', '=', 'sys_chartofaccounts_transaction.account_id')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code');
+            }, 'outstanding_amount')
+            ->selectSub(function($query) {
+                $query->select('id')
+                    ->from('sys_chartofaccounts')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code')
+                    ->limit(1);
+            }, 'chart_account_id')
+            ->with(['createdBy', 'updatedBy', 'salesperson', 'customertype'])
+            ->where('sys_cust_suppl.catid', 1);
 
             if (SysHelper::get_pagination_post($request)) {
                 if ($request->company_name != "") {
-                    $customer_query->where('name', 'like', '%' . $request->company_name . '%');
+                    $customer_query->where('sys_cust_suppl.name', 'like', '%' . $request->company_name . '%');
                     $ctrl_company_name = $request->company_name;
                 }
                 if ($request->contact_name != "") {
@@ -426,6 +481,115 @@ class SysCustomerController extends Controller
 
 
                     $information_filter = $request->information_filter;
+                }
+
+                if ($request->account_type != "") {
+                    $customer_query->where('sys_cust_suppl.account_type', $request->account_type);
+                    $ctrl_account_type = $request->account_type;
+                }
+                if ($request->cust_status != "") {
+                    $last_invoice_subquery = "(SELECT doc_date FROM sys_sales_invoice JOIN sys_chartofaccounts ON sys_chartofaccounts.id = sys_sales_invoice.customer WHERE sys_chartofaccounts.account_code = sys_cust_suppl.code ORDER BY doc_date DESC, sys_sales_invoice.id DESC LIMIT 1)";
+                    $number_of_invoices_subquery = "(SELECT count(*) FROM sys_sales_invoice JOIN sys_chartofaccounts ON sys_chartofaccounts.id = sys_sales_invoice.customer WHERE sys_chartofaccounts.account_code = sys_cust_suppl.code)";
+                    if ($request->cust_status == "prospective") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} = 0");
+                    } elseif ($request->cust_status == "new") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} = 1")
+                                       ->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()]);
+                    } elseif ($request->cust_status == "active") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} > 1")
+                                       ->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()]);
+                    } elseif ($request->cust_status == "inactive") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} >= 1")
+                                       ->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(180)->toDateString()])
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()]);
+                    } elseif ($request->cust_status == "dormant") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} >= 1")
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(180)->toDateString()]);
+                    }
+                    $ctrl_cust_status = $request->cust_status;
+                }
+                if ($request->mobile != "") {
+                    $customer_query->where('sys_cust_suppl.mobile', 'like', '%' . $request->mobile . '%');
+                    $ctrl_mobile = $request->mobile;
+                }
+                if ($request->customer_status != "") {
+                    $customer_query->where('sys_cust_suppl.status', $request->customer_status);
+                }
+                if ($request->information != "") {
+                    if ($request->information == "incomplete") {
+                        $customer_query->where(function($q) {
+                            $q->where('sys_cust_suppl.status', 3)
+                              ->orWhereNull('sys_cust_suppl.vat_country')
+                              ->orWhere('sys_cust_suppl.vat_country', '')
+                              ->orWhereNull('sys_cust_suppl.vat_percentage')
+                              ->orWhere('sys_cust_suppl.vat_percentage', '')
+                              ->orWhere(function($sub) {
+                                  $sub->where('sys_cust_suppl.customer_type', '!=', 7)
+                                      ->where(function($sub2) {
+                                          $sub2->whereNull('sys_cust_suppl.vat_number')
+                                               ->orWhere('sys_cust_suppl.vat_number', '')
+                                               ->orWhereRaw('LENGTH(sys_cust_suppl.vat_number) < 5');
+                                      });
+                              })
+                              ->orWhereNull('sys_cust_suppl.payment_terms')
+                              ->orWhere('sys_cust_suppl.payment_terms', '0')
+                              ->orWhereNull('sys_cust_suppl.mobile')
+                              ->orWhere('sys_cust_suppl.mobile', '')
+                              ->orWhereRaw('LENGTH(sys_cust_suppl.mobile) < 9');
+                        });
+                    } elseif ($request->information == "complete") {
+                        $customer_query->where('sys_cust_suppl.status', '!=', 2)
+                              ->where('sys_cust_suppl.status', '!=', 3)
+                              ->whereNotNull('sys_cust_suppl.vat_country')
+                              ->where('sys_cust_suppl.vat_country', '!=', '')
+                              ->whereNotNull('sys_cust_suppl.vat_percentage')
+                              ->where('sys_cust_suppl.vat_percentage', '!=', '')
+                              ->where(function($sub) {
+                                  $sub->where('sys_cust_suppl.customer_type', 7)
+                                      ->orWhere(function($sub2) {
+                                          $sub2->whereNotNull('sys_cust_suppl.vat_number')
+                                               ->where('sys_cust_suppl.vat_number', '!=', '')
+                                               ->whereRaw('LENGTH(sys_cust_suppl.vat_number) >= 5');
+                                      });
+                              })
+                              ->whereNotNull('sys_cust_suppl.payment_terms')
+                              ->where('sys_cust_suppl.payment_terms', '!=', '0')
+                              ->whereNotNull('sys_cust_suppl.mobile')
+                              ->where('sys_cust_suppl.mobile', '!=', '')
+                              ->whereRaw('LENGTH(sys_cust_suppl.mobile) >= 9');
+                    }
+                    $ctrl_information = $request->information;
+                }
+                if ($request->invoice_gap != "") {
+                    $last_invoice_subquery = "(SELECT doc_date FROM sys_sales_invoice JOIN sys_chartofaccounts ON sys_chartofaccounts.id = sys_sales_invoice.customer WHERE sys_chartofaccounts.account_code = sys_cust_suppl.code ORDER BY doc_date DESC, sys_sales_invoice.id DESC LIMIT 1)";
+                    if ($request->invoice_gap == "0-30") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(30)->toDateString()]);
+                    } elseif ($request->invoice_gap == "31-60") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(60)->toDateString()])
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(30)->toDateString()]);
+                    } elseif ($request->invoice_gap == "61-90") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()])
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(60)->toDateString()]);
+                    } elseif ($request->invoice_gap == "91-120") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(120)->toDateString()])
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()]);
+                    } elseif ($request->invoice_gap == "121+") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(120)->toDateString()]);
+                    }
+                    $ctrl_invoice_gap = $request->invoice_gap;
+                }
+
+                if ($request->outstanding != "" && $request->outstanding != "all") {
+                    $outstanding_subquery = "(SELECT COALESCE(SUM(debit_amount) - SUM(credit_amount), 0) FROM sys_chartofaccounts_transaction JOIN sys_chartofaccounts ON sys_chartofaccounts.id = sys_chartofaccounts_transaction.account_id WHERE sys_chartofaccounts_transaction.status = 1 AND sys_chartofaccounts_transaction.company_id = {$com_id} AND sys_chartofaccounts.account_code = sys_cust_suppl.code)";
+                    if ($request->outstanding == "yes") {
+                        $customer_query->whereRaw("{$outstanding_subquery} != 0");
+                    } elseif ($request->outstanding == "no") {
+                        $customer_query->whereRaw("{$outstanding_subquery} = 0");
+                    }
+                    $ctrl_outstanding = $request->outstanding;
+                }
+                if ($request->list_type != "") {
+                    $ctrl_list_type = $request->list_type;
                 }
 
                 if ($request->sales != "") {
@@ -638,12 +802,12 @@ class SysCustomerController extends Controller
                     }
                 }
             }
+            
+            $currentCompanyDet = SysCompany::where('id', session('logged_session_data.company_id'))->select('country', 'currency_id')->first();
+            $currentCompanyCountry     = $currentCompanyDet->country;
+            $currentCompanyCurrency = $currentCompanyDet->currency_id;
 
-
-
-            //return $duplicate_customer;
-
-            return view('backEnd.cust-suppl.customer_list', compact('customer', 'staff', 'countries', 'states', 'customer_list', 'duplicate_customer', 'ctrl_company_name', 'ctrl_contact_name', 'ctrl_email', 'ctrl_vat_country', 'ctrl_vat_state', 'ctrl_sales_person', 'active_id', 'selectedCus', 'addCustomer', 'action', 'editData', 'status_filter', 'information_filter', 'assigned_filter', 'filter_by', 'ctrl_date', 'ctrl_date2'));
+            return view('backEnd.cust-suppl.customer_list', compact('customer', 'staff', 'countries', 'states', 'customer_list', 'duplicate_customer', 'ctrl_company_name', 'ctrl_contact_name', 'ctrl_email', 'ctrl_vat_country', 'ctrl_vat_state', 'ctrl_sales_person', 'active_id', 'selectedCus', 'addCustomer', 'action', 'editData', 'status_filter', 'information_filter', 'assigned_filter', 'filter_by', 'ctrl_date', 'ctrl_date2', 'ctrl_mobile', 'ctrl_account_type', 'ctrl_cust_status', 'ctrl_information', 'ctrl_invoice_gap', 'ctrl_list_type', 'ctrl_outstanding','currentCompanyCountry','currentCompanyCurrency'));
 
             /*$form_data = [
                 'customer' => $customer,
@@ -785,8 +949,28 @@ class SysCustomerController extends Controller
             $staff = session('customer_list_query.staff');
             $countries = session('customer_list_query.countries');
             $states = session('customer_list_query.states');
+            $ctrl_company_name = "";
+            $ctrl_contact_name = "";
+            $ctrl_email = "";
+            $ctrl_vat_country = "";
+            $ctrl_vat_state = "";
+            $ctrl_sales_person = "";
+            $ctrl_sales = "";
+            $status_filter = "";
+            $information_filter = "";
+            $filter_by = "";
+            $ctrl_date = "";
+            $ctrl_date2 = "";
+            $assigned_filter = [];
+            $ctrl_mobile = "";
+            $ctrl_account_type = "";
+            $ctrl_cust_status = "";
+            $ctrl_information = "";
+            $ctrl_invoice_gap = "";
+            $ctrl_list_type = "normal";
+            $ctrl_outstanding = "all";
 
-            return view('backEnd.cust-suppl.customer_list', compact('customer', 'staff', 'countries', 'states'));
+            return view('backEnd.cust-suppl.customer_list', compact('customer', 'staff', 'countries', 'states', 'ctrl_company_name', 'ctrl_contact_name', 'ctrl_email', 'ctrl_vat_country', 'ctrl_vat_state', 'ctrl_sales_person', 'ctrl_sales', 'status_filter', 'information_filter', 'assigned_filter', 'filter_by', 'ctrl_date', 'ctrl_date2', 'ctrl_mobile', 'ctrl_account_type', 'ctrl_cust_status', 'ctrl_information', 'ctrl_invoice_gap', 'ctrl_list_type', 'ctrl_outstanding'));
         } catch (\Throwable $th) {
             return $th;
         }
@@ -2770,22 +2954,15 @@ class SysCustomerController extends Controller
             return redirect()->back();
         }
     }
-
     public function add_customer_detail_popup(Request $request) //kunal modified
     {
         try {
             
             DB::beginTransaction();
-                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                   
             //$check = SysCustSuppl::select('id','code','name')->where('email', $request->cust_email_add)->wherenotin('email', ['x','xx','xxx','xxxx'])->first();
             $company_name = $request->company_name_add;
-            $is_supplier = ($request->type == 2);
-
-            $already_exists = $is_supplier
-                ? (SysHelper::check_supplier_is_added($company_name) > 0)
-                : (SysHelper::check_customer_is_added($company_name) > 0);
-
-            if ($already_exists) {
+            if (SysHelper::check_customer_is_added($company_name) > 0) {
                 $retData = 'ERROR2';
                 return json_encode(array('data' => $retData));
             }
@@ -2817,17 +2994,13 @@ class SysCustomerController extends Controller
             }
 
             $new_customer = new SysCustSuppl();
-            $new_customer->group = $is_supplier ? SysHelper::get_supplier_group('group') : SysHelper::get_customer_group('group');
+            $new_customer->group = SysHelper::get_customer_group('group');
             $new_customer->customer_salutation = $request->customer_salutation_add ?: 'Mr.';
-            $new_customer->catid = $is_supplier ? 2 : 1;  // 1 customers, 2 suppliers
+            $new_customer->catid = 1;  // 1 customers, 2 suppliers
             $new_customer->account_type = $request->account_type;
-            if ($is_supplier) {
-                $new_customer->supplier_type = $request->supplier_type ?: ($request->account_type ?: 1);
-                $new_customer->purchase_type = 1;
-            }
             $new_customer->name = $request->company_name_add;
             $new_customer->customer_name_display = strtoupper($request->company_name_add);
-            $new_customer->code = $is_supplier ? SysHelper::get_new_supplier_code() : SysHelper::get_new_customer_code();
+            $new_customer->code = SysHelper::get_new_customer_code();
             $new_customer->address = $request->cust_address_add;
             $new_customer->address2 = $request->cust_address_add2;
             $new_customer->first_name = $fname;
@@ -2837,12 +3010,7 @@ class SysCustomerController extends Controller
             $new_customer->mobile = $request->cust_no_add;
 
             $new_customer->email = $request->cust_email_add;
-
-          $new_customer->sales_person = $is_supplier
-    ? Auth::id()
-    : ($request->filled('sales_person') ? (int) $request->sales_person : null);
-
-           
+            $new_customer->sales_person = $request->sales_person;
             $new_customer->vat_number = "";
             $new_customer->vat_country = $request->vat_country;
             $new_customer->vat_state = $request->vat_state;
@@ -2858,7 +3026,7 @@ class SysCustomerController extends Controller
             $new_customer->vat_percentage = $vat_percent;
             $new_customer->payment_terms = $request->payment_terms;
             $new_customer->status = 3;
-            $new_customer->type = $request->type ?: 1;
+            $new_customer->type = 1;
             $new_customer->zip_code = $request->zip_code;
             $new_customer->city = $request->city;
             $new_customer->company_access = $company_access;
@@ -2896,9 +3064,9 @@ class SysCustomerController extends Controller
             $accounts = new SysChartofAccounts();
             $accounts->account_code = $new_customer->code;
             $accounts->account_name = $request->company_name_add;
-            $accounts->group = $is_supplier ? SysHelper::get_supplier_group('group') : SysHelper::get_customer_group('group');
-            $accounts->subgroup = $is_supplier ? SysHelper::get_supplier_group('subgroup') : SysHelper::get_customer_group('subgroup');
-            $accounts->subgroup2 = $is_supplier ? SysHelper::get_supplier_group('subgroup2') : SysHelper::get_customer_group('subgroup2');
+            $accounts->group = SysHelper::get_customer_group('group');
+            $accounts->subgroup = SysHelper::get_customer_group('subgroup');
+            $accounts->subgroup2 = SysHelper::get_customer_group('subgroup2');
             $accounts->status = 1;
             $accounts->company_id = session('logged_session_data.company_id');
             $accounts->company_access = $company_access;
@@ -2906,15 +3074,11 @@ class SysCustomerController extends Controller
             $accounts->created_by = Auth::user()->id;
             $results = $accounts->save();
 
-            if(!$is_supplier){
-
             DB::table('sys_cust_suppl_assign')->insert([
                 'cust_supp_id' => $new_customer->id,
                 'user_id' => $request->sales_person,
-                'type' =>  1, //1 customers, 2 suppliers
+                'type' => 1, //1 customers, 2 suppliers
             ]);
-            }
-
 
             $address = new SysCustSupplAddressbook();
             $address->cust_suppl_id = $new_customer->id;
@@ -2993,36 +3157,9 @@ class SysCustomerController extends Controller
             $results = $contact->save();
 
 
-            if ($is_supplier) {
-                // Query suppliers
-                $com_id = session('logged_session_data.company_id');
-                $vendors_query = SysCustSuppl::select('id', 'code', 'name', 'customer_name_display')->where('catid', 2);
-                if (Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && Auth::user()->role_id != 35) {
-                    $sales_person = DB::table('sys_cust_suppl_assign')->select('cust_supp_id')->where('user_id', Auth::user()->id)->get();
-                    if (count($sales_person) > 0) {
-                        $sp = [];
-                        foreach ($sales_person as $spid) {
-                            $sp[] = $spid->cust_supp_id;
-                        }
-                        $vendors_query->wherein('id', $sp);
-                    } else {
-                        $vendors_query->where('id', 0);
-                    }
-                }
-                $vendors_query->whereRaw("find_in_set($com_id,sys_cust_suppl.company_access)");
-                $vendors = $vendors_query->wherein('status', [1, 3])->orderby('name', 'asc')->get();
-            } else {
-                $vendors = SysHelper::get_customer_list_deal_lead();
-            }
-
+            $vendors = SysHelper::get_customer_list_deal_lead();
             DB::commit();
-            return json_encode([
-                'data' => $vendors,
-                'new_company_id' => $new_customer->id,
-                'new_account_id' => $accounts->id,
-                'new_company_name' => $accounts->account_name,
-                'new_company_code' => $accounts->account_code,
-            ]);
+            return json_encode(['data' => $vendors, 'new_company_id' => $new_customer->id]);
         } catch (\Exception $e) {
             $retData = $e;
             DB::rollBack();
@@ -3592,5 +3729,388 @@ class SysCustomerController extends Controller
         }
     }
 
+    public function customerExport(Request $request)
+    {
+        try {
+            $r = SysHelper::get_data_by_role();
+            $company_id = $r[0];
+            $com_id = session('logged_session_data.company_id');
+
+            $customer_query = SysCustSuppl::select(
+                'sys_cust_suppl.id', 'sys_cust_suppl.updated_by', 'sys_cust_suppl.created_by', 'sys_cust_suppl.name', 
+                'sys_cust_suppl.code', 'sys_cust_suppl.contcat_person', 'sys_cust_suppl.mobile', 'sys_cust_suppl.email', 
+                'sys_cust_suppl.vat_country', 'sys_cust_suppl.vat_percentage', 'sys_cust_suppl.vat_number', 
+                'sys_cust_suppl.credit_limit', 'sys_cust_suppl.credit_days', 'sys_cust_suppl.payment_terms', 
+                'sys_cust_suppl.transaction_type', 'sys_cust_suppl.customer_type', 'sys_cust_suppl.first_name', 
+                'sys_cust_suppl.last_name', 'sys_cust_suppl.contcat_number', 'sys_cust_suppl.customer_salutation', 
+                'sys_cust_suppl.status', 'sys_cust_suppl.is_file', 'sys_cust_suppl.internal', 
+                'sys_cust_suppl.created_at', 'sys_cust_suppl.updated_at', 'sys_cust_suppl.customer_name_display',
+                'sys_cust_suppl.address', 'sys_cust_suppl.address2', 'sys_cust_suppl.sales_person', 'sys_cust_suppl.account_type'
+            )
+            ->selectSub(function($query) {
+                $query->select('doc_date')
+                    ->from('sys_sales_invoice')
+                    ->join('sys_chartofaccounts', 'sys_chartofaccounts.id', '=', 'sys_sales_invoice.customer')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code')
+                    ->orderBy('doc_date', 'desc')
+                    ->orderBy('sys_sales_invoice.id', 'desc')
+                    ->limit(1);
+            }, 'last_invoice_date')
+            ->selectSub(function($query) {
+                $query->selectRaw('count(*)')
+                    ->from('sys_sales_invoice')
+                    ->join('sys_chartofaccounts', 'sys_chartofaccounts.id', '=', 'sys_sales_invoice.customer')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code');
+            }, 'number_of_invoices')
+            ->selectSub(function($query) {
+                $query->selectRaw('COALESCE(SUM(debit_amount), 0)')
+                    ->from('sys_chartofaccounts_transaction')
+                    ->where('transaction_type', 'salesinvoice')
+                    ->where('sys_chartofaccounts_transaction.status', 1)
+                    ->join('sys_chartofaccounts', 'sys_chartofaccounts.id', '=', 'sys_chartofaccounts_transaction.account_id')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code');
+            }, 'total_invoice_amount')
+            ->selectSub(function($query) use ($com_id) {
+                $query->selectRaw('COALESCE(SUM(debit_amount) - SUM(credit_amount), 0)')
+                    ->from('sys_chartofaccounts_transaction')
+                    ->where('sys_chartofaccounts_transaction.status', 1)
+                    ->where('sys_chartofaccounts_transaction.company_id', $com_id)
+                    ->join('sys_chartofaccounts', 'sys_chartofaccounts.id', '=', 'sys_chartofaccounts_transaction.account_id')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code');
+            }, 'outstanding_amount')
+            ->selectSub(function($query) {
+                $query->select('id')
+                    ->from('sys_chartofaccounts')
+                    ->whereColumn('sys_chartofaccounts.account_code', 'sys_cust_suppl.code')
+                    ->limit(1);
+            }, 'chart_account_id')
+            ->with(['createdBy', 'updatedBy', 'salesperson', 'customertype'])
+            ->where('sys_cust_suppl.catid', 1);
+
+            if (SysHelper::get_pagination_post($request)) {
+                if ($request->company_name != "") {
+                    $customer_query->where('sys_cust_suppl.name', 'like', '%' . $request->company_name . '%');
+                }
+                if ($request->contact_name != "") {
+                    $customer_query->where('contcat_person', 'like', '%' . $request->contact_name . '%');
+                }
+                if ($request->email != "") {
+                    $customer_query->where('email', 'like', '%' . $request->email . '%');
+                }
+                if ($request->vat_country != "") {
+                    $customer_query->where('vat_country', $request->vat_country);
+                }
+                if ($request->vat_state != "") {
+                    $customer_query->where('vat_state', $request->vat_state);
+                }
+                if ($request->sales_person != "") {
+                    $sales_person = DB::table('sys_cust_suppl_assign')->select('cust_supp_id')->where('user_id', $request->sales_person)->get();
+                    if (count($sales_person) > 0) {
+                        foreach ($sales_person as $spid) {
+                            $sp[] = $spid->cust_supp_id;
+                        }
+                        $customer_query->wherein('id', $sp);
+                    } else {
+                        $customer_query->where('id', 0);
+                    }
+                }
+
+                if ($request->assigned_filter != "" && !empty($request->assigned_filter)) {
+                    if (is_array($request->assigned_filter)) {
+                        $customer_query->whereHas('createdBy', function ($q) use ($request) {
+                            $q->whereIn('users.id', $request->assigned_filter);
+                        });
+                    } else {
+                        if ($request->assigned_filter == 'none') {
+                            $customer_query->whereDoesntHave('createdBy');
+                        } else {
+                            $customer_query->whereHas('createdBy', function ($q) use ($request) {
+                                $q->where('users.id', $request->assigned_filter);
+                            });
+                        }
+                    }
+                }
+
+                if ($request->status_filter != "") {
+                    $customer_query->where('status', $request->status_filter);
+                }
+
+                if ($request->information_filter != "") {
+                    if ($request->information_filter == 'complete') {
+                        $customer_query->where(function ($q) {
+                            $q->where('status', '!=', 3)
+                                ->where('vat_country', '!=', '')
+                                ->where('vat_percentage', '!=', '')
+                                ->whereRaw('LENGTH(mobile) >= 9')
+                                ->whereRaw('LENGTH(email) >= 5')
+                                ->whereRaw('LENGTH(first_name) >= 3')
+                                ->whereRaw('LENGTH(contcat_number) >= 8')
+                                ->where('transaction_type', '!=', '')
+                                ->where('customer_salutation', '!=', '')
+                                ->where('customer_salutation', '!=', '.')
+                                ->where('is_file', '!=', 0)
+                                ->where(function ($sub) {
+                                    $sub->where('transaction_type', '!=', 'Credit')
+                                        ->orWhere(function ($sub2) {
+                                            $sub2->whereNotIn('credit_limit', ['', '0.00', '0'])
+                                                ->whereNotIn('credit_days', ['', '0']);
+                                        });
+                                })
+                                ->where(function ($sub3) {
+                                    $sub3->where('customer_type', 7)
+                                        ->orWhereRaw('LENGTH(vat_number) >= 5');
+                                });
+                        });
+                    } elseif ($request->information_filter == 'incomplete') {
+                        $customer_query->where(function ($q) {
+                            $q->where('status', 3)
+                                ->orWhere('vat_country', '')
+                                ->orWhere('vat_percentage', '')
+                                ->orWhereRaw('LENGTH(mobile) < 9')
+                                ->orWhereRaw('LENGTH(email) < 5')
+                                ->orWhereRaw('LENGTH(first_name) < 3')
+                                ->orWhereRaw('LENGTH(contcat_number) < 8')
+                                ->orWhere('transaction_type', '')
+                                ->orWhere('customer_salutation', '')
+                                ->orWhere('customer_salutation', '.')
+                                ->orWhere('is_file', 0)
+                                ->orWhere(function ($sub) {
+                                    $sub->where('transaction_type', 'Credit')
+                                        ->where(function ($sub2) {
+                                            $sub2->whereIn('credit_limit', ['', '0.00', '0'])
+                                                ->orWhereIn('credit_days', ['', '0']);
+                                        });
+                                })
+                                ->orWhere(function ($sub3) {
+                                    $sub3->where('customer_type', '!=', 7)
+                                        ->whereRaw('LENGTH(vat_number) < 5');
+                                });
+                        });
+                    }
+                }
+
+                if ($request->account_type != "") {
+                    $customer_query->where('sys_cust_suppl.account_type', $request->account_type);
+                }
+                if ($request->cust_status != "") {
+                    $last_invoice_subquery = "(SELECT doc_date FROM sys_sales_invoice JOIN sys_chartofaccounts ON sys_chartofaccounts.id = sys_sales_invoice.customer WHERE sys_chartofaccounts.account_code = sys_cust_suppl.code ORDER BY doc_date DESC, sys_sales_invoice.id DESC LIMIT 1)";
+                    $number_of_invoices_subquery = "(SELECT count(*) FROM sys_sales_invoice JOIN sys_chartofaccounts ON sys_chartofaccounts.id = sys_sales_invoice.customer WHERE sys_chartofaccounts.account_code = sys_cust_suppl.code)";
+                    if ($request->cust_status == "prospective") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} = 0");
+                    } elseif ($request->cust_status == "new") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} = 1")
+                                       ->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()]);
+                    } elseif ($request->cust_status == "active") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} > 1")
+                                       ->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()]);
+                    } elseif ($request->cust_status == "inactive") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} >= 1")
+                                       ->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(180)->toDateString()])
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()]);
+                    } elseif ($request->cust_status == "dormant") {
+                        $customer_query->whereRaw("{$number_of_invoices_subquery} >= 1")
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(180)->toDateString()]);
+                    }
+                }
+                if ($request->mobile != "") {
+                    $customer_query->where('sys_cust_suppl.mobile', 'like', '%' . $request->mobile . '%');
+                }
+                if ($request->customer_status != "") {
+                    $customer_query->where('sys_cust_suppl.status', $request->customer_status);
+                }
+                if ($request->information != "") {
+                    if ($request->information == "incomplete") {
+                        $customer_query->where(function($q) {
+                            $q->where('sys_cust_suppl.status', 3)
+                              ->orWhereNull('sys_cust_suppl.vat_country')
+                              ->orWhere('sys_cust_suppl.vat_country', '')
+                              ->orWhereNull('sys_cust_suppl.vat_percentage')
+                              ->orWhere('sys_cust_suppl.vat_percentage', '')
+                              ->orWhere(function($sub) {
+                                  $sub->where('sys_cust_suppl.customer_type', '!=', 7)
+                                      ->where(function($sub2) {
+                                          $sub2->whereNull('sys_cust_suppl.vat_number')
+                                               ->orWhere('sys_cust_suppl.vat_number', '')
+                                               ->orWhereRaw('LENGTH(sys_cust_suppl.vat_number) < 5');
+                                      });
+                              })
+                              ->orWhereNull('sys_cust_suppl.payment_terms')
+                              ->orWhere('sys_cust_suppl.payment_terms', '0')
+                              ->orWhereNull('sys_cust_suppl.mobile')
+                              ->orWhere('sys_cust_suppl.mobile', '')
+                              ->orWhereRaw('LENGTH(sys_cust_suppl.mobile) < 9');
+                        });
+                    } elseif ($request->information == "complete") {
+                        $customer_query->where('sys_cust_suppl.status', '!=', 2)
+                              ->where('sys_cust_suppl.status', '!=', 3)
+                              ->whereNotNull('sys_cust_suppl.vat_country')
+                              ->where('sys_cust_suppl.vat_country', '!=', '')
+                              ->whereNotNull('sys_cust_suppl.vat_percentage')
+                              ->where('sys_cust_suppl.vat_percentage', '!=', '')
+                              ->where(function($sub) {
+                                  $sub->where('sys_cust_suppl.customer_type', 7)
+                                      ->orWhere(function($sub2) {
+                                          $sub2->whereNotNull('sys_cust_suppl.vat_number')
+                                               ->where('sys_cust_suppl.vat_number', '!=', '')
+                                               ->whereRaw('LENGTH(sys_cust_suppl.vat_number) >= 5');
+                                      });
+                              })
+                              ->whereNotNull('sys_cust_suppl.payment_terms')
+                              ->where('sys_cust_suppl.payment_terms', '!=', '0')
+                              ->whereNotNull('sys_cust_suppl.mobile')
+                              ->where('sys_cust_suppl.mobile', '!=', '')
+                              ->whereRaw('LENGTH(sys_cust_suppl.mobile) >= 9');
+                    }
+                }
+                if ($request->invoice_gap != "") {
+                    $last_invoice_subquery = "(SELECT doc_date FROM sys_sales_invoice JOIN sys_chartofaccounts ON sys_chartofaccounts.id = sys_sales_invoice.customer WHERE sys_chartofaccounts.account_code = sys_cust_suppl.code ORDER BY doc_date DESC, sys_sales_invoice.id DESC LIMIT 1)";
+                    if ($request->invoice_gap == "0-30") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(30)->toDateString()]);
+                    } elseif ($request->invoice_gap == "31-60") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(60)->toDateString()])
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(30)->toDateString()]);
+                    } elseif ($request->invoice_gap == "61-90") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()])
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(60)->toDateString()]);
+                    } elseif ($request->invoice_gap == "91-120") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} >= ?", [\Carbon\Carbon::now()->subDays(120)->toDateString()])
+                                       ->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(90)->toDateString()]);
+                    } elseif ($request->invoice_gap == "121+") {
+                        $customer_query->whereRaw("{$last_invoice_subquery} < ?", [\Carbon\Carbon::now()->subDays(120)->toDateString()]);
+                    }
+                }
+
+                if ($request->outstanding != "" && $request->outstanding != "all") {
+                    $outstanding_subquery = "(SELECT COALESCE(SUM(debit_amount) - SUM(credit_amount), 0) FROM sys_chartofaccounts_transaction JOIN sys_chartofaccounts ON sys_chartofaccounts.id = sys_chartofaccounts_transaction.account_id WHERE sys_chartofaccounts_transaction.status = 1 AND sys_chartofaccounts_transaction.company_id = {$com_id} AND sys_chartofaccounts.account_code = sys_cust_suppl.code)";
+                    if ($request->outstanding == "yes") {
+                        $customer_query->whereRaw("{$outstanding_subquery} != 0");
+                    } elseif ($request->outstanding == "no") {
+                        $customer_query->whereRaw("{$outstanding_subquery} = 0");
+                    }
+                }
+
+                if ($request->sales != "") {
+                    $total_customers = SysCustSuppl::select('sys_cust_suppl.id')
+                        ->join('sys_cust_suppl_assign', 'sys_cust_suppl_assign.cust_supp_id', 'sys_cust_suppl.id')
+                        ->where('catid', 1)->where('user_id', $request->sales)->pluck('id');
+                    $customer_query->wherein('id', $total_customers);
+                } else {
+                    $customer_query->whereRaw("find_in_set($com_id,company_access)");
+                }
+
+                if (!empty($request->date)) {
+                    $ctrl_date = SysHelper::normalizeToYmd($request->date);
+                    $ctrl_date2 = !empty($request->date2) ? SysHelper::normalizeToYmd($request->date2) : $ctrl_date;
+                    $customer_query->whereBetween(DB::raw("DATE(created_at)"), [$ctrl_date, $ctrl_date2]);
+                }
+            } else {
+                if (Auth::user()->role_id != 1 && Auth::user()->role_id != 2 && Auth::user()->role_id != 3 && Auth::user()->role_id != 27 && Auth::user()->role_id != 28 && Auth::user()->role_id != 35) {
+                    if (Auth::user()->role_id == 5 || Auth::user()->role_id == 8) {
+                        $users = SmStaff::select('user_id')->where('company_id', $company_id)->get();
+                        foreach ($users as $value) {
+                            $userid[] = $value->user_id;
+                        }
+                        $customer_query->wherein('sales_person', $userid);
+                    } else {
+                        $customer_query->where('sales_person', Auth::user()->id);
+                    }
+                }
+                $customer_query->whereRaw("find_in_set($com_id,company_access)");
+            }
+
+            $customers = $customer_query->orderBy('sys_cust_suppl.created_at', 'desc')->get();
+
+            $list_type = $request->input('list_type', 'normal');
+
+            if ($list_type === 'detailed') {
+                $headers = [
+                    'Code', 'Customer Name', 'Contact Person', 'Mobile', 'Email', 
+                    'Address', 'Sales Person', 'Account Type', 'Last Invoice Date', 
+                    'Last Invoice Gap', 'Number of Invoices', 'Total Amount', 
+                    'Customer Type', 'Outstanding', 'Information', 'Status', 'Added By'
+                ];
+            } else {
+                $headers = [
+                    'Code', 'Customer Name', 'Contact Person', 'Mobile', 'Email', 
+                    'Added By', 'Updated By', 'Status', 'Information'
+                ];
+            }
+
+            return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($customers, $headers, $list_type) {
+                $out = fopen('php://output', 'w');
+                fwrite($out, "<table border='1'><thead><tr>");
+                foreach ($headers as $header) {
+                    fwrite($out, "<th style='background-color:#2c2b6d; color:white;'>" . $header . "</th>");
+                }
+                fwrite($out, "</tr></thead><tbody>");
+
+                foreach ($customers as $value) {
+                    $row = "<tr>";
+                    $row .= "<td>" . htmlspecialchars($value->code ?? '') . "</td>";
+                    $row .= "<td>" . htmlspecialchars($value->name ?? '') . "</td>";
+                    $row .= "<td>" . htmlspecialchars($value->contcat_person ?? '') . "</td>";
+                    $row .= "<td>" . htmlspecialchars($value->mobile ?? '') . "</td>";
+                    $row .= "<td>" . htmlspecialchars($value->email ?? '') . "</td>";
+                    
+                    if ($list_type === 'detailed') {
+                        $row .= "<td>" . htmlspecialchars(($value->address ?? '') . ' ' . ($value->address2 ?? '')) . "</td>";
+                        $row .= "<td>" . htmlspecialchars($value->salesperson->full_name ?? '—') . "</td>";
+                        
+                        $acType = '—';
+                        if ($value->account_type == 1) $acType = 'Reseller';
+                        elseif ($value->account_type == 2) $acType = 'Enduser';
+                        elseif ($value->account_type == 3) $acType = 'Ecommerce';
+                        $row .= "<td>" . htmlspecialchars($acType) . "</td>";
+
+                        $row .= "<td>" . ($value->last_invoice_date ? \Carbon\Carbon::parse($value->last_invoice_date)->format('d/m/Y') : '—') . "</td>";
+                        
+                        $gap = '—';
+                        if ($value->last_invoice_date) {
+                            $gap = \Carbon\Carbon::parse($value->last_invoice_date)->diffInDays(\Carbon\Carbon::now()) . ' Days';
+                        }
+                        $row .= "<td>" . htmlspecialchars($gap) . "</td>";
+                        $row .= "<td>" . htmlspecialchars($value->number_of_invoices ?? 0) . "</td>";
+                        $row .= "<td>" . htmlspecialchars(number_format($value->total_invoice_amount, 2, '.', '')) . "</td>";
+                        $row .= "<td>" . htmlspecialchars($value->customertype->title ?? '—') . "</td>";
+                        $row .= "<td>" . htmlspecialchars(number_format($value->outstanding_amount, 2, '.', '')) . "</td>";
+                    } else {
+                        $row .= "<td>" . htmlspecialchars($value->createdBy->full_name ?? '—') . "</td>";
+                        $row .= "<td>" . htmlspecialchars($value->updatedBy->full_name ?? '—') . "</td>";
+                    }
+
+                    $info = 'Complete';
+                    if ($value->status == 2) {
+                        $info = 'Deleted';
+                    } elseif (\App\SysHelper::get_company_status($value) == 0) {
+                        $info = 'Incomplete';
+                    }
+
+                    $status = 'Active';
+                    if ($value->status == 2) $status = 'Deleted';
+                    elseif ($value->status == 3) $status = 'Inactive';
+
+                    if ($list_type === 'detailed') {
+                        $row .= "<td>" . htmlspecialchars($info) . "</td>";
+                        $row .= "<td>" . htmlspecialchars($status) . "</td>";
+                        $row .= "<td>" . htmlspecialchars($value->createdBy->full_name ?? '—') . "</td>";
+                    } else {
+                        $row .= "<td>" . htmlspecialchars($status) . "</td>";
+                        $row .= "<td>" . htmlspecialchars($info) . "</td>";
+                    }
+
+                    $row .= "</tr>";
+                    fwrite($out, $row);
+                }
+                fwrite($out, "</tbody></table>");
+                fclose($out);
+            }, 200, [
+                'Content-Type' => 'application/vnd.ms-excel',
+                'Content-Disposition' => 'attachment; filename="customers_export.xls"',
+            ]);
+        } catch (\Exception $e) {
+            Toastr::error('Export Failed: ' . $e->getMessage(), 'Failed');
+            return redirect()->back();
+        }
+    }
 
 }

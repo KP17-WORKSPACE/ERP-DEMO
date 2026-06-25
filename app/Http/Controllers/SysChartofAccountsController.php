@@ -1300,7 +1300,6 @@ class SysChartofAccountsController extends Controller
     public function store_sub_employee(Request $request)
     {
         try {
-
             $com_id = session('logged_session_data.company_id');
             $staff = SmStaff::select('id', 'full_name', 'department_id')
                 ->where('id', $request->employee_id)
@@ -1316,7 +1315,6 @@ class SysChartofAccountsController extends Controller
                 return redirect()->back();
             }
 
-            
           
             $employeeName = ucwords($staff->full_name);
             if (isset($request->account_id_emp)) {
@@ -1330,23 +1328,24 @@ class SysChartofAccountsController extends Controller
             DB::beginTransaction();
             foreach ($request->account_id_emp as $emp) {
                 $det = SysHelper::get_account_details_for_employee_sub_add($com_id, $emp);
-                dd($det);
-                if (isset($det)) {
-                    if ($det == "no_data_found") {
+                
+                if (!$det || $det === 'no_data_found') {
+                    DB::rollBack();
+                    Toastr::error('Operation Failed. Accounts not found', 'Failed');
+                    return redirect()->back();
+                }
+                $accountExists = SysChartofAccounts::where([
+                    'account_name' => $employeeName . ' ' . $det->sub_account_name,
+                    'company_id'   => $com_id,
+                ])->exists();
 
-                        DB::rollBack();
-                        Toastr::error('Operation Failed. Accounts not found', 'Failed');
-                        return redirect()->back();
-                    }
-                    $valid = SysChartofAccounts::where([
-                        'account_name' => $employeeName . ' ' . $det->sub_account_name,
-                        'company_id' => $com_id
-                    ])->get();
-                    if (count($valid) > 0) {
-                        DB::rollBack();
-                        Toastr::error('Accounts Name Already Excist', 'Failed');
-                        return redirect()->back();
-                    }
+                if ($accountExists) {
+                    DB::rollBack();
+                    Toastr::error('Account Name Already Exists', 'Failed');
+                    return redirect()->back();
+                }
+                if (isset($det)) {
+                    
 
                     $accounts = new SysChartofAccounts();
                     $accounts->account_code = SysHelper::get_new_sub_account_code();
