@@ -7100,7 +7100,52 @@ public static function professional_service_approval_access(){
             return $account->account_name;
     }
 
-    public static function get_account_details_for_employee_sub_add($com_id,$account_name)
+    public static function get_account_details_for_employee_sub_add($com_id, $account_name)
+    {
+        try {
+            $accountMap = [
+                'employee_telephone_expenses' => ['db_name' => 'Employee Telephone Expenses',  'label' => 'Telephone Expenses'],
+                'employee_airfare_expenses'   => ['db_name' => 'Employee Airfare Expenses',    'label' => 'Airfare Expenses'],
+                'employee_food_expenses'      => ['db_name' => 'Employee Food Expenses',        'label' => 'Food Expenses'],
+                'employee_salary'             => ['db_name' => 'Employee Salaries Expenses',   'label' => 'Salary'],
+                'employee_gratuity'           => ['db_name' => 'Employee Gratuity',            'label' => 'Gratuity Expenses'],
+                'employee_visa_expenses'      => ['db_name' => 'Employee Visa Expenses',       'label' => 'Visa Expenses'],
+                'employee_travelling_expenses'=> ['db_name' => 'Employee Travelling Expenses', 'label' => 'Travelling Expenses'],
+                'employee_parking_expenses'   => ['db_name' => 'Employee Parking Expenses',    'label' => 'Parking Expenses'],
+                'employee_petrol_expenses'    => ['db_name' => 'Employee Petrol Expenses',     'label' => 'Petrol Expenses'],
+                'employee_vehicle_maintenance'=> ['db_name' => 'Employee Vehicle Maintenance', 'label' => 'Vehicle Maintenance'],
+                'employee_loans_add_advances' => ['db_name' => 'Employee Loans & Advances Expenses', 'label' => 'Loans & Advances'],
+            ];
+
+            if (!array_key_exists($account_name, $accountMap)) {
+                return 'no_data_found';
+            }
+
+            $config = $accountMap[$account_name];
+
+            $account = SysChartofAccounts::where([
+                'account_name' => $config['db_name'],
+                'company_id'   => $com_id,
+                'status'       => 1,
+            ])->value('id');
+
+            if (!$account) {
+                return 'no_data_found';
+            }
+
+            $data = DB::table('sys_chartofaccounts')
+                ->select('id', 'group', 'subgroup', 'subgroup2', DB::raw("'{$config['label']}' as sub_account_name"))
+                ->where('id', $account)
+                ->first();
+
+            return $data ?? 'no_data_found';
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
+
+    public static function get_account_details_for_employee_sub_add_OLD_CODE_EXCLUDE($com_id,$account_name)
     {
         try {
             $telephone = [1 => 11596, 2 => 10124, 3 => 11508, 4 => 11534, 5 => 10372, 6 => 11196, 7 => 11545, 8 => 10264, 9 => 11532, 10 => 10158, 11 => 11564, 12 => 11554];
