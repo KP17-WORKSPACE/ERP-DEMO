@@ -208,6 +208,13 @@
                                     Import</a>
                             </li>
 
+                            <li>
+                                <a href="{{ url('supplier-export') . '?' . http_build_query(request()->query()) }}"
+                                    class="dropdown-item d-flex align-items-center text-success"><i
+                                        class="ico icon-outline-export text-success title-15 me-2"></i>Export
+                                </a>
+                            </li>
+
                         </ul>
                     </div>
 
@@ -250,10 +257,66 @@
                                     value="{{ $ctrl_email }}">
                             </div>
                             <div class="col-md-2 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Mobile</label>
+                                <input class="form-control" type="text" autocomplete="off" name="mobile"
+                                    value="{{ @$ctrl_mobile }}">
+                            </div>
+                            <div class="col-md-2 mb-2 filter-field d-none">
                                 <label for="" class="form-check-label">VAT Number</label>
                                 <input class="form-control" type="text" autocomplete="off" name="vat"
                                     value="{{ $ctrl_vat }}">
                             </div>
+
+                            <div class="col-md-2 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Customer Type</label>
+                                <select class="form-control js-example-basic-single" name="cust_status">
+                                    <option value="">-Select-</option>
+                                    <option value="prospective" @if($ctrl_cust_status == "prospective") selected @endif>Prospective</option>
+                                    <option value="new" @if($ctrl_cust_status == "new") selected @endif>New</option>
+                                    <option value="active" @if($ctrl_cust_status == "active") selected @endif>Active</option>
+                                    <option value="inactive" @if($ctrl_cust_status == "inactive") selected @endif>Inactive</option>
+                                    <option value="dormant" @if($ctrl_cust_status == "dormant") selected @endif>Dormant</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Information</label>
+                                <select class="form-control js-example-basic-single" name="information">
+                                    <option value="">-Select-</option>
+                                    <option value="complete" @if($ctrl_information == "complete") selected @endif>Complete</option>
+                                    <option value="incomplete" @if($ctrl_information == "incomplete") selected @endif>Incomplete</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Last Invoice Gap</label>
+                                <select class="form-control js-example-basic-single" name="invoice_gap">
+                                    <option value="">-Select-</option>
+                                    <option value="0-30" @if($ctrl_invoice_gap == "0-30") selected @endif>0-30</option>
+                                    <option value="31-60" @if($ctrl_invoice_gap == "31-60") selected @endif>31-60</option>
+                                    <option value="61-90" @if($ctrl_invoice_gap == "61-90") selected @endif>61-90</option>
+                                    <option value="91-120" @if($ctrl_invoice_gap == "91-120") selected @endif>91-120</option>
+                                    <option value="121+" @if($ctrl_invoice_gap == "121+") selected @endif>121 and above</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">Outstanding</label>
+                                <select class="form-control js-example-basic-single" name="outstanding">
+                                    <option value="all" @if($ctrl_outstanding == "all") selected @endif>-Select-</option>
+                                    <option value="yes" @if($ctrl_outstanding == "yes") selected @endif>Yes</option>
+                                    <option value="no" @if($ctrl_outstanding == "no") selected @endif>No</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-2 filter-field d-none">
+                                <label for="" class="form-check-label">List Type</label>
+                                <select class="form-control js-example-basic-single" name="list_type">
+                                    <option value="normal" @if($ctrl_list_type == "normal") selected @endif>Normal</option>
+                                    <option value="detailed" @if($ctrl_list_type == "detailed") selected @endif>Detailed</option>
+                                </select>
+                            </div>
+
                             <div class="col-md-2 filter-field d-none">
 
                                 <button type="submit" class="btn btn-light mt-4 ">
@@ -322,12 +385,23 @@
                     <thead class="text-start">
 
                         <tr>
-                            <th style="width: 350px;">@lang('Supplier Name')</th>
+                             <th style="width: 350px;">@lang('Supplier Name')</th>
                             <th style="width: 200px">@lang('Contact Person')</th>
                             <th style="width: 130px">@lang('Contact Number')</th>
                             <th style="width: 130px">@lang('VAT Number')</th>
                             <th style="width: 130px">@lang('Mobile')</th>
                             <th style="width: 130px">@lang('Email')</th>
+                            @if ($ctrl_list_type == 'detailed')
+                                <th style="width: 250px">@lang('Address')</th>
+                                <th style="width: 150px">@lang('Sales Person')</th>
+                                <th style="width: 150px">@lang('Last Invoice Date')</th>
+                                <th style="width: 150px">@lang('Last Invoice Gap')</th>
+                                <th style="width: 150px">@lang('Number of Invoices')</th>
+                                <th style="width: 150px">@lang('Total Amount')</th>
+                                <th style="width: 150px">@lang('Supplier Type')</th>
+                                <th style="width: 150px">@lang('Outstanding')</th>
+                                <th style="width: 150px">@lang('Information')</th>
+                            @endif
                             <th class="text-center" style="width: 90px">@lang('Status')</th>
                             <th class="text-center" style="width: 90px;">@lang('Action')
                             </th>
@@ -362,6 +436,45 @@
                                 <td>
                                     {{ $value->email }}
                                 </td>
+                                @if ($ctrl_list_type == 'detailed')
+                                    <td>
+                                        {{ @$value->address }} {{ @$value->address2 }}
+                                    </td>
+                                    <td>
+                                        {{ @$value->salesperson->full_name ?? '—' }}
+                                    </td>
+                                    <td>
+                                        {{ $value->last_invoice_date ? \Carbon\Carbon::parse($value->last_invoice_date)->format('d/m/Y') : '—' }}
+                                    </td>
+                                    <td>
+                                        @if($value->last_invoice_date)
+                                            {{ \Carbon\Carbon::parse($value->last_invoice_date)->diffInDays(\Carbon\Carbon::now()) }} Days
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{ @$value->number_of_invoices ?? 0 }}
+                                    </td>
+                                    <td>
+                                        {{ number_format(@$value->total_invoice_amount, 2) }}
+                                    </td>
+                                    <td>
+                                        {{ @$value->suppliertype->title ?? '—' }}
+                                    </td>
+                                    <td>
+                                        {{ number_format(@$value->outstanding_amount, 2) }}
+                                    </td>
+                                    <td>
+                                        @if ($value->status == 2)
+                                            <span class="text-dark">Deleted</span>
+                                        @elseif(App\SysHelper::get_company_status($value) == 0)
+                                            <span class="text-danger">Incomplete</span>
+                                        @else
+                                            <span class="text-success">Complete</span>
+                                        @endif
+                                    </td>
+                                @endif
                                 <td class="text-center">
                                     @if ($value->status == 2)
                                         <span class="text-danger">Inactive</span>

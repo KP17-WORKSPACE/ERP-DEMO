@@ -216,6 +216,13 @@
                                 </a>
                             </li>
 
+                            <li>
+                                <a href="{{ url('customer-export') . '?' . http_build_query(request()->query()) }}"
+                                    class="dropdown-item d-flex align-items-center text-success"><i
+                                        class="ico icon-outline-export text-success title-15 me-2"></i>Export
+                                </a>
+                            </li>
+
 
 
 
@@ -277,6 +284,10 @@
                                     value="{{ @$ctrl_email }}">
                             </div>
                             <div class="col-1-5">
+                                <label for="" class="form-label">Mobile</label>
+                                <input class="form-control" type="text" autocomplete="off" name="mobile" value="{{ @$ctrl_mobile }}">
+                            </div>
+                            <div class="col-1-5">
                                 <label for="" class="form-label">Sales Person</label>
                                 <select class="form-control js-example-basic-single" name="sales_person">
                                     <option value="">-Select-</option>
@@ -285,6 +296,28 @@
                                             @if ($ctrl_sales_person == $value->user_id) selected @endif>{{ @$value->full_name }}
                                         </option>
                                     @endforeach
+                                </select>
+                            </div>
+                            <div class="col-1-5">
+                                <label for="" class="form-label">Account Type</label>
+                                <select class="form-control js-example-basic-single" name="account_type">
+                                    <option value="">-Select-</option>
+                                    <option value="1" @if($ctrl_account_type == "1") selected @endif>Reseller</option>
+                                    <option value="2" @if($ctrl_account_type == "2") selected @endif>Enduser</option>
+                                    <option value="3" @if($ctrl_account_type == "3") selected @endif>Ecommerce</option>
+                                </select>
+                            </div>
+
+                            <div class="col-1-5">
+                                <label for="" class="form-label">Status</label>
+                                <select class="form-control" id="statusFilter" name="status_filter">
+                                    <option value="">All Status</option>
+                                    <option value="1" @if ($status_filter == 1) selected @endif>Active
+                                    </option>
+                                    <option value="3" @if ($status_filter == 3) selected @endif>Inactive
+                                    </option>
+                                    <option value="2" @if ($status_filter == 2) selected @endif>Deleted
+                                    </option>
                                 </select>
                             </div>
                             <div class="col-1-5">
@@ -311,19 +344,6 @@
                                     @endforeach
                                 </select>
                             </div>
-
-                            <div class="col-1-5">
-                                <label for="" class="form-label">Status</label>
-                                <select class="form-control" id="statusFilter" name="status_filter">
-                                    <option value="">All Status</option>
-                                    <option value="1" @if ($status_filter == 1) selected @endif>Active
-                                    </option>
-                                    <option value="3" @if ($status_filter == 3) selected @endif>Inactive
-                                    </option>
-                                    <option value="2" @if ($status_filter == 2) selected @endif>Deleted
-                                    </option>
-                                </select>
-                            </div>
                             <div class="col-1-5">
                                 <label for="" class="form-label">Information</label>
                                 <select class="form-control" id="informationFilter" name="information_filter">
@@ -334,7 +354,7 @@
                                     </option>
                                 </select>
                             </div>
-                            <div class="col-3">
+                            <div class="col-1-5">
                                 <label for="" class="form-label">Added By</label>
                                 <select class="form-control js-example-basic-single" id="assignedFilter"
                                     name="assigned_filter[]" multiple>
@@ -344,6 +364,51 @@
                                             {{ @$value->full_name }}
                                         </option>
                                     @endforeach
+                                </select>
+                            </div>
+
+
+
+                            <div class="col-1-5">
+                                <label for="" class="form-label">Customer Type</label>
+                                <select class="form-control js-example-basic-single" name="cust_status">
+                                    <option value="">-Select-</option>
+                                    <option value="prospective" @if($ctrl_cust_status == "prospective") selected @endif>Prospective</option>
+                                    <option value="new" @if($ctrl_cust_status == "new") selected @endif>New</option>
+                                    <option value="active" @if($ctrl_cust_status == "active") selected @endif>Active</option>
+                                    <option value="inactive" @if($ctrl_cust_status == "inactive") selected @endif>Inactive</option>
+                                    <option value="dormant" @if($ctrl_cust_status == "dormant") selected @endif>Dormant</option>
+                                </select>
+                            </div>
+
+                            <div class="col-1-5">
+                                <label for="" class="form-label">Information</label>
+                                <select class="form-control js-example-basic-single" name="information">
+                                    <option value="">-Select-</option>
+                                    <option value="complete" @if($ctrl_information == "complete") selected @endif>Complete</option>
+                                    <option value="incomplete" @if($ctrl_information == "incomplete") selected @endif>Incomplete</option>
+                                </select>
+                            </div>
+
+                            <div class="col-1-5">
+                                <label for="" class="form-label">Last Invoice Gap</label>
+                                <select class="form-control js-example-basic-single" name="invoice_gap">
+                                    <option value="">-Select-</option>
+                                    <option value="0-30" @if($ctrl_invoice_gap == "0-30") selected @endif>0-30</option>
+                                    <option value="31-60" @if($ctrl_invoice_gap == "31-60") selected @endif>31-60</option>
+                                    <option value="61-90" @if($ctrl_invoice_gap == "61-90") selected @endif>61-90</option>
+                                    <option value="91-120" @if($ctrl_invoice_gap == "91-120") selected @endif>91-120</option>
+                                    <option value="121+" @if($ctrl_invoice_gap == "121+") selected @endif>121 and above</option>
+                                </select>
+                            </div>
+
+
+                            <div class="col-1-5">
+                                <label for="" class="form-label">Outstanding</label>
+                                <select class="form-control js-example-basic-single" name="outstanding">
+                                    <option value="all" @if($ctrl_outstanding == "all") selected @endif>-Select-</option>
+                                    <option value="yes" @if($ctrl_outstanding == "yes") selected @endif>Yes</option>
+                                    <option value="no" @if($ctrl_outstanding == "no") selected @endif>No</option>
                                 </select>
                             </div>
 
@@ -387,6 +452,13 @@
                                     </option>
                                     <option value="last_year" @if ($filter_by == 'last_year') selected @endif>Last Year
                                     </option>
+                                </select>
+                            </div>
+                            <div class="col-1-5">
+                                <label for="" class="form-label">List Type</label>
+                                <select class="form-control js-example-basic-single" name="list_type">
+                                    <option value="normal" @if($ctrl_list_type == "normal") selected @endif>Normal</option>
+                                    <option value="detailed" @if($ctrl_list_type == "detailed") selected @endif>Detailed</option>
                                 </select>
                             </div>
 
@@ -457,10 +529,22 @@
 
                     <thead class="text-start">
                         <tr>
+                            <th style="width: 100px;">@lang('Code')</th>
                             <th style="width: 300px;">@lang('Customer Name')</th>
                             <th style="width: 150px">@lang('Contact Person')</th>
                             <th style="width: 170px">@lang('Mobile')</th>
                             <th style="width: 220px">@lang('Email')</th>
+                            @if ($ctrl_list_type == 'detailed')
+                                <th style="width: 250px">@lang('Address')</th>
+                                <th style="width: 150px">@lang('Sales Person')</th>
+                                <th style="width: 150px">@lang('Account Type')</th>
+                                <th style="width: 150px">@lang('Last Invoice Date')</th>
+                                <th style="width: 150px">@lang('Last Invoice Gap')</th>
+                                <th style="width: 150px">@lang('Number of Invoices')</th>
+                                <th style="width: 150px">@lang('Total Amount')</th>
+                                <th style="width: 150px">@lang('Customer Type')</th>
+                                <th style="width: 150px">@lang('Outstanding')</th>
+                            @endif
                             <th style="width: 100px">@lang('Added By')</th>
                             <th style="width: 100px">@lang('Updated By')</th>
                             <th style="width: 90px">@lang('Status')</th>
@@ -475,9 +559,8 @@
                         @foreach ($customer as $value)
                             <tr @if ($value->status == 2) style="background-color: rgba(0, 0, 0, 0.19);" @endif>
 
-                                <td class="" onclick="handleCustomerClick(event, {{ @$value->id }})"><a
-                                        class="">
-                                        {{ @$value->code }} - {{ @$value->name }}</a>
+                                <td >{{ @$value->code }}</td>
+                                <td class="" onclick="handleCustomerClick(event, {{ @$value->id }})"><a>{{ @$value->name }}</a>
                                     @if (@$value->internal == 1)
                                         <i class="ico icon-bold-info-circle text-primary" aria-hidden="true"
                                             title="Internal Customer"></i>
@@ -492,6 +575,43 @@
                                 <td>
                                     {{ @$value->email }}
                                 </td>
+                                @if ($ctrl_list_type == 'detailed')
+                                    <td>
+                                        {{ @$value->address }} {{ @$value->address2 }}
+                                    </td>
+                                    <td>
+                                        {{ @$value->salesperson->full_name ?? '—' }}
+                                    </td>
+                                    <td>
+                                        @if ($value->account_type == 1) Reseller
+                                        @elseif ($value->account_type == 2) Enduser
+                                        @elseif ($value->account_type == 3) Ecommerce
+                                        @else —
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{ $value->last_invoice_date ? \Carbon\Carbon::parse($value->last_invoice_date)->format('d/m/Y') : '—' }}
+                                    </td>
+                                    <td>
+                                        @if($value->last_invoice_date)
+                                            {{ \Carbon\Carbon::parse($value->last_invoice_date)->diffInDays(\Carbon\Carbon::now()) }} Days
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{ @$value->number_of_invoices ?? 0 }}
+                                    </td>
+                                    <td>
+                                        {{ number_format(@$value->total_invoice_amount, 2) }}
+                                    </td>
+                                    <td>
+                                        {{ @$value->customertype->title ?? '—' }}
+                                    </td>
+                                    <td>
+                                        {{ number_format(@$value->outstanding_amount, 2) }}
+                                    </td>
+                                @endif
 
 
 

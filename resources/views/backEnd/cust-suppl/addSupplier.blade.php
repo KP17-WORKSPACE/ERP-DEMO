@@ -357,7 +357,7 @@
                                 id="country_telephone" required>
                                 <option value="" disabled selected>Select Country</option>
                                 @foreach ($countries as $key => $value)
-                                    <option value="{{ $value->iso2 }}|{{ $value->id }}">
+                                    <option value="{{ $value->iso2 }}|{{ $value->id }}" @if($value->id==@$currentCompanyCountry) selected @endif>
                                         {{ $value->name }}
                                     </option>
                                 @endforeach
@@ -653,7 +653,7 @@
                                 id="country" required>
                                 <option data-display="" value=""></option>
                                 @foreach ($countries as $key => $value)
-                                    <option value="{{ @$value->id }}">{{ @$value->name }} </option>
+                                    <option value="{{ @$value->id }}" @if($value->id==@$currentCompanyCountry) selected @endif>{{ @$value->name }} </option>
                                 @endforeach
                             </select></div>
                     </div>
@@ -994,7 +994,7 @@
                                 id="country_vat" required>
                                 <option data-display="" value=""></option>
                                 @foreach ($vat as $key => $value)
-                                    <option value="{{ @$value->vat_country }}">{{ @$value->name }} </option>
+                                    <option value="{{ @$value->vat_country }}" @if($value->vat_country==@$currentCompanyCountry) selected @endif>{{ @$value->name }} </option>
                                 @endforeach
                             </select></div>
                     </div>
@@ -1113,10 +1113,10 @@
                     <div class="row mt-2 currency-fields">
                         <div class="col-md-3">Currency</div>
                         <div class="col-md-8">
-                            <select class="form-control js-example-basic-single" name="currency_id" id="currency_id">
+                            <select class="form-control" name="currency_id" id="currency_id">
                                 <option value="">Select</option>
                                 @foreach ($currency as $value)
-                                    <option value="{{ $value->id }}">{{ $value->code }}</option>
+                                    <option value="{{ $value->id }}" @if($value->id==@$currentCompanyCurrency) selected @endif>{{ $value->code }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -1907,6 +1907,7 @@
                 $('.credit-fields input').prop('required', true);
                 $('.currency-fields').show();
                 $('#currency_id').prop('disabled', false);
+                $('#currency_id').val('{{ @$currentCompanyCurrency }}');
             }
         }
 
