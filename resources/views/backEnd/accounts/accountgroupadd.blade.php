@@ -205,7 +205,7 @@
                                     <label class="form-label"> @lang('Group Code') </label>
                                     <input class="form-control {{ $errors->has('group_code') ? 'is-invalid' : ' ' }}"
                                         type="text" id="group_code" name="group_code"
-                                        value="{{ isset($editData) ? $editData->group_code : (old('group_code') ?? @App\SysHelper::get_new_head_code()) }}" readonly>
+                                        value="{{ isset($editData) && !empty($editData->group_code) ? $editData->group_code : (old('group_code') ?? App\SysHelper::get_new_head_code()) }}" readonly>
                                     <span class="focus-border"></span>
 
                                     @if ($errors->has('group_code'))
