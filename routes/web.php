@@ -694,6 +694,7 @@ Route::group(['middleware' => ['XSS']], function () {
 
         /***************************************** Route customer ***************************/
         //Route::get('customers', 'SysCustomerController@customer');
+        Route::get('customer-export', 'SysCustomerController@customerExport');
         Route::get('customers/{id?}', 'SysCustomerController@customer');
         Route::get('customer-details/{id}', 'SysCustomerController@getCustomerDetails');
         Route::get('customer-list-search-record', 'SysCustomerController@searchCustomerList');
@@ -747,6 +748,7 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('autocomplete/supplier_name', 'SysSupplierController@supplier_name')->name('autocomplete.supplier_name');
 
         Route::get('suppliers', 'SysSupplierController@suppliers');
+        Route::get('supplier-export', 'SysSupplierController@supplierExport');
         Route::get('suppliers/search', 'SysSupplierController@search')->name('suppliers.search');
         Route::get('supplier-from-list/{id?}', 'SysSupplierController@supplier_from_list');
 
