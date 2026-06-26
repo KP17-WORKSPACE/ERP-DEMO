@@ -694,6 +694,7 @@ Route::group(['middleware' => ['XSS']], function () {
 
         /***************************************** Route customer ***************************/
         //Route::get('customers', 'SysCustomerController@customer');
+        Route::get('customer-export', 'SysCustomerController@customerExport');
         Route::get('customers/{id?}', 'SysCustomerController@customer');
         Route::get('customer-details/{id}', 'SysCustomerController@getCustomerDetails');
         Route::get('customer-list-search-record', 'SysCustomerController@searchCustomerList');
@@ -747,6 +748,7 @@ Route::group(['middleware' => ['XSS']], function () {
         Route::post('autocomplete/supplier_name', 'SysSupplierController@supplier_name')->name('autocomplete.supplier_name');
 
         Route::get('suppliers', 'SysSupplierController@suppliers');
+        Route::get('supplier-export', 'SysSupplierController@supplierExport');
         Route::get('suppliers/search', 'SysSupplierController@search')->name('suppliers.search');
         Route::get('supplier-from-list/{id?}', 'SysSupplierController@supplier_from_list');
 
@@ -771,10 +773,6 @@ Route::group(['middleware' => ['XSS']], function () {
             // 👉 Get Designations by Department
             Route::post('/get-designations', 'SmStaffController@getDesignationsByDepartment')
             ->name('staff.resignation.getDesignations');
-
-            Route::delete('/destroy/{id}', 'SmStaffController@destroyResignation')
-->name('staff.resignation.destroy');
-
             });
 
 
@@ -1249,7 +1247,7 @@ Route::get('/industry', 'SmIndustryController@index');
         Route::post('/company/bank/session/get', 'SysCompanyController@getBankSession');
         Route::post('/company/bank/session/delete', 'SysCompanyController@deleteBankSession');
         
-Route::group(['prefix' => 'employee', 'middleware' => ['auth']], function () {
+       Route::group(['prefix' => 'employee', 'middleware' => ['auth']], function () {
             // List + Create + Store
             Route::get('leaves', 'LeaveController@index')->name('employee.leaves.index');
             Route::get('leaves/create', 'LeaveController@create')->name('employee.leaves.create');
@@ -1702,11 +1700,13 @@ Route::group(['prefix' => 'employee', 'middleware' => ['auth']], function () {
         Route::get('journalvoucheradd/{date}', ['as' => 'journalvoucher-add', 'uses' => 'SysJournalVoucherController@journalvoucherAdd2']);
         Route::get('journalvoucher-add-deal/{id}/{cust_id}', ['as' => 'journalvoucher-add-deal', 'uses' => 'SysJournalVoucherController@journalvoucherAddDeal']);
         Route::post('journalvoucher-import', 'SysJournalVoucherController@journalvoucherImport');
+        Route::get('journalvoucher-export', 'SysJournalVoucherController@journalvoucherExport');
 
         Route::get('journalvoucher-details/{id}', 'SysJournalVoucherController@getDetails');
         Route::get('jv-details-pdf/{id}', 'SysJournalVoucherController@getDetailsPDF');
 
         Route::post('journalvoucher-store', ['as' => 'journalvoucher-store', 'uses' => 'SysJournalVoucherController@store']);
+        Route::post('journalvoucher-save-prepaid-accrued', 'SysJournalVoucherController@savePrepaidAccrued');
         Route::get('journalvoucher/{id}/edit', ['as' => 'edit', 'uses' => 'SysJournalVoucherController@edit']);
         Route::get('journalvoucher/{id}/view', ['as' => 'view', 'uses' => 'SysJournalVoucherController@view']);
         Route::put('journalvoucher-update/{id}', ['as' => 'journalvoucher-update', 'uses' => 'SysJournalVoucherController@update']);
@@ -1821,6 +1821,7 @@ Route::group(['prefix' => 'employee', 'middleware' => ['auth']], function () {
         Route::get('chartofaccounts-sub/{id}/get-edit', ['as' => 'edit-sub', 'uses' => 'SysChartofAccountsController@edit_subaccounts']);
         Route::get('accountgroupsub/{id}/get-edit', ['as' => 'edit', 'uses' => 'SysAccountGroupSubController@getEdit']);
         Route::get('accountgroupsub2/{id}/get-edit', ['as' => 'edit', 'uses' => 'SysAccountGroupSub2Controller@getEdit']);
+        Route::get('accountgroup/{id}/get-edit', ['as' => 'edit', 'uses' => 'SysAccountGroupController@getEdit']);
 
 
         Route::get('vat-settings', ['as' => 'vat-settings', 'uses' => 'SysVatController@vatadd']);
