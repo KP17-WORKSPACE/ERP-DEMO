@@ -172,7 +172,7 @@
                                             <td><input type="text" class="form-control text-center" name="sort_id[]" value="{{ $roid }}" /></td>
                                             <td class="noborder">
                                                 <select class="form-control" name="account_id[]">
-                                                    <option value="{{ @$editDataList[$roid-1]->account_id }}">{{ @$editDataList[$roid-1]->account_code }} - {{ @$editDataList[$roid-1]->account_name }}</option>
+                                                    <option value="{{ @$editDataList[$roid-1]->account_id }}" data-code="{{ @$editDataList[$roid-1]->account_code }}">{{ @$editDataList[$roid-1]->account_code }} - {{ @$editDataList[$roid-1]->account_name }}</option>
                                                 </select>
                                             </td> 
                                             <td>
@@ -211,7 +211,7 @@
                                             </td>
                                             @if($company->company_vat_rate!=0)
                                             <td><input type="checkbox" class="form-control" name="vat_account[]" onchange="vat_account_checked(this)" 
-                                                  style="appearance: checkbox; -webkit-appearance: checkbox; border: solid 1px #000000; height: 18px; display: block; display: none;"/></td>
+                                                  style="appearance: checkbox; -webkit-appearance: checkbox; border: solid 1px #000000; height: 18px; display: none;"/></td>
                                             @endif
                                         </tr>
                                     </tbody>
@@ -280,12 +280,34 @@ $(document).on("change", 'input[name="remarks[]"], input[name="dealid[]"], input
 
 
 
-function account_id_change(selectElement) {
+function account_id_change(selectElement, forceCode) {
     const $row = $(selectElement).closest('tr');
-    const selectedText = $(selectElement).find("option:selected").text();
+    let code = forceCode || "";
+    
+    if (!code) {
+        // 1. Try to get code from Select2 data
+        if ($(selectElement).hasClass('select2-hidden-accessible')) {
+            const data = $(selectElement).select2('data');
+            if (data && data.length > 0) {
+                code = data[0].account_code || "";
+            }
+        }
+    }
+    
+    // 2. Try to get code from option's data-code attribute
+    if (!code) {
+        code = $(selectElement).find("option:selected").attr('data-code') || "";
+    }
+    
+    // 3. Fallback: Parse from text if code wasn't found directly
+    if (!code) {
+        code = $(selectElement).find("option:selected").text() || "";
+    }
+    
+    code = code.toUpperCase();
     const $checkbox = $row.find('input[name="vat_account[]"]');
 
-    if (selectedText.startsWith('ACC') || selectedText.startsWith('SACC')) {
+    if (code.includes('ACC') || code.includes('SACC')) {
         $checkbox.show();
     } else {
         $checkbox.hide().prop('checked', false).trigger('change');
@@ -298,8 +320,82 @@ $(function () {
     });
 });
 
-function vat_account_checked(checkbox) {
+function vat_account_checked(checkboxElement) {
+    const checkbox = $(checkboxElement);
+    const currentRow = checkbox.closest('tr');
     
+    // Find the next adjacent rows relative to the current row
+    const targetRow1 = currentRow.next().next(); 
+    const targetRow2 = targetRow1.next();        
+    
+    const targetSelect1 = targetRow1.find('select[name="account_id[]"]');
+    const targetSelect2 = targetRow2.find('select[name="account_id[]"]');
+
+    if (checkbox.is(':checked')) {
+        const selectedSelect = currentRow.find('select[name="account_id[]"]');
+        let selectedText = "";
+        if (selectedSelect.hasClass('select2-hidden-accessible')) {
+            const data = selectedSelect.select2('data');
+            if (data && data.length > 0) {
+                selectedText = data[0].text || "";
+            }
+        }
+        if (!selectedText) {
+            selectedText = selectedSelect.find("option:selected").text() || "";
+        }
+        const selectedVal = selectedSelect.val();
+        
+        const vatRate = $('#company_vat_rate').val();
+        const vat_account_val = $('#vat_account_val').val();
+        const vat_account_text = $('#vat_account_text').val();
+
+        const mainAmt = parseFloat(currentRow.find('input[name="amount_dr[]"]').val()?.replace(/,/g, '') || 0);
+        const vr = 100 + parseFloat(vatRate || 0);
+        const vatAmt = (mainAmt * vatRate / vr).toFixed(2);
+
+        targetRow1.find('input[name="amount_dr[]"]').val(vatAmt);
+        targetRow2.find('input[name="amount_cr[]"]').val(vatAmt);
+        targetRow1.find('input[name="remarks[]"]').val("VAT paid on " + selectedText);
+        targetRow2.find('input[name="remarks[]"]').val("VAT paid on " + selectedText);
+
+        if (targetSelect1.length) {
+            if (targetSelect1.hasClass("select2-hidden-accessible")) {
+                try { targetSelect1.select2('destroy'); } catch(e) {}
+            }
+            if (window.initAccountSelect2) {
+                window.initAccountSelect2(targetSelect1);
+            }
+            const option = new Option(vat_account_text, vat_account_val, true, true);
+            targetSelect1.append(option).trigger('change');
+        } else {
+            console.warn('Select not found for targetRow1');
+        }
+        if (targetSelect2.length) {
+            if (targetSelect2.hasClass("select2-hidden-accessible")) {
+                try { targetSelect2.select2('destroy'); } catch(e) {}
+            }
+            if (window.initAccountSelect2) {
+                window.initAccountSelect2(targetSelect2);
+            }
+            const option = new Option(selectedText, selectedVal, true, true);
+            targetSelect2.append(option).trigger('change');
+        } else {
+            console.warn('Select not found for targetRow2');
+        }
+    } else {
+        if (targetSelect1.length) {
+            targetSelect1.val(null).trigger('change');
+            targetSelect1.empty();
+        }
+        if (targetSelect2.length) {
+            targetSelect2.val(null).trigger('change');
+            targetSelect2.empty();
+        }
+        targetRow1.find('input[name="amount_dr[]"]').val('');
+        targetRow2.find('input[name="amount_cr[]"]').val('');
+        targetRow1.find('input[name="remarks[]"]').val('');
+        targetRow2.find('input[name="remarks[]"]').val('');
+    }
 }
 </script>
 
@@ -346,6 +442,26 @@ $(document).on("keydown", 'input[name="amount_dr[]"], input[name="amount_cr[]"],
         var $row = $(this).closest('tr');
 
         var br_account_id = $row.find('[name="account_id[]"]').val();
+
+        if (!br_account_id) {
+            return false;
+        }
+
+        // --- NEW CHECK FOR YES_NO ACCOUNT ---
+        var isDebit = $(this).is('input[name="amount_dr[]"]');
+        var selectedOption = $row.find('[name="account_id[]"] option:selected');
+        var yesNo = selectedOption.attr('data-yes-no');
+
+        if (isDebit && yesNo == '1') {
+            const amountVal = $(this).val();
+            $('#ad_row_index').val($row.index());
+            $('#ad_account_id').val(br_account_id);
+            $('#ad_amount').val(amountVal);
+            
+            // Open Modal
+            $('#accrual_deferral_modal').appendTo('body').modal('show');
+            return false;
+        }
 
         $('#br_account_id').val(br_account_id);
 
@@ -810,7 +926,11 @@ function update_totals() {
     
 $(document).ready(function () {
     function initAccountSelect2(selector) {
+        window.initAccountSelect2 = initAccountSelect2;
+        $(selector).siblings('.select2, .select2-container').remove();
+        $(selector).removeClass('select2-hidden-accessible');
         $(selector).select2({
+            width: '100%',
             ajax: {
                 url: '{{ route("autocomplete.get_account_list_ajax") }}',
                 dataType: 'json',
@@ -820,36 +940,40 @@ $(document).ready(function () {
                         search_text: params.term
                     };
                 },
-               processResults: function (data) {
-                    return {
-                        results: data.map(function (item) {
-                            let text = item.account_name;
-                            if (item.account_code) {
-                                text += ' (' + item.account_code + ')';
-                            }
-                            return {
-                                id: item.id,
-                                text: text
-                            };
-                        })
-                    };
-                },
+                   processResults: function (data) {
+                     return {
+                         results: data.map(function (item) {
+                             let text = '';
+                             if (item.account_code) {
+                                 text += item.account_code + ' - ';
+                             }
+                             text += item.account_name;
+                             return {
+                                 id: item.id,
+                                 text: text,
+                                 account_code: item.original_code || item.account_code,
+                                 yes_no: item.yes_no
+                             };
+                         })
+                     };
+                 },
 
-                cache: true
-            },
-            placeholder: '',
-            minimumInputLength: 2,
-            dropdownParent: $(selector).parent() // optional: ensures dropdown shows in modals
-        });
+                 cache: true
+             },
+             placeholder: '',
+             minimumInputLength: 2,
+             dropdownParent: $(selector).parent() // optional: ensures dropdown shows in modals
+         });
 
-        $(selector).on('select2:select', function (e) {
-            var selectedData = e.params.data;
-            var $row = $(this).closest('tr'); // find the closest row
-                $row.find('input[name="amount_dr[]"]').focus();
-            // Set values using "name" attribute selectors inside the same row
-            
-        });
-
+         $(selector).on('select2:select', function (e) {
+             var selectedData = e.params.data;
+             var $row = $(this).closest('tr'); // find the closest row
+             $(this).find('option:selected').attr('data-code', selectedData.account_code || '');
+             $(this).find('option:selected').attr('data-yes-no', selectedData.yes_no || '0');
+             $row.find('input[name="amount_dr[]"]').focus();
+             // Trigger checkbox visibility update
+             account_id_change(this, selectedData.account_code);
+         });
         
          // prefill Select2 search with currently selected value when dropdown opens
             $(selector).on('select2:open', function() {
@@ -932,6 +1056,23 @@ $(document).ready(function () {
         inputs.forEach((input, index) => {
             if (index !== 0) input.value = "";
         });
+
+        // Clean up Select2 components on the cloned row and re-initialize
+        const select = newRow.querySelector('select[name="account_id[]"]');
+        if (select) {
+            select.classList.remove('select2-hidden-accessible');
+            select.classList.remove('js-account-select');
+            select.value = "";
+            const select2Containers = newRow.querySelectorAll('.select2, .select2-container');
+            select2Containers.forEach(container => container.remove());
+            
+            // Re-initialize Select2 after append
+            setTimeout(() => {
+                if (window.initAccountSelect2) {
+                    window.initAccountSelect2(select);
+                }
+            }, 0);
+        }
 
       tbody.appendChild(newRow);
     }
@@ -1709,5 +1850,108 @@ $(document).ready(function () {
     }
 </script>
 
+<!-- Accrual/Deferral Modal -->
+<div class="modal fade" id="accrual_deferral_modal" tabindex="-1" aria-labelledby="accrualDeferralModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="accrualDeferralModalLabel">Accrual/Deferral Details</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="accrual_deferral_form">
+                    <input type="hidden" id="ad_row_index">
+                    <input type="hidden" id="ad_account_id">
+                    <div class="mb-3 input-effect">
+                        <label class="dynamicslbl">Amount</label>
+                        <input type="text" class="form-control text-end" id="ad_amount" readonly>
+                    </div>
+                    <div class="mb-3 input-effect mt-15">
+                        <label class="dynamicslbl">From Date</label>
+                        <input type="date" class="form-control" id="ad_from_date" required>
+                    </div>
+                    <div class="mb-3 input-effect mt-15">
+                        <label class="dynamicslbl">To Date</label>
+                        <input type="date" class="form-control" id="ad_to_date" required>
+                    </div>
+                    <div class="mb-3 input-effect mt-15">
+                        <label class="dynamicslbl">No. of Days</label>
+                        <input type="text" class="form-control text-end" id="ad_no_of_days" readonly>
+                    </div>
+                    <div class="mb-3 input-effect mt-15">
+                        <label class="dynamicslbl">Per Day</label>
+                        <input type="text" class="form-control text-end" id="ad_per_day" readonly>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn_submit_accrual">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#ad_from_date, #ad_to_date').on('change', function() {
+        const fromVal = $('#ad_from_date').val();
+        const toVal = $('#ad_to_date').val();
+        const amtVal = parseFloat($('#ad_amount').val()?.replace(/,/g, '') || 0);
+
+        if (fromVal && toVal) {
+            const fromDate = new Date(fromVal);
+            const toDate = new Date(toVal);
+            
+            const diffTime = toDate - fromDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+            if (diffDays > 0) {
+                $('#ad_no_of_days').val(diffDays);
+                const perDay = amtVal / diffDays;
+                $('#ad_per_day').val(perDay.toFixed(6));
+            } else {
+                $('#ad_no_of_days').val('');
+                $('#ad_per_day').val('');
+            }
+        }
+    });
+
+    $('#btn_submit_accrual').on('click', function() {
+        const adForm = document.getElementById('accrual_deferral_form');
+        if (!adForm.checkValidity()) {
+            adForm.reportValidity();
+            return;
+        }
+
+        const data = {
+            _token: '{{ csrf_token() }}',
+            account_id: $('#ad_account_id').val(),
+            amount: $('#ad_amount').val(),
+            from_date: $('#ad_from_date').val(),
+            to_date: $('#ad_to_date').val(),
+            no_of_days: $('#ad_no_of_days').val(),
+            per_day_amount: $('#ad_per_day').val()
+        };
+
+        $.ajax({
+            url: '{{ URL::to("journalvoucher-save-prepaid-accrued") }}',
+            type: 'POST',
+            data: data,
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message, 'Success');
+                    $('#accrual_deferral_modal').modal('hide');
+                } else {
+                    alert('Error saving data: ' + response.error);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('AJAX Error: ' + error);
+            }
+        });
+    });
+});
+</script>
 
 <?php }catch (\Exception $e) { ?> {{ $e }} <?php  } ?>
