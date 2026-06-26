@@ -2291,7 +2291,7 @@ class SysChartofAccountsController extends Controller
 
             $settings = SysHelper::getCompanyCodeSettings($com_id);
 
-            $accounts = SysChartofAccounts::select('id', 'account_name', 'group', 'account_code')
+            $accounts = SysChartofAccounts::select('id', 'account_name', 'group', 'account_code', 'yes_no')
                 ->where('status', 1)
                 ->whereNotIn('id', function ($query) use ($com_id) {
                     $query->select('main_account_id')
@@ -2308,27 +2308,9 @@ class SysChartofAccountsController extends Controller
                 ->limit(50)
                 ->get();
 
-            // 🟢 Hide codes based on settings
+            // 🟢 Keep codes for select2 dropdown context
             $accounts->transform(function ($item) use ($settings) {
-
-                if (!$settings['is_account_code'] && Str::startsWith($item->account_code, 'ACC')) {
-                    $item->account_code = null;
-                }
-
-                if (!$settings['is_subaccount_code'] && Str::startsWith($item->account_code, 'SACC')) {
-                    $item->account_code = null;
-                }
-
-                if (!$settings['is_customer_code'] && Str::startsWith($item->account_code, 'CUS')) {
-                    $item->account_code = null;
-                }
-
-                if (!$settings['is_supplier_code'] && Str::startsWith($item->account_code, 'SUP')) { // 🧠 changed SUPS → SUP
-                    $item->account_code = null;
-                }
-
-
-
+                $item->original_code = $item->account_code;
                 return $item;
             });
 

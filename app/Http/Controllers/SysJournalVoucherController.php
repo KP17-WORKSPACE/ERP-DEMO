@@ -11,6 +11,7 @@ use App\SysCustSuppl;
 use App\SysAccountGroup;
 use App\SysChartofAccountsTransaction;
 use App\SysCompany;
+use App\SysCompanyCompliance;
 use App\SysCurrencySettings;
 use App\SysHelper;
 use App\SysJournalVoucher;
@@ -302,7 +303,8 @@ class SysJournalVoucherController extends Controller
             $currency = SysCurrencySettings::all();
             $get_staff_list = SysHelper::get_staff_list();
 
-            $company = SysCompany::find(session('logged_session_data.company_id'));
+            //$company = SysCompany::find(session('logged_session_data.company_id'));
+            $company = SysCompanyCompliance::where('company_id',session('logged_session_data.company_id'))->first();
             $editDataList = DB::table('sys_journalvoucher_cart as cart')->select('cart.*','ca.account_code','ca.account_name')
             ->join('sys_chartofaccounts as ca','ca.id','cart.account_id')
             ->where(['cart_id' => session('logged_session_data.cart_id'), 'cart.company_id' => session('logged_session_data.company_id'),'cart.status' => 1])
@@ -678,6 +680,26 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
 
                 DB::table('sys_journalvoucher_att')->where('cart_id',session('logged_session_data.cart_id'))->where('doc_id',0)->where('company_id',session('logged_session_data.company_id'))->update(['doc_id' => $jv->id]);
                 //DB::table('sys_journalvoucher')->where('id',$jv->id)->update(['narration' => $narration]);
+                
+                $cart_id = session('logged_session_data.cart_id');
+                if ($cart_id) {
+                    if (is_array($request->account_id)) {
+                        for ($i = 0; $i < count($request->account_id); $i++) {
+                            $acc_id = $request->account_id[$i];
+                            $debit_amount = isset($amountDr[$i]) && $amountDr[$i] !== "" ? $amountDr[$i] : null;
+                            if ($acc_id && $debit_amount !== null && floatval($debit_amount) > 0) {
+                                \App\SysPrepaidAccruedExp::where('cart_id', $cart_id)
+                                    ->where('company_id', session('logged_session_data.company_id'))
+                                    ->where('account_id', $acc_id)
+                                    ->where('amount', floatval($debit_amount))
+                                    ->update([
+                                        'jv_id' => $jv->id,
+                                        'cart_id' => null
+                                    ]);
+                            }
+                        }
+                    }
+                }
 
                 
             DB::table('sys_journalvoucher_cart as cart')
@@ -707,6 +729,36 @@ return $value !== "" ? str_replace(',', '', $value) : $value;
             return $e;
            Toastr::error('Operation Failed', 'Failed');
            return redirect()->back(); 
+        }
+    }
+
+    public function savePrepaidAccrued(Request $request)
+    {
+        try {
+            $com_id = session('logged_session_data.company_id');
+            $cart_id = session('logged_session_data.cart_id');
+            if (!$cart_id) {
+                $cart_id = session()->getId() . "_" . rand(10, 100);
+                session(['logged_session_data.cart_id' => $cart_id]);
+            }
+
+            $prepaid = new \App\SysPrepaidAccruedExp();
+            $prepaid->account_id = $request->account_id;
+            $prepaid->amount = str_replace(',', '', $request->amount);
+            $prepaid->from_date = \App\SysHelper::normalizeToYmd($request->from_date);
+            $prepaid->to_date = \App\SysHelper::normalizeToYmd($request->to_date);
+            $prepaid->no_of_days = $request->no_of_days;
+            $prepaid->per_day_amount = $request->per_day_amount;
+            $prepaid->cart_id = $cart_id;
+            $prepaid->company_id = $com_id;
+            $prepaid->status = 1;
+            $prepaid->created_by = Auth::user()->id;
+            $prepaid->created_at = Carbon::now('+04:00');
+            $prepaid->save();
+
+            return response()->json(['success' => true, 'message' => 'Details saved successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()]);
         }
     }
 
