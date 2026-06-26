@@ -1,6 +1,6 @@
 <?php
 $com_ids = session('logged_session_data.company_id');
-$accounts = @App\SysChartofAccounts::select('id', 'account_name', 'account_code')
+$accounts = @App\SysChartofAccounts::select('id', 'account_name', 'account_code', 'group')
     ->whereRaw("find_in_set($com_ids,sys_chartofaccounts.company_access)")
     ->where('main_account_id', 0)
     ->where('account_code', 'like', 'ACC%')
@@ -144,11 +144,12 @@ $sub_accounts = @App\SysChartofAccounts::whereRaw("find_in_set($com_id,sys_chart
                                 <div class="input-effect">
                                     <label class="form-label"> @lang('Select Account') <span>*</span> </label>
                                     <select class="form-control js-example-basic-single" name="main_account_id"
-                                        id="main_account_id" required>
+                                        id="main_account_id" onchange="fn_sub_subgroup()" required>
                                         <option value=""></option>
                                         @if (isset($accounts))
                                             @foreach ($accounts as $val)
                                                 <option value="{{ @$val->id }}"
+                                                    data-head-title="{{ strtolower(@$val->groupname->title ?? '') }}"
                                                     @if (isset($editData)) @if (@$editData->main_account_id == @$val->id) selected @endif
                                                     @endif >{{ @$val->account_code }} -
                                                     {{ @$val->account_name }}
@@ -164,7 +165,7 @@ $sub_accounts = @App\SysChartofAccounts::whereRaw("find_in_set($com_id,sys_chart
                             @endphp
 
                              
-                            <div class="col-lg-3 mb-2">
+                            <div class="col-lg-3 mb-2" id="sub_department_container">
                                 <div class="input-effect">
                                     <label class="form-label"> @lang('Department') <span>*</span> </label>
                                     <div class="input-effect" id="sectionDepartmentDiv">
@@ -181,7 +182,7 @@ $sub_accounts = @App\SysChartofAccounts::whereRaw("find_in_set($com_id,sys_chart
                                 </div>
                             </div>
 
-                            <div class="col-3 mb-4">
+                            <div class="col-3 mb-4" id="sub_prepaid_container">
                                 <div class="input-effect">
                                     <label class="form-label"> @lang('Prepaid/Accrued Exp') <span>*</span> </label>
                                     <select class="txtbx niceSelect w-100 bb form-control js-example-basic-single" name="credit_account_status" id="credit_account_status" required>
@@ -192,17 +193,6 @@ $sub_accounts = @App\SysChartofAccounts::whereRaw("find_in_set($com_id,sys_chart
                             </div>
                             
 
-                             <!-- toggle for opening balance inputs (sub-account modal) -->
-                            <div class="col-4 mb-2 mt-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" data-bs-popover="popover"
-                            data-bs-trigger="hover"
-                            data-bs-delay="500"
-                            data-bs-content="Add Opening Balance"
-                            data-bs-placement="top" type="checkbox" id="toggleOpeningBalanceSubAdd">
-                                    
-                                </div>
-                            </div>
 
 
                             <div class="col-4 mb-2 opening-balance">
@@ -285,7 +275,20 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer d-flex justify-content-between align-items-center">
+
+                
+                             <!-- toggle for opening balance inputs (sub-account modal) -->
+                                <div>
+                                    <input class="form-check-input" data-bs-popover="popover"
+                            data-bs-trigger="hover"
+                            data-bs-delay="500"
+                            data-bs-content="Add Opening Balance"
+                            data-bs-placement="top" type="checkbox" id="toggleOpeningBalanceSubAdd">
+                                    Add Opening Balance
+                                </div>
+
+
                 @if (isset($editData))
                     <button class="btn btn-light" id="btnSubAccountSubmit" name="btnSubmit" value="update">
                         <i class="ico icon-outline-bookmark-opened  text-success"></i> Save
@@ -516,11 +519,12 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
                                     <div class="input-effect">
                                         <label class="form-label"> @lang('Main Account') <span>*</span> </label>
                                         <select class="form-control js-example-basic-single" name="main_account_id"
-                                            id="edit_main_account_id" required>
+                                            id="edit_main_account_id" onchange="fn_sub_subgroup2()" required>
                                             <option value=""></option>
                                             @if (isset($accounts))
                                                 @foreach ($accounts as $val)
-                                                    <option value="{{ $val->id }}">{{ $val->account_code }} -
+                                                    <option value="{{ $val->id }}"
+                                                        data-head-title="{{ strtolower(@$val->groupname->title ?? '') }}">{{ $val->account_code }} -
                                                         {{ $val->account_name }}</option>
                                                 @endforeach
                                             @endif
@@ -528,7 +532,7 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
                                     </div>
                                 </div>
 
-                                <div class="col-3 mb-4">
+                                <div class="col-3 mb-4" id="edit_sub_department_container">
                                     <div class="input-effect">
                                         <label class="form-label"> @lang('Department') <span>*</span> </label>
                                         <div class="input-effect" id="sectionDepartmentDiv">
@@ -544,7 +548,7 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
                                     </div>
                                 </div>
 
-                                <div class="col-3 mb-4">
+                                <div class="col-3 mb-4" id="edit_sub_prepaid_container">
                                     <div class="input-effect">
                                         <label class="form-label"> @lang('Prepaid/Accrued Exp') <span>*</span> </label>
                                         <select class="txtbx niceSelect w-100 bb form-control js-example-basic-single" name="credit_account_status" id="edit_credit_account_status" required>
@@ -703,6 +707,40 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
 
     });
 
+    function fn_sub_subgroup() {
+        var headTitle = $('#main_account_id option:selected').data('head-title') || '';
+        if (headTitle === 'expenses' || headTitle === 'incomes') {
+            $('#sub_department_container').show();
+            $('#department_id').prop('required', true);
+            
+            $('#sub_prepaid_container').show();
+            $('#credit_account_status').prop('required', true);
+        } else {
+            $('#sub_department_container').hide();
+            $('#department_id').prop('required', false).val('').trigger('change');
+            
+            $('#sub_prepaid_container').hide();
+            $('#credit_account_status').prop('required', false).val('0').trigger('change');
+        }
+    }
+
+    function fn_sub_subgroup2() {
+        var headTitle = $('#edit_main_account_id option:selected').data('head-title') || '';
+        if (headTitle === 'expenses' || headTitle === 'incomes') {
+            $('#edit_sub_department_container').show();
+            $('#edit_department_id').prop('required', true);
+            
+            $('#edit_sub_prepaid_container').show();
+            $('#edit_credit_account_status').prop('required', true);
+        } else {
+            $('#edit_sub_department_container').hide();
+            $('#edit_department_id').prop('required', false).val('0').trigger('change');
+            
+            $('#edit_sub_prepaid_container').hide();
+            $('#edit_credit_account_status').prop('required', false).val('0').trigger('change');
+        }
+    }
+
     $(document).ready(function(){
     ctLoadFromContainer($('#accountSubModal')); // initialize add modal status
    
@@ -714,6 +752,11 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
     $('#accountSubModal').on('show.bs.modal', function() {
         $(this).find('.opening-balance').hide();
         $(this).find('#toggleOpeningBalanceSubAdd').prop('checked', false);
+        fn_sub_subgroup();
+        if ($.fn.niceSelect) {
+            $('#department_id').niceSelect('update');
+            $('#credit_account_status').niceSelect('update');
+        }
     });
 
     $('#toggleOpeningBalanceSubAdd').change(function() {
@@ -728,6 +771,11 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
     $('#editSubAccountModal2').on('show.bs.modal', function() {
         $(this).find('.opening-balance').hide();
         $(this).find('#toggleOpeningBalanceSubEdit2').prop('checked', false);
+        fn_sub_subgroup2();
+        if ($.fn.niceSelect) {
+            $('#edit_department_id').niceSelect('update');
+            $('#edit_credit_account_status').niceSelect('update');
+        }
     });
     $('#toggleOpeningBalanceSubEdit2').change(function() {
         if (this.checked) {
@@ -738,11 +786,6 @@ if (isset($editData_tran) && !empty($editData_tran->transaction_date)) {
     });
     
   });
-
-
-
-   
-  
 </script>
 
 
